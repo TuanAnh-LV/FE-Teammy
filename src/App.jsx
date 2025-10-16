@@ -1,13 +1,9 @@
-import './App.css'
-import MainLayout from './layout/MainLayout'
-import Home from './pages/common/Home'
+import React, { Suspense } from "react";
+import { useRoutes } from "react-router-dom";
+import routes from "./routes/app.routes";
+import "antd/dist/reset.css";
 
-function App() {
-  return (
-    <MainLayout>
-      <Home />
-    </MainLayout>
-  )
+export default function App() {
+  const element = useRoutes(routes);
+  return <Suspense fallback={<div>Loading...</div>}>{element}</Suspense>;
 }
-
-export default App

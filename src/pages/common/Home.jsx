@@ -1,6 +1,6 @@
-import React from 'react';
-import HeroSection from '../../components/common/HeroSection';
-import FeaturesSection from '../../components/common/FeaturesSection';
+import React from "react";
+import HeroSection from "../../components/common/HeroSection";
+import FeaturesSection from "../../components/common/FeaturesSection";
 
 const Home = () => {
   return (
