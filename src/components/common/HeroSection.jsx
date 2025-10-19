@@ -12,7 +12,7 @@ const HeroSection = () => {
         <img 
           src={Vector} 
           alt="Vector background" 
-          className="w-full h-full object-cover"
+          className="w-full object-cover"
         />
       </div>
       
@@ -24,13 +24,13 @@ const HeroSection = () => {
             {/* Left Content */}
             <div className="space-y-8">
               {/* Main Headline */}
-              <h1 className="font-sans font-bold text-[87px] leading-[96%] tracking-[-4%] text-[#3A3A3A]">
+              <h1 className="!font-sans !font-black text-[87px] leading-[96%] tracking-[-4%] text-[#3A3A3A]">
                 Build your future, one<br />
                 capstone at a time
               </h1>
               
               {/* Description */}
-              <p className="font-sans text-[18px] leading-[34px] tracking-[0px] text-black/60 max-w-lg">
+              <p className="!font-sans text-[18px] leading-[34px] tracking-[0px] text-black/60 max-w-lg">
                 Find teammates across majors, connect with mentors, and manage milestones—so you learn faster and deliver better.
               </p>
               
@@ -38,7 +38,7 @@ const HeroSection = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link 
                   to="/start" 
-                  className="bg-[#11253E] text-white px-4 py-2 rounded-[32px] text-lg font-semibold flex items-center justify-center space-x-2 font-sans"
+                  className="!font-sans bg-[#11253E] text-white px-4 py-2 rounded-[32px] text-lg font-semibold flex items-center justify-center space-x-2"
                 >
                   <span>Start now</span>
                   <svg 

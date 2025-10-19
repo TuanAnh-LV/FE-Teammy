@@ -17,6 +17,10 @@ const Settings = lazy(() => import("../pages/admin/Settings"));
 // Common
 const HomePage = lazy(() => import("../pages/common/Home"));
 const Profile = lazy(() => import("../pages/common/Profile"));
+const DiscoverGuest = lazy(() => import("../pages/common/Discover"));
+const Forum = lazy(() => import("../pages/common/Forum"));
+const MyGroupsGuest = lazy(() => import("../pages/common/MyGroup"));
+const Workspace = lazy(() => import("../pages/common/Workspace"));
 // const LoginPage = lazy(() => import("../pages/common"));
 //Moderator
 const Dashboard = lazy(() => import("../pages/moderator/Dashboard"));
@@ -35,6 +39,10 @@ const routes = [
     children: [
       { path: "/", element: <HomePage /> },
       // { path: "/login", element: <LoginPage /> },
+      { path: "/discover", element: <DiscoverGuest /> },
+      { path: "/forum", element: <Forum /> },
+      { path: "/my-groups", element: <MyGroupsGuest /> },
+      {path: "/workspace", element: <Workspace /> },
     ],
   },
 

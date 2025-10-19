@@ -1,16 +1,20 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "../components/common/Navbar";
+import Footer from "../components/common/Footer";
 
 const MainLayout = ({ children }) => {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      {/* Navbar có xử lý đăng nhập trực tiếp bằng Google */}
       <Navbar />
 
+      {/* Nội dung chính */}
       <main className="flex-1">
-        {/* ⚙️ Nếu có children (render thủ công) thì dùng, còn không thì Outlet (router render) */}
         {children || <Outlet />}
       </main>
+
+      <Footer/>
     </div>
   );
 };

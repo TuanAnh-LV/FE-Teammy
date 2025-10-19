@@ -13,8 +13,9 @@ createRoot(document.getElementById("root")).render(
           token: {
             colorPrimary: "#f97316",
             colorPrimaryHover: "#fb923c",
-            colorPrimaryActive: "#ea580c",
+            colorPrimaryActive: "#ea580c",  
             colorLink: "#f97316",
+            fontFamily: 'Inter, sans-serif',
           },
         }}
       >
