@@ -9,10 +9,10 @@ import {
 
 const { Header } = Layout;
 
-const HeaderBar = ({ role, collapsed, onToggle }) => {
+const HeaderBar = ({ collapsed, onToggle }) => {
   return (
     <Header
-      className="bg-white shadow-sm border-b border-gray-100 px-6 flex items-center justify-between top-0 z-50"
+      className="bg-white border-b border-gray-100 px-6 flex items-center justify-between top-0 z-50"
       style={{
         height: "64px",
         lineHeight: "64px",

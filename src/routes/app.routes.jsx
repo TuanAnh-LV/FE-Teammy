@@ -5,9 +5,11 @@ import DashboardLayout from "../layout/dashboard/DashboardLayout";
 import ProtectedRoute from "./protected/ProtectedRoute";
 
 // Mentor
+const MentorDashboard = lazy(() => import("../pages/mentor/MentorDashboard"));
 const MyGroups = lazy(() => import("../pages/mentor/MyGroups"));
 const Discover = lazy(() => import("../pages/mentor/Discover"));
 const Notifications = lazy(() => import("../pages/mentor/Notifications"));
+const GroupDetail = lazy(() => import("../pages/mentor/GroupDetail"));
 // Admin
 const AdminDashboard = lazy(() => import("../pages/admin/Dashboard"));
 const ManageUsers = lazy(() => import("../pages/admin/ManageUsers"));
@@ -32,6 +34,7 @@ const GroupManagement = lazy(() =>
 );
 const AIAssistant = lazy(() => import("../pages/moderator/AIAssistant"));
 const NotificationsMO = lazy(() => import("../pages/moderator/Notifications"));
+
 const routes = [
   // Public
   {
@@ -74,11 +77,13 @@ const routes = [
       {
         element: <DashboardLayout role="mentor" />,
         children: [
-          { index: true, element: <Discover /> },
+          { index: true, element: <MentorDashboard /> },
+          { path: "dashboard", element: <MentorDashboard /> },
           { path: "discover", element: <Discover /> },
           { path: "my-groups", element: <MyGroups /> },
           { path: "notifications", element: <Notifications /> },
           { path: "profile", element: <Profile /> },
+          { path: "my-groups/:id", element: <GroupDetail /> },
         ],
       },
     ],
