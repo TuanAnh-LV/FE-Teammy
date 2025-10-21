@@ -4,7 +4,6 @@ import { PlusOutlined } from "@ant-design/icons";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import TaskCard from "./TaskCard";
 import TaskDetailModal from "./TaskDetailModal";
-import AddTaskModal from "./AddTaskModal";
 
 const { TextArea } = Input;
 
@@ -57,7 +56,6 @@ export default function GroupTimeline() {
   const [columns, setColumns] = useState(initialColumns);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Drag & Drop logic
   const onDragEnd = (result) => {
@@ -83,7 +81,7 @@ export default function GroupTimeline() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+    <div className="bg-white rounded-2xl shadow-md p-8 space-y-8">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -134,12 +132,6 @@ export default function GroupTimeline() {
                       {col.title}
                       <Tag color={col.color}>{columns[col.key].length}</Tag>
                     </h3>
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<PlusOutlined />}
-                      onClick={() => setIsTaskModalOpen(true)}
-                    />
                   </div>
 
                   {/* Task Cards */}
@@ -170,14 +162,6 @@ export default function GroupTimeline() {
                     ))}
                     {provided.placeholder}
                   </div>
-
-                  {/* Add Card Button */}
-                  <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="text-sm text-blue-600 mt-4 hover:underline font-medium flex items-center justify-center gap-1 bg-white rounded-xl py-2 border border-blue-100 hover:border-blue-300 transition"
-                  >
-                    <PlusOutlined /> Add Card
-                  </button>
                 </div>
               )}
             </Droppable>
@@ -190,17 +174,6 @@ export default function GroupTimeline() {
         open={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
         task={selectedTask}
-      />
-      <AddTaskModal
-        open={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onCreate={(task) => {
-          setColumns({
-            ...columns,
-            todo: [...columns.todo, { id: Date.now().toString(), ...task }],
-          });
-          setIsAddModalOpen(false);
-        }}
       />
     </div>
   );

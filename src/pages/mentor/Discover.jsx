@@ -61,7 +61,7 @@ const Discover = () => {
   );
 
   return (
-    <div className="space-y-8 ">
+    <div className="space-y-8 bg-gray-50 min-h-screen">
       {/* Header Section */}
       <div className="space-y-1 mb-8">
         <h1

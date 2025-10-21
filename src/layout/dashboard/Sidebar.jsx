@@ -1,16 +1,16 @@
 import React, { useState } from "react";
-import { Layout, Menu } from "antd";
+import { Layout, Menu, Button, Tooltip } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import { getRoleMenus } from "../../consts/roleMenus.jsx";
+import { LogoutOutlined } from "@ant-design/icons";
 
 const { Sider } = Layout;
 
-const Sidebar = ({ role, collapsed: collapsedProp, onToggle }) => {
+const Sidebar = ({ role, collapsed: collapsedProp, onToggle, onLogout }) => {
   const location = useLocation();
   const menus = getRoleMenus(role);
   const [collapsed, setCollapsed] = useState(false);
 
-  // Ưu tiên state từ parent nếu truyền vào
   const isCollapsed =
     typeof collapsedProp === "boolean" ? collapsedProp : collapsed;
 
@@ -23,16 +23,14 @@ const Sidebar = ({ role, collapsed: collapsedProp, onToggle }) => {
       trigger={null}
       collapsedWidth={64}
       breakpoint="md"
-      onBreakpoint={(broken) => {
-        setCollapsed(broken);
-      }}
+      onBreakpoint={(broken) => setCollapsed(broken)}
       onCollapse={(c) => {
         setCollapsed(c);
         onToggle?.();
       }}
-      className="border-r border-gray-100"
+      className="border-r border-gray-100 relative flex flex-col"
     >
-      {/* Logo + brand */}
+      {/* Logo */}
       <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
         <div className="w-6 h-8 bg-black rounded"></div>
         {!isCollapsed && (
@@ -47,8 +45,12 @@ const Sidebar = ({ role, collapsed: collapsedProp, onToggle }) => {
         )}
       </div>
 
-      {/* Menu */}
-      <Menu mode="inline" selectedKeys={[location.pathname]} className="mt-2">
+      {/* Menu chính */}
+      <Menu
+        mode="inline"
+        selectedKeys={[location.pathname]}
+        className="mt-2 flex-1"
+      >
         {menus.map((m) => {
           const isActive = location.pathname === m.path;
           return (
@@ -67,12 +69,21 @@ const Sidebar = ({ role, collapsed: collapsedProp, onToggle }) => {
         })}
       </Menu>
 
-      {/* Footer nhỏ trong sidebar */}
-      {!isCollapsed && (
-        <div className="mt-auto text-center text-gray-400 text-xs py-3 border-t border-gray-100">
-          © {new Date().getFullYear()} Teammy
-        </div>
-      )}
+      {/* Nút Logout cố định ở đáy */}
+      <div className="absolute bottom-3 left-0 w-full flex justify-center">
+        <Tooltip title={!isCollapsed ? "" : "Logout"} placement="right">
+          <Button
+            type="text"
+            icon={<LogoutOutlined style={{ color: "red" }} />}
+            onClick={onLogout}
+            className={`flex items-center justify-center ${
+              !isCollapsed ? "w-[200px]" : "w-full"
+            } hover:text-red-500`}
+          >
+            {!isCollapsed && <span className="text-gray-700">Logout</span>}
+          </Button>
+        </Tooltip>
+      </div>
     </Sider>
   );
 };

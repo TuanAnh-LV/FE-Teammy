@@ -67,7 +67,7 @@ export default function MentorDashboard() {
   ];
 
   return (
-    <div className="flex flex-col gap-8 p-4 md:p-6 bg-gray-50 min-h-screen">
+    <div className="space-y-8 bg-gray-50 min-h-screen">
       {/* HEADER + OVERVIEW */}
       <div className="flex flex-col md:flex-row justify-between items-center">
         <div>

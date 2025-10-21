@@ -1,9 +1,10 @@
 import React from "react";
-import { Tag, Progress } from "antd";
+import { Tag, Progress, Card, List, Avatar, Button } from "antd";
 import {
   TeamOutlined,
   CalendarOutlined,
   PieChartOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 
 export default function GroupOverview() {
@@ -17,9 +18,15 @@ export default function GroupOverview() {
     activeWeeks: 9,
     status: "On Track",
   };
+  const members = [
+    { name: "Nguyễn Văn A", contribution: 35, status: "Active" },
+    { name: "Lê Thị B", contribution: 25, status: "Active" },
+    { name: "Trần C", contribution: 20, status: "Idle" },
+    { name: "Phạm D", contribution: 20, status: "Idle" },
+  ];
 
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-50 p-8 space-y-8">
+    <div className="bg-white rounded-2xl shadow-md p-8 space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
         <div>
@@ -112,6 +119,34 @@ export default function GroupOverview() {
           </div>
         </div>
       </div>
+      <Card className="rounded-2xl border border-gray-100 shadow-sm">
+        <h3 className="text-gray-800 font-semibold mb-3">
+          Contribution Summary
+        </h3>
+        <List
+          dataSource={members}
+          renderItem={(m) => (
+            <List.Item>
+              <Avatar icon={<UserOutlined />} />
+              <div className="ml-3 flex-1">
+                <p className="font-medium text-gray-700">{m.name}</p>
+                <Progress
+                  percent={m.contribution}
+                  strokeColor={m.status === "Active" ? "#3182ED" : "#D1D5DB"}
+                  size="small"
+                  className="w-40"
+                />
+              </div>
+              <Tag
+                color={m.status === "Active" ? "blue" : "default"}
+                className="rounded-md"
+              >
+                {m.status}
+              </Tag>
+            </List.Item>
+          )}
+        />
+      </Card>
     </div>
   );
 }
