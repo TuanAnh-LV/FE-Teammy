@@ -25,6 +25,12 @@ export const getRoleMenus = (role) => {
   const roleMenus = {
     mentor: [
       {
+        key: "dashboard",
+        label: "Dashboard",
+        path: "/mentor/dashboard",
+        icon: <HomeOutlined />,
+      },
+      {
         key: "discover",
         label: "Discover",
         path: "/mentor/discover",

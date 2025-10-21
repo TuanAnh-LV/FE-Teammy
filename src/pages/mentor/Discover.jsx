@@ -5,6 +5,7 @@ import {
   UserOutlined,
   ClockCircleOutlined,
 } from "@ant-design/icons";
+import GroupDetailModal from "../../components/mentor/GroupDetailModal";
 
 const { Option } = Select;
 
@@ -14,37 +15,41 @@ const Discover = () => {
     faculty: "",
     status: "",
   });
+  const [selectedGroup, setSelectedGroup] = useState(null);
 
   const mockGroups = [
     {
       id: 1,
       name: "AI Research Group",
       shortDesc: "Machine Learning Applications",
-      detail: "Exploring deep learning models for healthcare applications",
+      detail: "Exploring deep learning models for healthcare applications.",
       members: 5,
       lastActive: "2 hours ago",
       faculty: "Computer Science",
       urgent: true,
+      tags: ["Python", "TensorFlow", "Healthcare AI"],
     },
     {
       id: 2,
       name: "Web Innovation Lab",
       shortDesc: "Full-stack Web Solutions",
-      detail: "Building scalable cloud-based web systems",
+      detail: "Building scalable cloud-based web systems.",
       members: 6,
       lastActive: "3 hours ago",
       faculty: "Information Systems",
       urgent: false,
+      tags: ["React", "Node.js", "Docker"],
     },
     {
       id: 3,
       name: "Blockchain Pioneers",
       shortDesc: "Decentralized Applications",
-      detail: "Exploring blockchain frameworks for digital identity",
+      detail: "Exploring blockchain frameworks for digital identity.",
       members: 4,
       lastActive: "1 day ago",
       faculty: "Computer Science",
       urgent: true,
+      tags: ["Solidity", "Web3", "Smart Contracts"],
     },
   ];
 
@@ -56,7 +61,7 @@ const Discover = () => {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 bg-gray-50 min-h-screen">
       {/* Header Section */}
       <div className="space-y-1 mb-8">
         <h1
@@ -64,9 +69,7 @@ const Discover = () => {
           style={{
             backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
             WebkitBackgroundClip: "text",
-            backgroundClip: "text",
             WebkitTextFillColor: "transparent",
-            color: "transparent",
           }}
         >
           Discover
@@ -75,7 +78,8 @@ const Discover = () => {
           Find student groups that need mentoring and make a difference
         </p>
         <p className="text-gray-400 text-xs">
-          3 groups available • 2 need mentor
+          {mockGroups.length} groups available •{" "}
+          {mockGroups.filter((g) => g.urgent).length} need mentor
         </p>
       </div>
 
@@ -115,7 +119,6 @@ const Discover = () => {
             className="shadow-md rounded-2xl border-gray-100 hover:shadow-lg transition-all"
             bodyStyle={{ padding: "20px" }}
           >
-            {/* Header */}
             <div className="flex justify-between items-start mb-2">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-teal-500 inline-block"></span>
@@ -130,11 +133,9 @@ const Discover = () => {
               )}
             </div>
 
-            {/* Descriptions */}
             <p className="text-gray-500 text-sm font-medium">{g.shortDesc}</p>
             <p className="text-gray-400 text-sm mt-1">{g.detail}</p>
 
-            {/* Stats */}
             <div className="flex items-center gap-4 mt-3 text-gray-500 text-sm">
               <div className="flex items-center gap-1">
                 <UserOutlined />
@@ -146,16 +147,17 @@ const Discover = () => {
               </div>
             </div>
 
-            {/* Faculty tag */}
             <div className="mt-2">
               <Tag color="blue" className="rounded-md text-xs">
                 {g.faculty}
               </Tag>
             </div>
 
-            {/* Buttons */}
             <div className="flex gap-3 mt-4">
-              <Button className="flex-1 bg-gray-100 hover:bg-gray-200">
+              <Button
+                className="flex-1 bg-gray-100 hover:bg-gray-200"
+                onClick={() => setSelectedGroup(g)}
+              >
                 View Details
               </Button>
               <Button
@@ -169,12 +171,18 @@ const Discover = () => {
         ))}
       </div>
 
-      {/* Empty state (nếu không có group nào) */}
       {filteredGroups.length === 0 && (
         <div className="text-center text-gray-400 mt-16">
           No groups found matching your filters.
         </div>
       )}
+
+      {/* Popup chi tiết */}
+      <GroupDetailModal
+        group={selectedGroup}
+        open={!!selectedGroup}
+        onClose={() => setSelectedGroup(null)}
+      />
     </div>
   );
 };
