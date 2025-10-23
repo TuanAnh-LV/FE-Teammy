@@ -435,7 +435,7 @@ const Workspace = () => {
     <div className="relative">
       {/* Background */}
       <div className="absolute inset-0">
-        <img src={Vector} alt="Vector background" className="w-full h-full object-cover" />
+        <img src={Vector} alt="Vector background" className="w-full object-cover" />
       </div>
 
       {/* Content */}
