@@ -1,159 +1,279 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Vector from "../../assets/Vector.png";
-import { Users, Calendar, BarChart } from "lucide-react";
+import {
+  Users,
+  Calendar,
+  UserRound,
+  Info,
+  ClipboardList,
+  ArrowLeft,
+  UserPlus2,
+  FolderKanban,
+  Search,
+  X,
+  Mail,
+  Plus,
+} from "lucide-react";
 
 const MyGroup = () => {
-  const members = [
-    { name: "Nguyen Van A", role: "Leader" },
-    { name: "Tran Thi B", role: "Frontend Dev" },
-    { name: "Le Van C", role: "Backend Dev" },
-    { name: "Pham Thi D", role: "UI/UX Designer" },
-    { name: "Doan Van E", role: "Data Analyst" },
-    { name: "Hoang Thi F", role: "QA Tester" },
-  ];
+  const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [groupMembers, setGroupMembers] = useState([
+    { name: "Nguyen Van A", role: "Leader", email: "anva@fpt.edu.vn" },
+    { name: "Tran Thi B", email: "btran@fpt.edu.vn" },
+    { name: "Le Van C", email: "cle@fpt.edu.vn" },
+  ]);
+
+  // Hàm xử lý khi bấm Add (sẽ gọi API thật sau)
+  const handleAddMember = async () => {
+    if (!email.trim()) return alert("Please enter an email address.");
+    try {
+      // TODO: Gọi API backend tìm user theo email, ví dụ:
+      // const res = await fetch(`/api/users/search?email=${email}`);
+      // const user = await res.json();
+
+      // Giả sử API trả về user như dưới (chỉ demo)
+      const user = { name: "User Found", email };
+
+      // Kiểm tra trùng email
+      if (groupMembers.some((m) => m.email === user.email)) {
+        alert("This user is already in the group.");
+        return;
+      }
+
+      setGroupMembers([...groupMembers, user]);
+      alert(`${user.email} has been added.`);
+      setEmail("");
+      setShowModal(false);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add member. Please try again.");
+    }
+  };
+
+  const group = {
+    id: "G001",
+    title: "AI Healthcare Team",
+    field: "Healthcare",
+    description:
+      "AI Healthcare Team focuses on developing ML models to assist doctors in diagnosing diseases and predicting outcomes.",
+    start: "01/10/2025",
+    end: "15/12/2025",
+    progress: 65,
+    mentor: "Nguyen Van A",
+  };
 
   return (
-    <div className="relative">
+    <div className="relative bg-[#fafafa]">
       {/* Background */}
       <div className="absolute inset-0">
-        <img
-          src={Vector}
-          alt="Vector background"
-          className="w-full h-full object-cover"
-        />
+        <img src={Vector} alt="Vector background" className="w-full object-cover" />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-start pt-28 xl:pt-40 pb-28">
-        {/* Title */}
-        <h1 className="!font-sans !font-black text-[72px] md:text-[87px] leading-[96%] tracking-[-4%] text-[#3A3A3A] text-center">
-          My Group
-        </h1>
+      <div className="relative z-10 min-h-screen flex flex-col items-center pt-20 xl:pt-32 pb-28">
+        {/* Top bar */}
+        <div className="w-full max-w-7xl px-6 flex items-center justify-between mb-10">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-gray-700 font-medium hover:text-black transition"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back
+          </button>
 
-        {/* Subtitle */}
-        <p className="mt-5 font-semibold text-center text-[20px] md:text-[21px] leading-[28px] text-black/70">
-          Your capstone team information, track progress, and manage members.
-        </p>
-
-        {/* Group Info Card */}
-        <div className="mt-16 bg-gradient-to-br from-[#ffffff] to-[#f7f9ff] border border-gray-200 rounded-2xl shadow-md w-full max-w-[76rem] mxau p-10 backdrop-blur-md">
-          {/* Header */}
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h2 className="text-[64px] !font-bold text-black !tracking-[2%]">
-                AI Healthcare Team
-              </h2>
-              <p className="text-[#999999] font-bold text-[21px] tracking-[-4%] mt-1">
-                AI applications support medical diagnosis
-              </p>
-            </div>
-            <button className="bg-gradient-to-r from-[#FF5858] to-[#FF3E3E] hover:opacity-90 !text-white text-[24px] !tracking-[-4%] !font-bold px-6 py-3.5 rounded-[12px] !mt-3.5 transition">
-              Leave Group
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-[#404040] !text-white px-5 py-2.5 rounded-lg font-semibold shadow-md hover:bg-black hover:scale-[1.02] transition-all flex items-center gap-2"
+            >
+              <UserPlus2 className="w-4 h-4" />
+              Add Member
             </button>
-          </div>
 
-          {/* Status Tags */}
-          <div className="flex gap-2 mb-6">
-            <span className="bg-gray-200 text-gray-800 text-[14px] font-semibold px-4 py-1 rounded-full">
-              Team Leader
-            </span>
-            <span className="bg-green-100 text-green-700 text-[14px] font-semibold px-4 py-1 rounded-full">
-              On Track
-            </span>
-          </div>
-
-          {/* Grid Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {/* Project Progress */}
-            <div>
-              <h3 className="text-[16px] font-semibold text-gray-800 mb-4">
-                Project Progress
-              </h3>
-              <div className="bg-white/90 border border-gray-200 rounded-xl p-5 shadow-sm">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-[15px] text-gray-700 font-medium">
-                    Overall Progress
-                  </span>
-                  <span className="text-[15px] font-semibold text-[#3A3A3A]">
-                    65%
-                  </span>
-                </div>
-                <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden mb-5">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#6C63FF] to-[#3A3A3A] rounded-full"
-                    style={{ width: "65%" }}
-                  ></div>
-                </div>
-
-                <div>
-                  <h4 className="text-[14px] font-semibold text-gray-700 mb-1">
-                    Next Milestone
-                  </h4>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex justify-between items-center">
-                    <span className="text-gray-600 text-[14px] font-medium">
-                      MVP Demo
-                    </span>
-                    <span className="text-gray-800 font-semibold text-[14px]">
-                      15/11/2025
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* General Info */}
-            <div>
-              <h3 className="text-[16px] font-semibold text-gray-800 mb-4">
-                General Information
-              </h3>
-              <div className="bg-white/90 border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
-                <div>
-                  <p className="text-[14px] text-gray-600">Subject Area</p>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 font-medium text-gray-800">
-                    Healthcare
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[14px] text-gray-600">Mentor</p>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 font-medium text-gray-800">
-                    Nguyen Van A
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Group Members */}
-          <div className="mt-10">
-            <h3 className="text-[16px] font-semibold text-gray-800 mb-4">
-              Group Members
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
-              {members.map((m, i) => (
-                <div
-                  key={i}
-                  className="bg-gradient-to-br from-[#f4f4f4] to-[#fdfdfd] border border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center shadow-sm hover:shadow-md transition"
-                >
-                  <div className="w-12 h-12 bg-gray-300 rounded-full mb-3"></div>
-                  <p className="text-[15px] font-semibold text-gray-800">
-                    {m.name}
-                  </p>
-                  <p className="text-[13px] text-gray-600">{m.role}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="mt-10 flex flex-col md:flex-row justify-center gap-6">
-            <button className="bg-[#404040] hover:bg-black !text-white text-[21px] !font-bold px-26 py-4 rounded-[12px] !tracking-[-4%] transition">
+            <button
+              onClick={() => navigate("/workspace")}
+              className="bg-[#404040] !text-white px-5 py-2.5 rounded-lg font-semibold shadow-md hover:bg-black hover:scale-[1.02] transition-all flex items-center gap-2"
+            >
+              <FolderKanban className="w-4 h-4" />
               Open Workspace
-            </button>
-            <button className="bg-[#8C8C8C] hover:bg-gray-300 !text-white  text-[21px] !font-bold px-26 py-4 rounded-[12px] !tracking-[-4%] transition">
-              View Full Details
             </button>
           </div>
         </div>
+
+        {/* Layout 7-3 */}
+        <div className="w-full max-w-7xl px-6 grid grid-cols-1 lg:grid-cols-10 gap-8">
+          {/* LEFT SIDE */}
+          <div className="col-span-7 flex flex-col gap-6">
+            {/* Info */}
+            <div className="bg-white/90 backdrop-blur-md border border-gray-200 rounded-2xl shadow-md p-8">
+              <div className="flex items-center gap-2 mb-5">
+                <span className="bg-blue-100 p-2 rounded-lg">
+                  <Info className="text-blue-600 w-5 h-5" />
+                </span>
+                <h2 className="font-bold text-xl text-gray-800">Group Information</h2>
+              </div>
+
+              <h3 className="font-bold text-[26px] text-[#333] mb-3">{group.title}</h3>
+
+              <div className="flex flex-wrap gap-2 mb-6">
+                <span className="bg-blue-100 text-blue-700 text-sm font-semibold px-3 py-1 rounded-full">
+                  {group.field}
+                </span>
+                <span className="bg-green-100 text-green-700 text-sm font-semibold px-3 py-1 rounded-full">
+                  On Track
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 text-[15px] text-gray-700">
+                <p>
+                  <b>ID:</b> {group.id}
+                </p>
+                <p>
+                  <b>Mentor:</b> {group.mentor}
+                </p>
+                <p className="flex items-center gap-2">
+                  <Calendar size={15} /> <b>Start:</b> {group.start}
+                </p>
+                <p>
+                  <b>End:</b> {group.end}
+                </p>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="bg-white/90 border border-gray-200 rounded-2xl shadow-md p-8">
+              <div className="flex items-center gap-2 mb-5">
+                <span className="bg-purple-100 p-2 rounded-lg">
+                  <ClipboardList className="text-purple-600 w-5 h-5" />
+                </span>
+                <h2 className="font-bold text-xl text-gray-800">Description</h2>
+              </div>
+              <p className="text-gray-700 leading-relaxed text-[15px]">
+                {group.description}
+              </p>
+            </div>
+
+            {/* Progress */}
+            <div className="bg-white/90 border border-gray-200 rounded-2xl shadow-md p-8">
+              <div className="flex items-center gap-2 mb-5">
+                <span className="bg-green-100 p-2 rounded-lg">
+                  <Users className="text-green-600 w-5 h-5" />
+                </span>
+                <h2 className="font-bold text-xl text-gray-800">Progress</h2>
+              </div>
+              <div className="bg-gray-200 h-3 rounded-full overflow-hidden">
+                <div
+                  className="bg-green-500 h-3 rounded-full"
+                  style={{ width: `${group.progress}%` }}
+                />
+              </div>
+              <p className="text-sm text-gray-600 mt-2">
+                Current progress: <b>{group.progress}%</b>
+              </p>
+            </div>
+          </div>
+
+          {/* RIGHT SIDE */}
+          <div className="col-span-3 flex flex-col gap-6">
+            {/* Mentor */}
+            <div className="bg-white/90 border border-gray-200 rounded-2xl shadow-md p-6">
+              <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2">
+                <span className="bg-amber-100 p-2 rounded-lg">
+                  <Users className="text-amber-600 w-5 h-5" />
+                </span>
+                Mentor
+              </h3>
+              <div className="bg-amber-50 rounded-xl border border-amber-100 p-4 flex items-center gap-4">
+                <img
+                  src="https://i.pravatar.cc/80?img=12"
+                  alt="mentor"
+                  className="w-12 h-12 rounded-full object-cover border border-white shadow"
+                />
+                <div>
+                  <p className="font-semibold text-gray-800">{group.mentor}</p>
+                  <p className="text-sm text-amber-700 font-medium">Project Mentor</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Members */}
+            <div className="bg-white/90 border border-gray-200 rounded-2xl shadow-md p-6">
+              <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2">
+                <span className="bg-green-100 p-2 rounded-lg">
+                  <UserRound className="text-green-600 w-5 h-5" />
+                </span>
+                Members
+              </h3>
+              {groupMembers.map((member, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-4 border rounded-xl p-4 mb-3 bg-gray-50 hover:bg-gray-100 transition"
+                >
+                  <img
+                    src={`https://i.pravatar.cc/80?img=${i + 3}`}
+                    alt={member.name}
+                    className="w-12 h-12 rounded-full object-cover shadow"
+                  />
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">{member.name}</p>
+                    <p className="text-sm text-gray-600">{member.email}</p>
+                  </div>
+                </div>
+              ))}
+              <p className="text-right text-sm text-gray-500 mt-2">
+                Total: {groupMembers.length} members
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* === Popup: Search by email === */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white/95 border border-gray-200 shadow-xl rounded-2xl p-8 w-[90%] max-w-md relative">
+              <button
+                onClick={() => setShowModal(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-black"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <h2 className="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2">
+                <Mail className="w-4 h-4 text-gray-600" />
+                Add Member by Email
+              </h2>
+
+              <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2 mb-6">
+                <Search className="w-4 h-4 text-gray-500 mr-2" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter member email..."
+                  className="bg-transparent outline-none w-full text-gray-700"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="px-5 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddMember}
+                  className="flex items-center gap-2 !bg-[#404040] !text-white px-5 py-2 rounded-lg font-semibold !hover:bg-black transition"
+                >
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
