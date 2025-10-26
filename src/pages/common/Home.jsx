@@ -6,7 +6,7 @@ const Home = () => {
   return (
     <div className="w-full">
       <HeroSection />
-      {/* <FeaturesSection /> */}
+      <FeaturesSection />
     </div>
   );
 };
