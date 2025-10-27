@@ -74,12 +74,6 @@ export const getRoleMenus = (role) => {
         path: "/admin/reports",
         icon: <FileTextOutlined />,
       },
-      {
-        key: "settings",
-        label: "Setting",
-        path: "/admin/settings",
-        icon: <SettingOutlined />,
-      },
     ],
     moderator: [
       {

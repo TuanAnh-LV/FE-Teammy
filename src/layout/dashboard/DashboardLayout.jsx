@@ -25,7 +25,7 @@ const DashboardLayout = ({ role }) => {
         />
 
         <Content
-          className="overflow-y-auto bg-gray-50 p-8"
+          className="overflow-y-auto bg-white p-3"
           style={{
             height: "calc(100vh - 64px)",
           }}

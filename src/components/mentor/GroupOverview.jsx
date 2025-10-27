@@ -11,7 +11,7 @@ export default function GroupOverview() {
   const group = {
     description: "Exploring deep learning models for healthcare applications.",
     tags: ["AI", "Deep Learning", "Healthcare"],
-    faculty: "Computer Science",
+    major: "Computer Science",
     mentor: "Dr. Sarah Williams",
     members: 5,
     progress: 78,
@@ -61,8 +61,8 @@ export default function GroupOverview() {
               {group.members}
             </p>
             <p>
-              <span className="font-medium text-gray-700">Faculty:</span>{" "}
-              {group.faculty}
+              <span className="font-medium text-gray-700">Major:</span>{" "}
+              {group.major}
             </p>
             <p>
               <span className="font-medium text-gray-700">Mentor:</span>{" "}

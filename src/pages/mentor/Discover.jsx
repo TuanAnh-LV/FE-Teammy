@@ -12,7 +12,7 @@ const { Option } = Select;
 const Discover = () => {
   const [filters, setFilters] = useState({
     query: "",
-    faculty: "",
+    major: "",
     status: "",
   });
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -25,7 +25,7 @@ const Discover = () => {
       detail: "Exploring deep learning models for healthcare applications.",
       members: 5,
       lastActive: "2 hours ago",
-      faculty: "Computer Science",
+      major: "Computer Science",
       urgent: true,
       tags: ["Python", "TensorFlow", "Healthcare AI"],
     },
@@ -36,7 +36,7 @@ const Discover = () => {
       detail: "Building scalable cloud-based web systems.",
       members: 6,
       lastActive: "3 hours ago",
-      faculty: "Information Systems",
+      major: "Information Systems",
       urgent: false,
       tags: ["React", "Node.js", "Docker"],
     },
@@ -47,7 +47,7 @@ const Discover = () => {
       detail: "Exploring blockchain frameworks for digital identity.",
       members: 4,
       lastActive: "1 day ago",
-      faculty: "Computer Science",
+      major: "Computer Science",
       urgent: true,
       tags: ["Solidity", "Web3", "Smart Contracts"],
     },
@@ -56,7 +56,7 @@ const Discover = () => {
   const filteredGroups = mockGroups.filter(
     (g) =>
       g.name.toLowerCase().includes(filters.query.toLowerCase()) &&
-      (filters.faculty ? g.faculty === filters.faculty : true) &&
+      (filters.major ? g.major === filters.major : true) &&
       (filters.status === "urgent" ? g.urgent : true)
   );
 
@@ -94,9 +94,9 @@ const Discover = () => {
             onChange={(e) => setFilters({ ...filters, query: e.target.value })}
           />
           <Select
-            placeholder="Faculty"
+            placeholder="Major"
             allowClear
-            onChange={(val) => setFilters({ ...filters, faculty: val })}
+            onChange={(val) => setFilters({ ...filters, major: val })}
           >
             <Option value="Computer Science">Computer Science</Option>
             <Option value="Information Systems">Information Systems</Option>
@@ -149,7 +149,7 @@ const Discover = () => {
 
             <div className="mt-2">
               <Tag color="blue" className="rounded-md text-xs">
-                {g.faculty}
+                {g.major}
               </Tag>
             </div>
 

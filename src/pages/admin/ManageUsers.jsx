@@ -1,56 +1,121 @@
 import React, { useState } from "react";
-import { Table, Input, Select, Button, Tag, Space, Card } from "antd";
+import {
+  Table,
+  Input,
+  Select,
+  Button,
+  Tag,
+  Space,
+  Card,
+  Modal,
+  message,
+} from "antd";
 import {
   UploadOutlined,
   PlusOutlined,
-  EllipsisOutlined,
   SearchOutlined,
+  EyeOutlined,
+  EditOutlined,
+  StopOutlined,
 } from "@ant-design/icons";
-
 const { Option } = Select;
+import UserDetailModal from "../../components/admin/UserDetailModal";
+import UserAddModal from "../../components/admin/UserAddModal";
+import UserEditModal from "../../components/admin/UserEditModal";
+import { useNavigate } from "react-router-dom";
 
 const ManageUsers = () => {
-  const [filters, setFilters] = useState({
-    role: "All Roles",
-    status: "All Status",
-    faculty: "All Faculties",
-    search: "",
-  });
-
   const users = [
     {
       key: 1,
-      name: "Tuan Anh",
+      name: "Nguyen Tuan Anh",
       email: "anhlvtse172914@fpt.edu.vn",
       role: "Admin",
-      faculty: "Engineering",
       status: "Active",
+      phone: "0901234567",
+      major: "Software Engineering",
     },
     {
       key: 2,
-      name: "Tuan Anh",
-      email: "anhlvtse172914@fpt.edu.vn",
+      name: "Le Huy Ninh",
+      email: "huyninh@fpt.edu.vn",
       role: "Mentor",
-      faculty: "Business",
       status: "Suspended",
+      phone: "0987654321",
+      major: "Business Administration",
     },
     {
       key: 3,
-      name: "Tuan Anh",
-      email: "anhlvtse172914@fpt.edu.vn",
+      name: "Pham Van Dung",
+      email: "dungpv@fpt.edu.vn",
       role: "Student",
-      faculty: "Engineering",
-      status: "Inactive",
-    },
-    {
-      key: 4,
-      name: "Tuan Anh",
-      email: "anhlvtse172914@fpt.edu.vn",
-      role: "Admin",
-      faculty: "Engineering",
+      major: "Information Systems",
+      studentCode: "SE172914",
+      phone: "0912345678",
       status: "Active",
     },
   ];
+
+  const [filters, setFilters] = useState({
+    role: "All Roles",
+    status: "All Status",
+    major: "All Major",
+    search: "",
+  });
+
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [userList, setUserList] = useState(users);
+  const navigate = useNavigate();
+
+  const handleView = (user) => {
+    setSelectedUser(user);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (user) => {
+    setSelectedUser(user);
+    setIsEditOpen(true);
+  };
+
+  const handleSaveEdit = (updatedUser) => {
+    setUserList((prev) =>
+      prev.map((u) => (u.key === updatedUser.key ? updatedUser : u))
+    );
+  };
+
+  const handleAddUser = (newUser) => {
+    setUserList((prev) => [...prev, newUser]);
+  };
+
+  const handleBan = (user) => {
+    Modal.confirm({
+      title: `Ban ${user.name}?`,
+      content:
+        "Are you sure you want to ban this user? This action can be undone later.",
+      centered: true,
+      okText: "Confirm Ban",
+      cancelText: "Cancel",
+      okButtonProps: {
+        className:
+          "!bg-red-500 !text-white !border-none !rounded-md !px-4 !py-2 hover:!opacity-90",
+      },
+      cancelButtonProps: {
+        className:
+          "!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all !py-2",
+      },
+      onOk: () => {
+        setUserList((prev) =>
+          prev.map((u) =>
+            u.key === user.key ? { ...u, status: "Suspended" } : u
+          )
+        );
+        message.success(`${user.name} has been banned.`);
+      },
+    });
+  };
 
   const columns = [
     {
@@ -73,7 +138,7 @@ const ManageUsers = () => {
       key: "role",
       render: (role) => <Tag color="blue">{role}</Tag>,
     },
-    { title: "Faculty", dataIndex: "faculty", key: "faculty" },
+    { title: "Major", dataIndex: "major", key: "major" },
     {
       title: "Status",
       dataIndex: "status",
@@ -97,48 +162,66 @@ const ManageUsers = () => {
     {
       title: "Actions",
       key: "actions",
-      render: () => (
-        <Button
-          icon={<EllipsisOutlined />}
-          shape="circle"
-          className="border-gray-200 hover:border-gray-400"
-        />
+      render: (_, record) => (
+        <Space>
+          <Button
+            icon={<EyeOutlined />}
+            shape="circle"
+            onClick={() => handleView(record)}
+          />
+          <Button
+            icon={<EditOutlined />}
+            shape="circle"
+            onClick={() => handleEdit(record)}
+          />
+          <Button
+            icon={<StopOutlined />}
+            shape="circle"
+            danger
+            onClick={() => handleBan(record)}
+            title="Ban User"
+          />
+        </Space>
       ),
     },
   ];
 
+  const filteredUsers = userList.filter((user) => {
+    const roleMatch =
+      filters.role === "All Roles" || user.role === filters.role;
+    const statusMatch =
+      filters.status === "All Status" || user.status === filters.status;
+    const majorMatch =
+      filters.major === "All Major" || user.major === filters.major;
+    const searchText = filters.search.toLowerCase();
+    const searchMatch =
+      user.name.toLowerCase().includes(searchText) ||
+      user.email.toLowerCase().includes(searchText);
+
+    return roleMatch && statusMatch && majorMatch && searchMatch;
+  });
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1
-            className="inline-block text-4xl font-extrabold"
-            style={{
-              backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
+          <h1 className="inline-block text-4xl font-extrabold">
             Users & Roles
           </h1>
-          <p className="text-gray-500 text-sm">
-            Manage users, roles, and permissions across the platform
-          </p>
         </div>
         <Space>
           <Button
             icon={<UploadOutlined />}
-            className="!border-gray-300 hover:!border-blue-400 transition-all"
+            onClick={() => navigate("/admin/import-users")}
+            className="!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all !py-5"
           >
-            Import CSV
+            Import Users
           </Button>
           <Button
             icon={<PlusOutlined />}
-            type="default"
-            className="!text-white !bg-gradient-to-r from-[#3182ED] to-[#43D08A]
-             hover:!opacity-90 !shadow-sm !border-none !rounded-lg
-             !px-6 !py-2 transition-all duration-200 font-medium"
+            onClick={() => setIsAddOpen(true)}
+            className="!bg-[#FF7A00] !text-white !border-none !rounded-md !px-6 !py-5 hover:!opacity-90"
           >
             Add User
           </Button>
@@ -146,15 +229,11 @@ const ManageUsers = () => {
       </div>
 
       <div className="flex flex-col gap-6">
-        {/* Filters & Search */}
+        {/* Filters & Table */}
         <Card
           className="shadow-sm border-gray-100"
           bodyStyle={{ padding: "20px 24px" }}
         >
-          <h3 className="font-semibold text-gray-800 mb-3">Filters & Search</h3>
-          <p className="text-gray-500 text-sm mb-4">
-            Filter users by role, status, or faculty
-          </p>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <Input
               prefix={<SearchOutlined className="text-gray-400" />}
@@ -163,59 +242,66 @@ const ManageUsers = () => {
               onChange={(e) =>
                 setFilters({ ...filters, search: e.target.value })
               }
-              className="sm:col-span-1"
             />
             <Select
               value={filters.role}
               onChange={(v) => setFilters({ ...filters, role: v })}
               className="w-full"
             >
-              <Option>All Roles</Option>
-              <Option>Admin</Option>
-              <Option>Mentor</Option>
-              <Option>Student</Option>
+              <Option value="All Roles">All Roles</Option>
+              <Option value="Admin">Admin</Option>
+              <Option value="Mentor">Mentor</Option>
+              <Option value="Student">Student</Option>
             </Select>
             <Select
               value={filters.status}
               onChange={(v) => setFilters({ ...filters, status: v })}
               className="w-full"
             >
-              <Option>All Status</Option>
-              <Option>Active</Option>
-              <Option>Inactive</Option>
-              <Option>Suspended</Option>
+              <Option value="All Status">All Status</Option>
+              <Option value="Active">Active</Option>
+              <Option value="Inactive">Inactive</Option>
+              <Option value="Suspended">Suspended</Option>
             </Select>
             <Select
-              value={filters.faculty}
-              onChange={(v) => setFilters({ ...filters, faculty: v })}
+              value={filters.major}
+              onChange={(v) => setFilters({ ...filters, major: v })}
               className="w-full"
             >
-              <Option>All Faculties</Option>
-              <Option>Engineering</Option>
-              <Option>Business</Option>
-              <Option>IT</Option>
+              <Option value="All Major">All Major</Option>
+              <Option value="Engineering">Engineering</Option>
+              <Option value="Business">Business</Option>
+              <Option value="IT">IT</Option>
             </Select>
           </div>
-        </Card>
 
-        {/* Users Table */}
-        <Card
-          className="shadow-sm border-gray-100"
-          bodyStyle={{ padding: "20px 24px" }}
-        >
-          <h3 className="font-semibold text-gray-800 mb-3">Users (5)</h3>
-          <p className="text-gray-500 text-sm mb-4">
-            Complete list of all users in the system
-          </p>
           <Table
             columns={columns}
-            dataSource={users}
+            dataSource={filteredUsers}
             pagination={{ pageSize: 5 }}
             bordered
-            className="rounded-lg"
+            className="rounded-lg mt-5"
           />
         </Card>
       </div>
+
+      {/* Modals */}
+      <UserDetailModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        user={selectedUser}
+      />
+      <UserEditModal
+        open={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        user={selectedUser}
+        onSave={handleSaveEdit}
+      />
+      <UserAddModal
+        open={isAddOpen}
+        onClose={() => setIsAddOpen(false)}
+        onAdd={handleAddUser}
+      />
     </div>
   );
 };

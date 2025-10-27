@@ -16,6 +16,7 @@ const ManageUsers = lazy(() => import("../pages/admin/ManageUsers"));
 const AuditLogs = lazy(() => import("../pages/admin/AuditLogs"));
 const Reports = lazy(() => import("../pages/admin/Reports"));
 const Settings = lazy(() => import("../pages/admin/Settings"));
+const ImportUsers = lazy(() => import("../pages/admin/ImportUsers"));
 // Common
 const HomePage = lazy(() => import("../pages/common/Home"));
 const Profile = lazy(() => import("../pages/common/Profile"));
@@ -45,7 +46,7 @@ const routes = [
       { path: "/discover", element: <DiscoverGuest /> },
       { path: "/forum", element: <Forum /> },
       { path: "/my-groups", element: <MyGroupsGuest /> },
-      {path: "/workspace", element: <Workspace /> },
+      { path: "/workspace", element: <Workspace /> },
     ],
   },
 
@@ -64,6 +65,7 @@ const routes = [
           { path: "reports", element: <Reports /> },
           { path: "settings", element: <Settings /> },
           { path: "profile", element: <Profile /> },
+          { path: "import-users", element: <ImportUsers /> },
         ],
       },
     ],

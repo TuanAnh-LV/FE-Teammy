@@ -19,7 +19,7 @@ const { Option } = Select;
 
 const TopicManagement = () => {
   const [filters, setFilters] = useState({
-    faculty: "All Faculties",
+    major: "All Major",
     field: "All Fields",
     search: "",
   });
@@ -31,7 +31,7 @@ const TopicManagement = () => {
       field: "Artificial Intelligence",
       group: "Alpha Team",
       mentor: "Dr. Sarah Williams",
-      faculty: "Computer Science",
+      major: "Computer Science",
       date: "2025-09-15",
     },
     {
@@ -40,7 +40,7 @@ const TopicManagement = () => {
       field: "Internet of Things",
       group: "Beta Squad",
       mentor: "Prof. Robert Davis",
-      faculty: "Engineering",
+      major: "Engineering",
       date: "2025-09-18",
     },
     {
@@ -49,7 +49,7 @@ const TopicManagement = () => {
       field: "Blockchain",
       group: "Delta Group",
       mentor: "Dr. Sarah Williams",
-      faculty: "Information Technology",
+      major: "Information Technology",
       date: "2025-09-20",
     },
     {
@@ -58,7 +58,7 @@ const TopicManagement = () => {
       field: "Machine Learning",
       group: "Epsilon Team",
       mentor: "Prof. Michael Chen",
-      faculty: "Computer Science",
+      major: "Computer Science",
       date: "2025-09-22",
     },
     {
@@ -67,7 +67,7 @@ const TopicManagement = () => {
       field: "Cloud Computing",
       group: "Not assigned",
       mentor: "Dr. Emily Johnson",
-      faculty: "Computer Science",
+      major: "Computer Science",
       date: "2025-09-25",
     },
     {
@@ -76,7 +76,7 @@ const TopicManagement = () => {
       field: "Mobile Development",
       group: "Not assigned",
       mentor: "Prof. Robert Davis",
-      faculty: "Engineering",
+      major: "Engineering",
       date: "2025-09-28",
     },
   ];
@@ -134,9 +134,9 @@ const TopicManagement = () => {
       key: "mentor",
     },
     {
-      title: "Faculty",
-      dataIndex: "faculty",
-      key: "faculty",
+      title: "Major",
+      dataIndex: "major",
+      key: "major",
     },
     {
       title: "Created Date",
@@ -193,11 +193,11 @@ const TopicManagement = () => {
             />
             <div className="flex gap-2">
               <Select
-                value={filters.faculty}
-                onChange={(v) => setFilters({ ...filters, faculty: v })}
+                value={filters.major}
+                onChange={(v) => setFilters({ ...filters, major: v })}
                 className="w-40"
               >
-                <Option>All Faculties</Option>
+                <Option>All Major</Option>
                 <Option>Computer Science</Option>
                 <Option>Engineering</Option>
                 <Option>Information Technology</Option>
@@ -252,7 +252,7 @@ const TopicManagement = () => {
           {/* Chart Card */}
           <Card className="shadow-sm border-gray-100 rounded-lg">
             <h3 className="font-semibold text-gray-800 mb-3">
-              Topics by Faculty
+              Topics by Major
             </h3>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>

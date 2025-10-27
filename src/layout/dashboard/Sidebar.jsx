@@ -31,8 +31,7 @@ const Sidebar = ({ role, collapsed: collapsedProp, onToggle, onLogout }) => {
       className="border-r border-gray-100 relative flex flex-col"
     >
       {/* Logo */}
-      <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
-        <div className="w-6 h-8 bg-black rounded"></div>
+      <div className="flex items-center gap-2 px-10 py-[18px] border-b border-gray-100">
         {!isCollapsed && (
           <div>
             <div className="text-base font-bold text-gray-800 leading-none">
@@ -58,9 +57,7 @@ const Sidebar = ({ role, collapsed: collapsedProp, onToggle, onLogout }) => {
               key={m.path}
               icon={m.icon}
               className={`!rounded-md ${
-                isActive
-                  ? "bg-orange-50 text-orange-600"
-                  : "text-gray-700 hover:bg-gray-100 hover:text-orange-500"
+                isActive ? "bg-orange-50 text-white-600" : "hover:text-white"
               }`}
             >
               <Link to={m.path}>{m.label}</Link>
