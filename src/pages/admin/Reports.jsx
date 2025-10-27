@@ -6,7 +6,7 @@ const { Option } = Select;
 
 const Reports = () => {
   const [filters, setFilters] = useState({
-    faculty: "Engineering",
+    major: "Engineering",
     term: "Spring 2025",
     dateRange: "Last 30 days",
     customDate: null,
@@ -63,24 +63,14 @@ const Reports = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1
-            className="inline-block text-4xl font-extrabold"
-            style={{
-              backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
+          <h1 className="inline-block text-4xl font-extrabold">
             Report & Export
           </h1>
-          <p className="text-gray-500 text-sm">
-            Monitor system activities and user actions
-          </p>
         </div>
 
         <Button
           icon={<UploadOutlined />}
-          className="!border-gray-300 hover:!border-blue-400 transition-all"
+          className="!border-gray-300 hover:!border-orange-400  hover:!text-orange-400 transition-all !py-5"
         >
           Export CSV
         </Button>
@@ -99,15 +89,16 @@ const Reports = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Faculty</p>
+              <p className="text-sm text-gray-500 mb-1">Major</p>
               <Select
-                value={filters.faculty}
-                onChange={(v) => setFilters({ ...filters, faculty: v })}
+                value={filters.major}
+                onChange={(v) => setFilters({ ...filters, major: v })}
                 className="w-full"
+                placeholder="Select major"
               >
-                <Option>Engineering</Option>
-                <Option>Business</Option>
-                <Option>Information Systems</Option>
+                <Option value="Engineering">Engineering</Option>
+                <Option value="Business">Business</Option>
+                <Option value="Information Systems">Information Systems</Option>
               </Select>
             </div>
 
@@ -118,9 +109,9 @@ const Reports = () => {
                 onChange={(v) => setFilters({ ...filters, term: v })}
                 className="w-full"
               >
-                <Option>Spring 2025</Option>
-                <Option>Fall 2024</Option>
-                <Option>Summer 2024</Option>
+                <Option value="Spring 2025">Spring 2025</Option>
+                <Option value="Fall 2024">Fall 2024</Option>
+                <Option value="Summer 2024">Summer 2024</Option>
               </Select>
             </div>
 
@@ -131,9 +122,9 @@ const Reports = () => {
                 onChange={(v) => setFilters({ ...filters, dateRange: v })}
                 className="w-full"
               >
-                <Option>Last 7 days</Option>
-                <Option>Last 30 days</Option>
-                <Option>Last 90 days</Option>
+                <Option value="Last 7 days">Last 7 days</Option>
+                <Option value="Last 30 days">Last 30 days</Option>
+                <Option value="Last 90 days">Last 90 days</Option>
               </Select>
             </div>
 
@@ -158,7 +149,7 @@ const Reports = () => {
           <h3 className="font-semibold text-gray-800 mb-3">Report Summary</h3>
           <p className="text-gray-500 text-sm mb-4">
             Filter:{" "}
-            <span className="font-medium text-gray-700">{filters.faculty}</span>
+            <span className="font-medium text-gray-700">{filters.major}</span>
           </p>
 
           <Table

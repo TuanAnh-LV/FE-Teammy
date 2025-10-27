@@ -73,14 +73,7 @@ export default function GroupDetail() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1
-            className="text-4xl font-extrabold mb-1"
-            style={{
-              backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
+          <h1 className="text-4xl font-extrabold mb-1">
             Group #{id} – Progress Monitoring
           </h1>
           <p className="text-gray-500 text-sm">

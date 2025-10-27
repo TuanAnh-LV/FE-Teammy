@@ -13,7 +13,7 @@ const { Option } = Select;
 const GroupManagement = () => {
   const [filters, setFilters] = useState({
     status: "All",
-    faculty: "All Faculties",
+    major: "All Major",
     search: "",
   });
 
@@ -24,7 +24,7 @@ const GroupManagement = () => {
       topic: "AI-Powered Student Management",
       mentor: "Dr. Sarah Williams",
       members: 5,
-      faculty: "Computer Science",
+      major: "Computer Science",
       status: "Active",
     },
     {
@@ -33,7 +33,7 @@ const GroupManagement = () => {
       topic: "IoT Smart Campus Solutions",
       mentor: "Prof. Robert Davis",
       members: 4,
-      faculty: "Engineering",
+      major: "Engineering",
       status: "Active",
     },
     {
@@ -42,7 +42,7 @@ const GroupManagement = () => {
       topic: "Not Assigned",
       mentor: "Not Assigned",
       members: 3,
-      faculty: "Information Technology",
+      major: "Information Technology",
       status: "Pending",
     },
     {
@@ -51,7 +51,7 @@ const GroupManagement = () => {
       topic: "Blockchain in Education",
       mentor: "Dr. Sarah Williams",
       members: 6,
-      faculty: "Information Technology",
+      major: "Information Technology",
       status: "Active",
     },
     {
@@ -60,7 +60,7 @@ const GroupManagement = () => {
       topic: "Machine Learning for Analytics",
       mentor: "Prof. Michael Chen",
       members: 5,
-      faculty: "Computer Science",
+      major: "Computer Science",
       status: "Inactive",
     },
   ];
@@ -105,9 +105,9 @@ const GroupManagement = () => {
       align: "center",
     },
     {
-      title: "Faculty",
-      dataIndex: "faculty",
-      key: "faculty",
+      title: "Major",
+      dataIndex: "major",
+      key: "major",
     },
     {
       title: "Status",
@@ -147,14 +147,7 @@ const GroupManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1
-            className="inline-block text-4xl font-extrabold"
-            style={{
-              backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
+          <h1 className="inline-block text-4xl font-extrabold">
             Group Management
           </h1>
           <p className="text-gray-500 text-sm">
@@ -179,7 +172,7 @@ const GroupManagement = () => {
       >
         <h3 className="font-semibold text-gray-800 mb-3">Filters & Search</h3>
         <p className="text-gray-500 text-sm mb-4">
-          Filter groups by faculty, mentor, or project status
+          Filter groups by major, mentor, or project status
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-between">
@@ -192,11 +185,11 @@ const GroupManagement = () => {
           />
           <div className="flex gap-2">
             <Select
-              value={filters.faculty}
-              onChange={(v) => setFilters({ ...filters, faculty: v })}
+              value={filters.major}
+              onChange={(v) => setFilters({ ...filters, major: v })}
               className="w-40"
             >
-              <Option>All Faculties</Option>
+              <Option>All Major</Option>
               <Option>Computer Science</Option>
               <Option>Engineering</Option>
               <Option>Information Technology</Option>
