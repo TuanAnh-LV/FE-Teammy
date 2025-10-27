@@ -8,3 +8,23 @@
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
+
+/* --- Ghi đè màu active của AntD Menu --- */
+.ant-menu-light .ant-menu-item-selected {
+  background-color: #fff5eb !important;
+  /* nền cam nhạt */
+  color: #ea580c !important;
+  /* chữ cam đậm */
+  font-weight: 600;
+}
+
+.ant-menu-light .ant-menu-item-selected svg {
+  color: #ea580c !important;
+  /* icon cam đậm */
+}
+
+/* Hover cho đồng bộ */
+.ant-menu-light .ant-menu-item:hover {
+  color: #ea580c !important;
+  background-color: #fff7ed !important;
+}

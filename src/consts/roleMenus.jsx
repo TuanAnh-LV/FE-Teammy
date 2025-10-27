@@ -25,6 +25,12 @@ export const getRoleMenus = (role) => {
   const roleMenus = {
     mentor: [
       {
+        key: "dashboard",
+        label: "Dashboard",
+        path: "/mentor/dashboard",
+        icon: <HomeOutlined />,
+      },
+      {
         key: "discover",
         label: "Discover",
         path: "/mentor/discover",
@@ -67,12 +73,6 @@ export const getRoleMenus = (role) => {
         label: "Report",
         path: "/admin/reports",
         icon: <FileTextOutlined />,
-      },
-      {
-        key: "settings",
-        label: "Setting",
-        path: "/admin/settings",
-        icon: <SettingOutlined />,
       },
     ],
     moderator: [

@@ -73,24 +73,11 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between">
         <div>
-          <h1
-            className="inline-block text-4xl font-extrabold"
-            style={{
-              backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            Dashboard
-          </h1>
-          <p className="text-gray-500 text-sm">
-            Overview of system performance and key metrics
-          </p>
+          <h1 className="inline-block text-4xl font-extrabold">Dashboard</h1>
         </div>
       </div>
 

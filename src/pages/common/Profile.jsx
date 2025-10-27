@@ -4,7 +4,7 @@ import { Card, Input, Button, Tag, Avatar } from "antd";
 const Profile = () => {
   const mentorInfo = {
     name: "Tran Hai Son",
-    faculty: "Computer Science",
+    major: "Computer Science",
     email: "sonthse172913@fpt.edu.vn",
     phone: "+1 (555) 123-4567",
     officeHours: "Mon–Wed–Fri, 2:00–4:00 PM",
@@ -18,27 +18,13 @@ const Profile = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1
-            className="inline-block text-4xl font-extrabold"
-            style={{
-              backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              color: "transparent",
-            }}
-          >
+          <h1 className="inline-block text-4xl font-extrabold">
             Mentor Profile
           </h1>
-          <p className="text-gray-500 text-sm">
-            Manage your mentor profile and preferences
-          </p>
         </div>
         <Button
           type="default"
-          className="!text-white !bg-gradient-to-r from-[#3182ED] to-[#43D08A]
-             hover:!opacity-90 !shadow-sm !border-none !rounded-lg
-             !px-6 !py-2 transition-all duration-200 font-medium"
+          className="!bg-[#FF7A00] !text-white !border-none !rounded-md !px-6 !py-5 hover:!opacity-90"
         >
           Edit Profile
         </Button>
@@ -68,7 +54,7 @@ const Profile = () => {
           <h2 className="font-semibold text-lg mt-4 text-gray-800">
             {mentorInfo.name}
           </h2>
-          <p className="text-gray-500 text-sm">{mentorInfo.faculty}</p>
+          <p className="text-gray-500 text-sm">{mentorInfo.major}</p>
           <div className="mt-4 text-gray-600 text-sm space-y-1">
             <p>{mentorInfo.email}</p>
             <p>{mentorInfo.phone}</p>
@@ -110,9 +96,9 @@ const Profile = () => {
               </div>
               <div>
                 <label className="block text-sm text-gray-600 mb-1">
-                  Faculty
+                  Major
                 </label>
-                <Input value={mentorInfo.faculty} readOnly />
+                <Input value={mentorInfo.major} readOnly />
               </div>
             </div>
 

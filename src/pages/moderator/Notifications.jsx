@@ -23,9 +23,9 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const MOCK = {
-  withoutTopic: [{ id: 1, name: "Gamma Force", faculty: "Computer Science" }],
-  withoutMentor: [{ id: 2, name: "Beta Squad", faculty: "Engineering" }],
-  missingMembers: [{ id: 3, name: "Delta Group", faculty: "IT" }],
+  withoutTopic: [{ id: 1, name: "Gamma Force", major: "Computer Science" }],
+  withoutMentor: [{ id: 2, name: "Beta Squad", major: "Engineering" }],
+  missingMembers: [{ id: 3, name: "Delta Group", major: "IT" }],
 };
 
 export default function ModeratorNotifications() {
@@ -166,9 +166,7 @@ export default function ModeratorNotifications() {
                     >
                       <div className="flex flex-col">
                         <span className="font-medium">{g.name}</span>
-                        <span className="text-xs text-gray-500">
-                          {g.faculty}
-                        </span>
+                        <span className="text-xs text-gray-500">{g.major}</span>
                       </div>
                     </Radio>
                     {filterType === "withoutTopic" && (
