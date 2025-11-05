@@ -1,70 +1,67 @@
-import React, { useState } from "react";
-import { Card, Table, Input, Select, Button, Tag, Space } from "antd";
+import React, { useMemo, useState } from "react";
+import { Card, Table, Input, Select, Button, Space, Tooltip } from "antd";
 import {
   SearchOutlined,
   EyeOutlined,
   CopyOutlined,
-  SendOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-
+import TopicDetailModal from "../../components/moderator/TopicDetailModal";
 const { Option } = Select;
 
 const TopicManagement = () => {
   const [filters, setFilters] = useState({
-    major: "All Major",
-    field: "All Fields",
+    status: "All Status", // <-- dùng status thay vì major
     search: "",
   });
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [currentTopic, setCurrentTopic] = useState(null);
 
   const data = [
     {
       key: 1,
       title: "AI-Powered Student Management System",
-      field: "Artificial Intelligence",
       group: "Alpha Team",
       mentor: "Dr. Sarah Williams",
       major: "Computer Science",
       date: "2025-09-15",
+      downloadLink: "https://example.com/ai-student-management.pdf", // Example download link
+      githubLink: "https://github.com/username/repository",
     },
     {
       key: 2,
       title: "IoT Smart Campus Solutions",
-      field: "Internet of Things",
       group: "Beta Squad",
       mentor: "Prof. Robert Davis",
       major: "Engineering",
       date: "2025-09-18",
+      downloadLink: "https://example.com/ai-student-management.pdf", // Example download link
+      githubLink: "https://github.com/username/repository",
     },
     {
       key: 3,
       title: "Blockchain in Education",
-      field: "Blockchain",
       group: "Delta Group",
       mentor: "Dr. Sarah Williams",
       major: "Information Technology",
       date: "2025-09-20",
+      downloadLink: "https://example.com/ai-student-management.pdf", // Example download link
+      githubLink: "https://github.com/username/repository",
     },
     {
       key: 4,
       title: "Machine Learning for Academic Analytics",
-      field: "Machine Learning",
       group: "Epsilon Team",
       mentor: "Prof. Michael Chen",
       major: "Computer Science",
       date: "2025-09-22",
+      downloadLink: "https://example.com/ai-student-management.pdf", // Example download link
+      githubLink: "https://github.com/username/repository",
     },
     {
       key: 5,
       title: "Cloud-Based Learning Platform",
-      field: "Cloud Computing",
       group: "Not assigned",
       mentor: "Dr. Emily Johnson",
       major: "Computer Science",
@@ -73,7 +70,6 @@ const TopicManagement = () => {
     {
       key: 6,
       title: "Mobile App for Campus Services",
-      field: "Mobile Development",
       group: "Not assigned",
       mentor: "Prof. Robert Davis",
       major: "Engineering",
@@ -81,17 +77,26 @@ const TopicManagement = () => {
     },
   ];
 
-  const summary = {
-    total: 6,
-    assigned: 4,
-    available: 2,
-  };
+  // Suy ra status ẩn: "Available" nếu chưa gán group, ngược lại "Not Available"
+  const getStatus = (row) =>
+    row.group === "Not assigned" ? "Available" : "Not Available";
 
-  const chartData = [
-    { name: "Computer Science", value: 3, color: "#3B82F6" },
-    { name: "Engineering", value: 2, color: "#22C55E" },
-    { name: "Information Technology", value: 1, color: "#F59E0B" },
-  ];
+  // Lọc theo search + status (status không cần hiển thị trong table)
+  const filteredData = useMemo(() => {
+    const s = filters.search.toLowerCase().trim();
+
+    return data.filter((item) => {
+      const searchMatch =
+        item.title.toLowerCase().includes(s) ||
+        item.mentor.toLowerCase().includes(s);
+
+      const statusStr = getStatus(item);
+      const statusMatch =
+        filters.status === "All Status" || statusStr === filters.status;
+
+      return searchMatch && statusMatch;
+    });
+  }, [data, filters]);
 
   const columns = [
     {
@@ -105,19 +110,6 @@ const TopicManagement = () => {
       ),
     },
     {
-      title: "Field",
-      dataIndex: "field",
-      key: "field",
-      render: (field) => (
-        <Tag
-          color="default"
-          className="px-3 py-1 rounded-full text-gray-700 bg-gray-100 border-none"
-        >
-          {field}
-        </Tag>
-      ),
-    },
-    {
       title: "Assigned Group",
       dataIndex: "group",
       key: "group",
@@ -128,28 +120,27 @@ const TopicManagement = () => {
           <span className="text-gray-800">{group}</span>
         ),
     },
-    {
-      title: "Mentor",
-      dataIndex: "mentor",
-      key: "mentor",
-    },
-    {
-      title: "Major",
-      dataIndex: "major",
-      key: "major",
-    },
-    {
-      title: "Created Date",
-      dataIndex: "date",
-      key: "date",
-    },
+    { title: "Mentor", dataIndex: "mentor", key: "mentor" },
+    { title: "Major", dataIndex: "major", key: "major" },
+    { title: "Created Date", dataIndex: "date", key: "date" },
     {
       title: "Actions",
       key: "actions",
-      render: () => (
+      render: (_, record) => (
         <Space size="middle">
-          <Button type="text" icon={<EyeOutlined />} />
-          <Button type="text" icon={<CopyOutlined />} />
+          <Tooltip title="View details">
+            <Button
+              type="text"
+              icon={<EyeOutlined />}
+              onClick={() => {
+                setCurrentTopic(record); // Set the selected topic
+                setIsModalVisible(true); // Open modal
+              }}
+            />
+          </Tooltip>
+          <Tooltip title="Copy topic">
+            <Button type="text" icon={<CopyOutlined />} />
+          </Tooltip>
         </Space>
       ),
     },
@@ -158,25 +149,22 @@ const TopicManagement = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1
-          className="inline-block text-4xl font-extrabold"
-          style={{
-            backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
+      <div className="flex items-center justify-between">
+        <h1 className="inline-block text-4xl font-extrabold">
           Topic Management
         </h1>
-        <p className="text-gray-500 text-sm">
-          View and track all project topics and coverage across faculties
-        </p>
+        <Space>
+          <Button
+            icon={<UploadOutlined />}
+            className="!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all !py-5"
+          >
+            Import topic
+          </Button>
+        </Space>
       </div>
 
-      {/* Layout: Table + Summary */}
+      {/* Layout: Table */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        {/* Main Table */}
         <Card
           className="xl:col-span-3 shadow-sm border-gray-100 rounded-lg"
           bodyStyle={{ padding: "20px 24px" }}
@@ -193,103 +181,56 @@ const TopicManagement = () => {
             />
             <div className="flex gap-2">
               <Select
-                value={filters.major}
-                onChange={(v) => setFilters({ ...filters, major: v })}
+                value={filters.status}
+                onChange={(v) => setFilters({ ...filters, status: v })}
                 className="w-40"
               >
-                <Option>All Major</Option>
-                <Option>Computer Science</Option>
-                <Option>Engineering</Option>
-                <Option>Information Technology</Option>
-              </Select>
-              <Select
-                value={filters.field}
-                onChange={(v) => setFilters({ ...filters, field: v })}
-                className="w-36"
-              >
-                <Option>All Fields</Option>
-                <Option>AI</Option>
-                <Option>IoT</Option>
-                <Option>Cloud</Option>
+                <Option value="All Status">All Status</Option>
+                <Option value="Available">Available</Option>
+                <Option value="Not Available">Not Available</Option>
               </Select>
             </div>
           </div>
 
           <Table
+            rowKey="key"
             columns={columns}
-            dataSource={data}
+            dataSource={filteredData}
             pagination={false}
             bordered
             className="rounded-lg"
           />
         </Card>
 
-        {/* Sidebar Summary */}
+        {/* Sidebar Summary (tuỳ chọn) */}
         <div className="flex flex-col gap-6">
-          {/* Summary Card */}
           <Card className="shadow-sm border-gray-100 rounded-lg">
             <h3 className="font-semibold text-gray-800 mb-3">Summary</h3>
+            {/* Có thể tính lại theo filteredData nếu muốn thống kê theo filter hiện tại */}
             <p className="text-sm text-gray-600">
               Total Topics:{" "}
-              <span className="font-semibold text-gray-800">
-                {summary.total}
-              </span>
+              <span className="font-semibold text-gray-800">{data.length}</span>
             </p>
             <p className="text-sm text-gray-600">
               Assigned:{" "}
               <span className="font-semibold text-green-600">
-                {summary.assigned}
+                {data.filter((d) => getStatus(d) === "Not Available").length}
               </span>
             </p>
             <p className="text-sm text-gray-600">
               Available:{" "}
               <span className="font-semibold text-orange-500">
-                {summary.available}
+                {data.filter((d) => getStatus(d) === "Available").length}
               </span>
-            </p>
-          </Card>
-
-          {/* Chart Card */}
-          <Card className="shadow-sm border-gray-100 rounded-lg">
-            <h3 className="font-semibold text-gray-800 mb-3">
-              Topics by Major
-            </h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={60}
-                  label
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend verticalAlign="bottom" height={36} />
-              </PieChart>
-            </ResponsiveContainer>
-          </Card>
-
-          {/* Reminder Button */}
-          <Card className="shadow-sm border-gray-100 rounded-lg text-center">
-            <Button
-              type="primary"
-              icon={<SendOutlined />}
-              className="!bg-blue-600 hover:!bg-blue-700 text-white px-6 py-2 rounded-lg"
-            >
-              Send Reminder
-            </Button>
-            <p className="text-sm text-gray-500 mt-2">
-              to groups without topics
             </p>
           </Card>
         </div>
       </div>
+      <TopicDetailModal
+        open={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        topicDetails={currentTopic}
+      />
     </div>
   );
 };

@@ -51,34 +51,22 @@ const ModeratorDashboard = () => {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Header */}
-      <div>
-        <h1
-          className="inline-block text-4xl font-extrabold"
-          style={{
-            backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          Dashboard
-        </h1>
-        <p className="text-gray-500 text-sm">
-          Overview of system performance and key metrics
-        </p>
+      <div className="flex justify-between items-center">
+        <h1 className="inline-block text-4xl font-extrabold">Dashboard</h1>
       </div>
 
       {/* Top Statistics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((item, index) => (
           <Card
             key={index}
-            className="shadow-sm border border-gray-100 rounded-lg hover:shadow-md transition-all"
-            bodyStyle={{ padding: "16px 20px" }}
+            className="shadow-lg border border-gray-100 rounded-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:scale-105"
+            bodyStyle={{ padding: "24px" }}
           >
             <h3 className="text-gray-500 text-sm font-medium">{item.title}</h3>
-            <p className="text-2xl font-bold text-gray-900 mt-1">
+            <p className="text-3xl font-bold text-gray-900 mt-2">
               {item.value}
             </p>
           </Card>
@@ -87,8 +75,8 @@ const ModeratorDashboard = () => {
 
       {/* Recent System Alerts */}
       <Card
-        className="shadow-sm border-gray-100 rounded-lg mt-2"
-        bodyStyle={{ padding: "20px 24px" }}
+        className="shadow-lg border-gray-100 rounded-lg mt-6"
+        bodyStyle={{ padding: "24px" }}
       >
         <h3 className="font-semibold text-gray-800 flex items-center gap-2">
           <AlertOutlined className="text-blue-500" /> Recent System Alerts
@@ -97,14 +85,14 @@ const ModeratorDashboard = () => {
           Latest notifications and issues requiring attention
         </p>
 
-        <div className="flex flex-col divide-y divide-gray-100">
+        <div className="space-y-4">
           {alerts.map((alert, i) => (
             <div
               key={i}
-              className="flex items-center justify-between py-3 px-2 hover:bg-gray-50 rounded-lg transition"
+              className="flex items-center justify-between py-4 px-3 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition-all duration-300"
             >
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gray-100 flex justify-center items-center rounded-full">
                   {alert.icon}
                 </div>
                 <div>
