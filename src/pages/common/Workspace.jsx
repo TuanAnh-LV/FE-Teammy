@@ -433,21 +433,17 @@ const Workspace = () => {
 
   return (
     <div className="relative">
-      {/* Background */}
-      <div className="absolute inset-0">
-        <img src={Vector} alt="Vector background" className="w-full object-cover" />
-      </div>
-
       {/* Content */}
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-start pt-28 xl:pt-40 pb-20">
         {/* Title */}
-        <h1 className="!font-sans !font-black text-[72px] md:text-[87px] leading-[96%] tracking-[-4%] text-[#3A3A3A] text-center">
+      <div className="!max-w-[1600px] !mx-auto !ml-48 !mb-8">
+        <h1 className="!text-4xl !font-extrabold !text-[#1a1a1a] !mb-2">
           AI Healthcare Team
         </h1>
-        <p className="mt-5 font-semibold text-center text-[20px] md:text-[21px] leading-[28px] text-black/70">
-          Shared workspace for teams — manage tasks, share documents and track progress.
+        <p className="!text-gray-500 !text-lg">
+         Shared workspace for teams — manage tasks, share documents and track progress.
         </p>
-
+      </div>
         {/* Toolbar (Filters) */}
         <div className="mt-10 w-full max-w-7xl px-6">
           <div className=" backdrop-blur border border-gray-200 rounded-2xl p-4 shadow-sm">
@@ -478,7 +474,7 @@ const Workspace = () => {
                 </select>
               </div>
               <button
-                className="ml-auto flex items-center gap-2 bg-gray-900 !text-white px-4 py-2 rounded-lg text-sm hover:bg-black"
+                className="ml-auto flex items-center gap-2 !bg-[#4264d7] !text-white px-4 py-2 rounded-lg text-sm hover:bg-black"
                 onClick={() =>
                   alert("Tuỳ bạn: mở modal tạo task mới (title, tag, priority, assignees...)")
                 }

@@ -1,7 +1,9 @@
 import React from "react";
 import { Card, Input, Button, Tag, Avatar } from "antd";
+import { useTranslation } from "../../hook/useTranslation";
 
 const Profile = () => {
+  const { t } = useTranslation();
   const mentorInfo = {
     name: "Tran Hai Son",
     major: "Computer Science",
@@ -18,15 +20,33 @@ const Profile = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
+<<<<<<< Updated upstream
           <h1 className="inline-block text-4xl font-extrabold">
             Mentor Profile
           </h1>
+=======
+          <h1
+            className="inline-block text-4xl font-extrabold"
+            style={{
+              backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              color: "transparent",
+            }}
+          >
+            {t("mentorProfile")}
+          </h1>
+          <p className="text-gray-500 text-sm">
+            {t("manageProfilePreferences")}
+          </p>
+>>>>>>> Stashed changes
         </div>
         <Button
           type="default"
           className="!bg-[#FF7A00] !text-white !border-none !rounded-md !px-6 !py-5 hover:!opacity-90"
         >
-          Edit Profile
+          {t("editProfile")}
         </Button>
       </div>
 
@@ -61,7 +81,7 @@ const Profile = () => {
             <p>{mentorInfo.officeHours}</p>
           </div>
           <div className="mt-4 border-t w-full pt-2 text-sm text-gray-400">
-            Last updated: Sep 2025
+            {t("lastUpdated")}: Sep 2025
           </div>
         </Card>
 
@@ -73,36 +93,40 @@ const Profile = () => {
             bodyStyle={{ padding: "20px" }}
           >
             <h3 className="font-semibold text-gray-800 mb-3">
-              Basic Information
+              {t("basicInformation")}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm text-gray-600 mb-1">
-                  Full Name
+                  {t("fullName")}
                 </label>
                 <Input value={mentorInfo.name} readOnly />
               </div>
               <div>
                 <label className="block text-sm text-gray-600 mb-1">
-                  Email
+                  {t("email")}
                 </label>
                 <Input value={mentorInfo.email} readOnly />
               </div>
               <div>
                 <label className="block text-sm text-gray-600 mb-1">
-                  Phone
+                  {t("phone")}
                 </label>
                 <Input value={mentorInfo.phone} readOnly />
               </div>
               <div>
                 <label className="block text-sm text-gray-600 mb-1">
+<<<<<<< Updated upstream
                   Major
+=======
+                  {t("faculty")}
+>>>>>>> Stashed changes
                 </label>
                 <Input value={mentorInfo.major} readOnly />
               </div>
             </div>
 
-            <label className="block text-sm text-gray-600 mb-1">Bio</label>
+            <label className="block text-sm text-gray-600 mb-1">{t("bio")}</label>
             <Input.TextArea rows={3} value={mentorInfo.bio} readOnly />
           </Card>
 
@@ -112,10 +136,10 @@ const Profile = () => {
             bodyStyle={{ padding: "20px" }}
           >
             <h3 className="font-semibold text-gray-800 mb-3">
-              Expertise & Specialization
+              {t("expertiseSpecialization")}
             </h3>
             <p className="text-gray-400 text-sm mb-3">
-              Add your areas of expertise to help match you with relevant groups
+              {t("addExpertiseAreas")}
             </p>
             <div className="flex flex-wrap gap-2">
               {mentorInfo.expertise.map((tag, i) => (
@@ -136,18 +160,18 @@ const Profile = () => {
             bodyStyle={{ padding: "20px" }}
           >
             <h3 className="font-semibold text-gray-800 mb-3">
-              Availability & Capacity
+              {t("availabilityCapacity")}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-gray-600 mb-1">
-                  Office Hours
+                  {t("officeHours")}
                 </label>
                 <Input value={mentorInfo.officeHours} readOnly />
               </div>
               <div>
                 <label className="block text-sm text-gray-600 mb-1">
-                  Group Capacity
+                  {t("groupCapacity")}
                 </label>
                 <Input value={mentorInfo.groupCapacity} readOnly />
               </div>

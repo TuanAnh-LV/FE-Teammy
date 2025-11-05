@@ -3,12 +3,14 @@ import { Link, useLocation } from "react-router-dom";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../config/firebase.config";
 import { Globe } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
+import { getTranslation } from "../../translations";
 
 const Navbar = () => {
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [language, setLanguage] = useState("EN");
+  const { language, toggleLanguage } = useLanguage();
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -59,11 +61,6 @@ const Navbar = () => {
     setMenuOpen(false);
   };
 
-  const toggleLanguage = () => {
-    const newLang = language === "EN" ? "VIE" : "EN";
-    setLanguage(newLang);
-    localStorage.setItem("lang", newLang);
-  };
 
   return (
     <nav className="!w-full !h-16 !fixed !top-0 !z-50 !bg-white/80 !backdrop-blur-md !border-b !border-gray-200">
@@ -82,28 +79,28 @@ const Navbar = () => {
             className={`!hover:text-blue-600 ${isActive("/discover") ? "!text-blue-600" : ""
               }`}
           >
-            Find Projects
+            {getTranslation("findProjects", language)}
           </Link>
           <Link
             to="/forum"
             className={`!hover:text-blue-600 ${isActive("/forum") ? "!text-blue-600" : ""
               }`}
           >
-            Forum
+            {getTranslation("forum", language)}
           </Link>
           <Link
             to="/my-groups"
             className={`!hover:text-blue-600 ${isActive("/my-groups") ? "!text-blue-600" : ""
               }`}
           >
-            My Groups
+            {getTranslation("myGroups", language)}
           </Link>
           <Link
             to="/workspace"
             className={`!hover:text-blue-600 ${isActive("/workspace") ? "!text-blue-600" : ""
               }`}
           >
-            Workspace
+            {getTranslation("workspace", language)}
           </Link>
         </div>
 
@@ -155,19 +152,19 @@ const Navbar = () => {
                       to="/profile"
                       className="!block !px-4 !py-2 !text-sm !text-gray-700 hover:!bg-gray-100"
                     >
-                      Profile
+                      {getTranslation("profile", language)}
                     </Link>
                     <Link
                       to="/notifications"
                       className="!block !px-4 !py-2 !text-sm !text-gray-700 hover:!bg-gray-100"
                     >
-                      Notifications
+                      {getTranslation("notifications", language)}
                     </Link>
                     <button
                       onClick={handleSignOut}
                       className="!block !w-full !text-left !px-4 !py-2 !text-sm !text-red-600 hover:!bg-red-50"
                     >
-                      Logout
+                      {getTranslation("logout", language)}
                     </button>
                   </div>
                 </div>
@@ -179,7 +176,7 @@ const Navbar = () => {
               onClick={handleSignIn}
               className="!px-4 !py-2 !rounded-full !bg-black !text-white !text-sm !font-medium hover:!bg-gray-800 !transition-colors !duration-200 !flex !items-center !space-x-1 !font-sans"
             >
-              <span>Sign in</span>
+              <span>{getTranslation("signIn", language)}</span>
               <svg
                 className="!w-4 !h-4"
                 fill="none"
