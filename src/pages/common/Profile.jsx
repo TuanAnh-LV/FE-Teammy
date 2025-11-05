@@ -49,7 +49,7 @@ const Profile = () => {
   ];
 
   return (
-    <div className="mt-10 max-w-6xl mx-auto px-4 space-y-8">
+    <div className="mt-20 max-w-6xl mx-auto px-4 space-y-8">
       {/* Header */}
       <div className="bg-white shadow rounded-2xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div className="flex items-center gap-4">
