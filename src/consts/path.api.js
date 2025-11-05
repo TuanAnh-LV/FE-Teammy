@@ -3,6 +3,6 @@ export const API = {
         PUBLIC: "api/client"
     },
     AUTH: {
-        LOGIN_GOOGLE: "/auth/login"
+        LOGIN: "/auth/login"
     }
 }

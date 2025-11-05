@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Vector from "../../assets/Vector.png";
+import { useTranslation } from "../../hook/useTranslation";
 import {
   Users,
   Calendar,
@@ -18,6 +19,7 @@ import {
 
 const MyGroup = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [showModal, setShowModal] = useState(false);
   const [email, setEmail] = useState("");
   const [groupMembers, setGroupMembers] = useState([
@@ -28,7 +30,7 @@ const MyGroup = () => {
 
   // Hàm xử lý khi bấm Add (sẽ gọi API thật sau)
   const handleAddMember = async () => {
-    if (!email.trim()) return alert("Please enter an email address.");
+    if (!email.trim()) return alert(t("pleaseEnterEmail"));
     try {
       // TODO: Gọi API backend tìm user theo email, ví dụ:
       // const res = await fetch(`/api/users/search?email=${email}`);
@@ -39,17 +41,17 @@ const MyGroup = () => {
 
       // Kiểm tra trùng email
       if (groupMembers.some((m) => m.email === user.email)) {
-        alert("This user is already in the group.");
+        alert(t("userAlreadyInGroup"));
         return;
       }
 
       setGroupMembers([...groupMembers, user]);
-      alert(`${user.email} has been added.`);
+      alert(`${user.email} ${t("userAddedSuccessfully")}`);
       setEmail("");
       setShowModal(false);
     } catch (err) {
       console.error(err);
-      alert("Failed to add member. Please try again.");
+      alert(t("failedToAddMember"));
     }
   };
 
@@ -66,39 +68,34 @@ const MyGroup = () => {
   };
 
   return (
-    <div className="relative bg-[#fafafa]">
-      {/* Background */}
-      <div className="absolute inset-0">
-        <img src={Vector} alt="Vector background" className="w-full object-cover" />
-      </div>
-
+    <div className="relative bg-[#f7fafc]">
       {/* Content */}
       <div className="relative z-10 min-h-screen flex flex-col items-center pt-20 xl:pt-32 pb-28">
         {/* Top bar */}
         <div className="w-full max-w-7xl px-6 flex items-center justify-between mb-10">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-700 font-medium hover:text-black transition"
+            className="flex items-center gap-2 font-medium hover:text-black transition"
           >
             <ArrowLeft className="w-5 h-5" />
-            Back
+            {t("back")}
           </button>
 
           <div className="flex gap-3">
             <button
               onClick={() => setShowModal(true)}
-              className="bg-[#404040] !text-white px-5 py-2.5 rounded-lg font-semibold shadow-md hover:bg-black hover:scale-[1.02] transition-all flex items-center gap-2"
+              className="bg-[#4264d7] !text-white px-5 py-2.5 rounded-lg font-semibold shadow-md hover:bg-black hover:scale-[1.02] transition-all flex items-center gap-2"
             >
               <UserPlus2 className="w-4 h-4" />
-              Add Member
+              {t("addMember")}
             </button>
 
             <button
               onClick={() => navigate("/workspace")}
-              className="bg-[#404040] !text-white px-5 py-2.5 rounded-lg font-semibold shadow-md hover:bg-black hover:scale-[1.02] transition-all flex items-center gap-2"
+              className="bg-[#4264d7] !text-white px-5 py-2.5 rounded-lg font-semibold shadow-md hover:bg-black hover:scale-[1.02] transition-all flex items-center gap-2"
             >
               <FolderKanban className="w-4 h-4" />
-              Open Workspace
+              {t("openWorkspace")}
             </button>
           </div>
         </div>
@@ -113,7 +110,7 @@ const MyGroup = () => {
                 <span className="bg-blue-100 p-2 rounded-lg">
                   <Info className="text-blue-600 w-5 h-5" />
                 </span>
-                <h2 className="font-bold text-xl text-gray-800">Group Information</h2>
+                <h2 className="font-bold text-xl text-gray-800">{t("groupInformation")}</h2>
               </div>
 
               <h3 className="font-bold text-[26px] text-[#333] mb-3">{group.title}</h3>
@@ -123,7 +120,7 @@ const MyGroup = () => {
                   {group.field}
                 </span>
                 <span className="bg-green-100 text-green-700 text-sm font-semibold px-3 py-1 rounded-full">
-                  On Track
+                  {t("onTrack")}
                 </span>
               </div>
 
@@ -132,13 +129,13 @@ const MyGroup = () => {
                   <b>ID:</b> {group.id}
                 </p>
                 <p>
-                  <b>Mentor:</b> {group.mentor}
+                  <b>{t("mentor")}:</b> {group.mentor}
                 </p>
                 <p className="flex items-center gap-2">
-                  <Calendar size={15} /> <b>Start:</b> {group.start}
+                  <Calendar size={15} /> <b>{t("start")}:</b> {group.start}
                 </p>
                 <p>
-                  <b>End:</b> {group.end}
+                  <b>{t("end")}:</b> {group.end}
                 </p>
               </div>
             </div>
@@ -149,7 +146,7 @@ const MyGroup = () => {
                 <span className="bg-purple-100 p-2 rounded-lg">
                   <ClipboardList className="text-purple-600 w-5 h-5" />
                 </span>
-                <h2 className="font-bold text-xl text-gray-800">Description</h2>
+                <h2 className="font-bold text-xl text-gray-800">{t("description")}</h2>
               </div>
               <p className="text-gray-700 leading-relaxed text-[15px]">
                 {group.description}
@@ -162,7 +159,7 @@ const MyGroup = () => {
                 <span className="bg-green-100 p-2 rounded-lg">
                   <Users className="text-green-600 w-5 h-5" />
                 </span>
-                <h2 className="font-bold text-xl text-gray-800">Progress</h2>
+                <h2 className="font-bold text-xl text-gray-800">{t("progress")}</h2>
               </div>
               <div className="bg-gray-200 h-3 rounded-full overflow-hidden">
                 <div
@@ -171,7 +168,7 @@ const MyGroup = () => {
                 />
               </div>
               <p className="text-sm text-gray-600 mt-2">
-                Current progress: <b>{group.progress}%</b>
+                {t("currentProgress")}: <b>{group.progress}%</b>
               </p>
             </div>
           </div>
@@ -184,7 +181,7 @@ const MyGroup = () => {
                 <span className="bg-amber-100 p-2 rounded-lg">
                   <Users className="text-amber-600 w-5 h-5" />
                 </span>
-                Mentor
+                {t("mentor")}
               </h3>
               <div className="bg-amber-50 rounded-xl border border-amber-100 p-4 flex items-center gap-4">
                 <img
@@ -194,7 +191,7 @@ const MyGroup = () => {
                 />
                 <div>
                   <p className="font-semibold text-gray-800">{group.mentor}</p>
-                  <p className="text-sm text-amber-700 font-medium">Project Mentor</p>
+                  <p className="text-sm text-amber-700 font-medium">{t("projectMentor")}</p>
                 </div>
               </div>
             </div>
@@ -205,7 +202,7 @@ const MyGroup = () => {
                 <span className="bg-green-100 p-2 rounded-lg">
                   <UserRound className="text-green-600 w-5 h-5" />
                 </span>
-                Members
+                {t("members")}
               </h3>
               {groupMembers.map((member, i) => (
                 <div
@@ -224,7 +221,7 @@ const MyGroup = () => {
                 </div>
               ))}
               <p className="text-right text-sm text-gray-500 mt-2">
-                Total: {groupMembers.length} members
+                {t("totalMembers")}: {groupMembers.length} {t("members")}
               </p>
             </div>
           </div>
@@ -243,7 +240,7 @@ const MyGroup = () => {
 
               <h2 className="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2">
                 <Mail className="w-4 h-4 text-gray-600" />
-                Add Member by Email
+                {t("addMemberByEmail")}
               </h2>
 
               <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2 mb-6">
@@ -252,7 +249,7 @@ const MyGroup = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter member email..."
+                  placeholder={t("enterMemberEmail")}
                   className="bg-transparent outline-none w-full text-gray-700"
                 />
               </div>
@@ -262,13 +259,13 @@ const MyGroup = () => {
                   onClick={() => setShowModal(false)}
                   className="px-5 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition"
                 >
-                  Cancel
+                  {t("cancel")}
                 </button>
                 <button
                   onClick={handleAddMember}
                   className="flex items-center gap-2 !bg-[#404040] !text-white px-5 py-2 rounded-lg font-semibold !hover:bg-black transition"
                 >
-                  <Plus className="w-4 h-4" /> Add
+                  <Plus className="w-4 h-4" /> {t("add")}
                 </button>
               </div>
             </div>

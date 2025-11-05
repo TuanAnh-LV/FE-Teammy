@@ -49,6 +49,8 @@ const routes = [
       { path: "/my-groups", element: <MyGroupsGuest /> },
       { path: "/workspace", element: <Workspace /> },
       { path: "/project-detail", element: <ProjectDetail /> },
+      { path: "profile", element: <Profile /> },
+
     ],
   },
 

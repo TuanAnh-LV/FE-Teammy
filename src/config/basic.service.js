@@ -3,8 +3,8 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { getItemInLocalStorage } from '../utils/localStorage';
 import store from "../app/store";
-import { DOMAIN_ADMIN, LOCAL_STORAGE } from '../const/const';
-import { ROUTER_URL } from '../const/router.const';
+import { DOMAIN_ADMIN, LOCAL_STORAGE } from '../consts/const';
+import { ROUTER_URL } from '../consts/router.const';
 import { HttpException } from '../app/toastException';
 
 export const axiosInstance = axios.create({

@@ -1,158 +1,236 @@
 import React from "react";
-import { Card, Input, Button, Tag, Avatar } from "antd";
+import {
+  Edit,
+  Mail,
+  BookOpen,
+  GraduationCap,
+  Calendar,
+  ArrowUp,
+  LineChart,
+  Users,
+} from "lucide-react";
 
 const Profile = () => {
-  const mentorInfo = {
-    name: "Tran Hai Son",
+  const profile = {
+    name: "Nguyễn Văn A",
+    headline:
+      "Passionate about web development and UI/UX design. Always eager to learn new technologies and collaborate on exciting projects.",
+    email: "nguyen.vana@example.com",
     major: "Computer Science",
-    email: "sonthse172913@fpt.edu.vn",
-    phone: "+1 (555) 123-4567",
-    officeHours: "Mon–Wed–Fri, 2:00–4:00 PM",
-    bio: "Dedicated mentor passionate about guiding students in AI and data science projects.",
-    expertise: ["Machine Learning", "Deep Learning", "Data Analytics"],
-    groupCapacity: "5 groups max",
+    university: "FPT University",
+    joined: "Jan 2024",
+    activeProjects: 2,
+    completedProjects: 5,
+    skillCount: 6,
   };
 
-  return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="inline-block text-4xl font-extrabold">
-            Mentor Profile
-          </h1>
-        </div>
-        <Button
-          type="default"
-          className="!bg-[#FF7A00] !text-white !border-none !rounded-md !px-6 !py-5 hover:!opacity-90"
-        >
-          Edit Profile
-        </Button>
-      </div>
+  const activeProject = {
+    title: "E-commerce Platform",
+    category: "Web Development",
+    tags: ["React", "TypeScript", "Tailwind"],
+    mentor: "Dr. Smith",
+    progress: 65,
+    members: [
+      { name: "A", color: "bg-yellow-200" },
+      { name: "B", color: "bg-blue-200" },
+      { name: "C", color: "bg-purple-200" },
+      { name: "D", color: "bg-green-200" },
+    ],
+    memberCount: 5,
+  };
 
-      {/* Main layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left card: mentor summary */}
-        <Card
-          className="shadow-sm border-gray-100 flex flex-col items-center text-center"
-          bodyStyle={{ padding: "24px" }}
-        >
-          <Avatar
-            size={96}
-            style={{
-              backgroundColor: "#d9d9d9",
-              color: "#444",
-              fontWeight: "bold",
-              fontSize: "24px",
-            }}
-          >
-            {mentorInfo.name
+  const skills = [
+    { name: "React", level: "Advanced", percent: 90 },
+    { name: "TypeScript", level: "Intermediate", percent: 75 },
+    { name: "UI/UX Design", level: "Advanced", percent: 88 },
+    { name: "Figma", level: "Advanced", percent: 86 },
+    { name: "Tailwind CSS", level: "Advanced", percent: 85 },
+    { name: "Node.js", level: "Intermediate", percent: 72 },
+  ];
+
+  return (
+    <div className="mt-10 max-w-6xl mx-auto px-4 space-y-8">
+      {/* Header */}
+      <div className="bg-white shadow rounded-2xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center bg-blue-100 text-blue-600 w-20 h-20 rounded-full font-bold text-2xl">
+            {profile.name
               .split(" ")
               .map((n) => n[0])
               .join("")}
-          </Avatar>
-          <h2 className="font-semibold text-lg mt-4 text-gray-800">
-            {mentorInfo.name}
-          </h2>
-          <p className="text-gray-500 text-sm">{mentorInfo.major}</p>
-          <div className="mt-4 text-gray-600 text-sm space-y-1">
-            <p>{mentorInfo.email}</p>
-            <p>{mentorInfo.phone}</p>
-            <p>{mentorInfo.officeHours}</p>
           </div>
-          <div className="mt-4 border-t w-full pt-2 text-sm text-gray-400">
-            Last updated: Sep 2025
-          </div>
-        </Card>
 
-        {/* Right column (main details) */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          {/* Basic Information */}
-          <Card
-            className="shadow-sm border-gray-100 mb-5"
-            bodyStyle={{ padding: "20px" }}
-          >
-            <h3 className="font-semibold text-gray-800 mb-3">
-              Basic Information
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Full Name
-                </label>
-                <Input value={mentorInfo.name} readOnly />
+          <div>
+            <h1 className="!text-3xl !font-extrabold !bg-gradient-to-r !from-blue-600 !to-green-500 !text-transparent !bg-clip-text">
+              {profile.name}
+            </h1>
+            <p className="!text-gray-500 !text-sm !mt-1 !max-w-3xl">
+              {profile.headline}
+            </p>
+
+            {/* Info line */}
+            <div className="!flex !flex-wrap !gap-x-6 !gap-y-2 !text-sm !text-gray-600 !mt-3">
+              <div className="flex items-center gap-1">
+                <Mail className="w-4 h-4" /> {profile.email}
               </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Email
-                </label>
-                <Input value={mentorInfo.email} readOnly />
+              <div className="flex items-center gap-1">
+                <BookOpen className="w-4 h-4" /> {profile.major}
               </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Phone
-                </label>
-                <Input value={mentorInfo.phone} readOnly />
+              <div className="flex items-center gap-1">
+                <GraduationCap className="w-4 h-4" /> {profile.university}
               </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Major
-                </label>
-                <Input value={mentorInfo.major} readOnly />
+              <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" /> Joined {profile.joined}
               </div>
             </div>
+          </div>
+        </div>
 
-            <label className="block text-sm text-gray-600 mb-1">Bio</label>
-            <Input.TextArea rows={3} value={mentorInfo.bio} readOnly />
-          </Card>
+        <button className="!flex !items-center !gap-2 !bg-blue-600 !text-white !px-5 !py-2 !rounded-md !hover:bg-blue-700 !transition">
+          <Edit className="!w-4 !h-4" />
+          Edit Profile
+        </button>
+      </div>
 
-          {/* Expertise & Specialization */}
-          <Card
-            className="shadow-sm border-gray-100"
-            bodyStyle={{ padding: "20px" }}
-          >
-            <h3 className="font-semibold text-gray-800 mb-3">
-              Expertise & Specialization
-            </h3>
-            <p className="text-gray-400 text-sm mb-3">
-              Add your areas of expertise to help match you with relevant groups
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {mentorInfo.expertise.map((tag, i) => (
-                <Tag
-                  key={i}
-                  color="default"
-                  className="px-3 py-1 rounded-full text-gray-700 bg-gray-100 border-none"
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="bg-white shadow rounded-2xl p-5 flex justify-between items-center">
+          <div>
+            <p className="text-gray-500 text-sm">Active Projects</p>
+            <h2 className="text-3xl font-bold">{profile.activeProjects}</h2>
+          </div>
+          <ArrowUp className="text-green-500 w-6 h-6" />
+        </div>
+
+        <div className="bg-white shadow rounded-2xl p-5 flex justify-between items-center">
+          <div>
+            <p className="text-gray-500 text-sm">Completed Projects</p>
+            <h2 className="text-3xl font-bold">{profile.completedProjects}</h2>
+          </div>
+          <LineChart className="text-green-500 w-6 h-6" />
+        </div>
+
+        <div className="bg-white shadow rounded-2xl p-5 flex justify-between items-center">
+          <div>
+            <p className="text-gray-500 text-sm">Skills</p>
+            <h2 className="text-3xl font-bold">{profile.skillCount}</h2>
+          </div>
+          <ArrowUp className="text-green-500 w-6 h-6" />
+        </div>
+      </div>
+
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Active Projects */}
+        <div className="bg-white shadow rounded-2xl p-6 lg:col-span-2">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-gray-800">Active Projects</h3>
+            <button className="text-blue-600 text-sm hover:underline">
+              View All
+            </button>
+          </div>
+
+          <hr className="my-4 border-gray-100" />
+
+          <div className="border border-gray-100 rounded-xl p-4">
+            <div>
+              <p className="font-medium text-gray-900">{activeProject.title}</p>
+              <p className="text-xs text-gray-500">{activeProject.category}</p>
+            </div>
+
+            {/* Tags */}
+            <div className="flex flex-wrap gap-2 mt-3">
+              {activeProject.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-3 py-1 text-sm bg-blue-50 text-blue-700 rounded-full"
                 >
                   {tag}
-                </Tag>
+                </span>
               ))}
             </div>
-          </Card>
 
-          {/* Availability & Capacity */}
-          <Card
-            className="shadow-sm border-gray-100"
-            bodyStyle={{ padding: "20px" }}
-          >
-            <h3 className="font-semibold text-gray-800 mb-3">
-              Availability & Capacity
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Office Hours
-                </label>
-                <Input value={mentorInfo.officeHours} readOnly />
+            <p className="text-sm text-gray-600 mt-4">
+              Mentor:{" "}
+              <span className="text-gray-800 font-medium">
+                {activeProject.mentor}
+              </span>
+            </p>
+
+            {/* Progress */}
+            <div className="mt-3">
+              <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-blue-500 h-2 rounded-full"
+                  style={{ width: `${activeProject.progress}%` }}
+                />
               </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Group Capacity
-                </label>
-                <Input value={mentorInfo.groupCapacity} readOnly />
-              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {activeProject.progress}% Progress
+              </p>
             </div>
-          </Card>
+
+            {/* Members */}
+            <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center -space-x-2">
+                {activeProject.members.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`w-8 h-8 flex items-center justify-center text-sm font-medium ${m.color} rounded-full border-2 border-white`}
+                  >
+                    {m.name}
+                  </div>
+                ))}
+                <span className="text-xs text-gray-500 ml-3">
+                  {activeProject.memberCount} Members
+                </span>
+              </div>
+
+              <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
+                <Users className="w-4 h-4" />
+                View Details
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Skills */}
+        <div className="bg-white shadow rounded-2xl p-6">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-gray-800">Skills</h3>
+            <button className="text-blue-600 text-sm hover:underline">
+              + Add Skill
+            </button>
+          </div>
+
+          <hr className="my-4 border-gray-100" />
+
+          <div className="space-y-4">
+            {skills.map((skill) => (
+              <div key={skill.name}>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-800">
+                    {skill.name}
+                  </span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full ${
+                      skill.level === "Advanced"
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}
+                  >
+                    {skill.level}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2 mt-2 overflow-hidden">
+                  <div
+                    className="bg-blue-500 h-2 rounded-full"
+                    style={{ width: `${skill.percent}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
