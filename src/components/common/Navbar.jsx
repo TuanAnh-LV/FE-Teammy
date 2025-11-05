@@ -140,12 +140,12 @@ const Navbar = () => {
             {getTranslation("forum", language)}
           </Link>
           <Link
-            to="/my-groups"
+            to="/my-projects"
             className={`!hover:text-blue-600 ${
-              isActive("/my-groups") ? "!text-blue-600" : ""
+              isActive("/my-projects") ? "!text-blue-600" : ""
             }`}
           >
-            {getTranslation("myGroups", language)}
+            {getTranslation("My Projects", language)}
           </Link>
           <Link
             to="/workspace"
