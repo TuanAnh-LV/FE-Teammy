@@ -31,11 +31,17 @@ export const GroupService = {
         });
     },
 
-    inviteMember(groupId, userId) {
-        const payload = { userId };
+    inviteMember(groupId, payload) {
         return BaseService.post({
             url: API.GROUP.INVITE_MEMBER.replace(':id', groupId),
             payload,
+            isLoading: true,
+        });
+    },
+
+    leaveGroup(groupId) {
+        return BaseService.remove({
+            url: API.GROUP.LEAVE_GROUP(groupId),
             isLoading: true,
         });
     },
