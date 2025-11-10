@@ -1,160 +1,182 @@
-import React from "react";
-import { Card, Input, Button, Tag, Avatar } from "antd";
+import React, { useEffect, useMemo } from "react";
+import {
+  Edit,
+  Mail,
+  BookOpen,
+  GraduationCap,
+  Calendar,
+  ArrowUp,
+  LineChart,
+  Users,
+} from "lucide-react";
+import { AuthService } from "../../services/auth.service";
+import { useAuth } from "../../context/AuthContext";
 
 const Profile = () => {
-  const mentorInfo = {
-    name: "Tran Hai Son",
+  const {
+    userInfo,
+    setUserInfo,
+    role,
+    setRole,
+    isLoading,
+    setIsLoading,
+    token,
+  } = useAuth();
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!token || userInfo) return;
+      try {
+        setIsLoading(true);
+        const res = await AuthService.me();
+        const d = res?.data ?? {};
+        const mapped = {
+          userId: d.userId,
+          email: d.email,
+          name: d.displayName,
+          photoURL: d.avatarUrl || "",
+          role: d.role,
+          emailVerified: d.emailVerified,
+          skillsCompleted: d.skillsCompleted,
+        };
+        if (!mounted) return;
+        setUserInfo(mapped);
+        setRole(mapped.role);
+        localStorage.setItem("userInfo", JSON.stringify(mapped));
+        localStorage.setItem("role", mapped.role);
+      } catch (e) {
+        console.error("Không lấy được thông tin tài khoản:", e);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [token, userInfo, setUserInfo, setRole, setIsLoading]);
+
+  const profile = {
+    name: userInfo?.name ?? userInfo?.displayName ?? "Unnamed",
+    email: userInfo?.email ?? "",
+    role: role ?? userInfo?.role ?? "Student",
+    photoURL: userInfo?.photoURL || userInfo?.avatarUrl || "",
+    skillsCompleted: !!userInfo?.skillsCompleted,
     major: "Computer Science",
-    email: "sonthse172913@fpt.edu.vn",
-    phone: "+1 (555) 123-4567",
-    officeHours: "Mon–Wed–Fri, 2:00–4:00 PM",
-    bio: "Dedicated mentor passionate about guiding students in AI and data science projects.",
-    expertise: ["Machine Learning", "Deep Learning", "Data Analytics"],
-    groupCapacity: "5 groups max",
+    university: "FPT University",
+    joined: "Jan 2024",
+    activeProjects: 1,
+    completedProjects: 5,
+    skillCount: 6,
   };
 
+  const initials = useMemo(() => {
+    const full = profile.name || "User";
+    return full
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  }, [profile.name]);
+
+  if (isLoading && !userInfo) {
+    return <div className="mt-20 max-w-6xl mx-auto px-4">Loading...</div>;
+  }
+
+  // ---- UI
   return (
-    <div className="space-y-8">
+    <div className="mt-20 mb-96 max-w-6xl mx-auto px-4 space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="inline-block text-4xl font-extrabold">
-            Mentor Profile
-          </h1>
+      <div className="bg-white shadow rounded-2xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div className="flex items-center gap-4">
+          {profile.photoURL ? (
+            <img
+              src={profile.photoURL}
+              alt={profile.name}
+              className="w-20 h-20 rounded-full object-cover border"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : (
+            <div className="flex items-center justify-center bg-blue-100 text-blue-600 w-20 h-20 rounded-full font-bold text-2xl">
+              {initials}
+            </div>
+          )}
+
+          <div>
+            <h1 className="!text-3xl !font-extrabold !bg-gradient-to-r !from-blue-600 !to-green-500 !text-transparent !bg-clip-text">
+              {profile.name}
+            </h1>
+
+            <div className="!flex !flex-wrap !gap-x-6 !gap-y-2 !text-sm !text-gray-600 !mt-2">
+              <div className="flex items-center gap-1">
+                <Mail className="w-4 h-4" /> {profile.email}
+              </div>
+              <div className="flex items-center gap-1">
+                <BookOpen className="w-4 h-4" /> {profile.major}
+              </div>
+              <div className="flex items-center gap-1">
+                <GraduationCap className="w-4 h-4" /> {profile.university}
+              </div>
+              <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" /> Joined {profile.joined}
+              </div>
+            </div>
+
+            <div className="mt-3 flex gap-2">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-800">
+                Role:{profile.role}
+              </span>
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full ${
+                  profile.skillsCompleted
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700"
+                }`}
+              >
+                Skills form:{" "}
+                {profile.skillsCompleted ? "Completed" : "Incomplete"}
+              </span>
+            </div>
+          </div>
         </div>
-        <Button
-          type="default"
-          className="!bg-[#FF7A00] !text-white !border-none !rounded-md !px-6 !py-5 hover:!opacity-90"
-        >
+
+        <button className="!flex !items-center !gap-2 !bg-blue-600 !text-white !px-5 !py-2 !rounded-md !hover:bg-blue-700 !transition">
+          <Edit className="!w-4 !h-4" />
           Edit Profile
-        </Button>
+        </button>
       </div>
 
-      {/* Main layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left card: mentor summary */}
-        <Card
-          className="shadow-sm border-gray-100 flex flex-col items-center text-center"
-          bodyStyle={{ padding: "24px" }}
-        >
-          <Avatar
-            size={96}
-            style={{
-              backgroundColor: "#d9d9d9",
-              color: "#444",
-              fontWeight: "bold",
-              fontSize: "24px",
-            }}
-          >
-            {mentorInfo.name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")}
-          </Avatar>
-          <h2 className="font-semibold text-lg mt-4 text-gray-800">
-            {mentorInfo.name}
-          </h2>
-          <p className="text-gray-500 text-sm">{mentorInfo.major}</p>
-          <div className="mt-4 text-gray-600 text-sm space-y-1">
-            <p>{mentorInfo.email}</p>
-            <p>{mentorInfo.phone}</p>
-            <p>{mentorInfo.officeHours}</p>
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="bg-white shadow rounded-2xl p-5 flex justify-between items-center">
+          <div>
+            <p className="text-gray-500 text-sm">Active Projects</p>
+            <h2 className="text-3xl font-bold">{profile.activeProjects}</h2>
           </div>
-          <div className="mt-4 border-t w-full pt-2 text-sm text-gray-400">
-            Last updated: Sep 2025
+          <ArrowUp className="text-green-500 w-6 h-6" />
+        </div>
+        <div className="bg-white shadow rounded-2xl p-5 flex justify-between items-center">
+          <div>
+            <p className="text-gray-500 text-sm">Completed Projects</p>
+            <h2 className="text-3xl font-bold">{profile.completedProjects}</h2>
           </div>
-        </Card>
-
-        {/* Right column (main details) */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          {/* Basic Information */}
-          <Card
-            className="shadow-sm border-gray-100 mb-5"
-            bodyStyle={{ padding: "20px" }}
-          >
-            <h3 className="font-semibold text-gray-800 mb-3">
-              Basic Information
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Full Name
-                </label>
-                <Input value={mentorInfo.name} readOnly />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Email
-                </label>
-                <Input value={mentorInfo.email} readOnly />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Phone
-                </label>
-                <Input value={mentorInfo.phone} readOnly />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Major
-                </label>
-                <Input value={mentorInfo.major} readOnly />
-              </div>
-            </div>
-
-            <label className="block text-sm text-gray-600 mb-1">Bio</label>
-            <Input.TextArea rows={3} value={mentorInfo.bio} readOnly />
-          </Card>
-
-          {/* Expertise & Specialization */}
-          <Card
-            className="shadow-sm border-gray-100"
-            bodyStyle={{ padding: "20px" }}
-          >
-            <h3 className="font-semibold text-gray-800 mb-3">
-              Expertise & Specialization
-            </h3>
-            <p className="text-gray-400 text-sm mb-3">
-              Add your areas of expertise to help match you with relevant groups
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {mentorInfo.expertise.map((tag, i) => (
-                <Tag
-                  key={i}
-                  color="default"
-                  className="px-3 py-1 rounded-full text-gray-700 bg-gray-100 border-none"
-                >
-                  {tag}
-                </Tag>
-              ))}
-            </div>
-          </Card>
-
-          {/* Availability & Capacity */}
-          <Card
-            className="shadow-sm border-gray-100"
-            bodyStyle={{ padding: "20px" }}
-          >
-            <h3 className="font-semibold text-gray-800 mb-3">
-              Availability & Capacity
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Office Hours
-                </label>
-                <Input value={mentorInfo.officeHours} readOnly />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Group Capacity
-                </label>
-                <Input value={mentorInfo.groupCapacity} readOnly />
-              </div>
-            </div>
-          </Card>
+          <LineChart className="text-green-500 w-6 h-6" />
+        </div>
+        <div className="bg-white shadow rounded-2xl p-5 flex justify-between items-center">
+          <div>
+            <p className="text-gray-500 text-sm">Skills</p>
+            <h2 className="text-3xl font-bold">{profile.skillCount}</h2>
+          </div>
+          <ArrowUp className="text-green-500 w-6 h-6" />
         </div>
       </div>
+
+      {/* Main Grid (giữ nguyên phần dưới) */}
+      {/* ... */}
     </div>
   );
 };

@@ -1,8 +1,10 @@
 import React from "react";
 import FilterSidebar from "../../components/common/discover/FilterSidebar";
 import ProjectCard from "../../components/common/discover/ProjectCard";
+import { useTranslation } from "../../hook/useTranslation";
 
 const Discover = () => {
+  const { t } = useTranslation();
   const projects = [
     {
       title: "Modern Portfolio Website Builder",
@@ -57,10 +59,10 @@ const Discover = () => {
       {/*  Header section */}
       <div className="!max-w-[1600px] !mx-auto !ml-48 !mb-8">
         <h1 className="!text-4xl !font-extrabold !text-[#1a1a1a] !mb-2">
-          Find Projects
+          {t("findProjects")}
         </h1>
         <p className="!text-gray-500 !text-lg">
-          Discover projects across multiple domains and join teams
+          {t("discoverProjects")}
         </p>
       </div>
 
@@ -77,7 +79,7 @@ const Discover = () => {
           <div className="!flex !items-center">
             <input
               type="text"
-              placeholder="Search projects..."
+              placeholder={t("searchProjects")}
               className="!w-full !px-4 !py-2 !rounded-lg !border !border-gray-300 focus:!ring-2 focus:!ring-blue-500 focus:!outline-none"
             />
           </div>

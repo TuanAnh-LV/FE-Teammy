@@ -1,5 +1,4 @@
 import { lazy } from "react";
-import { ROUTER_URL } from "../consts/router.const";
 import MainLayout from "../layout/MainLayout";
 import DashboardLayout from "../layout/dashboard/DashboardLayout";
 import ProtectedRoute from "./protected/ProtectedRoute";
@@ -10,6 +9,7 @@ const MyGroups = lazy(() => import("../pages/mentor/MyGroups"));
 const Discover = lazy(() => import("../pages/mentor/Discover"));
 const Notifications = lazy(() => import("../pages/mentor/Notifications"));
 const GroupDetail = lazy(() => import("../pages/mentor/GroupDetail"));
+
 // Admin
 const AdminDashboard = lazy(() => import("../pages/admin/Dashboard"));
 const ManageUsers = lazy(() => import("../pages/admin/ManageUsers"));
@@ -17,23 +17,21 @@ const AuditLogs = lazy(() => import("../pages/admin/AuditLogs"));
 const Reports = lazy(() => import("../pages/admin/Reports"));
 const Settings = lazy(() => import("../pages/admin/Settings"));
 const ImportUsers = lazy(() => import("../pages/admin/ImportUsers"));
-// Common
+
+// Common (Public)
 const HomePage = lazy(() => import("../pages/common/Home"));
 const Profile = lazy(() => import("../pages/common/Profile"));
 const DiscoverGuest = lazy(() => import("../pages/common/Discover"));
 const Forum = lazy(() => import("../pages/common/Forum"));
-const MyGroupsGuest = lazy(() => import("../pages/common/MyGroup"));
 const Workspace = lazy(() => import("../pages/common/Workspace"));
-const ProjectDetail = lazy(() => import("../pages/common/ProjectDetail"));
-// const LoginPage = lazy(() => import("../pages/common"));
-//Moderator
+
+const MyProjects = lazy(() => import("../pages/common/MyProject")); 
+const MyGroup = lazy(() => import("../pages/common/MyGroup"));       
+
+// Moderator
 const Dashboard = lazy(() => import("../pages/moderator/Dashboard"));
-const TopicManagement = lazy(() =>
-  import("../pages/moderator/TopicManagement")
-);
-const GroupManagement = lazy(() =>
-  import("../pages/moderator/GroupManagement")
-);
+const TopicManagement = lazy(() => import("../pages/moderator/TopicManagement"));
+const GroupManagement = lazy(() => import("../pages/moderator/GroupManagement"));
 const AIAssistant = lazy(() => import("../pages/moderator/AIAssistant"));
 const NotificationsMO = lazy(() => import("../pages/moderator/Notifications"));
 
@@ -43,12 +41,12 @@ const routes = [
     element: <MainLayout />,
     children: [
       { path: "/", element: <HomePage /> },
-      // { path: "/login", element: <LoginPage /> },
       { path: "/discover", element: <DiscoverGuest /> },
       { path: "/forum", element: <Forum /> },
-      { path: "/my-groups", element: <MyGroupsGuest /> },
+      { path: "/my-projects", element: <MyProjects /> },
+      { path: "/my-group/:id", element: <MyGroup /> },
       { path: "/workspace", element: <Workspace /> },
-      { path: "/project-detail", element: <ProjectDetail /> },
+      { path: "/profile", element: <Profile /> },
     ],
   },
 
@@ -87,12 +85,13 @@ const routes = [
           { path: "my-groups", element: <MyGroups /> },
           { path: "notifications", element: <Notifications /> },
           { path: "profile", element: <Profile /> },
-          { path: "my-groups/:id", element: <GroupDetail /> },
+          { path: "my-groups/:id", element: <GroupDetail /> }, 
         ],
       },
     ],
   },
-  //Moderator
+
+  // Moderator
   {
     path: "/moderator",
     element: <ProtectedRoute allowedRoles={["moderator"]} />,
