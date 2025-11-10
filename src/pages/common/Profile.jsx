@@ -1,16 +1,25 @@
 import React, { useEffect, useMemo } from "react";
 import {
-  Edit, Mail, BookOpen, GraduationCap, Calendar,
-  ArrowUp, LineChart, Users,
+  Edit,
+  Mail,
+  BookOpen,
+  GraduationCap,
+  Calendar,
+  ArrowUp,
+  LineChart,
+  Users,
 } from "lucide-react";
-import { AuthService } from "../../services/auth.service";      // giữ nguyên
-import { useAuth } from "../../context/AuthContext";           // <-- chỉnh path cho đúng
+import { AuthService } from "../../services/auth.service";
+import { useAuth } from "../../context/AuthContext";
 
 const Profile = () => {
   const {
-    userInfo, setUserInfo,
-    role, setRole,
-    isLoading, setIsLoading,
+    userInfo,
+    setUserInfo,
+    role,
+    setRole,
+    isLoading,
+    setIsLoading,
     token,
   } = useAuth();
 
@@ -20,12 +29,12 @@ const Profile = () => {
       if (!token || userInfo) return;
       try {
         setIsLoading(true);
-        const res = await AuthService.me();             
+        const res = await AuthService.me();
         const d = res?.data ?? {};
         const mapped = {
           userId: d.userId,
           email: d.email,
-          name: d.displayName,        
+          name: d.displayName,
           photoURL: d.avatarUrl || "",
           role: d.role,
           emailVerified: d.emailVerified,
@@ -42,7 +51,9 @@ const Profile = () => {
         if (mounted) setIsLoading(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [token, userInfo, setUserInfo, setRole, setIsLoading]);
 
   const profile = {
@@ -61,7 +72,13 @@ const Profile = () => {
 
   const initials = useMemo(() => {
     const full = profile.name || "User";
-    return full.split(" ").filter(Boolean).map(n => n[0]).join("").slice(0,2).toUpperCase();
+    return full
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
   }, [profile.name]);
 
   if (isLoading && !userInfo) {
@@ -76,10 +93,12 @@ const Profile = () => {
         <div className="flex items-center gap-4">
           {profile.photoURL ? (
             <img
-              src={profile.photoURL}                
+              src={profile.photoURL}
               alt={profile.name}
               className="w-20 h-20 rounded-full object-cover border"
-              onError={(e) => { e.currentTarget.style.display = "none"; }}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
             />
           ) : (
             <div className="flex items-center justify-center bg-blue-100 text-blue-600 w-20 h-20 rounded-full font-bold text-2xl">
@@ -93,16 +112,33 @@ const Profile = () => {
             </h1>
 
             <div className="!flex !flex-wrap !gap-x-6 !gap-y-2 !text-sm !text-gray-600 !mt-2">
-              <div className="flex items-center gap-1"><Mail className="w-4 h-4" /> {profile.email}</div>
-              <div className="flex items-center gap-1"><BookOpen className="w-4 h-4" /> {profile.major}</div>
-              <div className="flex items-center gap-1"><GraduationCap className="w-4 h-4" /> {profile.university}</div>
-              <div className="flex items-center gap-1"><Calendar className="w-4 h-4" /> Joined {profile.joined}</div>
+              <div className="flex items-center gap-1">
+                <Mail className="w-4 h-4" /> {profile.email}
+              </div>
+              <div className="flex items-center gap-1">
+                <BookOpen className="w-4 h-4" /> {profile.major}
+              </div>
+              <div className="flex items-center gap-1">
+                <GraduationCap className="w-4 h-4" /> {profile.university}
+              </div>
+              <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" /> Joined {profile.joined}
+              </div>
             </div>
 
             <div className="mt-3 flex gap-2">
-              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-800">Role:{profile.role}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${profile.skillsCompleted ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
-                Skills form: {profile.skillsCompleted ? "Completed" : "Incomplete"}
+              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-800">
+                Role:{profile.role}
+              </span>
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full ${
+                  profile.skillsCompleted
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700"
+                }`}
+              >
+                Skills form:{" "}
+                {profile.skillsCompleted ? "Completed" : "Incomplete"}
               </span>
             </div>
           </div>
@@ -117,15 +153,24 @@ const Profile = () => {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div className="bg-white shadow rounded-2xl p-5 flex justify-between items-center">
-          <div><p className="text-gray-500 text-sm">Active Projects</p><h2 className="text-3xl font-bold">{profile.activeProjects}</h2></div>
+          <div>
+            <p className="text-gray-500 text-sm">Active Projects</p>
+            <h2 className="text-3xl font-bold">{profile.activeProjects}</h2>
+          </div>
           <ArrowUp className="text-green-500 w-6 h-6" />
         </div>
         <div className="bg-white shadow rounded-2xl p-5 flex justify-between items-center">
-          <div><p className="text-gray-500 text-sm">Completed Projects</p><h2 className="text-3xl font-bold">{profile.completedProjects}</h2></div>
+          <div>
+            <p className="text-gray-500 text-sm">Completed Projects</p>
+            <h2 className="text-3xl font-bold">{profile.completedProjects}</h2>
+          </div>
           <LineChart className="text-green-500 w-6 h-6" />
         </div>
         <div className="bg-white shadow rounded-2xl p-5 flex justify-between items-center">
-          <div><p className="text-gray-500 text-sm">Skills</p><h2 className="text-3xl font-bold">{profile.skillCount}</h2></div>
+          <div>
+            <p className="text-gray-500 text-sm">Skills</p>
+            <h2 className="text-3xl font-bold">{profile.skillCount}</h2>
+          </div>
           <ArrowUp className="text-green-500 w-6 h-6" />
         </div>
       </div>
