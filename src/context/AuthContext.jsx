@@ -15,10 +15,10 @@ const AuthContext = createContext(undefined);
 const normalizeUserInfo = (raw) => {
   if (!raw || typeof raw !== "object") return null;
   return {
-    userId: raw.userId || raw.uid,
+    userId: raw.userId,
     email: raw.email,
     name: raw.displayName || raw.name || "",
-    photoURL: raw.avatarUrl || raw.avatarURL || raw.photoURL || raw.photoUrl || "",
+    photoURL: raw.avatarUrl || raw.avatarURL || "",
     role: raw.role,
     emailVerified: !!raw.emailVerified,
     skillsCompleted: !!raw.skillsCompleted,
@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [userInfo]);
 
-  const loginGoogle = async (idToken, fallbackProfile = null) => {
+  const loginGoogle = async (idToken) => {
     try {
       const response = await AuthService.login({ idToken });
 
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error("Invalid Google login response");
       }
 
-      await handleLogin(token, fallbackProfile);
+      await handleLogin(token);
     } catch (error) {
       console.error("Failed to login with Google:", error);
       throw error instanceof HttpException
@@ -123,7 +123,6 @@ export const AuthProvider = ({ children }) => {
     setRole(null);
     setUserInfo(null);
     localStorage.clear();
-    window.location.href = "/";
   };
 
   const [notifications, setNotifications] = useState([]);
@@ -165,4 +164,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
