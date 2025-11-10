@@ -7,6 +7,7 @@ export const ROUTER_URL = {
     MY_GROUPS: "/my-groups",
     WORKSPACE: "/workspace",
     PROJECT_DETAIL: "/project-detail",
+    PROFILE: "/profile",
   },
   ADMIN: {
     DASHBOARD: "/admin",
