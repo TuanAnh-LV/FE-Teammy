@@ -64,7 +64,9 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
 
     try {
       setLoading(true);
-      await GroupService.inviteMember(groupId, selected.userId);
+      await GroupService.inviteMember(groupId, {
+        userId: selected.userId,
+      });
       if (typeof onAdd === "function") onAdd(selected);
       alert(t("inviteSent") || "Invitation sent");
       onClose();

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
+import { useAuth } from "../../context/AuthContext";
 import { GroupService } from "../../services/group.service";
 import InfoCard from "../../components/common/my-group/InfoCard";
 import DescriptionCard from "../../components/common/my-group/DescriptionCard";
@@ -15,13 +16,13 @@ export default function MyGroup() {
   const { id } = useParams();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { userInfo } = useAuth();
 
   const [group, setGroup] = useState(null);
   const [groupMembers, setGroupMembers] = useState([]);
   const [pendingMembers, setPendingMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [email, setEmail] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -53,24 +54,45 @@ export default function MyGroup() {
             : [];
 
         setGroupMembers(
-          members.map((m) => ({
-            name: m.displayName || m.name || "",
-            email: m.email || "",
-            role: m.role || m.status || "",
-            joinedAt: m.joinedAt,
-            avatarUrl: m.avatarUrl || "",
-          }))
+          members.map((m) => {
+            const email = m.email || "";
+            const normalizedEmail = email.toLowerCase();
+            const currentEmail = (userInfo?.email || "").toLowerCase();
+
+            return {
+              name: m.displayName || m.name || "",
+              email,
+              role: m.role || m.status || "",
+              joinedAt: m.joinedAt,
+              avatarUrl:
+                m.avatarUrl ||
+                m.photoURL ||
+                m.photoUrl ||
+                (currentEmail && normalizedEmail === currentEmail ? userInfo?.photoURL : ""),
+            };
+          })
         );
 
         // pending members
         if (pendingRes.status === "fulfilled" && Array.isArray(pendingRes.value?.data)) {
           setPendingMembers(
-            pendingRes.value.data.map((m) => ({
-              name: m.displayName || m.name || "",
-              email: m.email || "",
-              requestedAt: m.requestedAt,
-              role: m.role || m.status || "pending",
-            }))
+            pendingRes.value.data.map((m) => {
+              const email = m.email || "";
+              const normalizedEmail = email.toLowerCase();
+              const currentEmail = (userInfo?.email || "").toLowerCase();
+
+              return {
+                name: m.displayName || m.name || "",
+                email,
+                requestedAt: m.requestedAt,
+                role: m.role || m.status || "pending",
+                avatarUrl:
+                  m.avatarUrl ||
+                  m.photoURL ||
+                  m.photoUrl ||
+                  (currentEmail && normalizedEmail === currentEmail ? userInfo?.photoURL : ""),
+              };
+            })
           );
         } else {
           const fallback = members.filter((m) => {
@@ -82,6 +104,13 @@ export default function MyGroup() {
               name: m.displayName || m.name || "",
               email: m.email || "",
               role: "pending",
+              avatarUrl:
+                m.avatarUrl ||
+                m.photoURL ||
+                m.photoUrl ||
+                ((m.email || "").toLowerCase() === (userInfo?.email || "").toLowerCase()
+                  ? userInfo?.photoURL
+                  : ""),
             }))
           );
         }
@@ -92,18 +121,18 @@ export default function MyGroup() {
       }
     };
     loadData();
-  }, [id]);
+  }, [id, userInfo]);
 
-  const handleAddMember = async () => {
-    if (!email.trim()) return alert(t("pleaseEnterEmail"));
-    const user = { name: "User Found", email };
+  const handleAddMember = (user) => {
+    if (!user || !user.email) {
+      alert(t("pleaseSelectUser") || "Please select a user first");
+      return;
+    }
     if (groupMembers.some((m) => m.email === user.email)) {
       alert(t("userAlreadyInGroup"));
       return;
     }
     setGroupMembers((prev) => [...prev, user]);
-    alert(`${user.email} ${t("userAddedSuccessfully")}`);
-    setEmail("");
     setShowModal(false);
   };
 
@@ -151,7 +180,7 @@ export default function MyGroup() {
           </button>
           <button
             onClick={() => setShowModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            className="bg-[#FF7A00] text-white px-4 py-2 rounded-lg transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-orange-100"
           >
             {t("addMember")}
           </button>
@@ -184,8 +213,6 @@ export default function MyGroup() {
         <AddMemberModal
           open={showModal}
           onClose={() => setShowModal(false)}
-          email={email}
-          setEmail={setEmail}
           onAdd={handleAddMember}
           t={t}
         />

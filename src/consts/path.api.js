@@ -3,7 +3,8 @@ export const API = {
         PUBLIC: "api/client"
     },
     AUTH: {
-        LOGIN: "/auth/login"
+        LOGIN: "/auth/login",
+        ME: "/auth/me",
     },
     POST: {
         GET_PERSONAL: "/profile-posts",
@@ -34,6 +35,7 @@ export const API = {
       `/groups/${groupId}/join-requests/${requestId}/accept`,
         REJECT_JOIN: (groupId, requestId) =>
       `/groups/${groupId}/join-requests/${requestId}/reject`,
+        LEAVE_GROUP: (id) => `/groups/${id}/members/me`,
     }
 }
 

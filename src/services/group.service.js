@@ -32,14 +32,13 @@ export const GroupService = {
     });
   },
 
-  inviteMember(groupId, userId) {
-    const payload = { userId };
-    return BaseService.post({
-      url: API.GROUP.INVITE_MEMBER.replace(":id", groupId),
-      payload,
-      isLoading: true,
-    });
-  },
+    inviteMember(groupId, payload) {
+        return BaseService.post({
+            url: API.GROUP.INVITE_MEMBER.replace(':id', groupId),
+            payload,
+            isLoading: true,
+        });
+    },
 
   /** Member gửi yêu cầu tham gia nhóm */
   applyToGroup(groupId, payload = {}) {
@@ -63,4 +62,10 @@ export const GroupService = {
       isLoading: true,
     });
   },
+    leaveGroup(groupId) {
+        return BaseService.remove({
+            url: API.GROUP.LEAVE_GROUP(groupId),
+            isLoading: true,
+        });
+    },
 };
