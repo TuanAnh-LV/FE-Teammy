@@ -10,4 +10,10 @@ export const AuthService = {
       isLoading: true,
     });
   },
+  getMembership() {
+    return BaseService.get({
+      url: API.GROUPS.MEMBERSHIP,
+      isLoading: true,
+    });
+  },
 };

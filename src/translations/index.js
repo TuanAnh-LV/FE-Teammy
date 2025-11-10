@@ -134,6 +134,12 @@ export const translations = {
     officeHours: "Office Hours",
     groupCapacity: "Group Capacity",
     lastUpdated: "Last updated",
+    activeProjects: "Active Projects",
+    completedProjects: "Completed Projects",
+    skills: "Skills",
+    viewDetails: "View Details",
+    addSkill: "+ Add Skill",
+    viewAll: "View All",
     
     // Admin Dashboard
     overviewSystemPerformance: "Overview of system performance and key metrics",
@@ -150,7 +156,6 @@ export const translations = {
     studentDistributionMajors: "Student distribution across different majors",
     
     // Moderator Dashboard
-    totalGroups: "Total Groups",
     groupsMissingTopics: "Groups Missing Topics",
     groupsMissingMentor: "Groups Missing Mentor",
     studentWithoutGroup: "Student Without Group",
@@ -191,6 +196,29 @@ export const translations = {
     groupId: "Group #",
     timelineTasks: "Timeline & Tasks",
     contributionsChat: "Contributions & Chat",
+
+    // Forum
+    recruitmentForum: "Recruitment Forum",
+    forumPersonalSubtitle: "Publish your profile and let project teams invite you.",
+    createRecruitPost: "Create Post",
+    createPersonalPost: "Create Profile",
+    activePosts: "Active Posts",
+    activeProfiles: "Active Profiles",
+    openPositions: "Open Positions",
+    desiredRolesTotal: "Desired Roles",
+    noData: "No results found.",
+    searchByProject: "Search posts by project, skills…",
+    searchByPeople: "Search people by role, skills…",
+    findTeammates: "Find Teammates",
+    findGroup: "Find Group",
+    positionsNeeded: "Positions Needed",
+    requiredSkills: "Required Skills",
+    applyNow: "Apply Now",
+    viewProfile: "View Profile",
+    inviteToGroup: "Invite to Group",
+    alwaysOpen: "Always Open",
+    availableNow: "Available",
+
   },
   
   VIE: {
@@ -328,6 +356,13 @@ export const translations = {
     officeHours: "Giờ Làm Việc",
     groupCapacity: "Sức Chứa Nhóm",
     lastUpdated: "Cập nhật lần cuối",
+    activeProjects: "Dự Án Hoạt Động",
+    completedProjects: "Dự Án Hoàn Thành",
+    skills: "Kỹ Năng",
+    viewDetails: "Xem Chi Tiết",
+    addSkill: "+ Thêm Kỹ Năng",
+    viewAll: "Xem tất cả",
+
     
     // Admin Dashboard
     overviewSystemPerformance: "Tổng quan về hiệu suất hệ thống và các chỉ số quan trọng",
@@ -344,7 +379,6 @@ export const translations = {
     studentDistributionMajors: "Phân bố sinh viên theo các chuyên ngành khác nhau",
     
     // Moderator Dashboard
-    totalGroups: "Tổng Nhóm",
     groupsMissingTopics: "Nhóm Thiếu Chủ Đề",
     groupsMissingMentor: "Nhóm Thiếu Người Hướng Dẫn",
     studentWithoutGroup: "Sinh Viên Chưa Có Nhóm",
@@ -362,7 +396,6 @@ export const translations = {
     
     // Workspace
     todo: "Cần Làm",
-    inProgress: "Đang Thực Hiện",
     review: "Xem Xét",
     done: "Hoàn Thành",
     frontend: "Frontend",
@@ -385,6 +418,32 @@ export const translations = {
     groupId: "Nhóm #",
     timelineTasks: "Timeline & Nhiệm Vụ",
     contributionsChat: "Đóng Góp & Trò Chuyện",
+
+    // Forum
+    recruitmentForum: "Diễn Đàn Tuyển Thành Viên",
+    forumPersonalSubtitle: "Đăng hồ sơ để các nhóm mời bạn tham gia.",
+    createRecruitPost: "Tạo Bài Tuyển",
+    createPersonalPost: "Tạo Hồ Sơ Cá Nhân",
+    activePosts: "Bài Đang Mở",
+    activeProfiles: "Hồ Sơ Đang Mở",
+    openPositions: "Vị Trí Cần Tuyển",
+    desiredRolesTotal: "Vai Trò Mong Muốn",
+    noData: "Không có kết quả.",
+    searchByProject: "Tìm bài theo dự án, kỹ năng…",
+    searchByPeople: "Tìm người theo vai trò, kỹ năng…",
+    findTeammates: "Tìm Thành Viên",
+    findGroup: "Tìm Nhóm",
+    positionsNeeded: "Vị trí cần tuyển",
+    requiredSkills: "Kỹ năng yêu cầu",
+    skills: "Kỹ năng",
+    viewDetails: "Xem chi tiết",
+    applyNow: "Ứng tuyển ngay",
+    viewProfile: "Xem hồ sơ",
+    inviteToGroup: "Mời vào nhóm",
+    alwaysOpen: "Mở 24/7",
+    availableNow: "Sẵn sàng",
+
+
   },
 };
 

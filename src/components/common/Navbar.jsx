@@ -44,7 +44,7 @@ const Navbar = () => {
 
   const parseMaybeStringJson = (payload) => {
     if (payload == null) return null;
-    const raw = payload?.data ?? payload; 
+    const raw = payload?.data ?? payload;
     if (typeof raw === "string") {
       try {
         return JSON.parse(raw);
@@ -81,8 +81,7 @@ const Navbar = () => {
       // 6) Lưu localStorage cho UI (Navbar)
       const email = data.email ?? fbUser.email ?? "";
       const role =
-        data.role ??
-        (email.endsWith("@fpt.edu.vn") ? "student" : "instructor");
+        data.role ?? (email.endsWith("@fpt.edu.vn") ? "student" : "instructor");
 
       const uiUser = {
         name: data.displayName ?? fbUser.displayName ?? "",

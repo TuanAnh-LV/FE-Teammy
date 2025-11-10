@@ -9,8 +9,10 @@ import {
   LineChart,
   Users,
 } from "lucide-react";
+import { useTranslation } from "../../hook/useTranslation";
 
 const Profile = () => {
+  const { t } = useTranslation();
   const profile = {
     name: "Nguyễn Văn A",
     headline:
@@ -49,7 +51,7 @@ const Profile = () => {
   ];
 
   return (
-    <div className="mt-20 max-w-6xl mx-auto px-4 space-y-8">
+    <div className="mt-20 max-w-7xl mx-auto px-4 space-y-8 mb-20">
       {/* Header */}
       <div className="bg-white shadow rounded-2xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div className="flex items-center gap-4">
@@ -86,9 +88,9 @@ const Profile = () => {
           </div>
         </div>
 
-        <button className="!flex !items-center !gap-2 !bg-blue-600 !text-white !px-5 !py-2 !rounded-md !hover:bg-blue-700 !transition">
+        <button className="!flex !items-center !gap-2 !bg-[#FF7A00] hover:!opacity-90 !text-white !px-7 !py-2 !rounded-md !transition">
           <Edit className="!w-4 !h-4" />
-          Edit Profile
+          {t("editProfile") || "Edit Profile"}
         </button>
       </div>
 
@@ -96,7 +98,9 @@ const Profile = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div className="bg-white shadow rounded-2xl p-5 flex justify-between items-center">
           <div>
-            <p className="text-gray-500 text-sm">Active Projects</p>
+            <p className="text-gray-500 text-sm">
+              {t("activeProjects") || "Active Projects"}
+            </p>
             <h2 className="text-3xl font-bold">{profile.activeProjects}</h2>
           </div>
           <ArrowUp className="text-green-500 w-6 h-6" />
@@ -104,7 +108,9 @@ const Profile = () => {
 
         <div className="bg-white shadow rounded-2xl p-5 flex justify-between items-center">
           <div>
-            <p className="text-gray-500 text-sm">Completed Projects</p>
+            <p className="text-gray-500 text-sm">
+              {t("completedProjects") || "Completed Projects"}
+            </p>
             <h2 className="text-3xl font-bold">{profile.completedProjects}</h2>
           </div>
           <LineChart className="text-green-500 w-6 h-6" />
@@ -112,7 +118,7 @@ const Profile = () => {
 
         <div className="bg-white shadow rounded-2xl p-5 flex justify-between items-center">
           <div>
-            <p className="text-gray-500 text-sm">Skills</p>
+            <p className="text-gray-500 text-sm">{t("skills") || "Skills"}</p>
             <h2 className="text-3xl font-bold">{profile.skillCount}</h2>
           </div>
           <ArrowUp className="text-green-500 w-6 h-6" />
@@ -124,9 +130,11 @@ const Profile = () => {
         {/* Active Projects */}
         <div className="bg-white shadow rounded-2xl p-6 lg:col-span-2">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-gray-800">Active Projects</h3>
+            <h3 className="font-semibold text-gray-800">
+              {t("activeProjects") || "Active Projects"}
+            </h3>
             <button className="text-blue-600 text-sm hover:underline">
-              View All
+              {t("viewAll") || "View All"}
             </button>
           </div>
 
@@ -151,7 +159,7 @@ const Profile = () => {
             </div>
 
             <p className="text-sm text-gray-600 mt-4">
-              Mentor:{" "}
+              {t("mentor") || "Mentor"}:{" "}
               <span className="text-gray-800 font-medium">
                 {activeProject.mentor}
               </span>
@@ -166,7 +174,7 @@ const Profile = () => {
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                {activeProject.progress}% Progress
+                {activeProject.progress}% {t("progress") || "Progress"}
               </p>
             </div>
 
@@ -182,13 +190,13 @@ const Profile = () => {
                   </div>
                 ))}
                 <span className="text-xs text-gray-500 ml-3">
-                  {activeProject.memberCount} Members
+                  {activeProject.memberCount} {t("members") || "Members"}
                 </span>
               </div>
 
-              <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
+              <button className="flex items-center gap-2 bg-[#FF7A00] hover:opacity-90 text-white px-4 py-2 rounded-md transition">
                 <Users className="w-4 h-4" />
-                View Details
+                {t("viewDetails") || "View Details"}
               </button>
             </div>
           </div>
@@ -197,9 +205,11 @@ const Profile = () => {
         {/* Skills */}
         <div className="bg-white shadow rounded-2xl p-6">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-gray-800">Skills</h3>
+            <h3 className="font-semibold text-gray-800">
+              {t("skills") || "Skills"}
+            </h3>
             <button className="text-blue-600 text-sm hover:underline">
-              + Add Skill
+              {t("addSkill") || "+ Add Skill"}
             </button>
           </div>
 
