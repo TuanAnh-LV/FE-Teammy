@@ -25,6 +25,7 @@ const clamp3 = {
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
 };
+
 const Forum = () => {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
@@ -240,6 +241,7 @@ const Forum = () => {
           {activeTab === "groups" &&
             paged.map((p) => {
               const author =
+                p?.group?.name ||
                 p?.groupName ||
                 p?.userDisplayName ||
                 p?.user?.displayName ||
@@ -394,18 +396,14 @@ const Forum = () => {
                   Prev
                 </button>
 
-                {/* simple numeric pages (up to 7 items incl. ellipsis) */}
                 {Array.from({ length: maxPage }, (_, i) => i + 1)
                   .filter((p) => {
-                    // keep first, last, current, and neighbors
                     if (p === 1 || p === maxPage) return true;
                     if (Math.abs(p - page) <= 1) return true;
-                    // also keep page-2 and page+2 for better context on large sets
                     if (Math.abs(p - page) === 2) return true;
                     return false;
                   })
                   .reduce((acc, p, _, arr) => {
-                    // insert ellipsis between gaps
                     if (acc.length === 0) return [p];
                     const prev = acc[acc.length - 1];
                     if (p - prev > 1) acc.push("ellipsis");
@@ -443,8 +441,6 @@ const Forum = () => {
             </div>
           )}
         </div>
-
-        {/* Modals (truyền groupId từ membership xuống CreatePostModal) */}
         <CreatePostModal
           isOpen={isCreatePostModalOpen}
           closeModal={() => setIsCreatePostModalOpen(false)}
