@@ -16,4 +16,12 @@ export const AuthService = {
       isLoading: true,
     });
   },
+  me() {
+    return BaseService.get({
+      url: API.AUTH.ME,
+      isLoading: true,
+    });
+  },
+
 };
+  

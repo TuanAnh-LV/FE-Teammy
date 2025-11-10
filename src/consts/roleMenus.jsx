@@ -17,7 +17,7 @@ export const getRoleMenus = (role) => {
     {
       key: "profile",
       label: "Profile",
-      path: `/${role}/profile`,
+      path: `/profile`,
       icon: <UserOutlined />,
     },
   ];

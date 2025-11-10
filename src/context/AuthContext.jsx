@@ -11,10 +11,24 @@ const HTTP_STATUS = {
 
 const AuthContext = createContext(undefined);
 
+// Ensure a consistent user shape across the app
+const normalizeUserInfo = (raw) => {
+  if (!raw || typeof raw !== "object") return null;
+  return {
+    userId: raw.userId,
+    email: raw.email,
+    name: raw.displayName || raw.name || "",
+    photoURL: raw.avatarUrl || raw.avatarURL || "",
+    role: raw.role,
+    emailVerified: !!raw.emailVerified,
+    skillsCompleted: !!raw.skillsCompleted,
+  };
+};
+
 export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(() => {
     const storedRole = localStorage.getItem("role");
-    return storedRole || null;
+    return storedRole && storedRole !== "undefined" ? storedRole : null;
   });
 
   const [token, setToken] = useState(() => {
@@ -25,7 +39,9 @@ export const AuthProvider = ({ children }) => {
   const [userInfo, setUserInfo] = useState(() => {
     try {
       const storedUserInfo = localStorage.getItem("userInfo");
-      return storedUserInfo ? JSON.parse(storedUserInfo) : null;
+      if (!storedUserInfo) return null;
+      const parsed = JSON.parse(storedUserInfo);
+      return normalizeUserInfo(parsed);
     } catch (error) {
       console.error("Failed to parse userInfo from localStorage:", error);
       return null;
@@ -48,9 +64,9 @@ export const AuthProvider = ({ children }) => {
 
   const loginGoogle = async (idToken) => {
     try {
-      const response = await AuthService.loginGoogle({ idToken });
+      const response = await AuthService.login({ idToken });
 
-      const token = response.data?.token;
+      const token = response.data?.accessToken || response.data?.token;
       if (!token) {
         throw new Error("Invalid Google login response");
       }
@@ -78,16 +94,19 @@ export const AuthProvider = ({ children }) => {
       let userData = userFromLogin;
 
       if (!userData) {
-        const response = await AuthService.getUserRole();
+        const response = await AuthService.me(); 
         userData = response.data;
       }
 
       if (!userData) throw new Error("No user info");
 
-      setUserInfo(userData);
-      setRole(userData.role);
-      localStorage.setItem("userInfo", JSON.stringify(userData));
-      localStorage.setItem("role", userData.role);
+      // Normalize backend fields → UI shape used across the app
+      const normalized = normalizeUserInfo(userData);
+
+      setUserInfo(normalized);
+      setRole(normalized.role);
+      localStorage.setItem("userInfo", JSON.stringify(normalized));
+      localStorage.setItem("role", normalized.role);
 
     } catch (error) {
       console.error("Failed to get user info:", error);
