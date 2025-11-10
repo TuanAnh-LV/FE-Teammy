@@ -5,12 +5,15 @@ import CreatePostModal from "../../components/common/forum/CreatePostModal";
 import CreatePersonalPostModal from "../../components/common/forum/CreatePersonalPostModal";
 import { PostService } from "../../services/post.service";
 import { AuthService } from "../../services/auth.service";
+import { GroupService } from "../../services/group.service";
 import {
   toArraySafe,
   timeAgoFrom,
   toArrayPositions,
   initials,
 } from "../../utils/helpers";
+import GroupDetailModal from "../../components/common/forum/GroupDetailModal";
+import { message } from "antd";
 /** ---------- UI SMALLS ---------- */
 function Chip({ children }) {
   return (
@@ -61,6 +64,11 @@ const Forum = () => {
 
   // posts list
   const [postsData, setPostsData] = useState([]);
+  //View dẻtail modal group
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailGroupId, setDetailGroupId] = useState(null);
+
+  const [applyLoadingId, setApplyLoadingId] = useState(null);
 
   /** 1) Lấy membership khi mount (hoặc sau login bạn cũng có thể set ở global store) */
   useEffect(() => {
@@ -141,11 +149,51 @@ const Forum = () => {
   const start = (page - 1) * pageSize;
   const end = start + pageSize;
   const paged = filtered.slice(start, end);
-  const onApply = (id) => alert(`Apply to post ${id}`);
+
+  const onApply = async (post) => {
+    // Lấy đúng groupId từ post
+    const groupId =
+      post?.group?.groupId ||
+      post?.groupId ||
+      post?.group?.id ||
+      post?.group_id ||
+      null;
+
+    if (!groupId) {
+      console.warn("No groupId found in post:", post);
+      return;
+    }
+
+    try {
+      setApplyLoadingId(post.id);
+      await GroupService.applyToGroup(groupId);
+      message.success("Đã gửi yêu cầu tham gia nhóm!");
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setApplyLoadingId(null);
+    }
+  };
   const onInvite = (id) => alert(`Invite user ${id} vào nhóm của bạn`);
 
+  const openDetail = (post) => {
+    const gid =
+      post?.group?.groupId ||
+      post?.groupId ||
+      post?.group?.id ||
+      post?.group_id ||
+      null;
+
+    if (!gid) {
+      console.warn("No groupId found in post:", post);
+      return;
+    }
+    setDetailGroupId(gid);
+    setDetailOpen(true);
+  };
+
   return (
-    <div className="min-h-screen bg-[#f7f9fc]">
+    <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-6 lg:px-0 pt-10 pb-20">
         {/* Header */}
         <div className="mb-6 mt-16 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -296,10 +344,19 @@ const Forum = () => {
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => onApply(p.id)}
-                        className="inline-flex items-center rounded-lg bg-[#FF7A00] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:!opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                        onClick={() => openDetail(p)}
+                        className="inline-flex items-center rounded-lg px-3.5 py-2 text-xs font-bold shadow-sm hover:border-orange-400 hover:text-orange-400 transition-all focus:outline-none focus:ring-4 focus:ring-blue-100"
                       >
-                        {t("applyNow") || "Apply Now"}
+                        {t("viewDetails") || "View Details"}
+                      </button>
+                      <button
+                        onClick={() => onApply(p)}
+                        disabled={applyLoadingId === p.id}
+                        className="inline-flex items-center rounded-lg bg-[#FF7A00] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:!opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-60"
+                      >
+                        {applyLoadingId === p.id
+                          ? t("applying") || "Applying..."
+                          : t("applyNow") || "Apply Now"}
                       </button>
                     </div>
                   </div>
@@ -452,6 +509,11 @@ const Forum = () => {
           closeModal={() => setIsCreatePersonalPostModalOpen(false)}
           onCreated={handleCreated}
           currentUserName={currentUserName}
+        />
+        <GroupDetailModal
+          isOpen={detailOpen}
+          onClose={() => setDetailOpen(false)}
+          groupId={detailGroupId}
         />
       </div>
     </div>

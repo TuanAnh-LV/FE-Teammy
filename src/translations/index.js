@@ -173,7 +173,6 @@ export const translations = {
     
     // Workspace
     todo: "To Do",
-    inProgress: "In Progress",
     review: "Review",
     done: "Done",
     frontend: "Frontend",
