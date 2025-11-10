@@ -1,0 +1,21 @@
+// services/user.service.js
+import { BaseService } from "../config/basic.service";
+import { API } from "../consts/path.api";
+
+export const UserService = {
+
+  list(params = {}, isLoading = true) {
+    return BaseService.get({
+      url: API.USERS.LIST,
+      params,
+      isLoading,
+    });
+  },
+
+  detail(userId, isLoading = true) {
+    return BaseService.get({
+      url: API.USERS.DETAIL(userId),
+      isLoading,
+    });
+  },
+};
