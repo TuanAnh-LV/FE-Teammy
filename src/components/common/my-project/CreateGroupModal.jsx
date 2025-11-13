@@ -34,7 +34,7 @@ export default function CreateGroupModal({
       >
         <div className="flex items-center justify-between border-b px-6 py-4">
           <h3 className="text-lg font-semibold">
-            {t("Create New Group") || "Create New Group"}
+            {t("createNewGroup") || "Create New Group"}
           </h3>
           <button
             type="button"
@@ -88,7 +88,7 @@ export default function CreateGroupModal({
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              {t("Description") || "Description"}
+              {t("description") || "Description"}
             </label>
             <textarea
               rows={3}
@@ -129,7 +129,7 @@ export default function CreateGroupModal({
             className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
             disabled={submitting}
           >
-            {t("Cancel") || "Cancel"}
+            {t("cancel") || "Cancel"}
           </button>
           <button
             type="submit"

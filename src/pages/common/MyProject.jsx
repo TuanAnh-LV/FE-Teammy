@@ -5,6 +5,7 @@ import { GroupService } from "../../services/group.service";
 import ProjectToolbar from "../../components/common/my-project/ProjectToolbar";
 import ProjectTable from "../../components/common/my-project/ProjectTable";
 import CreateGroupModal from "../../components/common/my-project/CreateGroupModal";
+import { notification } from "antd";
 
 
 
@@ -74,11 +75,15 @@ export default function MyProject() {
     if (!confirm(`Leave group ${groupId}?`)) return;
     try {
       await GroupService.leaveGroup(groupId);
-      alert("You left the group.");
+      notification.success({
+        message: "You left the group.",
+      });
       await fetchMyGroups();
     } catch (error) {
       console.error(error);
-      // alert("Failed to leave group. Please try again.");
+      notification.error({
+        message: "Failed to leave group. Please try again.",
+      });
     }
   };
 
@@ -119,14 +124,18 @@ export default function MyProject() {
       };
       const res = await GroupService.createGroup(payload);
       if (res?.data) {
-        alert("Group created!");
+        notification.success({
+          message: "Group created!",
+        });
         closeModal();
         await fetchMyGroups();
         // navigate(`/my-group/${res.data.id}`);
       }
     } catch (err) {
       console.error(err);
-      alert("Failed to create group. Please try again.");
+      notification.error({
+        message: "Failed to create group. Please try again.",
+      });
     } finally {
       setSubmitting(false);
     }

@@ -3,6 +3,7 @@ import { X, Mail, Search, Plus, UserRound } from "lucide-react";
 import { UserService } from "../../../services/user.service";
 import { GroupService } from "../../../services/group.service";
 import { useParams } from "react-router-dom";
+import { notification } from "antd";
 
 export default function AddMemberModal({ open, onClose, onAdd, t }) {
   const { id: groupId } = useParams();
@@ -54,11 +55,15 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
 
   const handleAddClick = async () => {
     if (!selected) {
-      alert(t("pleaseSelectUser") || "Please select a user first");
+      notification.warning({
+        message: t("pleaseSelectUser") || "Please select a user first",
+      });
       return;
     }
     if (!groupId) {
-      alert(t("missingGroupId") || "Missing group id");
+      notification.error({
+        message: t("missingGroupId") || "Missing group id",
+      });
       return;
     }
 
@@ -68,11 +73,15 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
         userId: selected.userId,
       });
       if (typeof onAdd === "function") onAdd(selected);
-      alert(t("inviteSent") || "Invitation sent");
+      notification.success({
+        message: t("inviteSent") || "Invitation sent",
+      });
       onClose();
     } catch (err) {
       console.error("Invite failed:", err);
-      alert(t("inviteFailed") || "Failed to send invitation");
+      notification.error({
+        message: t("inviteFailed") || "Failed to send invitation",
+      });
     } finally {
       setLoading(false);
     }

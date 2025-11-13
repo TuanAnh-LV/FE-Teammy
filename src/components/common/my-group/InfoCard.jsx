@@ -16,9 +16,9 @@ export default function InfoCard({ group }) {
       <h3 className="!font-bold !text-[26px] !text-[#333] !mb-3">{group.title}</h3>
 
       <div className="!flex !flex-wrap !gap-2 !mb-6">
-        <span className="!bg-blue-100 !text-blue-700 !text-sm !font-semibold !px-3 !py-1 !rounded-full">
+        {/* <span className="!bg-blue-100 !text-blue-700 !text-sm !font-semibold !px-3 !py-1 !rounded-full">
           {group.field}
-        </span>
+        </span> */}
         <span className="!bg-green-100 !text-green-700 !text-sm !font-semibold !px-3 !py-1 !rounded-full">
           {group.statusText}
         </span>
@@ -31,6 +31,9 @@ export default function InfoCard({ group }) {
           <Calendar className="!w-4 !h-4" /> <b>{t("start")}:</b> {group.start}
         </p>
         <p><b>{t("end")}:</b> {group.end}</p>
+        {group.semester && (
+          <p><b>{t("semester")}:</b> {group.semester}</p>
+        )}
       </div>
     </div>
   );
