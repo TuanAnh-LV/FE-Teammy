@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal } from "antd";
-import { Users, Shield, BookOpen } from "lucide-react";
+import { Users, Shield } from "lucide-react";
 import { GroupService } from "../../../services/group.service";
+import { useTranslation } from "../../../hook/useTranslation"; // ✅ đường dẫn từ components/common/forum
 
 const clamp3 = {
   display: "-webkit-box",
@@ -13,7 +14,7 @@ const clamp3 = {
 function Row({ label, children }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="w-28 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+      <span className="w-28 shrink-0 text-[11px] font-semibold tracking-wide text-gray-500">
         {label}
       </span>
       <div className="text-sm text-gray-800 break-all">{children ?? "—"}</div>
@@ -22,6 +23,7 @@ function Row({ label, children }) {
 }
 
 const GroupDetailModal = ({ isOpen, onClose, groupId }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [group, setGroup] = useState(null);
 
@@ -45,7 +47,11 @@ const GroupDetailModal = ({ isOpen, onClose, groupId }) => {
     };
   }, [isOpen, groupId]);
 
-  const title = useMemo(() => group?.name || "Group Detail", [group]);
+  // Title ưu tiên tên nhóm, fallback dùng key "groupInformation"
+  const title = useMemo(
+    () => group?.name || t("groupInformation") || "Group Detail",
+    [group, t]
+  );
 
   return (
     <Modal
@@ -55,10 +61,8 @@ const GroupDetailModal = ({ isOpen, onClose, groupId }) => {
       title={<div className="font-bold text-base">{title}</div>}
       width={720}
       destroyOnClose
-      // antd v5: có thể style body trực tiếp
       styles={{ body: { paddingTop: 12, paddingBottom: 16 } }}
     >
-      {/* vùng scroll để tránh tràn modal */}
       <div className="max-h-[70vh] overflow-y-auto pr-1">
         {loading ? (
           <div className="space-y-3">
@@ -69,14 +73,14 @@ const GroupDetailModal = ({ isOpen, onClose, groupId }) => {
           </div>
         ) : !group ? (
           <div className="text-sm text-gray-500">
-            Không tìm thấy thông tin nhóm.
+            {t("noData") || "No results found."}
           </div>
         ) : (
           <div className="space-y-5">
             {/* Summary */}
             <div className="rounded-xl border border-gray-200 p-4">
               <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-800">
-                Description
+                {t("description") || "Description"}
               </div>
               <div
                 className="text-sm text-gray-700 whitespace-pre-wrap"
@@ -92,23 +96,28 @@ const GroupDetailModal = ({ isOpen, onClose, groupId }) => {
               {/* Members */}
               <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-800">
-                  <Users className="h-4 w-4" /> Members
+                  <Users className="h-4 w-4" /> {t("members") || "Members"}
                 </div>
                 <div className="space-y-2">
-                  <Row label="Status">{group.status}</Row>
-                  <Row label="Max members">{group.maxMembers}</Row>
-                  <Row label="Current">{group.currentMembers}</Row>
+                  {/* 3 label dưới chưa có key riêng -> giữ tiếng Anh */}
+                  <Row label={t("groupStatus")}>{group.status}</Row>
+                  <Row label={t("groupMaxMembers")}>{group.maxMembers}</Row>
+                  <Row label={t("groupCurrentMembers")}>
+                    {group.currentMembers}
+                  </Row>
                 </div>
               </div>
 
               {/* Leader */}
               <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-800">
-                  <Shield className="h-4 w-4" /> Leader
+                  <Shield className="h-4 w-4" /> {t("leader") || "Leader"}
                 </div>
                 <div className="space-y-2">
-                  <Row label="Name">{group.leader?.displayName}</Row>
-                  <Row label="Email">{group.leader?.email}</Row>
+                  <Row label={t("fullName") || "Name"}>
+                    {group.leader?.displayName}
+                  </Row>
+                  <Row label={t("email") || "Email"}>{group.leader?.email}</Row>
                 </div>
               </div>
             </div>
@@ -117,7 +126,7 @@ const GroupDetailModal = ({ isOpen, onClose, groupId }) => {
             {!!group.members?.length && (
               <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="mb-3 text-sm font-semibold text-gray-800">
-                  Members ({group.members.length})
+                  {(t("members") || "Members") + ` (${group.members.length})`}
                 </div>
                 <ul className="space-y-2 text-sm">
                   {group.members.map((m) => (
