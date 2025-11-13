@@ -28,6 +28,7 @@ export const API = {
         CREATE_GROUP: "/groups",
         MY_GROUPS: "/groups/my",
         GROUP_DETAIL: "/groups/:id",
+        UPDATE_GROUP: (id) => `/groups/${id}`,
         LIST_MEMBERS: "/groups/:id/members",
         INVITE_MEMBER: "/groups/:id/invites",
         JOIN_REQUESTS: (groupId) => `/groups/${groupId}/join-requests`,
@@ -38,6 +39,12 @@ export const API = {
       `/groups/${groupId}/pending/${requestId}/reject`,
         LEAVE_GROUP: (id) => `/groups/${id}/members/me`,
         JOIN_POST_TO_GROUP: (id) => `recruitment-posts/${id}/applications`,
+    },
+    TOPICS: {
+        LIST: "/topics",
+    },
+    MAJORS: {
+        LIST: "/majors",
     }
 }
 

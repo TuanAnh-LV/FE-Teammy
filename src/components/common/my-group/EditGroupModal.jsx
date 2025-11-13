@@ -1,12 +1,13 @@
 import React from "react";
 import { X } from "lucide-react";
 
-export default function CreateGroupModal({
+export default function EditGroupModal({
   t,
   open,
   submitting,
   form,
   errors,
+  memberCount,
   onClose,
   onSubmit,
   onChange,
@@ -14,42 +15,48 @@ export default function CreateGroupModal({
   if (!open) return null;
 
   const handleBackdrop = (e) => {
-    if (e.target === e.currentTarget) {
+    if (e.target === e.currentTarget && !submitting) {
       onClose();
     }
   };
 
+  const label = (key, fallback) => t(key) || fallback;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      aria-modal="true"
       role="dialog"
+      aria-modal="true"
       onClick={handleBackdrop}
     >
       <div className="absolute inset-0 bg-black/40" />
-
       <form
         onSubmit={onSubmit}
-        className="relative z-10 w-full max-w-lg rounded-2xl bg-white shadow-xl"
+        className="relative z-10 w-full max-w-2xl rounded-2xl bg-white shadow-xl"
       >
         <div className="flex items-center justify-between border-b px-6 py-4">
-          <h3 className="text-lg font-semibold">
-            {t("createNewGroup") || "Create New Group"}
-          </h3>
+          <div>
+            <p className="text-xs font-semibold uppercase text-blue-500">
+              {label("editGroup", "Edit group")}
+            </p>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {label("updateGroupDetails", "Update group details")}
+            </h3>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 hover:bg-gray-100"
             disabled={submitting}
+            className="rounded p-1 text-gray-500 hover:bg-gray-100"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="space-y-4 px-6 py-5">
+        <div className="space-y-5 px-6 py-6">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              {t("groupName") || "Group name"}{" "}
+              {label("groupName", "Group name")}
               <span className="text-red-500">*</span>
             </label>
             <input
@@ -60,7 +67,6 @@ export default function CreateGroupModal({
                   ? "border-red-400 ring-red-100"
                   : "border-gray-200 focus:border-blue-400 ring-blue-100"
               }`}
-              placeholder="E.g., AI Capstone"
             />
             {errors.name && (
               <p className="mt-1 text-xs text-red-600">{errors.name}</p>
@@ -69,45 +75,28 @@ export default function CreateGroupModal({
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              {t("field") || "Field"} <span className="text-red-500">*</span>
-            </label>
-            <input
-              value={form.field}
-              onChange={(e) => onChange("field", e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-4 transition ${
-                errors.field
-                  ? "border-red-400 ring-red-100"
-                  : "border-gray-200 focus:border-blue-400 ring-blue-100"
-              }`}
-              placeholder="E.g., Healthcare / Fintech / Education..."
-            />
-            {errors.field && (
-              <p className="mt-1 text-xs text-red-600">{errors.field}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              {t("description") || "Description"}
+              {label("description", "Description")}
             </label>
             <textarea
-              rows={3}
+              rows={4}
               value={form.description}
               onChange={(e) => onChange("description", e.target.value)}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none ring-blue-100 transition focus:border-blue-400 focus:ring-4"
-              placeholder="Team goals, preferred tech stack..."
+              placeholder={label(
+                "updateGroupPlaceholder",
+                "Share the latest direction, scope, or constraints."
+              )}
             />
           </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              {t("maxMembers") || "Max members"}{" "}
+              {label("maxMembers", "Max members")}
               <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
-              min={1}
-              max={50}
+              min={memberCount || 1}
               value={form.maxMembers}
               onChange={(e) => onChange("maxMembers", e.target.value)}
               className={`w-40 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-4 transition ${
@@ -116,9 +105,41 @@ export default function CreateGroupModal({
                   : "border-gray-200 focus:border-blue-400 ring-blue-100"
               }`}
             />
+            <p className="mt-1 text-xs text-gray-500">
+              {label(
+                "maxMembersHint",
+                "Cannot be lower than current member count"
+              )}{" "}
+              ({memberCount})
+            </p>
             {errors.maxMembers && (
               <p className="mt-1 text-xs text-red-600">{errors.maxMembers}</p>
             )}
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                {label("majorId", "Major ID")}
+              </label>
+              <input
+                value={form.majorId}
+                onChange={(e) => onChange("majorId", e.target.value)}
+                placeholder="uuid-123..."
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-4 ring-blue-100 transition"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                {label("topicId", "Topic ID")}
+              </label>
+              <input
+                value={form.topicId}
+                onChange={(e) => onChange("topicId", e.target.value)}
+                placeholder="uuid-123..."
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-4 ring-blue-100 transition"
+              />
+            </div>
           </div>
         </div>
 
@@ -126,19 +147,19 @@ export default function CreateGroupModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
             disabled={submitting}
+            className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
-            {t("cancel") || "Cancel"}
+            {label("cancel", "Cancel")}
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex items-center justify-center rounded-lg bg-[#FF7A00] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-orange-100 disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
           >
             {submitting
-              ? t("creating") || "Creating..."
-              : t("createGroup") || "Create group"}
+              ? label("saving", "Saving...")
+              : label("saveChanges", "Save changes")}
           </button>
         </div>
       </form>

@@ -36,22 +36,22 @@ export default function ProjectTable({
                 #
               </th>
               <th className="px-5 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                Project
+                {t?.("group") || "Group"}
               </th>
               <th className="px-5 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                Status
+                {t?.("status") || "Status"}
               </th>
               <th className="px-5 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                Members
+                {t?.("members") || "Members"}
               </th>
               <th className="px-5 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                Role
+                {t?.("role") || "Role"}
               </th>
               <th className="px-5 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                Created
+                {t?.("created") || "Created"}
               </th>
               <th className="px-5 py-3 text-right text-xs font-semibold uppercase text-gray-500">
-                Action
+                {t?.("action") || "Action"}
               </th>
             </tr>
           </thead>
@@ -89,7 +89,7 @@ export default function ProjectTable({
             {!loading && projects.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-5 py-10 text-center text-gray-500">
-                  {t("noData") || "No projects found."}
+                  {t("noData") || "No groups found."}
                 </td>
               </tr>
             )}
