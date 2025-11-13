@@ -4,7 +4,7 @@ export const ROUTER_URL = {
     LOGIN: "/login",
     DISCOVER: "/discover",
     FORUM: "/forum",
-    MY_GROUPS: "/my-groups",
+    MY_GROUPS: "/my-group",
     WORKSPACE: "/workspace",
     PROJECT_DETAIL: "/project-detail",
     PROFILE: "/profile",
@@ -23,7 +23,7 @@ export const ROUTER_URL = {
     GROUPS: "/moderator/groups",
   },
   STUDENT: {
-    PROJECT: "/student/my-project",
+    PROJECT: "/student/my-group",
     DISCOVER: "/student/discover",
   },
 };
