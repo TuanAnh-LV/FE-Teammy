@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
@@ -34,9 +34,12 @@ export default function MyGroup() {
     topicId: "",
   });
   const [editErrors, setEditErrors] = useState({});
+  const loadedGroupIdRef = useRef(null);
 
   useEffect(() => {
     if (!id) return;
+    if (loadedGroupIdRef.current === id) return;
+    loadedGroupIdRef.current = id;
     const loadData = async () => {
       try {
         setLoading(true);

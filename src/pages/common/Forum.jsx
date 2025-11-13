@@ -90,6 +90,8 @@ const Forum = () => {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const timer = useRef(null);
+  const membershipFetchedRef = useRef(false);
+  const tabFetchRef = useRef(null);
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setDebouncedQuery(query), 200);
@@ -104,8 +106,10 @@ const Forum = () => {
 
   const [applyLoadingId, setApplyLoadingId] = useState(null);
 
-  /** 1) Lấy membership khi mount (hoặc sau login bạn cũng có thể set ở global store) */
+  /** 1) L???y membership khi mount (ho???c sau login b???n c?cng cA3 th??? set ??Y global store) */
   useEffect(() => {
+    if (membershipFetchedRef.current) return;
+    membershipFetchedRef.current = true;
     (async () => {
       try {
         const res = await AuthService.getMembership();
@@ -115,9 +119,10 @@ const Forum = () => {
           status: res?.data?.status || null,
         };
         setMembership(m);
-        setActiveTab(m.hasGroup ? "groups" : "individuals"); // quyết định tab theo hasGroup
+        // Luôn giữ tab ở "groups" (Post Group)
+        // setActiveTab(m.hasGroup ? "groups" : "individuals");
       } catch {
-        // nếu lỗi, để mặc định "groups"
+        // n?u l?i, gi? m?c d?nh "groups"
       }
     })();
   }, []);
@@ -135,8 +140,9 @@ const Forum = () => {
       : arr;
   };
 
-  /** 2) load list khi đổi tab (đã tự chọn theo membership) */
   useEffect(() => {
+    if (tabFetchRef.current === activeTab) return;
+    tabFetchRef.current = activeTab;
     let mounted = true;
     (async () => {
       try {
@@ -151,7 +157,7 @@ const Forum = () => {
     };
   }, [activeTab]);
 
-  /** refetch sau khi tạo post */
+  /** refetch sau khi t?o post */
   const handleCreated = async () => {
     const rows = await fetchList(activeTab);
     setPostsData(rows);
@@ -241,22 +247,20 @@ const Forum = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-7xl">
+    <div className="min-h-screen bg-[#f6f8fb] pb-16 pt-10">
+      <div className="mx-auto w-full max-w-[76rem] px-6 pt-10 lg:px-0">
         {/* Header */}
-        <div className="border-b border-gray-300 bg-card/50 backdrop-blur-sm mb-6 mt-10 gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="container mx-auto py-8">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h1 className="text-3xl font-black tracking-tight text-gray-900">
-                  {t("recruitmentForum") || "Recruitment Forum"}
-                </h1>
-                <p className="text-muted-foreground max-w-2xl text-gray-400">
-                  Post recruitment opportunities or showcase your profile to
-                  find the perfect team match. Connect with students and groups
-                  across all departments.
-                </p>
-              </div>
+        <div className="border-b border-gray-200 pb-8 mb-6">
+          <div className="container mx-auto py-2">
+            <div className="space-y-3">
+              <h1 className="text-3xl font-black tracking-tight text-gray-900">
+                {t("recruitmentForum") || "Recruitment Forum"}
+              </h1>
+              <p className="text-muted-foreground max-w-2xl text-gray-400">
+                Post recruitment opportunities or showcase your profile to find
+                the perfect team match. Connect with students and groups across
+                all departments.
+              </p>
 
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-4">
