@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import Vector from "../../assets/Vector.png";
+import { notification } from "antd";
 import {
   DndContext,
   closestCenter,
@@ -476,7 +477,10 @@ const Workspace = () => {
               <button
                 className="ml-auto flex items-center gap-2 !bg-[#4264d7] !text-white px-4 py-2 rounded-lg text-sm hover:bg-black"
                 onClick={() =>
-                  alert("Tuỳ bạn: mở modal tạo task mới (title, tag, priority, assignees...)")
+                  notification.info({
+                    message:
+                      "Tuỳ bạn: mở modal tạo task mới (title, tag, priority, assignees...)",
+                  })
                 }
               >
                 <Plus className="w-6 h-6 rounded-[12px]" />

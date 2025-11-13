@@ -27,14 +27,15 @@ export const API = {
     GROUP: {
         CREATE_GROUP: "/groups",
         MY_GROUPS: "/groups/my",
-        GROUP_DETAIL: "/groups/:id/",
+        GROUP_DETAIL: "/groups/:id",
         LIST_MEMBERS: "/groups/:id/members",
         INVITE_MEMBER: "/groups/:id/invites",
         JOIN_REQUESTS: (groupId) => `/groups/${groupId}/join-requests`,
+        PENDING_REQUESTS: (groupId) => `/groups/${groupId}/pending`,
         ACCEPT_JOIN: (groupId, requestId) =>
-      `/groups/${groupId}/join-requests/${requestId}/accept`,
+      `/groups/${groupId}/pending/${requestId}/accept`,
         REJECT_JOIN: (groupId, requestId) =>
-      `/groups/${groupId}/join-requests/${requestId}/reject`,
+      `/groups/${groupId}/pending/${requestId}/reject`,
         LEAVE_GROUP: (id) => `/groups/${id}/members/me`,
     }
 }

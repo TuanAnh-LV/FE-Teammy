@@ -12,7 +12,7 @@ export default function ProjectToolbar({
     <div className="mb-6 mt-16 flex flex-col gap-5 sm:mt-20 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-          {t("My Projects") || "My Projects"}
+          {t("myProjects") || "My Projects"}
         </h1>
         <p className="mt-1 text-sm text-gray-500">
           {t("total") || "Total"}:{" "}
@@ -36,7 +36,7 @@ export default function ProjectToolbar({
           className="mt-3 inline-flex items-center justify-center gap-2 rounded-lg bg-[#FF7A00] px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-orange-100 sm:mt-0"
         >
           <Plus className="h-4 w-4" />
-          {t("Create New Group") || "Create New Group"}
+          {t("createNewGroup") || "Create New Group"}
         </button>
       </div>
     </div>

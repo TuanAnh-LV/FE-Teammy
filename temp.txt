@@ -32,20 +32,13 @@ export const GroupService = {
     });
   },
 
-  getJoinRequests(groupId) {
-    return BaseService.get({
-      url: API.GROUP.PENDING_REQUESTS(groupId),
-      isLoading: true,
-    });
-  },
-
-  inviteMember(groupId, payload) {
-    return BaseService.post({
-      url: API.GROUP.INVITE_MEMBER.replace(":id", groupId),
-      payload,
-      isLoading: true,
-    });
-  },
+    inviteMember(groupId, payload) {
+        return BaseService.post({
+            url: API.GROUP.INVITE_MEMBER.replace(':id', groupId),
+            payload,
+            isLoading: true,
+        });
+    },
 
   /** Member gửi yêu cầu tham gia nhóm */
   applyToGroup(groupId, payload = {}) {
@@ -57,17 +50,15 @@ export const GroupService = {
   },
 
   /** Leader chấp nhận yêu cầu tham gia */
-  acceptJoinRequest(groupId, requestId, payload = {}) {
+  acceptJoinRequest(groupId, requestId) {
     return BaseService.post({
       url: API.GROUP.ACCEPT_JOIN(groupId, requestId),
-      payload,
       isLoading: true,
     });
   },
-  rejectJoinRequest(groupId, requestId, payload = {}) {
+  rejectJoinRequest(groupId, requestId) {
     return BaseService.post({
       url: API.GROUP.REJECT_JOIN(groupId, requestId),
-      payload,
       isLoading: true,
     });
   },

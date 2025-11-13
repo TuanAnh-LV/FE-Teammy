@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { AuthService } from "../../services/auth.service";
 import { useAuth } from "../../context/AuthContext";
+import LoadingState from "../../components/common/LoadingState";
 
 const Profile = () => {
   const {
@@ -82,7 +83,12 @@ const Profile = () => {
   }, [profile.name]);
 
   if (isLoading && !userInfo) {
-    return <div className="mt-20 max-w-6xl mx-auto px-4">Loading...</div>;
+    return (
+      <LoadingState
+        message="Preparing your profile..."
+        subtext="Hold on a second while we fetch your latest details."
+      />
+    );
   }
 
   // ---- UI

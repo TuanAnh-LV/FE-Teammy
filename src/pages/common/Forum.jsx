@@ -13,7 +13,7 @@ import {
   initials,
 } from "../../utils/helpers";
 import GroupDetailModal from "../../components/common/forum/GroupDetailModal";
-import { message } from "antd";
+import { message, notification } from "antd";
 /** ---------- UI SMALLS ---------- */
 function Chip({ children }) {
   return (
@@ -174,7 +174,10 @@ const Forum = () => {
       setApplyLoadingId(null);
     }
   };
-  const onInvite = (id) => alert(`Invite user ${id} vào nhóm của bạn`);
+  const onInvite = (id) =>
+    notification.info({
+      message: `Invite user ${id} vào nhóm của bạn`,
+    });
 
   const openDetail = (post) => {
     const gid =
