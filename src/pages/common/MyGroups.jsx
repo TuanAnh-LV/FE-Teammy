@@ -326,9 +326,7 @@ export default function MyGroupsPage() {
                         <p className="text-sm font-semibold text-gray-900">
                           {request.name}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {request.email}
-                        </p>
+                        <p className="text-xs text-gray-500">{request.email}</p>
                         {request.message && (
                           <p className="mt-1 text-xs text-gray-500">
                             {request.message}
@@ -382,10 +380,10 @@ export default function MyGroupsPage() {
         <div className="border-b border-gray-200 pb-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="mt-2 text-3xl font-bold text-[#1d3a66]">
+              <h1 className="mt-2 text-3xl font-black tracking-tight text-gray-900">
                 {t("myGroupsProjectsTitle") || "My Groups & Projects"}
               </h1>
-              <p className="mt-3 max-w-3xl text-sm text-[#627084]">
+              <p className="mt-3 max-w-3xl text-muted-foreground text-gray-400">
                 {t("myGroupsProjectsSubtitle") ||
                   "Manage your capstone project teams, track progress, and collaborate with teammates. Create new groups or join existing ones to build amazing projects together."}
                 <br />
