@@ -2,8 +2,7 @@ import { BaseService } from "../config/basic.service";
 import { API } from "../consts/path.api";
 
 export const GroupService = {
-  createGroup({ name, description, maxMembers }) {
-    const payload = { name, description, maxMembers };
+  createGroup(payload) {
     return BaseService.post({
       url: API.GROUP.CREATE_GROUP,
       payload,
@@ -23,6 +22,16 @@ export const GroupService = {
       url: API.GROUP.GROUP_DETAIL.replace(":id", id),
       isLoading: true,
     });
+  },
+  updateGroup(id, payload) {
+    return BaseService.patch({
+      url: API.GROUP.UPDATE_GROUP(id),
+      payload,
+      isLoading: true,
+    });
+  },
+  assignTopic(groupId, topicId) {
+    return GroupService.updateGroup(groupId, { topic: topicId });
   },
 
   getListMembers(id) {

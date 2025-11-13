@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../config/firebase.config";
-import { Globe, Bell } from "lucide-react";
+import { Globe, Bell, MessageSquare, Users, FolderKanban, Search } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { getTranslation } from "../../translations";
@@ -13,6 +13,7 @@ import { InvitationService } from "../../services/invitation.service";
 const Navbar = () => {
   const location = useLocation();
   const { logout, loginGoogle, userInfo, token } = useAuth();
+  const navigate = useNavigate();
   const [user, setUser] = useState(userInfo);
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -100,59 +101,69 @@ const Navbar = () => {
       // Clear auth state and storage via AuthContext
       logout();
     } finally {
-
       setUser(null);
       setMenuOpen(false);
       messageApi.info("You have logged out.");
+      navigate("/");
     }
   };
 
   return (
     <>
     <nav className="!w-full !h-16 !fixed !top-0 !z-50 !bg-white/80 !backdrop-blur-md !border-b !border-gray-200">
-      <div className="!max-w-7xl !mx-auto !px-4 sm:!px-6 lg:!px-8 !h-full !flex !items-center !justify-between">
+      <div className="!max-w-7xl !mx-auto !px-4 sm:!px-6 lg:!px-8 !h-full !flex !items-center !gap-6 !justify-between">
         {contextHolder}
-        {/* Logo */}
-        <Link to="/" className="!no-underline">
-          <h1 className="font-sans text-2xl font-black text-black cursor-pointer !mb-0">
-            Teammy.
-          </h1>
-        </Link>
+        {/* Logo + menu */}
+        <div className="!flex !items-center !gap-10">
+          <Link to="/" className="!no-underline">
+            <h1 className="font-sans text-2xl font-black text-black cursor-pointer !mb-0">
+              Teammy.
+            </h1>
+          </Link>
 
-        {/* Nav links */}
-        <div className="!hidden md:!flex !items-center !space-x-8 !font-sans !font-semibold !text-[14px] !text-black">
-          {/* <Link
-            to="/discover"
-            className={`!hover:text-blue-600 ${
-              isActive("/discover") ? "!text-blue-600" : ""
-            }`}
-          >
-            {getTranslation("findProjects", language)}
-          </Link> */}
-          <Link
-            to="/forum"
-            className={`!hover:text-blue-600 ${
-              isActive("/forum") ? "!text-blue-600" : ""
-            }`}
-          >
-            {getTranslation("forum", language)}
-          </Link>
-          <Link
-            to="/my-projects"
-            className={`!hover:text-blue-600 ${
-              isActive("/my-projects") ? "!text-blue-600" : ""
-            }`}
-          >
-            {getTranslation("myProjects", language)}
-          </Link>
-          <Link
-            to="/workspace"
-            className={`!hover:text-blue-600 ${
-              isActive("/workspace") ? "!text-blue-600" : ""
-            }`}
-          >
-            {getTranslation("workspace", language)}
-          </Link>
+          {/* Nav links */}
+          <div className="!hidden md:!flex !items-center !space-x-8 !font-sans !font-semibold !text-[14px] !text-black">
+            <Link
+              to="/forum"
+              className={`!flex !items-center !gap-2 !hover:text-blue-600 ${
+                isActive("/forum") ? "!text-blue-600" : ""
+              }`}
+            >
+              <MessageSquare className="!w-4 !h-4" />
+              <span>{getTranslation("forum", language)}</span>
+            </Link>
+            <Link
+              to="/my-group"
+              className={`!flex !items-center !gap-2 !hover:text-blue-600 ${
+                isActive("/my-group") ? "!text-blue-600" : ""
+              }`}
+            >
+              <Users className="!w-4 !h-4" />
+              <span>{getTranslation("myGroups", language)}</span>
+            </Link>
+            <Link
+              to="/workspace"
+              className={`!flex !items-center !gap-2 !hover:text-blue-600 ${
+                isActive("/workspace") ? "!text-blue-600" : ""
+              }`}
+            >
+              <FolderKanban className="!w-4 !h-4" />
+              <span>{getTranslation("workspace", language)}</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="!hidden lg:!flex !flex-1 !justify-center">
+          <label className="!relative !w-full !max-w-md">
+            <Search className="!absolute !left-4 !top-1/2 !-translate-y-1/2 !w-4 !h-4 !text-gray-400" />
+            <input
+              type="search"
+              name="navbar-search"
+              placeholder="Search skills, majors, projects..."
+              className="!w-full !rounded-full !border !border-blue-200 !py-2.5 !pl-11 !pr-4 !text-sm !text-gray-700 placeholder:!text-gray-400 focus:!outline-none focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-100"
+            />
+          </label>
         </div>
 
         {/* Right side */}
@@ -188,20 +199,33 @@ const Navbar = () => {
             <>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="!flex !items-center !space-x-2 !focus:outline-none"
+                className="!flex !items-center !space-x-3 !focus:outline-none"
               >
-                <img
-                  src={
-                    user.photoURL
-                      ? user.photoURL.replace("=s96-c", "=s256-c")
-                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          user.name || user.email
-                        )}&background=random`
-                  }
-                  alt="avatar"
-                  referrerPolicy="no-referrer"
-                  className="!w-9 !h-9 !rounded-full !border !border-gray-300 !object-cover"
-                />
+                {(() => {
+                  const avatarSource =
+                    user.photoUrl ||
+                    user.photoURL ||
+                    user.avatarUrl ||
+                    user.avatarURL ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      user.displayName || user.name || user.email || "User"
+                    )}&background=0D8ABC&color=fff`;
+                  return (
+                    <img
+                      src={
+                        avatarSource?.includes("=s96-c")
+                          ? avatarSource.replace("=s96-c", "=s256-c")
+                          : avatarSource
+                      }
+                      alt={user.name || user.displayName || user.email || "avatar"}
+                      referrerPolicy="no-referrer"
+                      className="!w-9 !h-9 !rounded-full !border !border-gray-300 !object-cover !bg-gray-100"
+                    />
+                  );
+                })()}
+                <span className="!text-sm !font-semibold !text-gray-800 !hidden sm:!inline-block">
+                  {user.displayName || user.name || user.email}
+                </span>
               </button>
 
               {menuOpen && (
