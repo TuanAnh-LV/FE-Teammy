@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "antd";
 import { Users, Shield } from "lucide-react";
 import { GroupService } from "../../../services/group.service";
-import { useTranslation } from "../../../hook/useTranslation"; // ✅ đường dẫn từ components/common/forum
-
+import { useTranslation } from "../../../hook/useTranslation"; 
 const clamp3 = {
   display: "-webkit-box",
   WebkitLineClamp: 3,
@@ -26,9 +25,15 @@ const GroupDetailModal = ({ isOpen, onClose, groupId }) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [group, setGroup] = useState(null);
+  const lastFetchedGroupRef = useRef(null);
 
   useEffect(() => {
-    if (!isOpen || !groupId) return;
+    if (!isOpen || !groupId) {
+      if (!isOpen) lastFetchedGroupRef.current = null;
+      return;
+    }
+    if (lastFetchedGroupRef.current === groupId) return;
+    lastFetchedGroupRef.current = groupId;
     let mounted = true;
     (async () => {
       try {
