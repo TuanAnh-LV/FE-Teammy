@@ -1,5 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Search, Users, UserPlus } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Users,
+  UserPlus,
+  Clock,
+  Eye,
+  Calendar,
+  MessageSquare,
+} from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
 import CreatePostModal from "../../components/common/forum/CreatePostModal";
 import CreatePersonalPostModal from "../../components/common/forum/CreatePersonalPostModal";
@@ -13,7 +22,7 @@ import {
   initials,
 } from "../../utils/helpers";
 import GroupDetailModal from "../../components/common/forum/GroupDetailModal";
-import { message, notification } from "antd";
+import { message } from "antd";
 /** ---------- UI SMALLS ---------- */
 function Chip({ children }) {
   return (
@@ -152,6 +161,10 @@ const Forum = () => {
   const filtered = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase();
     return (postsData || []).filter((item) => {
+      // Hide posts that are explicitly closed
+      if ((item?.status || "").toString().toLowerCase() === "closed")
+        return false;
+
       const texts = [
         item.title,
         item.description,
@@ -208,10 +221,8 @@ const Forum = () => {
       setApplyLoadingId(null);
     }
   };
-  const onInvite = (id) =>
-    notification.info({
-      message: `Invite user ${id} vào nhóm của bạn`,
-    });
+
+  const onInvite = (id) => alert(`Invite user ${id} vào nhóm của bạn`);
 
   const openDetail = (post) => {
     const gid =
@@ -230,43 +241,74 @@ const Forum = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto max-w-6xl px-6 lg:px-0 pt-10 pb-20">
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-6 mt-16 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-gray-900">
-              {t("recruitmentForum") || "Recruitment Forum"}
-            </h1>
-            <p className="mt-2 text-sm text-gray-600">
-              {activeTab === "groups"
-                ? t("forumSubtitle") ||
-                  "Find team members for your projects or join exciting projects"
-                : t("forumPersonalSubtitle") ||
-                  "Publish your profile and let project teams invite you"}
-            </p>
-          </div>
+        <div className="border-b border-gray-300 bg-card/50 backdrop-blur-sm mb-6 mt-10 gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="container mx-auto py-8">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-black tracking-tight text-gray-900">
+                  {t("recruitmentForum") || "Recruitment Forum"}
+                </h1>
+                <p className="text-muted-foreground max-w-2xl text-gray-400">
+                  Post recruitment opportunities or showcase your profile to
+                  find the perfect team match. Connect with students and groups
+                  across all departments.
+                </p>
+              </div>
 
-          {/* Nút tạo: quyết định theo role từ API (không còn toggle) */}
-          <div className="flex gap-2 items-center">
-            {userRole === "leader" ? (
-              <button
-                onClick={() => setIsCreatePostModalOpen(true)}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#FF7A00] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100"
-                title={t("createRecruitPost") || "Create group post"}
-              >
-                <Plus className="h-4 w-4" />
-                {t("createRecruitPost") || "Create recruitment post"}
-              </button>
-            ) : (
-              <button
-                onClick={() => setIsCreatePersonalPostModalOpen(true)}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#FF7A00] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100"
-              >
-                <Plus className="h-4 w-4" />
-                {t("createPersonalPost") || "Create personal post"}
-              </button>
-            )}
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-4">
+                  {userRole === "leader" ? (
+                    <button
+                      onClick={() => setIsCreatePostModalOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#FF7A00] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                      title={t("createRecruitPost") || "Create group post"}
+                    >
+                      <Plus className="h-4 w-4" />
+                      {t("createRecruitPost") || "Create recruitment post"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setIsCreatePersonalPostModalOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#FF7A00] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    >
+                      <Plus className="h-4 w-4" />
+                      {t("createPersonalPost") || "Create personal post"}
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <MessageSquare className="w-4 h-4" />
+                    <span>2 recruitment posts</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Users className="w-4 h-4" />
+                    <span>2 student profiles</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative w-full">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={
+                activeTab === "groups"
+                  ? t("searchByProject") || "Search posts by project, skills…"
+                  : t("searchByPeople") || "Search people by role, skills…"
+              }
+              className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-700 outline-none ring-blue-100 transition focus:border-blue-500 focus:ring-4"
+            />
           </div>
         </div>
 
@@ -296,23 +338,6 @@ const Forum = () => {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative w-full">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={
-                activeTab === "groups"
-                  ? t("searchByProject") || "Search posts by project, skills…"
-                  : t("searchByPeople") || "Search people by role, skills…"
-              }
-              className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-700 outline-none ring-blue-100 transition focus:border-blue-500 focus:ring-4"
-            />
-          </div>
-        </div>
-
         {/* LISTS */}
         <div className="space-y-4">
           {filtered.length === 0 && (
@@ -324,34 +349,73 @@ const Forum = () => {
           {/* GROUP CARDS */}
           {activeTab === "groups" &&
             paged.map((p) => {
-              const author =
-                p?.group?.name ||
-                p?.groupName ||
-                p?.userDisplayName ||
-                p?.user?.displayName ||
-                "";
-              const timeAgo = p?.createdAt ? timeAgoFrom(p.createdAt) : "";
               return (
                 <div
                   key={p.id}
                   className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1 h-9 w-9 shrink-0 rounded-full bg-gray-200" />
-                      <div>
-                        <h3 className="text-base font-semibold text-gray-900">
+                    <div className="space-y-2 flex-1">
+                      {/* Title & Status */}
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h3 className="text-xl font-semibold text-gray-900 cursor-pointer hover:text-primary transition-colors">
                           {p.title}
                         </h3>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
-                          {author && (
-                            <span className="font-medium text-gray-700">
-                              {author}
-                            </span>
-                          )}
-                          {author && timeAgo && <span>•</span>}
-                          {timeAgo && <span>{timeAgo}</span>}
+                        {p.status && (
+                          <span
+                            className={`text-xs font-semibold ml-2 px-2.5 py-0.5 rounded-lg ${
+                              p.status === "open"
+                                ? "bg-green-100 text-green-600"
+                                : "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            {p.status}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Author, Group, Date */}
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-white text-lg font-semibold">
+                            {p?.group?.name[0] || "T"}{" "}
+                            {/* Thay biểu tượng chữ theo tên nhóm */}
+                          </div>
+                          <span>
+                            {p.group?.leader?.displayName} •{" "}
+                            {p.group?.leader?.role}
+                          </span>
                         </div>
+                        <span>•</span>
+                        <span>{p.group?.name}</span>
+                        <span>•</span>
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          <span>
+                            {new Date(p.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right text-sm text-gray-600">
+                      {/* Applications & Due Date */}
+                      <div className="flex items-center gap-1 mb-1">
+                        <Eye className="w-3 h-3" />
+                        <span>
+                          {p.applicationsCount}{" "}
+                          {t("applications") || "Applications"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        <span>
+                          {p.applicationDeadline
+                            ? `${t("due") || "Due"}: ${new Date(
+                                p.applicationDeadline
+                              ).toLocaleDateString()}`
+                            : t("noDeadline") || "No deadline"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -360,27 +424,37 @@ const Forum = () => {
                     {p.description}
                   </p>
 
-                  <div className="mt-4">
-                    <div className="text-xs font-semibold tracking-wide text-gray-500">
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Positions Needed */}
+                    <div className="text-xs font-semibold tracking-wide text-gray-800">
                       {(t("positionsNeeded") || "Positions Needed") + ":"}
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {toArrayPositions(p).map((s) => (
+                          <Chip key={s}>{s}</Chip>
+                        ))}
+                      </div>
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {toArrayPositions(p).map((s) => (
-                        <Chip key={s}>{s}</Chip>
-                      ))}
+
+                    {/* Major */}
+                    <div className="ml-10 text-xs font-semibold tracking-wide text-gray-800">
+                      {(t("major") || "Major") + ":"}
+                      <div className="mt-2 text-gray-500">
+                        {p?.major?.majorName || "—"}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="mt-5 flex items-center justify-between">
+                  <div className="mt-5 flex items-center justify-between pt-4 border-t border-gray-300">
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <Users className="h-4 w-4" />
                       {!!p.currentMembers && (
                         <span>
-                          {p.currentMembers} {t("members") || "Members"}
+                          {p.currentMembers}/{p.group?.maxMembers}{" "}
+                          {t("members") || "Members"}
                         </span>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => openDetail(p)}
                         className="inline-flex items-center rounded-lg px-3.5 py-2 text-xs font-bold shadow-sm hover:border-orange-400 hover:text-orange-400 transition-all focus:outline-none focus:ring-4 focus:ring-blue-100"
@@ -467,7 +541,7 @@ const Forum = () => {
             })}
           {/* Pagination */}
           {total > 0 && (
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:gap-4">
+            <div className="mt-8 mb-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:gap-4">
               {/* Page size */}
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <span>Show</span>

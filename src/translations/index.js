@@ -273,7 +273,9 @@ export const translations = {
         groupStatus: "Status",
     groupMaxMembers: "Max members",
     groupCurrentMembers: "Current",
-
+    major: "Major",
+    noDeadline: "No deadline",
+    applications:"Applications"
   },
   
   VIE: {
@@ -551,8 +553,9 @@ export const translations = {
     groupStatus: "Trạng thái",
   groupMaxMembers: "Số thành viên tối đa",
   groupCurrentMembers: "Hiện có",
-
-
+  major: "Chuyên ngành",
+  noDeadline: "Không giới hạn",
+  applications:"Đơn ứng tuyển"
   },
 };
 
