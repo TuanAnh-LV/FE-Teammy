@@ -1,5 +1,5 @@
 // src/hooks/useMyGroupsPage.js
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { notification } from "antd";
 import { GroupService } from "../services/group.service";
 import { TopicService } from "../services/topic.service";
@@ -33,6 +33,9 @@ export const useMyGroupsPage = (t, navigate) => {
   const [topicSearch, setTopicSearch] = useState("");
   const [majors, setMajors] = useState([]);
   const [majorsLoading, setMajorsLoading] = useState(false);
+
+  const hasFetchedGroupsRef = useRef(false);
+  const majorsFetchLock = useRef(false);
 
   const groupsById = useMemo(() => {
     const map = new Map();
@@ -328,14 +331,20 @@ export const useMyGroupsPage = (t, navigate) => {
   };
 
   useEffect(() => {
+    if (hasFetchedGroupsRef.current) return;
+    hasFetchedGroupsRef.current = true;
     fetchMyGroups();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (open) {
-      fetchMajors();
+    if (!open) {
+      majorsFetchLock.current = false;
+      return;
     }
+    if (majorsFetchLock.current) return;
+    majorsFetchLock.current = true;
+    fetchMajors();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 

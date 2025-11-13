@@ -90,6 +90,8 @@ const Forum = () => {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const timer = useRef(null);
+  const membershipFetchedRef = useRef(false);
+  const tabFetchRef = useRef(null);
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setDebouncedQuery(query), 200);
@@ -104,8 +106,10 @@ const Forum = () => {
 
   const [applyLoadingId, setApplyLoadingId] = useState(null);
 
-  /** 1) Lấy membership khi mount (hoặc sau login bạn cũng có thể set ở global store) */
+  /** 1) L???y membership khi mount (ho???c sau login b???n c?cng cA3 th??? set ??Y global store) */
   useEffect(() => {
+    if (membershipFetchedRef.current) return;
+    membershipFetchedRef.current = true;
     (async () => {
       try {
         const res = await AuthService.getMembership();
@@ -118,7 +122,7 @@ const Forum = () => {
         // Luôn giữ tab ở "groups" (Post Group)
         // setActiveTab(m.hasGroup ? "groups" : "individuals");
       } catch {
-        // nếu lỗi, để mặc định "groups"
+        // n?u l?i, gi? m?c d?nh "groups"
       }
     })();
   }, []);
@@ -136,8 +140,9 @@ const Forum = () => {
       : arr;
   };
 
-  /** 2) load list khi đổi tab (đã tự chọn theo membership) */
   useEffect(() => {
+    if (tabFetchRef.current === activeTab) return;
+    tabFetchRef.current = activeTab;
     let mounted = true;
     (async () => {
       try {
@@ -152,7 +157,7 @@ const Forum = () => {
     };
   }, [activeTab]);
 
-  /** refetch sau khi tạo post */
+  /** refetch sau khi t?o post */
   const handleCreated = async () => {
     const rows = await fetchList(activeTab);
     setPostsData(rows);

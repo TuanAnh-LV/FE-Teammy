@@ -20,6 +20,7 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
   const { language, toggleLanguage } = useLanguage();
   const dropdownRef = useRef(null);
+  const inviteFetchTokenRef = useRef(null);
 
   const [signingIn, setSigningIn] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
@@ -57,7 +58,13 @@ const Navbar = () => {
       }
     };
     if (token) {
-      fetchInvites();
+      if (inviteFetchTokenRef.current !== token) {
+        inviteFetchTokenRef.current = token;
+        fetchInvites();
+      }
+    } else {
+      inviteFetchTokenRef.current = null;
+      setNotifications([]);
     }
 
     const handleClickOutside = (e) => {

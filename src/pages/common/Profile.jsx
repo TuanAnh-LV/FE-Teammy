@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import {
   Edit,
   Mail,
@@ -24,10 +24,17 @@ const Profile = () => {
     token,
   } = useAuth();
 
+  const profileFetchTokenRef = useRef(null);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
-      if (!token || userInfo) return;
+      if (!token || userInfo) {
+        profileFetchTokenRef.current = null;
+        return;
+      }
+      if (profileFetchTokenRef.current === token) return;
+      profileFetchTokenRef.current = token;
       try {
         setIsLoading(true);
         const res = await AuthService.me();
@@ -47,7 +54,7 @@ const Profile = () => {
         localStorage.setItem("userInfo", JSON.stringify(mapped));
         localStorage.setItem("role", mapped.role);
       } catch (e) {
-        console.error("Không lấy được thông tin tài khoản:", e);
+        console.error("KhA'ng l???y ???c thA'ng tin tA?i kho?n:", e);
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -56,6 +63,7 @@ const Profile = () => {
       mounted = false;
     };
   }, [token, userInfo, setUserInfo, setRole, setIsLoading]);
+
 
   const profile = {
     name: userInfo?.name ?? userInfo?.displayName ?? "Unnamed",
