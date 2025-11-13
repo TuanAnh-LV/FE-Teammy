@@ -121,14 +121,14 @@ const Navbar = () => {
 
         {/* Nav links */}
         <div className="!hidden md:!flex !items-center !space-x-8 !font-sans !font-semibold !text-[14px] !text-black">
-          <Link
+          {/* <Link
             to="/discover"
             className={`!hover:text-blue-600 ${
               isActive("/discover") ? "!text-blue-600" : ""
             }`}
           >
             {getTranslation("findProjects", language)}
-          </Link>
+          </Link> */}
           <Link
             to="/forum"
             className={`!hover:text-blue-600 ${
@@ -143,7 +143,7 @@ const Navbar = () => {
               isActive("/my-projects") ? "!text-blue-600" : ""
             }`}
           >
-            {getTranslation("My Projects", language)}
+            {getTranslation("myProjects", language)}
           </Link>
           <Link
             to="/workspace"
