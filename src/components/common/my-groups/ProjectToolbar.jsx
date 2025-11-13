@@ -12,7 +12,7 @@ export default function ProjectToolbar({
     <div className="mb-6 mt-16 flex flex-col gap-5 sm:mt-20 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-          {t("myProjects") || "My Projects"}
+          {t("myGroups") || "My Groups"}
         </h1>
         <p className="mt-1 text-sm text-gray-500">
           {t("total") || "Total"}:{" "}
@@ -26,7 +26,11 @@ export default function ProjectToolbar({
           <input
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
-            placeholder={t("searchProjects") || "Search projects..."}
+            placeholder={
+              t("searchGroups") ||
+              t("searchProjects") ||
+              "Search groups..."
+            }
             className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-700 outline-none ring-blue-100 transition focus:border-blue-400 focus:ring-4"
           />
         </div>

@@ -1,0 +1,490 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Crown,
+  Users,
+  ClipboardList,
+  UserPlus,
+  ArrowRight,
+  FileText,
+  Activity,
+} from "lucide-react";
+import { useTranslation } from "../../hook/useTranslation";
+import CreateGroupModal from "../../components/common/my-groups/CreateGroupModal";
+import SelectTopicModal from "../../components/common/my-groups/SelectTopicModal";
+import { useMyGroupsPage } from "../../hook/useMyGroupsPage";
+
+export default function MyGroupsPage() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const {
+    groups,
+    loading,
+    heroStats,
+    activeTab,
+    setActiveTab,
+    open,
+    submitting,
+    form,
+    errors,
+    pendingLoading,
+    activeApplications,
+    pendingTotal,
+    groupsById,
+    setOpen,
+    handleFormChange,
+    handleCreateGroup,
+    requestCloseModal,
+    handleViewGroup,
+    handleLeaveGroup,
+    handleApprove,
+    handleReject,
+    topicModalGroup,
+    topics,
+    topicsLoading,
+    assigningTopic,
+    selectedTopicId,
+    topicSearch,
+    majors,
+    majorsLoading,
+    handleOpenTopicModal,
+    handleCloseTopicModal,
+    handleSearchTopics,
+    handleAssignTopic,
+    setSelectedTopicId,
+    canSelectTopic,
+  } = useMyGroupsPage(t, navigate);
+
+  const tabs = [
+    {
+      key: "groups",
+      label: t("myGroups") || "My Groups",
+      icon: <Users className="!w-4 !h-4" />,
+    },
+    {
+      key: "applications",
+      label: t("applications") || "Applications",
+      icon: <FileText className="!w-4 !h-4" />,
+    },
+    {
+      key: "overview",
+      label: t("overview") || "Overview",
+      icon: <Activity className="!w-4 !h-4" />,
+    },
+  ];
+
+  const heroStatsWithIcons = [
+    {
+      ...heroStats[0],
+      icon: <Users className="!w-4 !h-4 text-[#627084]" />,
+    },
+    {
+      ...heroStats[1],
+      icon: <ClipboardList className="!w-4 !h-4 text-[#627084]" />,
+    },
+  ];
+
+  const overviewCards = [
+    {
+      title: t("activeGroups") || "Active groups",
+      value: heroStats[0]?.value ?? 0,
+      description: t("groups") || "Groups you are part of",
+    },
+    {
+      title: t("pendingApplications") || "Pending applications",
+      value: pendingTotal,
+      description: t("pendingRequests") || "Awaiting your review",
+    },
+    {
+      title: t("created") || "Created",
+      value: groups.length
+        ? new Date(groups[0].createdAt).toLocaleDateString()
+        : "--",
+      description: t("mostRecentGroup") || "Most recent group created",
+    },
+  ];
+
+  const renderGroupsTab = () => {
+    if (loading) {
+      return (
+        <div className="grid gap-5 md:grid-cols-2">
+          {Array.from({ length: 2 }).map((_, idx) => (
+            <div
+              key={`group-skeleton-${idx}`}
+              className="animate-pulse space-y-3 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+            >
+              <div className="h-4 w-32 rounded bg-gray-200" />
+              <div className="h-6 w-48 rounded bg-gray-200" />
+              <div className="h-3 w-full rounded bg-gray-100" />
+              <div className="flex gap-3">
+                <div className="h-3 flex-1 rounded bg-gray-100" />
+                <div className="h-3 flex-1 rounded bg-gray-100" />
+              </div>
+              <div className="h-9 rounded-full bg-gray-200" />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (groups.length === 0) {
+      return (
+        <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
+          <p className="text-base font-semibold text-gray-800">
+            {t("noData") || "No groups found"}
+          </p>
+          <p className="mt-1 text-sm text-gray-500">
+            {t("createGroup") || "Create a new group to get started."}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid gap-6 lg:grid-cols-2">
+        {groups.map((group) => (
+          <div
+            key={group.id}
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase text-blue-500">
+                  {group.field}
+                </p>
+                <h3 className="mt-1 text-[18px] font-bold text-gray-900">
+                  {group.title}
+                </h3>
+                <p className="mt-2 line-clamp-3 text-sm text-gray-600">
+                  {group.description}
+                </p>
+              </div>
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+                  group.isLeader
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-gray-100 text-gray-700"
+                }`}
+              >
+                {group.isLeader && (
+                  <Crown className="!h-3.5 !w-3.5 text-amber-500" />
+                )}
+                {group.displayRole}
+              </span>
+            </div>
+
+            <div className="mt-5 grid gap-4 text-sm text-gray-600 sm:grid-cols-3">
+              <div>
+                <p className="text-xs uppercase text-gray-400">
+                  {t("members") || "Members"}
+                </p>
+                <p className="mt-1 font-semibold text-gray-900">
+                  {group.members}/{group.maxMembers}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase text-gray-400">
+                  {t("semester") || "Semester"}
+                </p>
+                <p className="mt-1 font-semibold text-gray-900">
+                  {group.semesterLabel || t("updating") || "Updating"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase text-gray-400">
+                  {t("status") || "Status"}
+                </p>
+                <p className="mt-1 font-semibold capitalize text-gray-900">
+                  {group.status}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                onClick={() => handleViewGroup(group.id)}
+                className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-300"
+              >
+                {t("view") || "View"}
+                <ArrowRight className="!h-4 !w-4" />
+              </button>
+              {group.isLeader && (
+                <button
+                  onClick={() => handleOpenTopicModal(group)}
+                  disabled={!canSelectTopic(group)}
+                  title={
+                    canSelectTopic(group)
+                      ? ""
+                      : t("topicRequirement") ||
+                        "Topic can be selected when the group is full."
+                  }
+                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    canSelectTopic(group)
+                      ? "border-emerald-200 text-emerald-600 hover:border-emerald-300"
+                      : "border-gray-100 text-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  {group.topicTitle
+                    ? t("changeTopic") || "Change topic"
+                    : t("selectTopic") || "Select topic"}
+                </button>
+              )}
+              <button
+                onClick={() => handleLeaveGroup(group.id)}
+                className="inline-flex items-center gap-2 rounded-full border border-red-100 px-4 py-2 text-sm font-semibold text-red-600 hover:border-red-200"
+              >
+                {t("leaveGroup") || "Leave Group"}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderApplicationsTab = () => {
+    if (pendingLoading) {
+      return (
+        <div className="space-y-4">
+          {Array.from({ length: 2 }).map((_, idx) => (
+            <div
+              key={`pending-skeleton-${idx}`}
+              className="animate-pulse space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+            >
+              <div className="h-4 w-40 rounded bg-gray-200" />
+              <div className="h-3 w-24 rounded bg-gray-100" />
+              <div className="h-14 rounded-xl bg-gray-50" />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (activeApplications.length === 0) {
+      return (
+        <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
+          <p className="text-base font-semibold text-gray-800">
+            {t("pendingRequests") || "No pending applications"}
+          </p>
+          <p className="mt-1 text-sm text-gray-500">
+            {t("noPendingRequests") ||
+              "You have reviewed all applications for now."}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {activeApplications.map(([groupId, requests]) => {
+          const group = groupsById.get(groupId);
+          return (
+            <div
+              key={groupId}
+              className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase text-blue-500">
+                    {group?.field || t("group") || "Group"}
+                  </p>
+                  <h3 className="text-lg font-bold text-gray-900">
+                    {group?.title || t("group") || "Group"}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {requests.length}{" "}
+                    {requests.length > 1
+                      ? t("applications") || "applications"
+                      : t("application") || "application"}
+                  </p>
+                </div>
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                  <Crown className="!h-3.5 !w-3.5 text-amber-500" />
+                  {t("leader") || "Leader"}
+                </span>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                {requests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-gray-50/60 p-4 md:flex-row md:items-center md:justify-between"
+                  >
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={
+                          request.avatarUrl ||
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                            request.name || request.email || "User"
+                          )}&background=0D8ABC&color=fff`
+                        }
+                        alt={request.name}
+                        className="h-12 w-12 rounded-full object-cover"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {request.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {request.email}
+                        </p>
+                        {request.message && (
+                          <p className="mt-1 text-xs text-gray-500">
+                            {request.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleReject(groupId, request)}
+                        className="inline-flex h-10 items-center justify-center rounded-full border border-red-200 px-4 text-sm font-semibold text-red-600 hover:bg-red-50"
+                      >
+                        {t("reject") || "Reject"}
+                      </button>
+                      <button
+                        onClick={() => handleApprove(groupId, request)}
+                        className="inline-flex h-10 items-center justify-center rounded-full bg-emerald-500 px-4 text-sm font-semibold text-white hover:bg-emerald-600"
+                      >
+                        {t("approve") || "Approve"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderOverviewTab = () => (
+    <div className="grid gap-5 md:grid-cols-3">
+      {overviewCards.map((card) => (
+        <div
+          key={card.title}
+          className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+        >
+          <p className="text-sm font-semibold text-gray-500">{card.title}</p>
+          <p className="mt-3 text-3xl font-bold text-gray-900">{card.value}</p>
+          <p className="mt-2 text-sm text-gray-500">{card.description}</p>
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-[#f6f8fb] pb-16 pt-10">
+      <div className="mx-auto w-full max-w-[76rem] px-6 pt-10 lg:px-0">
+        {/* Header */}
+        <div className="border-b border-gray-200 pb-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h1 className="mt-2 text-3xl font-bold text-[#1d3a66]">
+                {t("myGroupsProjectsTitle") || "My Groups & Projects"}
+              </h1>
+              <p className="mt-3 max-w-3xl text-sm text-[#627084]">
+                {t("myGroupsProjectsSubtitle") ||
+                  "Manage your capstone project teams, track progress, and collaborate with teammates. Create new groups or join existing ones to build amazing projects together."}
+                <br />
+                Create new groups or join existing ones to build amazing
+                projects together.
+              </p>
+
+              <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:justify-between lg:gap-8">
+                {/* Buttons */}
+                <div className="flex flex-wrap items-center gap-3 lg:flex-none">
+                  <button
+                    onClick={() => setOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                  >
+                    <span>+</span>
+                    {t("createNewGroup") || "Create New Group"}
+                  </button>
+                  <button
+                    onClick={() => navigate("/discover")}
+                    className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-orange-600"
+                  >
+                    <UserPlus className="!h-4 !w-4" />
+                    {t("joinGroup") || "Join Group"}
+                  </button>
+                </div>
+
+                {/* Stats */}
+                <div className="ml-[33rem] flex w-full flex-wrap items-center gap-4 text-sm font-semibold text-[#627084] lg:flex-1 lg:justify-end lg:text-right">
+                  {heroStatsWithIcons.map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="inline-flex items-center gap-2 text-[#627084]"
+                    >
+                      {stat.icon}
+                      <span>
+                        {stat.value} {stat.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs + content */}
+        <div className="mt-8">
+          <div className="flex h-10 w-full max-w-2xl gap-2 rounded-md border border-gray-200 bg-[#f2f4f5] px-2 py-1 text-sm font-semibold text-[#7d889c]">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-1.5 transition ${
+                  activeTab === tab.key
+                    ? "bg-[#f7f9fa] text-[#1d3a66] shadow"
+                    : "bg-[#f2f4f5] text-[#7d889c] hover:text-[#1d3a66]"
+                }`}
+              >
+                {tab.icon}
+                <span className="capitalize">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-6">
+            {activeTab === "groups" && renderGroupsTab()}
+            {activeTab === "applications" && renderApplicationsTab()}
+            {activeTab === "overview" && renderOverviewTab()}
+          </div>
+        </div>
+      </div>
+
+      {/* Modal */}
+      <CreateGroupModal
+        t={t}
+        open={open}
+        submitting={submitting}
+        form={form}
+        errors={errors}
+        majors={majors}
+        majorsLoading={majorsLoading}
+        onClose={requestCloseModal}
+        onSubmit={handleCreateGroup}
+        onChange={handleFormChange}
+      />
+      <SelectTopicModal
+        t={t}
+        open={Boolean(topicModalGroup)}
+        group={topicModalGroup}
+        topics={topics}
+        loading={topicsLoading}
+        assigning={assigningTopic}
+        search={topicSearch}
+        selectedTopicId={selectedTopicId}
+        onClose={handleCloseTopicModal}
+        onSearch={handleSearchTopics}
+        onSelect={setSelectedTopicId}
+        onSubmit={handleAssignTopic}
+      />
+    </div>
+  );
+}

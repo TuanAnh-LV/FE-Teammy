@@ -110,8 +110,8 @@ export const getRoleMenus = (role) => {
     student: [
       {
         key: "project",
-        label: "My Project",
-        path: "/student/my-project",
+        label: "My Groups",
+        path: "/student/my-group",
         icon: <DashboardOutlined />,
       },
       {

@@ -34,6 +34,9 @@ export default function InfoCard({ group }) {
         {group.semester && (
           <p><b>{t("semester")}:</b> {group.semester}</p>
         )}
+        {group.topicName && (
+          <p><b>{t("topic") || "Topic"}:</b> {group.topicName}</p>
+        )}
       </div>
     </div>
   );

@@ -30,12 +30,15 @@ export const translations = {
     clear: "Clear",
     apply: "Apply",
     reset: "Reset",
+    searchGroups: "Search groups...",
     total: "Total",
     fetchingGroupData: "Fetching your group workspace.",
     pendingRequests: "Pending requests",
     noPendingRequests: "No pending requests at the moment.",
     request: "request",
     requests: "requests",
+    application: "application",
+    applications: "applications",
     approve: "Approve",
     reject: "Reject",
     
@@ -131,6 +134,12 @@ export const translations = {
     featureRealtimeChatDesc: "Stay connected with instant messaging and file sharing capabilities.",
     featureSkillTrackingTitle: "Skill Tracking",
     featureSkillTrackingDesc: "Showcase your abilities and find teammates with complementary skills.",
+    myGroupsProjectsTitle: "My Groups & Projects",
+    myGroupsProjectsSubtitle: "Manage your capstone project teams, track progress, and collaborate with team members.",
+    activeGroups: "active groups",
+    pendingApplications: "pending applications",
+    mostRecentGroup: "Most recent group created",
+    updating: "Updating",
     
     // MyGroup Page
     addMember: "Add Member",
@@ -144,6 +153,14 @@ export const translations = {
     description: "Description",
     progress: "Progress",
     currentProgress: "Current progress",
+    majorId: "Major ID",
+    topicId: "Topic ID",
+    semesterId: "Semester ID",
+    majorIdRequired: "Major ID is required",
+    semesterIdRequired: "Semester ID is required",
+    maxMembersValidation: "Max members must be at least the current member count.",
+    updateGroupDetails: "Update group details",
+    selectMajor: "Select major",
     members: "Members",
     totalMembers: "Total",
     addMemberByEmail: "Add Member by Email",
@@ -256,7 +273,9 @@ export const translations = {
         groupStatus: "Status",
     groupMaxMembers: "Max members",
     groupCurrentMembers: "Current",
-
+    major: "Major",
+    noDeadline: "No deadline",
+    applications:"Applications"
   },
   
   VIE: {
@@ -290,12 +309,15 @@ export const translations = {
     clear: "Xóa",
     apply: "Áp dụng",
     reset: "Đặt lại",
+    searchGroups: "Tìm nhóm...",
     total: "Tổng",
     fetchingGroupData: "Đang tải dữ liệu nhóm của bạn.",
     pendingRequests: "Yêu cầu chờ duyệt",
     noPendingRequests: "Chưa có yêu cầu nào.",
     request: "yêu cầu",
     requests: "yêu cầu",
+    application: "đơn",
+    applications: "đơn",
     approve: "Chấp nhận",
     reject: "Từ chối",
     
@@ -391,6 +413,12 @@ export const translations = {
     featureRealtimeChatDesc: "Luôn kết nối với tin nhắn tức thì và chia sẻ tệp.",
     featureSkillTrackingTitle: "Theo dõi kỹ năng",
     featureSkillTrackingDesc: "Thể hiện năng lực và tìm đồng đội có kỹ năng bổ trợ.",
+    myGroupsProjectsTitle: "Nhóm & Dự án của tôi",
+    myGroupsProjectsSubtitle: "Quản lý đội capstone, theo dõi tiến độ và cộng tác với thành viên. Bạn có thể tạo nhóm mới hoặc tham gia những nhóm đang tuyển.",
+    activeGroups: "nhóm đang hoạt động",
+    pendingApplications: "đơn chờ duyệt",
+    mostRecentGroup: "Nhóm mới tạo gần nhất",
+    updating: "Đang cập nhật",
     
     // MyGroup Page
     addMember: "Thêm Thành Viên",
@@ -404,6 +432,14 @@ export const translations = {
     description: "Mô Tả",
     progress: "Tiến Độ",
     currentProgress: "Tiến độ hiện tại",
+    majorId: "Mã chuyên ngành",
+    topicId: "Mã đề tài",
+    semesterId: "Mã học kỳ",
+    majorIdRequired: "Vui lòng nhập mã chuyên ngành.",
+    semesterIdRequired: "Vui lòng nhập mã học kỳ.",
+    maxMembersValidation: "Số thành viên tối đa không được nhỏ hơn số thành viên hiện tại.",
+    updateGroupDetails: "Cập nhật thông tin nhóm",
+    selectMajor: "Chọn chuyên ngành",
     members: "Thành viên",
     totalMembers: "Tổng",
     addMemberByEmail: "Thêm Thành Viên Bằng Email",
@@ -517,8 +553,9 @@ export const translations = {
     groupStatus: "Trạng thái",
   groupMaxMembers: "Số thành viên tối đa",
   groupCurrentMembers: "Hiện có",
-
-
+  major: "Chuyên ngành",
+  noDeadline: "Không giới hạn",
+  applications:"Đơn ứng tuyển"
   },
 };
 

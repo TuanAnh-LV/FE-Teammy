@@ -10,7 +10,7 @@ import ProgressCard from "../../components/common/my-group/ProgressCard";
 import MentorCard from "../../components/common/my-group/MentorCard";
 import MembersList from "../../components/common/my-group/MembersList";
 import AddMemberModal from "../../components/common/my-group/AddMemberModal";
-import PendingList from "../../components/common/my-group/PendingList";
+import EditGroupModal from "../../components/common/my-group/EditGroupModal";
 import LoadingState from "../../components/common/LoadingState";
 import { notification } from "antd";
 
@@ -22,21 +22,27 @@ export default function MyGroup() {
 
   const [group, setGroup] = useState(null);
   const [groupMembers, setGroupMembers] = useState([]);
-  const [pendingMembers, setPendingMembers] = useState([]);
-  const [pendingLoading, setPendingLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    description: "",
+    maxMembers: 5,
+    majorId: "",
+    topicId: "",
+  });
+  const [editErrors, setEditErrors] = useState({});
 
   useEffect(() => {
     if (!id) return;
     const loadData = async () => {
       try {
         setLoading(true);
-        setPendingLoading(true);
-        const [detailRes, membersRes, pendingRes] = await Promise.allSettled([
+        const [detailRes, membersRes] = await Promise.allSettled([
           GroupService.getGroupDetail(id),
           GroupService.getListMembers(id),
-          GroupService.getJoinRequests(id),
         ]);
 
         const d = detailRes.status === "fulfilled" ? detailRes.value.data : {};
@@ -54,6 +60,37 @@ export default function MyGroup() {
           : "";
         const semesterLabel = [formattedSeason, semesterInfo.year].filter(Boolean).join(" ");
 
+        const members =
+          membersRes.status === "fulfilled" && Array.isArray(membersRes.value?.data)
+            ? membersRes.value.data
+            : [];
+
+        const normalizedMembers = members.map((m) => {
+          const email = m.email || "";
+          const normalizedEmail = email.toLowerCase();
+          const currentEmail = (userInfo?.email || "").toLowerCase();
+
+          return {
+            name: m.displayName || m.name || "",
+            email,
+            role: m.role || m.status || "",
+            joinedAt: m.joinedAt,
+            avatarUrl:
+              m.avatarUrl ||
+              m.photoURL ||
+              m.photoUrl ||
+              (currentEmail && normalizedEmail === currentEmail ? userInfo?.photoURL : ""),
+          };
+        });
+
+        const currentEmail = (userInfo?.email || "").toLowerCase();
+        const detailRole = (d.role || "").toLowerCase();
+        const leaderFromMembers = normalizedMembers.some(
+          (member) =>
+            (member.email || "").toLowerCase() === currentEmail &&
+            (member.role || "").toLowerCase() === "leader"
+        );
+
         setGroup({
           id: d.id || id,
           title: d.name || "",
@@ -65,75 +102,43 @@ export default function MyGroup() {
           progress: Math.min(100, Math.max(0, Number(d.progress) || 0)),
           mentor: d.mentorName || "",
           statusText: d.status || "",
+          maxMembers: Number(d.maxMembers || d.capacity || 5),
+          majorId:
+            d.majorId ||
+            d.major?.id ||
+            d.major?.majorId ||
+            d.majorID ||
+            "",
+          topicId: d.topicId || d.topic?.id || "",
+          topicName:
+            d.topicName ||
+            d.topic?.title ||
+            d.topic?.name ||
+            "",
+          canEdit: detailRole === "leader" || leaderFromMembers,
         });
 
-        const members =
-          membersRes.status === "fulfilled" && Array.isArray(membersRes.value?.data)
-            ? membersRes.value.data
-            : [];
-
-        setGroupMembers(
-          members.map((m) => {
-            const email = m.email || "";
-            const normalizedEmail = email.toLowerCase();
-            const currentEmail = (userInfo?.email || "").toLowerCase();
-
-            return {
-              name: m.displayName || m.name || "",
-              email,
-              role: m.role || m.status || "",
-              joinedAt: m.joinedAt,
-              avatarUrl:
-                m.avatarUrl ||
-                m.photoURL ||
-                m.photoUrl ||
-                (currentEmail && normalizedEmail === currentEmail ? userInfo?.photoURL : ""),
-            };
-          })
-        );
-
-        if (pendingRes.status === "fulfilled" && Array.isArray(pendingRes.value?.data)) {
-          setPendingMembers(
-            pendingRes.value.data.map((req) => {
-              const email = req.email || req.requesterEmail || "";
-              const normalizedEmail = email.toLowerCase();
-              const currentEmail = (userInfo?.email || "").toLowerCase();
-              const seasonType =
-                typeof req.type === "string"
-                  ? req.type
-                  : req.type
-                  ? String(req.type)
-                  : "";
-
-              return {
-                requestId: req.requestId || req.id,
-                name: req.displayName || req.name || req.requesterName || "",
-                email,
-                requestedAt: req.requestedAt || req.createdAt,
-                role: req.role || req.status || "pending",
-                type: seasonType || "application",
-                postId: req.postId || req.postID || req.post?.id || "",
-                avatarUrl:
-                  req.avatarUrl ||
-                  req.avatarURL ||
-                  req.photoURL ||
-                  req.photoUrl ||
-                  (currentEmail && normalizedEmail === currentEmail ? userInfo?.photoURL : ""),
-              };
-            })
-          );
-        } else {
-          setPendingMembers([]);
-        }
+        setGroupMembers(normalizedMembers);
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
-        setPendingLoading(false);
       }
     };
     loadData();
   }, [id, userInfo]);
+
+  useEffect(() => {
+    if (group) {
+      setEditForm({
+        name: group.title || "",
+        description: group.description || "",
+        maxMembers: group.maxMembers || groupMembers.length || 5,
+        majorId: group.majorId || "",
+        topicId: group.topicId || "",
+      });
+    }
+  }, [group, groupMembers.length]);
 
   const handleAddMember = (user) => {
     if (!user || !user.email) {
@@ -152,55 +157,61 @@ export default function MyGroup() {
     setShowModal(false);
   };
 
-  const handleApprove = async (user) => {
-    try {
-      const requestId = user.requestId || user.id;
-      const payload = {
-        type: user.type || "application",
-        postId: user.postId || user.postID || "",
-      };
-      await GroupService.acceptJoinRequest(id, requestId, payload);
-      setPendingMembers((prev) =>
-        prev.filter((x) =>
-          requestId ? x.requestId !== requestId : x.email !== user.email
-        )
-      );
-      setGroupMembers((prev) => [
-        ...prev,
-        {
-          name: user.name,
-          email: user.email,
-          role: "member",
-          joinedAt: new Date().toISOString(),
-          avatarUrl: user.avatarUrl,
-        },
-      ]);
-    } catch (err) {
-      console.error(err);
-      notification.error({
-        message: t("approveFailed") || "Approve failed",
-      });
+  const validateEditForm = () => {
+    const errors = {};
+    if (!editForm.name.trim()) {
+      errors.name = t("groupName") || "Group name is required";
     }
+    const max = Number(editForm.maxMembers);
+    if (!max || max < groupMembers.length) {
+      errors.maxMembers =
+        t("maxMembersValidation") ||
+        "Max members must be at least current member count.";
+    }
+    setEditErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
-  const handleReject = async (user) => {
+  const handleEditChange = (field, value) => {
+    setEditForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmitEdit = async (e) => {
+    e?.preventDefault();
+    if (!group || !validateEditForm()) return;
     try {
-      const requestId = user.requestId || user.id;
+      setEditSubmitting(true);
       const payload = {
-        type: user.type || "application",
-        postId: user.postId || user.postID || "",
+        name: editForm.name.trim(),
+        description: editForm.description.trim(),
+        maxMembers: Number(editForm.maxMembers),
       };
-      await GroupService.rejectJoinRequest(id, requestId, payload);
-      setPendingMembers((prev) =>
-        prev.filter((x) =>
-          requestId ? x.requestId !== requestId : x.email !== user.email
-        )
+      if (editForm.majorId.trim()) payload.majorId = editForm.majorId.trim();
+      if (editForm.topicId.trim()) payload.topicId = editForm.topicId.trim();
+      await GroupService.updateGroup(group.id, payload);
+      notification.success({
+        message: t("updateSuccess") || "Group updated successfully.",
+      });
+      setGroup((prev) =>
+        prev
+          ? {
+              ...prev,
+              title: payload.name,
+              description: payload.description,
+              maxMembers: payload.maxMembers,
+              majorId: payload.majorId ?? prev.majorId,
+              topicId: payload.topicId ?? prev.topicId,
+            }
+          : prev
       );
+      setEditOpen(false);
     } catch (err) {
       console.error(err);
       notification.error({
-        message: t("rejectFailed") || "Reject failed",
+        message: t("error") || "Failed to update group.",
       });
+    } finally {
+      setEditSubmitting(false);
     }
   };
 
@@ -225,12 +236,22 @@ export default function MyGroup() {
             <ArrowLeft className="w-5 h-5" />
             {t("back")}
           </button>
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-[#FF7A00] text-white px-4 py-2 rounded-lg transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-orange-100"
-          >
-            {t("addMember")}
-          </button>
+          <div className="flex gap-3">
+            {group?.canEdit && (
+              <button
+                onClick={() => setEditOpen(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
+              >
+                {t("editGroup") || "Edit group"}
+              </button>
+            )}
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-[#FF7A00] text-white px-4 py-2 rounded-lg transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-orange-100"
+            >
+              {t("addMember")}
+            </button>
+          </div>
         </div>
 
         {/* Layout */}
@@ -248,14 +269,6 @@ export default function MyGroup() {
           <div className="col-span-3 flex flex-col gap-6">
             {group && <MentorCard name={group.mentor} label={t("projectMentor")} />}
             <MembersList members={groupMembers} totalLabel="Tổng thành viên" membersLabel="Thành viên" />
-            <PendingList
-              items={pendingMembers}
-              title={t("pendingListTitle") || "Danh sách chờ xét duyệt"}
-              onApprove={handleApprove}
-              onReject={handleReject}
-              loading={pendingLoading}
-              t={t}
-            />
           </div>
         </div>
 
@@ -265,11 +278,26 @@ export default function MyGroup() {
           onAdd={handleAddMember}
           t={t}
         />
+        <EditGroupModal
+          t={t}
+          open={editOpen}
+          submitting={editSubmitting}
+          form={editForm}
+          errors={editErrors}
+          memberCount={groupMembers.length}
+          onClose={() => {
+            if (!editSubmitting) {
+              setEditOpen(false);
+              setEditErrors({});
+            }
+          }}
+          onChange={handleEditChange}
+          onSubmit={handleSubmitEdit}
+        />
       </div>
     </div>
   );
 }
-
 
 
 
