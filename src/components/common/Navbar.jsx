@@ -7,16 +7,13 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { getTranslation } from "../../translations";
 import { message } from "antd";
-
-import { AuthService } from "../../services/auth.service";
-import { LOCAL_STORAGE } from "../../consts/const";
 import NotificationDrawer from "./NotificationDrawer";
 import { InvitationService } from "../../services/invitation.service";
 
 const Navbar = () => {
   const location = useLocation();
-  const { logout } = useAuth();
-  const [user, setUser] = useState(null);
+  const { logout, loginGoogle, userInfo, token } = useAuth();
+  const [user, setUser] = useState(userInfo);
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -27,8 +24,10 @@ const Navbar = () => {
   const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) setUser(JSON.parse(savedUser));
+    setUser(userInfo || null);
+  }, [userInfo]);
+
+  useEffect(() => {
     const formatRelative = (iso) => {
       if (!iso) return "";
       const d = new Date(iso);
@@ -56,15 +55,9 @@ const Navbar = () => {
         setNotifications([]);
       }
     };
-    if (localStorage.getItem("token")) {
+    if (token) {
       fetchInvites();
     }
-
-    const onStorage = () => {
-      const updatedUser = localStorage.getItem("user");
-      setUser(updatedUser ? JSON.parse(updatedUser) : null);
-    };
-    window.addEventListener("storage", onStorage);
 
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -73,89 +66,44 @@ const Navbar = () => {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      window.removeEventListener("storage", onStorage);
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [token]);
 
   const isActive = (path) => location.pathname === path;
-
-  const parseMaybeStringJson = (payload) => {
-    if (payload == null) return null;
-    const raw = payload?.data ?? payload;
-    if (typeof raw === "string") {
-      try {
-        return JSON.parse(raw);
-      } catch {
-        return null;
-      }
-    }
-    return raw;
-  };
 
   const handleSignIn = async () => {
     if (signingIn) return;
     setSigningIn(true);
     try {
-      // 1) Đăng nhập Google (Firebase)
       const result = await signInWithPopup(auth, provider);
       const fbUser = result.user;
-
-      // 2) Lấy Firebase ID Token
       const idToken = await fbUser.getIdToken();
-
-      // 3) Gọi backend /api/auth/login với idToken
-      const resp = await AuthService.login({ idToken });
-
-      // 4) Chuẩn hoá response
-      const data = parseMaybeStringJson(resp);
-      if (!data || !data.accessToken) {
-        throw new Error("Login API không trả về accessToken hợp lệ.");
-      }
-
-      // 5) Lưu localStorage cho backend (token, role, email…)
-      localStorage.setItem(LOCAL_STORAGE.ACCOUNT_ADMIN, JSON.stringify(data));
-      // Quan trọng: lưu token cho axios interceptor và Profile
-      if (data.accessToken) {
-        localStorage.setItem("token", data.accessToken);
-      }
-
-      // 6) Lưu localStorage cho UI (Navbar)
-      const email = data.email ?? fbUser.email ?? "";
-      const role =
-        data.role ?? (email.endsWith("@fpt.edu.vn") ? "student" : "instructor");
-
-      const uiUser = {
-        name: data.displayName ?? fbUser.displayName ?? "",
-        email,
+      await loginGoogle(idToken, {
+        email: fbUser.email ?? "",
+        displayName: fbUser.displayName ?? "",
         photoURL: fbUser.photoURL ?? "",
-        role,
-        skillsCompleted: !!data.skillsCompleted,
-      };
-      localStorage.setItem("user", JSON.stringify(uiUser));
-
-      // 7) Cập nhật state + thông báo cho các tab khác
-      window.dispatchEvent(new Event("storage"));
-      setUser(uiUser);
-      messageApi.success("Đăng nhập thành công.");
+        avatarUrl: fbUser.photoURL ?? "",
+      });
+      messageApi.success("Signed in successfully.");
     } catch (error) {
       console.error("Google login failed:", error);
-      messageApi.error(error?.message || "Đăng nhập thất bại. Vui lòng thử lại.");
+      messageApi.error(error?.message || "Sign in failed. Please try again.");
     } finally {
       setSigningIn(false);
     }
   };
+
 
   const handleSignOut = () => {
     try {
       // Clear auth state and storage via AuthContext
       logout();
     } finally {
-      // Also clear UI user cache
-      localStorage.removeItem("user");
+
       setUser(null);
       setMenuOpen(false);
-      messageApi.info("Bạn đã đăng xuất.");
+      messageApi.info("You have logged out.");
     }
   };
 
@@ -173,14 +121,14 @@ const Navbar = () => {
 
         {/* Nav links */}
         <div className="!hidden md:!flex !items-center !space-x-8 !font-sans !font-semibold !text-[14px] !text-black">
-          <Link
+          {/* <Link
             to="/discover"
             className={`!hover:text-blue-600 ${
               isActive("/discover") ? "!text-blue-600" : ""
             }`}
           >
             {getTranslation("findProjects", language)}
-          </Link>
+          </Link> */}
           <Link
             to="/forum"
             className={`!hover:text-blue-600 ${
@@ -195,7 +143,7 @@ const Navbar = () => {
               isActive("/my-projects") ? "!text-blue-600" : ""
             }`}
           >
-            {getTranslation("My Projects", language)}
+            {getTranslation("myProjects", language)}
           </Link>
           <Link
             to="/workspace"
@@ -321,7 +269,7 @@ const Navbar = () => {
         try {
           await InvitationService.accept(n.id);
           setNotifications((prev) => prev.filter((x) => x.id !== n.id));
-          messageApi.success("Đã chấp nhận lời mời");
+          messageApi.success("Signed in successfully.");
         } catch (e) {
           console.error(e);
           messageApi.error("Chấp nhận thất bại");
@@ -331,7 +279,7 @@ const Navbar = () => {
         try {
           await InvitationService.decline(n.id);
           setNotifications((prev) => prev.filter((x) => x.id !== n.id));
-          messageApi.info("Đã từ chối lời mời");
+          messageApi.info("You have logged out.");
         } catch (e) {
           console.error(e);
           messageApi.error("Từ chối thất bại");
@@ -343,3 +291,10 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+
+
+
+
+
+

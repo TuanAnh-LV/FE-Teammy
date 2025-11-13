@@ -1,5 +1,6 @@
 import React from "react";
 import { UserRound } from "lucide-react";
+import { avatarFromEmail } from "../../../utils/helpers";
 
 export default function MembersList({ members, totalLabel, membersLabel }) {
   return (
@@ -17,8 +18,8 @@ export default function MembersList({ members, totalLabel, membersLabel }) {
           className="!flex !items-center !gap-4 !border !rounded-xl !p-4 !mb-3 !bg-gray-50 hover:!bg-gray-100 !transition"
         >
           <img
-            src={`https://i.pravatar.cc/80?img=${i + 3}`}
-            alt={m.name}
+            src={m.avatarUrl || avatarFromEmail(m.email, 80)}
+            alt={m.name || m.email}
             className="!w-12 !h-12 !rounded-full !object-cover !shadow"
           />
           <div className="!flex-1">

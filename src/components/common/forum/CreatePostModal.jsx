@@ -15,7 +15,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
 
   const handleSubmit = async () => {
     try {
-      const { groupId, title, description, position_needed, limit } =
+      const { groupId, title, description, position_needed } =
         await form.validateFields();
 
       await PostService.createRecruitmentPost({
@@ -23,7 +23,6 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
         title,
         description,
         position_needed,
-        limit,
       });
 
       message.success("Tạo recruitment post thành công!");
@@ -56,7 +55,6 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           title: "",
           description: "",
           position_needed: "",
-          limit: 1,
         }}
       >
         <Form.Item
@@ -93,24 +91,21 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           <Input placeholder="VD: Git, Azure" />
         </Form.Item>
 
-        <Form.Item
-          label="Limit"
-          name="limit"
-          rules={[{ required: true, message: "Vui lòng nhập số lượng" }]}
-        >
-          <InputNumber min={1} style={{ width: "100%" }} />
-        </Form.Item>
-
         <div className="flex justify-between mt-4">
           <Button
             onClick={() => {
               form.resetFields();
               closeModal();
             }}
+            className="inline-flex items-center rounded-lg px-3.5 py-2 text-xs font-bold shadow-sm hover:!border-orange-400 hover:!text-orange-400 transition-all focus:outline-none focus:ring-4 focus:ring-blue-100"
           >
             Cancel
           </Button>
-          <Button type="primary" htmlType="submit">
+          <Button
+            type="primary"
+            htmlType="submit"
+            className="inline-flex items-center rounded-lg !bg-[#FF7A00] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:!opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-60"
+          >
             Publish Post
           </Button>
         </div>

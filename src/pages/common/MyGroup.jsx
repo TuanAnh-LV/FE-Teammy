@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
+import { useAuth } from "../../context/AuthContext";
 import { GroupService } from "../../services/group.service";
 import InfoCard from "../../components/common/my-group/InfoCard";
 import DescriptionCard from "../../components/common/my-group/DescriptionCard";
@@ -10,38 +11,57 @@ import MentorCard from "../../components/common/my-group/MentorCard";
 import MembersList from "../../components/common/my-group/MembersList";
 import AddMemberModal from "../../components/common/my-group/AddMemberModal";
 import PendingList from "../../components/common/my-group/PendingList";
+import LoadingState from "../../components/common/LoadingState";
+import { notification } from "antd";
 
 export default function MyGroup() {
   const { id } = useParams();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { userInfo } = useAuth();
 
   const [group, setGroup] = useState(null);
   const [groupMembers, setGroupMembers] = useState([]);
   const [pendingMembers, setPendingMembers] = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [email, setEmail] = useState("");
 
   useEffect(() => {
     if (!id) return;
     const loadData = async () => {
       try {
         setLoading(true);
+        setPendingLoading(true);
         const [detailRes, membersRes, pendingRes] = await Promise.allSettled([
           GroupService.getGroupDetail(id),
           GroupService.getListMembers(id),
-          GroupService.getPendingMembers ? GroupService.getPendingMembers(id) : Promise.reject("no pending api"),
+          GroupService.getJoinRequests(id),
         ]);
 
         const d = detailRes.status === "fulfilled" ? detailRes.value.data : {};
+        const semesterInfo = d.semester || {};
+        const rawStartDate = semesterInfo.startDate || d.startDate;
+        const rawEndDate = semesterInfo.endDate || d.endDate;
+        const season =
+          typeof semesterInfo.season === "string"
+            ? semesterInfo.season.trim()
+            : semesterInfo.season
+            ? String(semesterInfo.season)
+            : "";
+        const formattedSeason = season
+          ? season.charAt(0).toUpperCase() + season.slice(1)
+          : "";
+        const semesterLabel = [formattedSeason, semesterInfo.year].filter(Boolean).join(" ");
+
         setGroup({
           id: d.id || id,
           title: d.name || "",
           field: d.field || "",
           description: d.description || "",
-          start: d.startDate?.slice(0, 10) || "",
-          end: d.endDate?.slice(0, 10) || "",
+          start: rawStartDate ? rawStartDate.slice(0, 10) : "",
+          end: rawEndDate ? rawEndDate.slice(0, 10) : "",
+          semester: semesterLabel,
           progress: Math.min(100, Math.max(0, Number(d.progress) || 0)),
           mentor: d.mentorName || "",
           statusText: d.status || "",
@@ -53,88 +73,144 @@ export default function MyGroup() {
             : [];
 
         setGroupMembers(
-          members.map((m) => ({
-            name: m.displayName || m.name || "",
-            email: m.email || "",
-            role: m.role || m.status || "",
-            joinedAt: m.joinedAt,
-            avatarUrl: m.avatarUrl || "",
-          }))
+          members.map((m) => {
+            const email = m.email || "";
+            const normalizedEmail = email.toLowerCase();
+            const currentEmail = (userInfo?.email || "").toLowerCase();
+
+            return {
+              name: m.displayName || m.name || "",
+              email,
+              role: m.role || m.status || "",
+              joinedAt: m.joinedAt,
+              avatarUrl:
+                m.avatarUrl ||
+                m.photoURL ||
+                m.photoUrl ||
+                (currentEmail && normalizedEmail === currentEmail ? userInfo?.photoURL : ""),
+            };
+          })
         );
 
-        // pending members
         if (pendingRes.status === "fulfilled" && Array.isArray(pendingRes.value?.data)) {
           setPendingMembers(
-            pendingRes.value.data.map((m) => ({
-              name: m.displayName || m.name || "",
-              email: m.email || "",
-              requestedAt: m.requestedAt,
-              role: m.role || m.status || "pending",
-            }))
+            pendingRes.value.data.map((req) => {
+              const email = req.email || req.requesterEmail || "";
+              const normalizedEmail = email.toLowerCase();
+              const currentEmail = (userInfo?.email || "").toLowerCase();
+              const seasonType =
+                typeof req.type === "string"
+                  ? req.type
+                  : req.type
+                  ? String(req.type)
+                  : "";
+
+              return {
+                requestId: req.requestId || req.id,
+                name: req.displayName || req.name || req.requesterName || "",
+                email,
+                requestedAt: req.requestedAt || req.createdAt,
+                role: req.role || req.status || "pending",
+                type: seasonType || "application",
+                postId: req.postId || req.postID || req.post?.id || "",
+                avatarUrl:
+                  req.avatarUrl ||
+                  req.avatarURL ||
+                  req.photoURL ||
+                  req.photoUrl ||
+                  (currentEmail && normalizedEmail === currentEmail ? userInfo?.photoURL : ""),
+              };
+            })
           );
         } else {
-          const fallback = members.filter((m) => {
-            const status = (m.role || m.status || "").toLowerCase();
-            return status === "pending" || status === "waiting" || status === "request";
-          });
-          setPendingMembers(
-            fallback.map((m) => ({
-              name: m.displayName || m.name || "",
-              email: m.email || "",
-              role: "pending",
-            }))
-          );
+          setPendingMembers([]);
         }
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
+        setPendingLoading(false);
       }
     };
     loadData();
-  }, [id]);
+  }, [id, userInfo]);
 
-  const handleAddMember = async () => {
-    if (!email.trim()) return alert(t("pleaseEnterEmail"));
-    const user = { name: "User Found", email };
+  const handleAddMember = (user) => {
+    if (!user || !user.email) {
+      notification.warning({
+        message: t("pleaseSelectUser") || "Please select a user first",
+      });
+      return;
+    }
     if (groupMembers.some((m) => m.email === user.email)) {
-      alert(t("userAlreadyInGroup"));
+      notification.info({
+        message: t("userAlreadyInGroup") || "This user is already in the group.",
+      });
       return;
     }
     setGroupMembers((prev) => [...prev, user]);
-    alert(`${user.email} ${t("userAddedSuccessfully")}`);
-    setEmail("");
     setShowModal(false);
   };
 
   const handleApprove = async (user) => {
     try {
-      // Nếu backend có API thì gọi ở đây, ví dụ:
-      // await GroupService.approveMember(id, user.email);
-      setPendingMembers((prev) => prev.filter((x) => x.email !== user.email));
+      const requestId = user.requestId || user.id;
+      const payload = {
+        type: user.type || "application",
+        postId: user.postId || user.postID || "",
+      };
+      await GroupService.acceptJoinRequest(id, requestId, payload);
+      setPendingMembers((prev) =>
+        prev.filter((x) =>
+          requestId ? x.requestId !== requestId : x.email !== user.email
+        )
+      );
       setGroupMembers((prev) => [
         ...prev,
-        { name: user.name, email: user.email, role: "member", joinedAt: new Date().toISOString() },
+        {
+          name: user.name,
+          email: user.email,
+          role: "member",
+          joinedAt: new Date().toISOString(),
+          avatarUrl: user.avatarUrl,
+        },
       ]);
     } catch (err) {
       console.error(err);
-      alert("Duyệt thất bại");
+      notification.error({
+        message: t("approveFailed") || "Approve failed",
+      });
     }
   };
 
   const handleReject = async (user) => {
     try {
-      // Nếu backend có API thì gọi ở đây
-      // await GroupService.rejectMember(id, user.email);
-      setPendingMembers((prev) => prev.filter((x) => x.email !== user.email));
+      const requestId = user.requestId || user.id;
+      const payload = {
+        type: user.type || "application",
+        postId: user.postId || user.postID || "",
+      };
+      await GroupService.rejectJoinRequest(id, requestId, payload);
+      setPendingMembers((prev) =>
+        prev.filter((x) =>
+          requestId ? x.requestId !== requestId : x.email !== user.email
+        )
+      );
     } catch (err) {
       console.error(err);
-      alert("Từ chối thất bại");
+      notification.error({
+        message: t("rejectFailed") || "Reject failed",
+      });
     }
   };
 
   if (loading) {
-    return <div className="text-center mt-20 text-gray-600">{t("loading")}...</div>;
+    return (
+      <LoadingState
+        message={t("loading") || "Loading..."}
+        subtext={t("fetchingGroupData") || "Fetching your group workspace."}
+      />
+    );
   }
 
   return (
@@ -151,7 +227,7 @@ export default function MyGroup() {
           </button>
           <button
             onClick={() => setShowModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            className="bg-[#FF7A00] text-white px-4 py-2 rounded-lg transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-orange-100"
           >
             {t("addMember")}
           </button>
@@ -174,9 +250,11 @@ export default function MyGroup() {
             <MembersList members={groupMembers} totalLabel="Tổng thành viên" membersLabel="Thành viên" />
             <PendingList
               items={pendingMembers}
-              title="Danh sách chờ xét duyệt"
+              title={t("pendingListTitle") || "Danh sách chờ xét duyệt"}
               onApprove={handleApprove}
               onReject={handleReject}
+              loading={pendingLoading}
+              t={t}
             />
           </div>
         </div>
@@ -184,8 +262,6 @@ export default function MyGroup() {
         <AddMemberModal
           open={showModal}
           onClose={() => setShowModal(false)}
-          email={email}
-          setEmail={setEmail}
           onAdd={handleAddMember}
           t={t}
         />
@@ -193,3 +269,8 @@ export default function MyGroup() {
     </div>
   );
 }
+
+
+
+
+

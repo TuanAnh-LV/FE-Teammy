@@ -13,26 +13,6 @@ import {
 
 const ProjectDetail = () => {
   const navigate = useNavigate();
-
-    const project = {
-    id: "SEP490",
-    title: "SkillSync",
-    fields: ["Ed Tech", "AI & Machine Learning"],
-    description:
-      "SkillSync is an AI-driven platform that helps students personalize their learning journey by analyzing strengths, weaknesses, and study habits. The system generates adaptive study plans, tracks progress, and provides skill-based recommendations for continuous improvement.",
-    start: "05/11/2025",
-    end: "10/12/2025",
-    progress: 65,
-    leader: "Nguyen Van A",
-    mentor: "Nguyen Van B",
-    members: [
-      { name: "Nguyen Van A", role: "Leader" },
-      { name: "Team memmber" },
-      { name: "Team memmber" },
-      { name: "Team memmber" },
-    ],
-  };
-
   return (
     <div className="!relative !bg-[#fafafa]">
       {/* Background */}
@@ -94,10 +74,10 @@ const ProjectDetail = () => {
                   <b>Leader:</b> {project.leader}
                 </p>
                 <p className="!flex !items-center !gap-2">
-                  <Calendar size={15} /> <b>Start:</b> {project.start}
+                  <Calendar size={15} /> <b>Start:</b> {project.startDate}
                 </p>
                 <p>
-                  <b>End:</b> {project.end}
+                  <b>End:</b> {project.endDate}
                 </p>
                 <p>
                   <b>Mentor:</b> {project.mentor}

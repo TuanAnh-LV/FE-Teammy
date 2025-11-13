@@ -4,6 +4,7 @@ export const translations = {
     findProjects: "Find Projects",
     forum: "Forum",
     myGroups: "My Groups",
+    myProjects: "My Projects",
     workspace: "Workspace",
     profile: "Profile",
     notifications: "Notifications",
@@ -12,6 +13,7 @@ export const translations = {
     
     // Common
     loading: "Loading...",
+    creating: "Creating...",
     error: "Error",
     success: "Success",
     cancel: "Cancel",
@@ -28,6 +30,14 @@ export const translations = {
     clear: "Clear",
     apply: "Apply",
     reset: "Reset",
+    total: "Total",
+    fetchingGroupData: "Fetching your group workspace.",
+    pendingRequests: "Pending requests",
+    noPendingRequests: "No pending requests at the moment.",
+    request: "request",
+    requests: "requests",
+    approve: "Approve",
+    reject: "Reject",
     
     // Auth
     login: "Login",
@@ -54,14 +64,18 @@ export const translations = {
     projectDescription: "Project Description",
     projectStatus: "Project Status",
     projectType: "Project Type",
+    field: "Field",
     
     // Groups
     groups: "Groups",
     group: "Group",
+    groupName: "Group Name",
     createGroup: "Create Group",
+    createNewGroup: "Create New Group",
     joinGroup: "Join Group",
     leaveGroup: "Leave Group",
     groupMembers: "Group Members",
+    maxMembers: "Max Members",
     groupChat: "Group Chat",
     
     // Tasks
@@ -97,6 +111,27 @@ export const translations = {
     communityForum: "Community Forum",
     forumSubtitle: "Share experiences, ask questions and connect with the IT student community.",
     
+    // Homepage
+    heroHeadlinePrefix: "Empowering students to",
+    heroHeadlineHighlight: "Connect, Collaborate, and Create",
+    heroDescription: "Find the perfect teammates and projects with AI-powered recommendations.",
+    heroPrimaryCta: "Get Started",
+    heroSecondaryCta: "Sign in with Google",
+    heroLoginPrompt: "Already have an account?",
+    statsActiveProjects: "Active Projects",
+    statsStudents: "Students",
+    statsSuccessRate: "Success Rate",
+    featuresTitle: "Everything you need to succeed",
+    featuresSubtitle: "Powerful features to help you manage your projects and collaborate effectively.",
+    featureAIMatchingTitle: "AI-Powered Matching",
+    featureAIMatchingDesc: "Get personalized teammate and project recommendations based on your skills and interests.",
+    featureProjectManagementTitle: "Project Management",
+    featureProjectManagementDesc: "Track progress, manage tasks, and collaborate seamlessly with your team.",
+    featureRealtimeChatTitle: "Real-time Chat",
+    featureRealtimeChatDesc: "Stay connected with instant messaging and file sharing capabilities.",
+    featureSkillTrackingTitle: "Skill Tracking",
+    featureSkillTrackingDesc: "Showcase your abilities and find teammates with complementary skills.",
+    
     // MyGroup Page
     addMember: "Add Member",
     openWorkspace: "Open Workspace",
@@ -105,6 +140,7 @@ export const translations = {
     mentor: "Mentor",
     start: "Start",
     end: "End",
+    semester: "Semester",
     description: "Description",
     progress: "Progress",
     currentProgress: "Current progress",
@@ -173,7 +209,6 @@ export const translations = {
     
     // Workspace
     todo: "To Do",
-    inProgress: "In Progress",
     review: "Review",
     done: "Done",
     frontend: "Frontend",
@@ -200,8 +235,8 @@ export const translations = {
     // Forum
     recruitmentForum: "Recruitment Forum",
     forumPersonalSubtitle: "Publish your profile and let project teams invite you.",
-    createRecruitPost: "Create Post",
-    createPersonalPost: "Create Profile",
+    createRecruitPost: "Create group post",
+    createPersonalPost: "Create personal post",
     activePosts: "Active Posts",
     activeProfiles: "Active Profiles",
     openPositions: "Open Positions",
@@ -209,8 +244,8 @@ export const translations = {
     noData: "No results found.",
     searchByProject: "Search posts by project, skills…",
     searchByPeople: "Search people by role, skills…",
-    findTeammates: "Find Teammates",
-    findGroup: "Find Group",
+    postPersonal: "Post Personal",
+    postGroup: "Post Group",
     positionsNeeded: "Positions Needed",
     requiredSkills: "Required Skills",
     applyNow: "Apply Now",
@@ -218,6 +253,9 @@ export const translations = {
     inviteToGroup: "Invite to Group",
     alwaysOpen: "Always Open",
     availableNow: "Available",
+        groupStatus: "Status",
+    groupMaxMembers: "Max members",
+    groupCurrentMembers: "Current",
 
   },
   
@@ -226,6 +264,7 @@ export const translations = {
     findProjects: "Tìm Dự Án",
     forum: "Diễn Đàn",
     myGroups: "Nhóm Của Tôi",
+    myProjects: "Dự Án Của Tôi",
     workspace: "Không Gian Làm Việc",
     profile: "Hồ Sơ",
     notifications: "Thông Báo",
@@ -234,6 +273,7 @@ export const translations = {
     
     // Common
     loading: "Đang tải...",
+    creating: "Đang tạo...",
     error: "Lỗi",
     success: "Thành công",
     cancel: "Hủy",
@@ -250,6 +290,14 @@ export const translations = {
     clear: "Xóa",
     apply: "Áp dụng",
     reset: "Đặt lại",
+    total: "Tổng",
+    fetchingGroupData: "Đang tải dữ liệu nhóm của bạn.",
+    pendingRequests: "Yêu cầu chờ duyệt",
+    noPendingRequests: "Chưa có yêu cầu nào.",
+    request: "yêu cầu",
+    requests: "yêu cầu",
+    approve: "Chấp nhận",
+    reject: "Từ chối",
     
     // Auth
     login: "Đăng nhập",
@@ -276,14 +324,18 @@ export const translations = {
     projectDescription: "Mô tả dự án",
     projectStatus: "Trạng thái dự án",
     projectType: "Loại dự án",
+    field: "Lĩnh vực",
     
     // Groups
     groups: "Nhóm",
     group: "Nhóm",
+    groupName: "Tên nhóm",
     createGroup: "Tạo nhóm",
+    createNewGroup: "Tạo nhóm mới",
     joinGroup: "Tham gia nhóm",
     leaveGroup: "Rời nhóm",
     groupMembers: "Thành viên nhóm",
+    maxMembers: "Số thành viên tối đa",
     groupChat: "Trò chuyện nhóm",
     
     // Tasks
@@ -319,6 +371,27 @@ export const translations = {
     communityForum: "Diễn Đàn Cộng Đồng",
     forumSubtitle: "Chia sẻ kinh nghiệm, đặt câu hỏi và kết nối với cộng đồng sinh viên IT.",
     
+    // Homepage
+    heroHeadlinePrefix: "Trao quyền cho sinh viên để",
+    heroHeadlineHighlight: "Kết nối, Hợp tác và Sáng tạo",
+    heroDescription: "Tìm đồng đội và dự án phù hợp nhờ gợi ý thông minh từ AI.",
+    heroPrimaryCta: "Bắt đầu ngay",
+    heroSecondaryCta: "Đăng nhập bằng Google",
+    heroLoginPrompt: "Bạn đã có tài khoản?",
+    statsActiveProjects: "Dự án đang hoạt động",
+    statsStudents: "Sinh viên",
+    statsSuccessRate: "Tỉ lệ thành công",
+    featuresTitle: "Mọi thứ bạn cần để thành công",
+    featuresSubtitle: "Bộ tính năng mạnh mẽ giúp quản lý dự án và cộng tác hiệu quả.",
+    featureAIMatchingTitle: "Gợi ý bằng AI",
+    featureAIMatchingDesc: "Nhận đề xuất đồng đội và dự án cá nhân hóa dựa trên kỹ năng và sở thích.",
+    featureProjectManagementTitle: "Quản lý dự án",
+    featureProjectManagementDesc: "Theo dõi tiến độ, quản lý nhiệm vụ và phối hợp liền mạch với nhóm.",
+    featureRealtimeChatTitle: "Trò chuyện thời gian thực",
+    featureRealtimeChatDesc: "Luôn kết nối với tin nhắn tức thì và chia sẻ tệp.",
+    featureSkillTrackingTitle: "Theo dõi kỹ năng",
+    featureSkillTrackingDesc: "Thể hiện năng lực và tìm đồng đội có kỹ năng bổ trợ.",
+    
     // MyGroup Page
     addMember: "Thêm Thành Viên",
     openWorkspace: "Mở Không Gian Làm Việc",
@@ -327,10 +400,11 @@ export const translations = {
     mentor: "Người Hướng Dẫn",
     start: "Bắt Đầu",
     end: "Kết Thúc",
+    semester: "Học Kỳ",
     description: "Mô Tả",
     progress: "Tiến Độ",
     currentProgress: "Tiến độ hiện tại",
-    members: "Thành Viên",
+    members: "Thành viên",
     totalMembers: "Tổng",
     addMemberByEmail: "Thêm Thành Viên Bằng Email",
     enterMemberEmail: "Nhập email thành viên...",
@@ -422,8 +496,8 @@ export const translations = {
     // Forum
     recruitmentForum: "Diễn Đàn Tuyển Thành Viên",
     forumPersonalSubtitle: "Đăng hồ sơ để các nhóm mời bạn tham gia.",
-    createRecruitPost: "Tạo Bài Tuyển",
-    createPersonalPost: "Tạo Hồ Sơ Cá Nhân",
+    createRecruitPost: "Tạo bài tuyển thành viên",
+    createPersonalPost: "Tạo bài đăng cá nhân",
     activePosts: "Bài Đang Mở",
     activeProfiles: "Hồ Sơ Đang Mở",
     openPositions: "Vị Trí Cần Tuyển",
@@ -431,17 +505,18 @@ export const translations = {
     noData: "Không có kết quả.",
     searchByProject: "Tìm bài theo dự án, kỹ năng…",
     searchByPeople: "Tìm người theo vai trò, kỹ năng…",
-    findTeammates: "Tìm Thành Viên",
-    findGroup: "Tìm Nhóm",
+    postPersonal: "Bài đăng cá nhân",
+    postGroup: "Bài đăng nhóm",
     positionsNeeded: "Vị trí cần tuyển",
     requiredSkills: "Kỹ năng yêu cầu",
-    skills: "Kỹ năng",
-    viewDetails: "Xem chi tiết",
     applyNow: "Ứng tuyển ngay",
     viewProfile: "Xem hồ sơ",
     inviteToGroup: "Mời vào nhóm",
     alwaysOpen: "Mở 24/7",
     availableNow: "Sẵn sàng",
+    groupStatus: "Trạng thái",
+  groupMaxMembers: "Số thành viên tối đa",
+  groupCurrentMembers: "Hiện có",
 
 
   },
