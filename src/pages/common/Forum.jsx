@@ -22,6 +22,31 @@ function Chip({ children }) {
     </span>
   );
 }
+function StatusChip({ status }) {
+  const s = String(status || "").toLowerCase();
+  const map = {
+    pending: "bg-amber-50 text-amber-700 ring-amber-200",
+    accepted: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    rejected: "bg-rose-50 text-rose-700 ring-rose-200",
+  };
+  const cls = map[s] || "bg-gray-100 text-gray-700 ring-gray-200";
+  const label =
+    s === "pending"
+      ? "Pending"
+      : s === "accepted"
+      ? "Accepted"
+      : s === "rejected"
+      ? "Rejected"
+      : status || "Applied";
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${cls}`}
+    >
+      {label}
+    </span>
+  );
+}
+
 const clamp3 = {
   display: "-webkit-box",
   WebkitLineClamp: 3,
@@ -144,6 +169,7 @@ const Forum = () => {
   useEffect(() => {
     setPage(1);
   }, [debouncedQuery, activeTab]);
+
   const total = filtered.length;
   const maxPage = Math.max(1, Math.ceil(total / pageSize));
   const start = (page - 1) * pageSize;
@@ -151,22 +177,30 @@ const Forum = () => {
   const paged = filtered.slice(start, end);
 
   const onApply = async (post) => {
-    // Lấy đúng groupId từ post
-    const groupId =
-      post?.group?.groupId ||
-      post?.groupId ||
-      post?.group?.id ||
-      post?.group_id ||
-      null;
-
-    if (!groupId) {
-      console.warn("No groupId found in post:", post);
-      return;
-    }
+    const id = post?.id;
+    if (!id) return;
 
     try {
-      setApplyLoadingId(post.id);
-      await GroupService.applyToGroup(groupId);
+      setApplyLoadingId(id);
+
+      const res = await GroupService.applyPostToGroup(id, {});
+      // CHỈ lấy status từ body nếu có; KHÔNG dùng res.status (HTTP)
+      const bodyStatus = (res?.data?.status || "").toString().toLowerCase();
+      const newStatus = bodyStatus || "pending"; // optimistic fallback
+
+      setPostsData((prev) =>
+        (prev || []).map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                hasApplied: true,
+                myApplicationStatus: newStatus, // "pending" (hoặc theo body)
+                myApplicationId: res?.data?.id || item?.myApplicationId || null,
+              }
+            : item
+        )
+      );
+
       message.success("Đã gửi yêu cầu tham gia nhóm!");
     } catch (e) {
       console.error(e);
@@ -174,6 +208,7 @@ const Forum = () => {
       setApplyLoadingId(null);
     }
   };
+
   const onInvite = (id) => alert(`Invite user ${id} vào nhóm của bạn`);
 
   const openDetail = (post) => {
@@ -216,19 +251,18 @@ const Forum = () => {
               <button
                 onClick={() => setIsCreatePostModalOpen(true)}
                 className="inline-flex items-center gap-2 rounded-xl bg-[#FF7A00] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100"
-                title={t("createRecruitPost") || "Create recruitment post"}
+                title={t("createRecruitPost") || "Create group post"}
               >
                 <Plus className="h-4 w-4" />
-                {t("createRecruitPost") || "Create Post"}
+                {t("createRecruitPost") || "Create recruitment post"}
               </button>
             ) : (
               <button
                 onClick={() => setIsCreatePersonalPostModalOpen(true)}
                 className="inline-flex items-center gap-2 rounded-xl bg-[#FF7A00] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100"
-                title={t("createPersonalPost") || "Create personal profile"}
               >
                 <Plus className="h-4 w-4" />
-                {t("createPersonalPost") || "Create Profile"}
+                {t("createPersonalPost") || "Create personal post"}
               </button>
             )}
           </div>
@@ -245,7 +279,7 @@ const Forum = () => {
                   : "text-gray-700 hover:bg-gray-50"
               }`}
             >
-              {t("findTeammates") || "Find Teammates"}
+              {t("postGroup") || "Post Group"}
             </button>
             <button
               onClick={() => setActiveTab("individuals")}
@@ -255,7 +289,7 @@ const Forum = () => {
                   : "text-gray-700 hover:bg-gray-50"
               }`}
             >
-              {t("findGroup") || "Find Group"}
+              {t("postPersonal") || "Post Personal"}
             </button>
           </div>
         </div>
@@ -325,7 +359,7 @@ const Forum = () => {
                   </p>
 
                   <div className="mt-4">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <div className="text-xs font-semibold tracking-wide text-gray-500">
                       {(t("positionsNeeded") || "Positions Needed") + ":"}
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -339,7 +373,9 @@ const Forum = () => {
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <Users className="h-4 w-4" />
                       {!!p.currentMembers && (
-                        <span>{p.currentMembers} members</span>
+                        <span>
+                          {p.currentMembers} {t("members") || "Members"}
+                        </span>
                       )}
                     </div>
                     <div className="flex gap-2">
@@ -349,15 +385,21 @@ const Forum = () => {
                       >
                         {t("viewDetails") || "View Details"}
                       </button>
-                      <button
-                        onClick={() => onApply(p)}
-                        disabled={applyLoadingId === p.id}
-                        className="inline-flex items-center rounded-lg bg-[#FF7A00] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:!opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-60"
-                      >
-                        {applyLoadingId === p.id
-                          ? t("applying") || "Applying..."
-                          : t("applyNow") || "Apply Now"}
-                      </button>
+                      {p.hasApplied || p.myApplicationStatus ? (
+                        <StatusChip
+                          status={p.myApplicationStatus || "pending"}
+                        />
+                      ) : (
+                        <button
+                          onClick={() => onApply(p)}
+                          disabled={applyLoadingId === p.id}
+                          className="inline-flex items-center rounded-lg bg-[#FF7A00] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:!opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-60"
+                        >
+                          {applyLoadingId === p.id
+                            ? t("applying") || "Applying…"
+                            : t("applyNow") || "Apply Now"}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

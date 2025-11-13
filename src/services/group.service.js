@@ -48,6 +48,13 @@ export const GroupService = {
       isLoading: true,
     });
   },
+  applyPostToGroup(id, payload = {}) {
+    return BaseService.post({
+      url: API.GROUP.JOIN_POST_TO_GROUP(id),
+      payload,
+      isLoading: true,
+    })
+  },
 
   /** Leader chấp nhận yêu cầu tham gia */
   acceptJoinRequest(groupId, requestId) {

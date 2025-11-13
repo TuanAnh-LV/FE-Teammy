@@ -36,6 +36,7 @@ export const API = {
         REJECT_JOIN: (groupId, requestId) =>
       `/groups/${groupId}/join-requests/${requestId}/reject`,
         LEAVE_GROUP: (id) => `/groups/${id}/members/me`,
+        JOIN_POST_TO_GROUP: (id) => `recruitment-posts/${id}/applications`,
     }
 }
 
