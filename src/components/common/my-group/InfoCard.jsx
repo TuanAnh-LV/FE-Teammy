@@ -1,42 +1,107 @@
 import React from "react";
-import { Info, Calendar } from "lucide-react";
+import { ArrowLeft, Calendar, Users, ClipboardList, Target } from "lucide-react";
 import { useTranslation } from "../../../hook/useTranslation";
 
-export default function InfoCard({ group }) {
+const formatText = (value) => {
+  if (!value) return "";
+  return value;
+};
+
+export default function InfoCard({
+  group,
+  memberCount = 0,
+  onBack,
+  onEdit,
+}) {
   const { t } = useTranslation();
+  const statusLabel =
+    formatText(group.statusText) ||
+    formatText(group.status) ||
+    (t("status") || "Status");
+  const progressValue = Math.min(
+    100,
+    Math.max(0, Number(group.progress) || 0)
+  );
+
   return (
-    <div className="!bg-white/90 !backdrop-blur-md !border !border-gray-200 !rounded-2xl !shadow-md !p-8">
-      <div className="!flex !items-center !gap-2 !mb-5">
-        <span className="!bg-blue-100 !p-2 !rounded-lg">
-          <Info className="!text-blue-600 !w-5 !h-5" />
-        </span>
-        <h2 className="!font-bold !text-xl !text-gray-800">{t("groupInformation")}</h2>
-      </div>
+    <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 border border-gray-200 bg-white shadow-sm">
+      <div className="mx-auto w-full max-w-[79rem] px-6 py-4">
+        <div className="flex items-center justify-between pt-10">
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-gray-900"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {t("back") || "Back"}
+            </button>
+          ) : (
+            <span />
+          )}
+          {onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
+            >
+              {t("editGroup") || "Edit group"}
+            </button>
+          )}
+        </div>
 
-      <h3 className="!font-bold !text-[26px] !text-[#333] !mb-3">{group.title}</h3>
+        <div className="mt-3 flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <h3 className="text-3xl font-black bg-gradient-to-r from-[#3182ed] to-[#0595c7] text-transparent bg-clip-text">{group.title}</h3>
+            <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-0.5 text-xs font-semibold uppercase tracking-wide text-green-700">
+              {statusLabel}
+            </span>
+          </div>
+          <p className="text-[16px] text-[#627084]">
+            {group.topicName || group.field || t("selectMajor") || "Topic pending"}
+          </p>
+        </div>
 
-      <div className="!flex !flex-wrap !gap-2 !mb-6">
-        {/* <span className="!bg-blue-100 !text-blue-700 !text-sm !font-semibold !px-3 !py-1 !rounded-full">
-          {group.field}
-        </span> */}
-        <span className="!bg-green-100 !text-green-700 !text-sm !font-semibold !px-3 !py-1 !rounded-full">
-          {group.statusText}
-        </span>
-      </div>
+        <div className="mt-5 flex flex-wrap gap-6 text-sm text-[#627084]">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-gray-400" />
+            <span className="text-[#627084]">
+              {memberCount}/{group.maxMembers}
+            </span>
+            <span>{t("members") || "members"}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Target className="h-4 w-4 text-gray-400" />
+            <span className="">
+              {group.field || t("selectMajor") || "Major"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 text-gray-400" />
+            <span className="">
+              {group.semester || group.semesterLabel || "-"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-gray-400" />
+            <span className="">
+              {t("due") || "Due"}: {group.end || "--"}
+            </span>
+          </div>
+        </div>
 
-      <div className="!grid !grid-cols-1 md:!grid-cols-2 !gap-y-3 !text-[15px] !text-gray-700">
-        <p><b>ID:</b> {group.id}</p>
-        <p><b>{t("mentor")}:</b> {group.mentor}</p>
-        <p className="!flex !items-center !gap-2">
-          <Calendar className="!w-4 !h-4" /> <b>{t("start")}:</b> {group.start}
-        </p>
-        <p><b>{t("end")}:</b> {group.end}</p>
-        {group.semester && (
-          <p><b>{t("semester")}:</b> {group.semester}</p>
-        )}
-        {group.topicName && (
-          <p><b>{t("topic") || "Topic"}:</b> {group.topicName}</p>
-        )}
+        <div className="mt-6">
+          <div className="flex items-center justify-between text-xs font-semibold uppercase text-gray-500">
+            <p>{t("progress") || "Progress"}</p>
+            <span className="text-gray-900">{progressValue}%</span>
+          </div>
+          <div className="mt-2 h-2 w-full bg-gray-100">
+            <div
+              className="h-full bg-blue-500"
+              style={{ width: `${progressValue}%` }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
