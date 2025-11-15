@@ -6,8 +6,8 @@ import { useAuth } from "../../context/AuthContext";
 import { GroupService } from "../../services/group.service";
 import InfoCard from "../../components/common/my-group/InfoCard";
 import DescriptionCard from "../../components/common/my-group/DescriptionCard";
-import ProgressCard from "../../components/common/my-group/ProgressCard";
 import MentorCard from "../../components/common/my-group/MentorCard";
+import RecentActivityCard from "../../components/common/my-group/RecentActivityCard";
 import MembersList from "../../components/common/my-group/MembersList";
 import AddMemberModal from "../../components/common/my-group/AddMemberModal";
 import EditGroupModal from "../../components/common/my-group/EditGroupModal";
@@ -80,6 +80,7 @@ export default function MyGroup() {
             joinedAt: m.joinedAt,
             avatarUrl:
               m.avatarUrl ||
+              m.avatarURL ||
               m.photoURL ||
               m.photoUrl ||
               (currentEmail && normalizedEmail === currentEmail ? userInfo?.photoURL : ""),
@@ -97,7 +98,12 @@ export default function MyGroup() {
         setGroup({
           id: d.id || id,
           title: d.name || "",
-          field: d.field || "",
+          field:
+            d.field ||
+            d.major?.name ||
+            d.major?.majorName ||
+            (typeof d.major === "string" ? d.major : "") ||
+            "",
           description: d.description || "",
           start: rawStartDate ? rawStartDate.slice(0, 10) : "",
           end: rawEndDate ? rawEndDate.slice(0, 10) : "",
@@ -229,49 +235,40 @@ export default function MyGroup() {
 
   return (
     <div className="relative bg-[#f7fafc]">
-      <div className="relative z-10 min-h-screen flex flex-col items-center pt-20 xl:pt-32 pb-28">
-        {/* Header */}
-        <div className="w-full max-w-7xl px-6 flex items-center justify-between mb-10">
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 text-gray-700 hover:text-gray-900 transition"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            {t("back")}
-          </button>
-          <div className="flex gap-3">
-            {group?.canEdit && (
-              <button
-                onClick={() => setEditOpen(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
-              >
-                {t("editGroup") || "Edit group"}
-              </button>
-            )}
-            <button
-              onClick={() => setShowModal(true)}
-              className="bg-[#FF7A00] text-white px-4 py-2 rounded-lg transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-orange-100"
-            >
-              {t("addMember")}
-            </button>
-          </div>
-        </div>
+      <div className="relative z-10 min-h-screen flex flex-col items-center pt-4 xl:pt-8 pb-24">
+        <div className="w-full flex flex-col gap-6">
+          {group && (
+            <InfoCard
+              group={group}
+              memberCount={groupMembers.length}
+              onBack={() => navigate(-1)}
+              onEdit={group.canEdit ? () => setEditOpen(true) : null}
+            />
+          )}
 
-        {/* Layout */}
-        <div className="w-full max-w-7xl px-6 grid grid-cols-1 lg:grid-cols-10 gap-8">
-          <div className="col-span-7 flex flex-col gap-6">
-            {group && (
-              <>
-                <InfoCard group={group} />
-                <DescriptionCard description={group.description} />
-                <ProgressCard value={group.progress} text={t("currentProgress")} />
-              </>
-            )}
-          </div>
-
-          <div className="col-span-3 flex flex-col gap-6">
-            {group && <MentorCard name={group.mentor} label={t("projectMentor")} />}
-            <MembersList members={groupMembers} totalLabel="Tổng thành viên" membersLabel="Thành viên" />
+          <div className="mx-auto flex w-full max-w-[79rem] flex-col gap-6 lg:flex-row">
+            <div className="flex-1 space-y-6">
+              {group && (
+                <>
+                  <DescriptionCard description={group.description} />
+                  <RecentActivityCard />
+                </>
+              )}
+            </div>
+            <div className="w-full max-w-sm space-y-6">
+              <MembersList
+                members={groupMembers}
+                title={t("teamMembers") || "Team Members"}
+                inviteLabel={t("inviteMembers") || "Invite Members"}
+                emptyLabel={t("noMembersYet") || "No members yet"}
+                onInvite={
+                  group?.canEdit ? () => setShowModal(true) : undefined
+                }
+              />
+              {group && (
+                <MentorCard name={group.mentor} label={t("projectMentor")} />
+              )}
+            </div>
           </div>
         </div>
 

@@ -52,7 +52,8 @@ axiosInstance.interceptors.response.use(
 
     if (response?.status === 401) {
       localStorage.clear();
-      window.location.href = ROUTER_URL.LOGIN;
+      const loginPath = ROUTER_URL?.COMMON?.LOGIN || "/login";
+      window.location.href = loginPath;
     }
 
     // nếu thiếu token => 403 public page: giữ nguyên logic nhưng dùng getAccessToken()

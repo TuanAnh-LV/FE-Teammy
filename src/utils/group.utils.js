@@ -14,6 +14,66 @@ export const formatSemester = (semester = {}) => {
 export const normalizeGroup = (group, idx = 0) => {
   const role = (group.role || "").toLowerCase();
   const progress = Number(group.progress ?? 0);
+
+  const memberEntries =
+    (Array.isArray(group.membersList) && group.membersList) ||
+    (Array.isArray(group.members) && group.members) ||
+    (Array.isArray(group.memberDetails) && group.memberDetails) ||
+    (Array.isArray(group.memberProfiles) && group.memberProfiles) ||
+    [];
+
+  const normalizedMembers = memberEntries.map((member, memberIdx) => {
+    const name =
+      member?.displayName ||
+      member?.name ||
+      member?.fullName ||
+      member?.username ||
+      member?.email ||
+      `Member ${memberIdx + 1}`;
+    return {
+      id:
+        member?.id ||
+        member?.memberId ||
+        member?.userId ||
+        member?.userID ||
+        member?.accountId ||
+        `member-${memberIdx}`,
+      name,
+      avatar:
+        member?.avatarUrl ||
+        member?.avatarURL ||
+        member?.photoURL ||
+        member?.photoUrl ||
+        member?.profileImage ||
+        member?.profilePicture ||
+        member?.imageUrl ||
+        member?.imageURL ||
+        member?.image ||
+        "",
+    };
+  });
+
+  const resolveMembersCount = () => {
+    const numberCandidates = [
+      group.currentMembers,
+      !Array.isArray(group.members) ? group.members : null,
+      group.memberCount,
+      group.membersCount,
+      group.totalMembers,
+      group.countMembers,
+    ];
+
+    for (const candidate of numberCandidates) {
+      if (candidate === null || candidate === undefined) continue;
+      const num = Number(candidate);
+      if (!Number.isNaN(num) && num >= 0) return num;
+    }
+    if (normalizedMembers.length > 0) return normalizedMembers.length;
+    return 1;
+  };
+
+  const membersCount = resolveMembersCount();
+
   return {
     id: String(group.groupId || group.id || `G-${idx + 1}`),
     title: group.name || group.title || `Group ${idx + 1}`,
@@ -34,7 +94,7 @@ export const normalizeGroup = (group, idx = 0) => {
     role,
     displayRole: group.role || "Member",
     isLeader: role === "leader",
-    members: Number(group.currentMembers ?? group.members ?? 1),
+    members: membersCount,
     maxMembers: Number(group.maxMembers ?? 5),
     createdAt: group.createdAt || new Date().toISOString(),
     avatarUrl: group.leader?.avatarUrl || "",
@@ -45,6 +105,7 @@ export const normalizeGroup = (group, idx = 0) => {
     progress: Number.isNaN(progress)
       ? 0
       : Math.min(100, Math.max(0, progress)),
+    memberPreview: normalizedMembers,
   };
 };
 

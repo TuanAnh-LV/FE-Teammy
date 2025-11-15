@@ -100,16 +100,14 @@ const Forum = () => {
 
   // posts list
   const [postsData, setPostsData] = useState([]);
-  //View dẻtail modal group
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailGroupId, setDetailGroupId] = useState(null);
 
   const [applyLoadingId, setApplyLoadingId] = useState(null);
 
-  /** 1) L???y membership khi mount (ho???c sau login b???n c?cng cA3 th??? set ??Y global store) */
   useEffect(() => {
     if (membershipFetchedRef.current) return;
-    membershipFetchedRef.current = true;
+    membershipFetchedRef.current = true;  
     (async () => {
       try {
         const res = await AuthService.getMembership();
@@ -122,7 +120,6 @@ const Forum = () => {
         // Luôn giữ tab ở "groups" (Post Group)
         // setActiveTab(m.hasGroup ? "groups" : "individuals");
       } catch {
-        // n?u l?i, gi? m?c d?nh "groups"
       }
     })();
   }, []);

@@ -18,6 +18,47 @@ export default function MyGroupsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  const formatRoleLabel = (role) => {
+    if (!role) return "";
+    return role
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/_/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
+  const getInitials = (name = "") => {
+    const trimmed = name.trim();
+    if (!trimmed) return "?";
+    const parts = trimmed.split(/\s+/).slice(0, 2);
+    return parts
+      .map((part) => part.charAt(0).toUpperCase())
+      .join("");
+  };
+
+  const getRoleLabel = (group) => {
+    if (group.isLeader) {
+      const leaderLabel =
+        t("teamLeader") || t("leader") || group.displayRole || "Team Leader";
+      return formatRoleLabel(leaderLabel);
+    }
+
+    const normalizedRoleKey = group.displayRole
+      ? typeof group.displayRole === "string"
+        ? group.displayRole.toLowerCase()
+        : group.displayRole
+      : null;
+
+    const translatedRole = normalizedRoleKey ? t(normalizedRoleKey) : null;
+
+    return (
+      translatedRole ||
+      formatRoleLabel(group.displayRole) ||
+      t("member") ||
+      "Member"
+    );
+  };
+
   const {
     groups,
     loading,
@@ -150,39 +191,35 @@ export default function MyGroupsPage() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase text-blue-500">
-                  {group.field}
-                </p>
                 <h3 className="mt-1 text-[18px] font-bold text-gray-900">
                   {group.title}
-                </h3>
-                <p className="mt-2 line-clamp-3 text-sm text-gray-600">
+                </h3> 
+                <p className="text-sm pt-1 text-[#627084]">
+                  {group.field}
+                </p>
+
+                <p className="mt-2 line-clamp-3 text-sm text-[#1d2530]">
                   {group.description}
                 </p>
               </div>
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
-                  group.isLeader
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-gray-100 text-gray-700"
-                }`}
-              >
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center rounded-full px-4 py-1.5 text-xs font-semibold ${group.isLeader
+                      ? "bg-[#3182ed] text-white"
+                      : "bg-gray-100 text-gray-700"
+                    }`}
+                >
+                  <span className="capitalize leading-none whitespace-nowrap">
+                    {getRoleLabel(group)}
+                  </span>
+                </span>
                 {group.isLeader && (
-                  <Crown className="!h-3.5 !w-3.5 text-amber-500" />
+                  <Crown className="!h-4 !w-4 text-amber-400" />
                 )}
-                {group.displayRole}
-              </span>
+              </div>
             </div>
 
-            <div className="mt-5 grid gap-4 text-sm text-gray-600 sm:grid-cols-3">
-              <div>
-                <p className="text-xs uppercase text-gray-400">
-                  {t("members") || "Members"}
-                </p>
-                <p className="mt-1 font-semibold text-gray-900">
-                  {group.members}/{group.maxMembers}
-                </p>
-              </div>
+            <div className="mt-5 grid gap-4 text-sm text-gray-600 sm:grid-cols-2">
               <div>
                 <p className="text-xs uppercase text-gray-400">
                   {t("semester") || "Semester"}
@@ -201,10 +238,77 @@ export default function MyGroupsPage() {
               </div>
             </div>
 
+            {(() => {
+              const progressPercent = Math.min(
+                100,
+                Math.round(
+                  ((group.members || 0) / (group.maxMembers || 1)) * 100
+                )
+              );
+              return (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between text-xs text-gray-400">
+                    <p className="uppercase">{t("progress") || "Progress"}</p>
+                    <p className="font-semibold text-gray-600">
+                      {progressPercent}%
+                    </p>
+                  </div>
+                  <div className="mt-2 h-2 w-full rounded-full bg-gray-100">
+                    <div
+                      className="h-full rounded-full bg-blue-500 transition-all"
+                      style={{
+                        width: `${progressPercent}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {group.memberPreview?.length ? (
+                  <>
+                    <div className="flex -space-x-2">
+                      {group.memberPreview.slice(0, 5).map((member, idx) => (
+                        <div
+                          key={member.id || `member-${idx}`}
+                          className="relative h-8 w-8 rounded-full border-2 border-white bg-gray-100 text-[10px] font-semibold text-gray-600 shadow-sm"
+                          title={member.name}
+                        >
+                          {member.avatar ? (
+                            <img
+                              src={member.avatar}
+                              alt={member.name}
+                              className="h-full w-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="flex h-full w-full items-center justify-center">
+                              {getInitials(member.name)}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {group.memberPreview.length > 5 && (
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full border border-dashed border-gray-200 bg-white text-[10px] font-semibold text-gray-500">
+                        +{group.memberPreview.length - 5}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-xs text-gray-400">
+                    {t("noMembersYet") || "No members yet"}
+                  </p>
+                )}
+              </div>
+              <p className="text-sm font-semibold text-[#627084]">
+                {group.members}/{group.maxMembers}
+              </p>
+            </div>
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 onClick={() => handleViewGroup(group.id)}
-                className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-300"
+                className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 cursor-pointer hover:border-gray-300"
               >
                 {t("view") || "View"}
                 <ArrowRight className="!h-4 !w-4" />
@@ -217,13 +321,12 @@ export default function MyGroupsPage() {
                     canSelectTopic(group)
                       ? ""
                       : t("topicRequirement") ||
-                        "Topic can be selected when the group is full."
+                      "Topic can be selected when the group is full."
                   }
-                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                    canSelectTopic(group)
+                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${canSelectTopic(group)
                       ? "border-emerald-200 text-emerald-600 hover:border-emerald-300"
                       : "border-gray-100 text-gray-400 cursor-not-allowed"
-                  }`}
+                    }`}
                 >
                   {group.topicTitle
                     ? t("changeTopic") || "Change topic"
@@ -232,7 +335,7 @@ export default function MyGroupsPage() {
               )}
               <button
                 onClick={() => handleLeaveGroup(group.id)}
-                className="inline-flex items-center gap-2 rounded-full border border-red-100 px-4 py-2 text-sm font-semibold text-red-600 hover:border-red-200"
+                className="inline-flex items-center gap-2 rounded-full border border-red-100 px-4 py-2 text-sm font-semibold cursor-pointer text-red-600 hover:border-red-200"
               >
                 {t("leaveGroup") || "Leave Group"}
               </button>
@@ -385,10 +488,10 @@ export default function MyGroupsPage() {
               </h1>
               <p className="mt-3 max-w-3xl text-muted-foreground text-gray-400">
                 {t("myGroupsProjectsSubtitle") ||
-                  "Manage your capstone project teams, track progress, and collaborate with teammates. Create new groups or join existing ones to build amazing projects together."}
+                  "Manage your capstone project teams, track progress, and collaborate with teammates."}
                 <br />
-                Create new groups or join existing ones to build amazing
-                projects together.
+                {t("myGroupsProjectsCTA") ||
+                  "Create new groups or join existing ones to build amazing projects together."}
               </p>
 
               <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:justify-between lg:gap-8">
@@ -436,11 +539,10 @@ export default function MyGroupsPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-1.5 transition ${
-                  activeTab === tab.key
+                className={`flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-1.5 transition ${activeTab === tab.key
                     ? "bg-[#f7f9fa] text-[#1d3a66] shadow"
                     : "bg-[#f2f4f5] text-[#7d889c] hover:text-[#1d3a66]"
-                }`}
+                  }`}
               >
                 {tab.icon}
                 <span className="capitalize">{tab.label}</span>

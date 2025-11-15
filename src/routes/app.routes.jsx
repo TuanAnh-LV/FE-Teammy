@@ -24,6 +24,7 @@ const Profile = lazy(() => import("../pages/common/Profile"));
 const DiscoverGuest = lazy(() => import("../pages/common/Discover"));
 const Forum = lazy(() => import("../pages/common/Forum"));
 const Workspace = lazy(() => import("../pages/common/Workspace"));
+const Login = lazy(() => import("../pages/common/Login"));
 
 const MyGroupsPage = lazy(() => import("../pages/common/MyGroups")); 
 const MyGroup = lazy(() => import("../pages/common/MyGroup"));       
@@ -43,6 +44,7 @@ const routes = [
       { path: "/", element: <HomePage /> },
       { path: "/discover", element: <DiscoverGuest /> },
       { path: "/forum", element: <Forum /> },
+      { path: "/login", element: <Login /> },
       { path: "/my-group", element: <MyGroupsPage /> },
       { path: "/my-group/:id", element: <MyGroup /> },
       { path: "/workspace", element: <Workspace /> },
