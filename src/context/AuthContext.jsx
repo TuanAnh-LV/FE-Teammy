@@ -18,7 +18,12 @@ const normalizeUserInfo = (raw) => {
     userId: raw.userId,
     email: raw.email,
     name: raw.displayName || raw.name || "",
-    photoURL: raw.avatarUrl || raw.avatarURL || "",
+    photoURL:
+      raw.avatarUrl ||
+      raw.avatarURL ||
+      raw.photoURL ||
+      raw.photoUrl ||
+      "",
     role: raw.role,
     emailVerified: !!raw.emailVerified,
     skillsCompleted: !!raw.skillsCompleted,

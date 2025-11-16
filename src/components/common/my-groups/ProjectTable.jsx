@@ -112,7 +112,7 @@ export default function ProjectTable({
                     <Badge tone={g.tone}>{formatStatus(g.status)}</Badge>
                   </td>
 
-                  <td className="px-5 py-4 text-sm text-gray-700">
+                  <td className="px-5 py-4 text-sm text-[#627084]">
                     {g.members}/{g.maxMembers}
                   </td>
 

@@ -23,6 +23,7 @@ import {
 } from "../../utils/helpers";
 import GroupDetailModal from "../../components/common/forum/GroupDetailModal";
 import { message } from "antd";
+import ApplyModal from "../../components/common/forum/ApplyModal";
 /** ---------- UI SMALLS ---------- */
 function Chip({ children }) {
   return (
@@ -91,7 +92,6 @@ const Forum = () => {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const timer = useRef(null);
   const membershipFetchedRef = useRef(false);
-  const tabFetchRef = useRef(null);
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setDebouncedQuery(query), 200);
@@ -100,11 +100,13 @@ const Forum = () => {
 
   // posts list
   const [postsData, setPostsData] = useState([]);
-  //View dẻtail modal group
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailGroupId, setDetailGroupId] = useState(null);
 
   const [applyLoadingId, setApplyLoadingId] = useState(null);
+
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [applyPost, setApplyPost] = useState(null);
 
   /** 1) L???y membership khi mount (ho???c sau login b???n c?cng cA3 th??? set ??Y global store) */
   useEffect(() => {
@@ -121,9 +123,7 @@ const Forum = () => {
         setMembership(m);
         // Luôn giữ tab ở "groups" (Post Group)
         // setActiveTab(m.hasGroup ? "groups" : "individuals");
-      } catch {
-        // n?u l?i, gi? m?c d?nh "groups"
-      }
+      } catch {}
     })();
   }, []);
 
@@ -141,8 +141,7 @@ const Forum = () => {
   };
 
   useEffect(() => {
-    if (tabFetchRef.current === activeTab) return;
-    tabFetchRef.current = activeTab;
+    // Khi activeTab thay đổi, gọi lại hàm fetch để tải dữ liệu mới
     let mounted = true;
     (async () => {
       try {
@@ -195,36 +194,40 @@ const Forum = () => {
   const end = start + pageSize;
   const paged = filtered.slice(start, end);
 
-  const onApply = async (post) => {
-    const id = post?.id;
+  const onClickOpenApply = (post) => {
+    if (!post?.id) return;
+    setApplyPost(post);
+    setApplyOpen(true);
+  };
+  const handleApplySubmit = async (payload /* { message } */) => {
+    const id = applyPost?.id;
     if (!id) return;
-
     try {
       setApplyLoadingId(id);
-
-      const res = await GroupService.applyPostToGroup(id, {});
-      // CHỈ lấy status từ body nếu có; KHÔNG dùng res.status (HTTP)
+      const res = await GroupService.applyPostToGroup(id, payload);
       const bodyStatus = (res?.data?.status || "").toString().toLowerCase();
-      const newStatus = bodyStatus || "pending"; // optimistic fallback
+      const newStatus = bodyStatus || "pending";
 
+      // Cập nhật UI lạc quan
       setPostsData((prev) =>
         (prev || []).map((item) =>
           item.id === id
             ? {
                 ...item,
                 hasApplied: true,
-                myApplicationStatus: newStatus, // "pending" (hoặc theo body)
+                myApplicationStatus: newStatus,
                 myApplicationId: res?.data?.id || item?.myApplicationId || null,
               }
             : item
         )
       );
-
       message.success("Đã gửi yêu cầu tham gia nhóm!");
     } catch (e) {
       console.error(e);
     } finally {
       setApplyLoadingId(null);
+      setApplyOpen(false);
+      setApplyPost(null);
     }
   };
 
@@ -471,7 +474,7 @@ const Forum = () => {
                         />
                       ) : (
                         <button
-                          onClick={() => onApply(p)}
+                          onClick={() => onClickOpenApply(p)}
                           disabled={applyLoadingId === p.id}
                           className="inline-flex items-center rounded-lg bg-[#FF7A00] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:!opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-60"
                         >
@@ -636,6 +639,15 @@ const Forum = () => {
           isOpen={detailOpen}
           onClose={() => setDetailOpen(false)}
           groupId={detailGroupId}
+        />
+        <ApplyModal
+          open={applyOpen}
+          onClose={() => {
+            setApplyOpen(false);
+            setApplyPost(null);
+          }}
+          post={applyPost}
+          onSubmit={handleApplySubmit}
         />
       </div>
     </div>
