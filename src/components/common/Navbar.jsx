@@ -96,6 +96,12 @@ const Navbar = () => {
     }
   };
 
+  const handleWorkspaceNav = () => {
+    const lastId =
+      (typeof localStorage !== "undefined" && localStorage.getItem("last_group_id")) || "";
+    navigate(lastId ? `/workspace?groupId=${lastId}` : "/workspace");
+  };
+
   return (
     <>
     <nav className="!w-full !h-16 !fixed !top-0 !z-50 !bg-white/80 !backdrop-blur-md !border-b !border-gray-200">
@@ -129,15 +135,16 @@ const Navbar = () => {
               <Users className="!w-4 !h-4" />
               <span>{getTranslation("myGroups", language)}</span>
             </Link>
-            <Link
-              to="/workspace"
-              className={`!flex !items-center !gap-2 !hover:text-blue-600 ${
+            <button
+              type="button"
+              onClick={handleWorkspaceNav}
+              className={`!flex !items-center !gap-2 !hover:text-blue-600 !bg-transparent !border-0 !p-0 ${
                 isActive("/workspace") ? "!text-blue-600" : ""
               }`}
             >
               <FolderKanban className="!w-4 !h-4" />
               <span>{getTranslation("workspace", language)}</span>
-            </Link>
+            </button>
           </div>
         </div>
 
