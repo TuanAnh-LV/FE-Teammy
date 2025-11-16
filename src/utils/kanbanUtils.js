@@ -19,21 +19,37 @@ export function insertAt(arr, index, item) {
 }
 
 /**
- * Filter task theo search + tag
+ * Filter tasks theo search + status + priority
  */
-export function filterColumns(columns, search, filterTag, allColumnIds = ALL_COLUMN_IDS) {
+export function filterColumns(
+  columns,
+  search,
+  filterStatus,
+  filterPriority,
+  allColumnIds
+) {
+  const columnIds =
+    allColumnIds && allColumnIds.length
+      ? allColumnIds
+      : Object.keys(columns || {});
   const pass = (task) => {
     const matchText =
       !search ||
       task.title.toLowerCase().includes(search.toLowerCase()) ||
       task.description.toLowerCase().includes(search.toLowerCase());
-    const matchTag = filterTag === "All" || task.tags.includes(filterTag);
-    return matchText && matchTag;
+    const matchStatus =
+      !filterStatus || filterStatus === "All" || task.status === filterStatus;
+    const matchPriority =
+      !filterPriority ||
+      filterPriority === "All" ||
+      task.priority?.toLowerCase() === filterPriority?.toLowerCase();
+    return matchText && matchStatus && matchPriority;
   };
 
   const clone = {};
-  for (const c of allColumnIds) {
-    clone[c] = columns[c].filter(pass);
+  for (const c of columnIds) {
+    const list = Array.isArray(columns?.[c]) ? columns[c] : [];
+    clone[c] = list.filter(pass);
   }
   return clone;
 }
