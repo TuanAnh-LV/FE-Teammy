@@ -92,7 +92,6 @@ const Forum = () => {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const timer = useRef(null);
   const membershipFetchedRef = useRef(false);
-  const tabFetchRef = useRef(null);
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setDebouncedQuery(query), 200);
@@ -101,7 +100,6 @@ const Forum = () => {
 
   // posts list
   const [postsData, setPostsData] = useState([]);
-  //View dẻtail modal group
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailGroupId, setDetailGroupId] = useState(null);
 
@@ -125,9 +123,7 @@ const Forum = () => {
         setMembership(m);
         // Luôn giữ tab ở "groups" (Post Group)
         // setActiveTab(m.hasGroup ? "groups" : "individuals");
-      } catch {
-        // n?u l?i, gi? m?c d?nh "groups"
-      }
+      } catch {}
     })();
   }, []);
 

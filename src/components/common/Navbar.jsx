@@ -81,31 +81,12 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path;
 
   const handleSignIn = async () => {
-    if (signingIn) return;
-    setSigningIn(true);
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const fbUser = result.user;
-      const idToken = await fbUser.getIdToken();
-      await loginGoogle(idToken, {
-        email: fbUser.email ?? "",
-        displayName: fbUser.displayName ?? "",
-        photoURL: fbUser.photoURL ?? "",
-        avatarUrl: fbUser.photoURL ?? "",
-      });
-      messageApi.success("Signed in successfully.");
-    } catch (error) {
-      console.error("Google login failed:", error);
-      messageApi.error(error?.message || "Sign in failed. Please try again.");
-    } finally {
-      setSigningIn(false);
-    }
+    navigate("/login");
   };
 
 
   const handleSignOut = () => {
     try {
-      // Clear auth state and storage via AuthContext
       logout();
     } finally {
       setUser(null);
@@ -213,10 +194,7 @@ const Navbar = () => {
                     user.photoUrl ||
                     user.photoURL ||
                     user.avatarUrl ||
-                    user.avatarURL ||
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      user.displayName || user.name || user.email || "User"
-                    )}&background=0D8ABC&color=fff`;
+                    user.avatarURL
                   return (
                     <img
                       src={
@@ -266,14 +244,9 @@ const Navbar = () => {
           ) : (
             <button
               onClick={handleSignIn}
-              disabled={signingIn}
-              className="!px-4 !py-2 !rounded-full !bg-black !text-white !text-sm !font-medium hover:!bg-gray-800 !transition-colors !duration-200 !flex !items-center !space-x-1 !font-sans disabled:!opacity-60"
+              className="!px-4 !py-2 !rounded-full !bg-black !text-white !text-sm !font-medium hover:!bg-gray-800 !transition-colors !duration-200 !flex !items-center !space-x-1 !font-sans"
             >
-              <span>
-                {signingIn
-                  ? getTranslation("loading", language) || "Đang đăng nhập..."
-                  : getTranslation("signIn", language)}
-              </span>
+              <span>{getTranslation("signIn", language)}</span>
               <svg
                 className="!w-4 !h-4"
                 fill="none"
