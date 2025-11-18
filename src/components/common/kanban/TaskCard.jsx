@@ -2,8 +2,31 @@
 import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Calendar, Clock3, MessageSquare } from "lucide-react";
-import { tagStyles, priorityStyles, initials } from "../../../utils/kanbanHelpers";
+import { Calendar, MessageSquare } from "lucide-react";
+import {
+  priorityStyles,
+  statusStyles,
+  initials,
+} from "../../../utils/kanbanHelpers";
+
+const getAssigneeId = (assignee) => {
+  if (!assignee) return "";
+  if (typeof assignee === "string") return assignee;
+  return assignee.id || assignee.userId || assignee.email || "";
+};
+
+const getAssigneeLabel = (assignee) => {
+  if (!assignee) return "";
+  if (typeof assignee === "string") return assignee;
+  return (
+    assignee.name ||
+    assignee.displayName ||
+    assignee.fullName ||
+    assignee.email ||
+    assignee.id ||
+    ""
+  );
+};
 
 const TaskCard = ({ task, onOpen }) => {
   const {
@@ -21,6 +44,13 @@ const TaskCard = ({ task, onOpen }) => {
     opacity: isDragging ? 0.6 : 1,
   };
 
+  const priorityClass = priorityStyles[task.priority] || "bg-gray-100 text-gray-700";
+  const statusClass = statusStyles[task.status] || "bg-gray-100 text-gray-700";
+  const dueLabel = task.dueDate
+    ? new Date(task.dueDate).toLocaleDateString()
+    : "--";
+  const commentsCount = Array.isArray(task.comments) ? task.comments.length : 0;
+
   return (
     <div
       ref={setNodeRef}
@@ -34,9 +64,7 @@ const TaskCard = ({ task, onOpen }) => {
         <h4 className="font-semibold text-gray-900 leading-snug">
           {task.title}
         </h4>
-        <span
-          className={`text-xs px-2 py-1 rounded-full ${priorityStyles[task.priority]}`}
-        >
+        <span className={`text-xs px-2 py-1 rounded-full ${priorityClass}`}>
           {task.priority}
         </span>
       </div>
@@ -45,44 +73,41 @@ const TaskCard = ({ task, onOpen }) => {
         {task.description}
       </p>
 
-      <div className="flex flex-wrap items-center gap-2 mt-3">
-        {task.tags.map((t) => (
-          <span
-            key={t}
-            className={`text-xs px-2 py-1 rounded-full ${tagStyles[t]}`}
-          >
-            {t}
-          </span>
-        ))}
+      <div className="flex items-center gap-2 mt-3">
+        <span className={`text-xs px-2 py-1 rounded-full ${statusClass}`}>
+          {task.status}
+        </span>
       </div>
 
       <div className="flex items-center justify-between mt-4">
         <div className="flex items-center gap-2 text-xs text-gray-600">
           <Calendar className="w-4 h-4" />
-          <span>{task.due}</span>
-          <Clock3 className="w-4 h-4 ml-2" />
-          <span>{task.points}pts</span>
+          <span>{dueLabel}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex -space-x-2">
-            {task.assignees.slice(0, 3).map((a) => (
-              <div
-                key={a}
-                className="w-6 h-6 rounded-full bg-gray-800 text-white text-[10px] flex items-center justify-center ring-2 ring-white"
-                title={a}
-              >
-                {initials(a)}
-              </div>
-            ))}
-            {task.assignees.length > 3 && (
+            {(task.assignees || []).slice(0, 3).map((assignee, index) => {
+              const label = getAssigneeLabel(assignee) || "Unassigned";
+              const key = getAssigneeId(assignee) || `${label}-${index}`;
+              return (
+                <div
+                  key={key}
+                  className="w-6 h-6 rounded-full bg-gray-800 text-white text-[10px] flex items-center justify-center ring-2 ring-white"
+                  title={label}
+                >
+                  {initials(label || "U")}
+                </div>
+              );
+            })}
+            {(task.assignees || []).length > 3 && (
               <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 text-[10px] flex items-center justify-center ring-2 ring-white">
-                +{task.assignees.length - 3}
+                +{(task.assignees || []).length - 3}
               </div>
             )}
           </div>
           <div className="flex items-center text-gray-600 text-xs ml-2">
             <MessageSquare className="w-4 h-4 mr-1" />
-            {task.comments.length}
+            {commentsCount}
           </div>
         </div>
       </div>

@@ -266,6 +266,15 @@ export default function MyGroup() {
                 }
               />
               {group && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/workspace?groupId=${group.id || id}`)}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
+                >
+                  M? Workspace
+                </button>
+              )}
+              {group && (
                 <MentorCard name={group.mentor} label={t("projectMentor")} />
               )}
             </div>
