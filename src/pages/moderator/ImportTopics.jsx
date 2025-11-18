@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Steps, Button } from "antd";
 import {
   UploadOutlined,
@@ -7,31 +7,29 @@ import {
   CheckCircleOutlined,
 } from "@ant-design/icons";
 
-import ImportStep1Upload from "../../components/admin/import/ImportStep1Upload";
-import ImportStep2Mapping from "../../components/admin/import/ImportStep2Mapping";
-import ImportStep3Preview from "../../components/admin/import/ImportStep3Preview";
-import ImportStep4Result from "../../components/admin/import/ImportStep4Result";
-import { useNavigate } from "react-router-dom";
-const ImportUsers = () => {
+import ImportStep1UploadTopic from "../../components/moderator/import/ImportStep1UploadTopic";
+import ImportStep2MappingTopic from "../../components/moderator/import/ImportStep2MappingTopic";
+import ImportStep3PreviewTopic from "../../components/moderator/import/ImportStep3PreviewTopic";
+import ImportStep4ResultTopic from "../../components/moderator/import/ImportStep4ResultTopic";
+
+const ImportTopics = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [rawData, setRawData] = useState([]);
-  const [mappedUsers, setMappedUsers] = useState([]);
+  const [mappedTopics, setMappedTopics] = useState([]);
   const [columnMap, setColumnMap] = useState({});
 
-  // Wrap setMappedUsers in useCallback to provide stable reference
-  const handleSetMappedUsers = useCallback((users) => {
-    setMappedUsers(users);
-  }, []);
-  const navigate = useNavigate();
+  const handleSetMappedTopics = useCallback(
+    (list) => setMappedTopics(list),
+    []
+  );
 
-  // Memoize steps array to prevent infinite loops
   const steps = useMemo(
     () => [
       {
         title: "Upload File",
         icon: <UploadOutlined />,
         content: (
-          <ImportStep1Upload
+          <ImportStep1UploadTopic
             setRawData={setRawData}
             setCurrentStep={setCurrentStep}
           />
@@ -41,7 +39,7 @@ const ImportUsers = () => {
         title: "Map Columns",
         icon: <SwapOutlined />,
         content: (
-          <ImportStep2Mapping
+          <ImportStep2MappingTopic
             rawData={rawData}
             setColumnMap={setColumnMap}
             setCurrentStep={setCurrentStep}
@@ -52,10 +50,10 @@ const ImportUsers = () => {
         title: "Review",
         icon: <EyeOutlined />,
         content: (
-          <ImportStep3Preview
+          <ImportStep3PreviewTopic
             rawData={rawData}
             columnMap={columnMap}
-            setMappedUsers={handleSetMappedUsers}
+            setMappedTopics={handleSetMappedTopics}
             setCurrentStep={setCurrentStep}
           />
         ),
@@ -64,21 +62,21 @@ const ImportUsers = () => {
         title: "Import",
         icon: <CheckCircleOutlined />,
         content: (
-          <ImportStep4Result
-            mappedUsers={mappedUsers}
+          <ImportStep4ResultTopic
+            mappedTopics={mappedTopics}
             setCurrentStep={setCurrentStep}
           />
         ),
       },
     ],
-    [rawData, columnMap, mappedUsers, handleSetMappedUsers]
+    [rawData, columnMap, handleSetMappedTopics]
   );
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Import Users</h1>
-        <Button onClick={() => navigate("/admin/users")}>Back to Users</Button>
+        <h1 className="text-3xl font-bold">Import Topics</h1>
+        <div />
       </div>
 
       <Steps
@@ -98,4 +96,4 @@ const ImportUsers = () => {
   );
 };
 
-export default ImportUsers;
+export default ImportTopics;

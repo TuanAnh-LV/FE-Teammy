@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   Input,
@@ -22,40 +22,11 @@ const { Option } = Select;
 import UserDetailModal from "../../components/admin/UserDetailModal";
 import UserAddModal from "../../components/admin/UserAddModal";
 import UserEditModal from "../../components/admin/UserEditModal";
+import { AdminService } from "../../services/admin.service";
 import { useNavigate } from "react-router-dom";
 
 const ManageUsers = () => {
-  const users = [
-    {
-      key: 1,
-      name: "Nguyen Tuan Anh",
-      email: "anhlvtse172914@fpt.edu.vn",
-      role: "Admin",
-      status: "Active",
-      phone: "0901234567",
-      major: "Software Engineering",
-    },
-    {
-      key: 2,
-      name: "Le Huy Ninh",
-      email: "huyninh@fpt.edu.vn",
-      role: "Mentor",
-      status: "Suspended",
-      phone: "0987654321",
-      major: "Business Administration",
-    },
-    {
-      key: 3,
-      name: "Pham Van Dung",
-      email: "dungpv@fpt.edu.vn",
-      role: "Student",
-      major: "Information Systems",
-      studentCode: "SE172914",
-      phone: "0912345678",
-      status: "Active",
-    },
-  ];
-
+  // users will be loaded from API
   const [filters, setFilters] = useState({
     role: "All Roles",
     status: "All Status",
@@ -67,12 +38,41 @@ const ManageUsers = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [userList, setUserList] = useState(users);
+  const [userList, setUserList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleView = (user) => {
+  const handleView = async (user) => {
     setSelectedUser(user);
     setIsModalOpen(true);
+    // Fetch full user details from API
+    setDetailLoading(true);
+    try {
+      const id = user.raw?.userId || user.key;
+      const res = await AdminService.detailUser(id);
+      const payload = res?.data ?? res;
+      const fullUser = Array.isArray(payload) ? payload[0] : payload;
+
+      // Map API response to component shape
+      const enriched = {
+        ...user,
+        displayName: fullUser?.displayName || user.name,
+        phone: fullUser?.phone || user.phone,
+        major: fullUser?.majorName || user.major,
+        studentCode: fullUser?.studentCode || user.studentCode,
+        gender: fullUser?.gender || null,
+        createdAt: fullUser?.createdAt || null,
+        emailVerified: fullUser?.emailVerified || false,
+        raw: fullUser,
+      };
+      setSelectedUser(enriched);
+    } catch (err) {
+      console.error(err);
+      message.error("Failed to load user details");
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   const handleEdit = (user) => {
@@ -106,16 +106,69 @@ const ManageUsers = () => {
         className:
           "!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all !py-2",
       },
-      onOk: () => {
-        setUserList((prev) =>
-          prev.map((u) =>
-            u.key === user.key ? { ...u, status: "Suspended" } : u
-          )
-        );
-        message.success(`${user.name} has been banned.`);
+      onOk: async () => {
+        const id = user.raw?.userId || user.key;
+        try {
+          await AdminService.banUser(id);
+          setUserList((prev) =>
+            prev.map((u) =>
+              u.key === user.key ? { ...u, status: "Suspended" } : u
+            )
+          );
+          message.success(`${user.name} has been banned.`);
+        } catch (err) {
+          console.error(err);
+          message.error(`Failed to ban ${user.name}`);
+        }
       },
     });
   };
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const res = await AdminService.getListUsers();
+        // API may return array directly or inside res.data
+        const payload = res?.data ?? res;
+        const list = Array.isArray(payload) ? payload : payload?.data ?? [];
+
+        const mapped = (list || []).map((u, idx) => ({
+          key: u.userId || u.id || idx,
+          name: u.displayName || u.name || "",
+          email: u.email || "",
+          role:
+            (u.role &&
+              String(u.role).charAt(0).toUpperCase() +
+                String(u.role).slice(1)) ||
+            "",
+          status: u.isActive
+            ? "Active"
+            : u.isActive === false
+            ? "Suspended"
+            : "Inactive",
+          phone: u.phone || "",
+          major: u.majorName || "",
+          studentCode: u.studentCode || null,
+          avatarUrl: u.avatarUrl || null,
+          raw: u,
+        }));
+
+        if (mounted) setUserList(mapped);
+      } catch (err) {
+        console.error(err);
+        message.error("Failed to load users");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchUsers();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const columns = [
     {
@@ -278,6 +331,7 @@ const ManageUsers = () => {
           <Table
             columns={columns}
             dataSource={filteredUsers}
+            loading={loading}
             pagination={{ pageSize: 5 }}
             bordered
             className="rounded-lg mt-5"
@@ -290,6 +344,7 @@ const ManageUsers = () => {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         user={selectedUser}
+        loading={detailLoading}
       />
       <UserEditModal
         open={isEditOpen}

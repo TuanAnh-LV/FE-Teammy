@@ -10,14 +10,31 @@ import {
 export default function GroupDetailModal({ open, onClose, group }) {
   if (!group) return null;
 
+  // Map API response fields to display fields
+  const groupName = group.groupName || group.name || "";
+  const groupStatus = (group.status || "active").toUpperCase();
   const statusColor =
     {
+      ACTIVE: "green",
+      PENDING: "orange",
+      INACTIVE: "default",
       Active: "green",
       Pending: "orange",
       Inactive: "default",
-    }[group.status] || "default";
+    }[groupStatus] || "default";
 
-  const members = group.membersDetail || [];
+  const topic = group.topicName || group.topic || "Not Assigned";
+  const mentor =
+    group.mentor?.displayName ||
+    group.mentor ||
+    group.leaderName ||
+    "Not Assigned";
+  const majorName = group.major?.majorName || group.major || "";
+  const members = group.members || group.membersDetail || [];
+  const leader = group.leader || {};
+  const currentMembers =
+    group.currentMembers || members.length || group.members || 0;
+  const maxMembers = group.maxMembers || group.capacity || 5;
 
   return (
     <Modal
@@ -34,10 +51,10 @@ export default function GroupDetailModal({ open, onClose, group }) {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-2xl font-bold">{group.groupName}</h2>
+            <h2 className="text-2xl font-bold">{groupName}</h2>
             <div className="mt-2">
               <Tag color={statusColor} className="px-3 py-1 rounded-full">
-                {group.status?.toUpperCase()}
+                {groupStatus}
               </Tag>
             </div>
           </div>
@@ -52,10 +69,10 @@ export default function GroupDetailModal({ open, onClose, group }) {
             </div>
             <div className="px-4 py-4 border-l-4 border-blue-500 rounded-bl-xl rounded-br-xl">
               <p className="text-gray-700">
-                {group.topic === "Not Assigned" ? (
-                  <span className="italic text-gray-400">{group.topic}</span>
+                {topic === "Not Assigned" ? (
+                  <span className="italic text-gray-400">{topic}</span>
                 ) : (
-                  group.topic
+                  topic
                 )}
               </p>
             </div>
@@ -72,10 +89,10 @@ export default function GroupDetailModal({ open, onClose, group }) {
               <span className="text-gray-500">Mentor</span>
             </div>
             <p className="font-medium">
-              {group.mentor === "Not Assigned" ? (
-                <span className="italic text-gray-400">{group.mentor}</span>
+              {mentor === "Not Assigned" ? (
+                <span className="italic text-gray-400">{mentor}</span>
               ) : (
-                group.mentor
+                mentor
               )}
             </p>
           </div>
@@ -85,7 +102,7 @@ export default function GroupDetailModal({ open, onClose, group }) {
               <SafetyCertificateOutlined className="text-blue-500 text-lg" />
               <span className="text-gray-500">Major</span>
             </div>
-            <p className="font-medium">{group.major}</p>
+            <p className="font-medium">{majorName}</p>
           </div>
         </div>
 
@@ -96,28 +113,50 @@ export default function GroupDetailModal({ open, onClose, group }) {
           <div className="flex items-center gap-2 mb-3">
             <TeamOutlined className="text-blue-500" />
             <span className="font-semibold">
-              Members ({members.length || group.members || 0})
+              Members ({currentMembers}/{maxMembers})
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Leader */}
+            {leader?.displayName && (
+              <div className="border rounded-xl p-4 shadow-sm flex flex-col items-center bg-blue-50">
+                <Avatar
+                  size={56}
+                  src={leader.avatarUrl}
+                  icon={<UserOutlined />}
+                  className="mb-3"
+                />
+                <div className="text-center font-medium text-sm">
+                  {leader.displayName}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">Leader</div>
+              </div>
+            )}
+
+            {/* Members */}
             {members.map((m) => (
               <div
-                key={m.id}
+                key={m.userId || m.id}
                 className="border rounded-xl p-4 shadow-sm flex flex-col items-center"
               >
                 <Avatar
                   size={56}
-                  src={m.avatar}
+                  src={m.avatarUrl}
                   icon={<UserOutlined />}
                   className="mb-3"
                 />
-                <div className="text-center font-medium">{m.name}</div>
+                <div className="text-center font-medium text-sm">
+                  {m.displayName || m.name}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {m.role || "Member"}
+                </div>
               </div>
             ))}
 
-            {/* Nếu chưa có danh sách chi tiết */}
-            {members.length === 0 && (
+            {/* No members */}
+            {members.length === 0 && !leader?.displayName && (
               <div className="text-gray-400 italic">No member details.</div>
             )}
           </div>

@@ -1,5 +1,5 @@
 // src/pages/moderator/GroupManagement.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   Table,
@@ -19,6 +19,8 @@ import {
   BellOutlined,
 } from "@ant-design/icons";
 import GroupDetailModal from "../../components/moderator/GroupDetailModal";
+import { GroupService } from "../../services/group.service";
+import { normalizeGroup } from "../../utils/group.utils";
 
 const { Option } = Select;
 
@@ -32,56 +34,45 @@ export default function GroupManagement() {
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState(null);
 
-  // Dữ liệu mẫu đã thêm capacity + isFull + membersDetail để modal hiển thị như ảnh
-  const [rows, setRows] = useState([
-    {
-      key: 1,
-      groupName: "AI Research Group",
-      topic: "Machine Learning Applications in Healthcare",
-      mentor: "Dr. Nguyễn Văn A",
-      members: 5,
-      capacity: 5,
-      isFull: true,
-      major: "Computer Science",
-      status: "Active",
-      membersDetail: [
-        { id: 1, name: "Trần Thị B" },
-        { id: 2, name: "Lê Văn C" },
-        { id: 3, name: "Phạm Thị D" },
-        { id: 4, name: "Hoàng Văn E" },
-        { id: 5, name: "Đỗ Thị F" },
-      ],
-    },
-    {
-      key: 2,
-      groupName: "Beta Squad",
-      topic: "IoT Smart Campus Solutions",
-      mentor: "Prof. Robert Davis",
-      members: 4,
-      capacity: 5,
-      isFull: false,
-      major: "Engineering",
-      status: "Active",
-      membersDetail: [
-        { id: 1, name: "Alex P." },
-        { id: 2, name: "Brian Q." },
-        { id: 3, name: "Chloe R." },
-        { id: 4, name: "Dana S." },
-      ],
-    },
-    {
-      key: 3,
-      groupName: "Gamma Group",
-      topic: "Not Assigned",
-      mentor: "Not Assigned",
-      members: 3,
-      capacity: 5,
-      isFull: false,
-      major: "Information Technology",
-      status: "Pending",
-      membersDetail: [],
-    },
-  ]);
+  // rows loaded from API
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchList = async () => {
+      setLoading(true);
+      try {
+        const res = await GroupService.getListGroup();
+        const arr = Array.isArray(res?.data) ? res.data : [];
+        const normalized = arr.map((g, idx) => normalizeGroup(g, idx));
+        const mapped = normalized.map((g) => ({
+          key: g.id,
+          groupName: g.title,
+          topic: g.topicTitle || "Not Assigned",
+          mentor: g.leaderName || "Not Assigned",
+          members: g.members || 0,
+          capacity: g.maxMembers || 5,
+          isFull: g.members >= (g.maxMembers || 5),
+          major: g.field || "",
+          status:
+            g.status && typeof g.status === "string"
+              ? g.status.charAt(0).toUpperCase() + g.status.slice(1)
+              : "Active",
+          membersDetail: Array.isArray(g.memberPreview) ? g.memberPreview : [],
+          raw: g,
+        }));
+        if (mounted) setRows(mapped);
+      } catch (err) {
+        console.error(err);
+        message.error("Không thể tải danh sách nhóm");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    fetchList();
+    return () => (mounted = false);
+  }, []);
 
   const toggleFull = (record) => {
     setRows((prev) =>
@@ -174,9 +165,17 @@ export default function GroupManagement() {
               <Button
                 type="text"
                 icon={<EyeOutlined />}
-                onClick={() => {
-                  setCurrent(record);
-                  setOpen(true);
+                onClick={async () => {
+                  try {
+                    const res = await GroupService.getGroupDetail(record.key);
+                    if (res?.data) {
+                      setCurrent(res.data);
+                      setOpen(true);
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    message.error("Không thể tải chi tiết nhóm");
+                  }
                 }}
               />
             </Tooltip>
@@ -277,6 +276,7 @@ export default function GroupManagement() {
         dataSource={filteredRows}
         pagination={{ pageSize: 5 }}
         bordered
+        loading={loading}
         className="rounded-lg mt-5"
       />
 

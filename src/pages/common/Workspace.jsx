@@ -1,6 +1,5 @@
 // src/pages/Workspace.jsx
-import React from "react";
-import { notification } from "antd";
+import React, { useEffect, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -13,29 +12,79 @@ import { Search, Filter, Plus } from "lucide-react";
 import Column from "../../components/common/kanban/Column";
 import TaskModal from "../../components/common/kanban/TaskModal";
 import useKanbanBoard from "../../hook/useKanbanBoard";
+import { useLocation, useParams } from "react-router-dom";
+import { GroupService } from "../../services/group.service";
 
 const Workspace = () => {
-  const sensors = useSensors(useSensor(PointerSensor));
+  const { id: routeGroupId } = useParams();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const queryGroupId = searchParams.get("groupId");
+  const storedGroupId = typeof localStorage !== "undefined" ? localStorage.getItem("last_group_id") || "" : "";
+  const [resolvedGroupId, setResolvedGroupId] = useState(queryGroupId || routeGroupId || storedGroupId);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   const {
     filteredColumns,
+    columnMeta,
+    groupMembers,
     selectedTask,
     setSelectedTask,
     search,
     setSearch,
-    filterTag,
-    setFilterTag,
+    filterStatus,
+    setFilterStatus,
+    filterPriority,
+    setFilterPriority,
     handleDragOver,
     handleDragEnd,
-    handleAddComment,
+    createColumn,
+    createTask,
+    updateTaskFields,
+    updateTaskAssignees,
+    deleteTask,
+    deleteColumn,
     loading,
     error,
-  } = useKanbanBoard();
+    refetchBoard,
+    loadTaskComments,
+    addTaskComment,
+    updateTaskComment,
+    deleteTaskComment,
+  } = useKanbanBoard(resolvedGroupId);
+
+  // Fallback: if groupId missing, pick the first of my groups
+  useEffect(() => {
+    if (resolvedGroupId) {
+      localStorage.setItem("last_group_id", resolvedGroupId);
+      return;
+    }
+    const fetchDefaultGroup = async () => {
+      try {
+        const res = await GroupService.getMyGroups();
+        const list = res?.data || [];
+        if (list.length > 0) {
+          const fallback = list[0].id || list[0]._id || "";
+          setResolvedGroupId(fallback);
+          localStorage.setItem("last_group_id", fallback);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchDefaultGroup();
+  }, [resolvedGroupId]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <span className="text-gray-500">Đang tải board...</span>
+        <span className="text-gray-500">Loading board...</span>
       </div>
     );
   }
@@ -43,23 +92,25 @@ const Workspace = () => {
   if (error || !filteredColumns) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <span className="text-red-500">{error || "Có lỗi xảy ra"}</span>
+        <span className="text-red-500">{error || "Something went wrong"}</span>
       </div>
     );
   }
+
+  const hasData = filteredColumns && Object.keys(filteredColumns).length > 0;
+  const normalizeTitle = (value = "") => value.toLowerCase().replace(/\s+/g, "_");
 
   return (
     <div className="relative">
       {/* Content */}
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-start pt-28 xl:pt-40 pb-20">
         {/* Title */}
-        <div className="!max-w-[1600px] !mx-auto !ml-48 !mb-8">
-          <h1 className="!text-4xl !font-extrabold !text-[#1a1a1a] !mb-2">
-            AI Healthcare Team
+        <div className="mx-auto ml-48 mb-8">
+          <h1 className="text-4xl font-extrabold text-[#1a1a1a] mb-2">
+            Team Workspace
           </h1>
           <p className="!text-gray-500 !text-lg">
-            Shared workspace for teams — manage tasks, share documents and track
-            progress.
+            Manage tasks, share documents and track progress.
           </p>
         </div>
 
@@ -78,31 +129,46 @@ const Workspace = () => {
                   />
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-black" />
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-black" />
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  >
+                    <option value="All">All status</option>
+                    <option value="todo">To do</option>
+                    <option value="in_progress">In progress</option>
+                    <option value="review">Review</option>
+                    <option value="blocked">Blocked</option>
+                    <option value="done">Done</option>
+                  </select>
+                </div>
                 <select
-                  value={filterTag}
-                  onChange={(e) => setFilterTag(e.target.value)}
+                  value={filterPriority}
+                  onChange={(e) => setFilterPriority(e.target.value)}
                   className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 >
-                  <option>All</option>
-                  <option>Frontend</option>
-                  <option>Backend</option>
-                  <option>Design</option>
-                  <option>Bug</option>
+                  <option value="All">All priority</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
                 </select>
               </div>
               <button
-                className="ml-auto flex items-center gap-2 !bg-[#4264d7] !text-white px-4 py-2 rounded-lg text-sm hover:bg-black"
-                onClick={() =>
-                  notification.info({
-                    message:
-                      "Tuỳ bạn: mở modal tạo task mới (title, tag, priority, assignees...)",
-                  })
-                }
+                className="flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
+                onClick={() => {
+                  const name = window.prompt("Column name?");
+                  if (!name) return;
+                  const positionInput = window.prompt("Position?", "1");
+                  const position = Number(positionInput) || 0;
+                  const payload = { columnName: name, position };
+                  createColumn(payload);
+                }}
               >
-                <Plus className="w-6 h-6 rounded-[12px]" />
-                New Task
+                <Plus className="w-5 h-5" />
+                New Column
               </button>
             </div>
           </div>
@@ -115,40 +181,67 @@ const Workspace = () => {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div className="mt-8 flex gap-6 overflow-x-auto max-w-8xl mx-auto px-6 pb-2">
-            <Column
-              id="todo"
-              title="To Do"
-              tasks={filteredColumns.todo}
-              onOpen={setSelectedTask}
-            />
-            <Column
-              id="inprogress"
-              title="In Progress"
-              tasks={filteredColumns.inprogress}
-              onOpen={setSelectedTask}
-            />
-            <Column
-              id="review"
-              title="Review"
-              tasks={filteredColumns.review}
-              onOpen={setSelectedTask}
-            />
-            <Column
-              id="done"
-              title="Done"
-              tasks={filteredColumns.done}
-              onOpen={setSelectedTask}
-            />
-          </div>
+          {hasData ? (
+            <div className="mt-8 flex gap-6 overflow-x-auto max-w-8xl mx-auto px-6 pb-2">
+              {Object.entries(columnMeta)
+                .sort((a, b) => (a[1]?.position || 0) - (b[1]?.position || 0))
+                .map(([colId, meta]) => {
+                  const normalizedTitleValue = normalizeTitle(meta?.title || colId);
+                  const statusForColumn =
+                    normalizedTitleValue === "to_do" ? "todo" : normalizedTitleValue;
+                  const allowQuickCreate = statusForColumn === "todo";
+                  return (
+                    <Column
+                      key={colId}
+                      id={colId}
+                      meta={meta}
+                      tasks={filteredColumns[colId] || []}
+                      onOpen={setSelectedTask}
+                      onCreate={
+                        allowQuickCreate
+                          ? (quickPayload) => {
+                              createTask({
+                                columnId: colId,
+                                title: quickPayload?.title || "New Task",
+                                description: "",
+                                priority: "medium",
+                                status: statusForColumn,
+                                dueDate: null,
+                              });
+                            }
+                          : undefined
+                      }
+                      onDelete={() => {
+                        const confirmDelete = window.confirm(
+                          `Delete column "${columnMeta[colId]?.title || colId}"?`
+                        );
+                        if (confirmDelete) deleteColumn(colId);
+                      }}
+                    />
+                  );
+                })}
+            </div>
+          ) : (
+            <div className="mt-10 text-gray-500">No board data available.</div>
+          )}
         </DndContext>
       </div>
 
       {/* Task Modal */}
       <TaskModal
         task={selectedTask}
+        members={groupMembers}
+        onFetchComments={loadTaskComments}
         onClose={() => setSelectedTask(null)}
-        onAddComment={handleAddComment}
+        onAddComment={addTaskComment}
+        onUpdateComment={updateTaskComment}
+        onDeleteComment={deleteTaskComment}
+        onUpdateTask={updateTaskFields}
+        onUpdateAssignees={updateTaskAssignees}
+        onDeleteTask={(taskId) => {
+          deleteTask(taskId);
+          setSelectedTask(null);
+        }}
       />
     </div>
   );
