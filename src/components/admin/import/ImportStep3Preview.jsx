@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Table, Button, Checkbox, Select, Tag } from "antd";
 import {
   CheckCircleOutlined,
@@ -19,11 +19,38 @@ export default function ImportStep3Preview({
   const [importMode, setImportMode] = useState("create");
 
   useEffect(() => {
+    // Dev helper: log shapes to help debugging mapping issues
+    // Remove or guard this in production
+    console.debug(
+      "Import preview — rawData sample:",
+      rawData && rawData.slice && rawData.slice(0, 3)
+    );
+    console.debug("Import preview — columnMap:", columnMap);
+
     const mapped = rawData.map((r, i) => {
-      const email = r[columnMap.email];
-      const name = r[columnMap.name];
-      const validEmail = email && email.includes("@");
-      const validName = name && name.trim().length > 0;
+      // Helper to get value from row whether it's an object or array
+      const get = (row, key) => {
+        if (!row || key == null) return "";
+        // If key is a number or numeric string, use numeric index
+        if (typeof key === "number" || /^\d+$/.test(String(key))) {
+          const idx = Number(key);
+          return Array.isArray(row)
+            ? row[idx] ?? ""
+            : row[idx] ?? row[key] ?? "";
+        }
+        // Normal: treat row as object with header keys
+        return row[key] ?? row[String(key).trim()] ?? "";
+      };
+
+      const email = get(r, columnMap.email);
+      const displayName = get(r, columnMap.displayName);
+      const role = get(r, columnMap.role) || "student";
+      const majorName = get(r, columnMap.majorName);
+      const gender = get(r, columnMap.gender);
+      const studentCode = get(r, columnMap.studentCode);
+
+      const validEmail = email && String(email).includes("@");
+      const validName = displayName && String(displayName).trim().length > 0;
 
       let status = "Valid";
       let issues = [];
@@ -34,77 +61,87 @@ export default function ImportStep3Preview({
       }
       if (!validName) {
         status = "Error";
-        issues.push("Full name is required");
+        issues.push("Display name is required");
       }
 
-      // Fake warning example
-      if (status === "Valid" && !r.github) {
-        status = "Warning";
-        issues.push("No GitHub URL provided");
+      // Warning if missing optional fields
+      if (status === "Valid") {
+        if (!majorName) issues.push("Major name not provided");
+        if (!studentCode) issues.push("Student code not provided");
+        if (issues.length > 0) status = "Warning";
       }
 
       return {
         key: i,
         row: i + 1,
         email,
-        name,
-        role: r[columnMap.role] || "Student",
+        displayName,
+        role: String(role).charAt(0).toUpperCase() + String(role).slice(1),
+        majorName: majorName || "-",
+        gender: gender || "-",
+        studentCode: studentCode || "-",
         status,
         issues,
       };
     });
     setPreviewData(mapped);
-    setMappedUsers(mapped);
-  }, [rawData, columnMap]);
+    if (setMappedUsers) setMappedUsers(mapped);
+  }, [rawData, columnMap, setMappedUsers]);
 
   // Stats
   const validCount = previewData.filter((u) => u.status === "Valid").length;
   const warnCount = previewData.filter((u) => u.status === "Warning").length;
   const errorCount = previewData.filter((u) => u.status === "Error").length;
 
-  const columns = [
-    { title: "Row", dataIndex: "row", width: 60 },
-    { title: "Email", dataIndex: "email" },
-    { title: "Name", dataIndex: "name" },
-    { title: "Role", dataIndex: "role" },
-    {
-      title: "Status",
-      dataIndex: "status",
-      render: (status) => {
-        if (status === "Valid")
+  const columns = useMemo(
+    () => [
+      { title: "Row", dataIndex: "row", width: 60 },
+      { title: "Email", dataIndex: "email" },
+      { title: "Display Name", dataIndex: "displayName" },
+      { title: "Role", dataIndex: "role" },
+      { title: "Major", dataIndex: "majorName" },
+      { title: "Gender", dataIndex: "gender" },
+      { title: "Student Code", dataIndex: "studentCode" },
+      {
+        title: "Status",
+        dataIndex: "status",
+        render: (status) => {
+          if (status === "Valid")
+            return (
+              <Tag icon={<CheckCircleOutlined />} color="success">
+                Valid
+              </Tag>
+            );
+          if (status === "Warning")
+            return (
+              <Tag icon={<ExclamationCircleOutlined />} color="warning">
+                Warning
+              </Tag>
+            );
           return (
-            <Tag icon={<CheckCircleOutlined />} color="success">
-              Valid
+            <Tag icon={<CloseCircleOutlined />} color="error">
+              Error
             </Tag>
           );
-        if (status === "Warning")
-          return (
-            <Tag icon={<ExclamationCircleOutlined />} color="warning">
-              Warning
-            </Tag>
-          );
-        return (
-          <Tag icon={<CloseCircleOutlined />} color="error">
-            Error
-          </Tag>
-        );
+        },
       },
-    },
-    {
-      title: "Issues",
-      dataIndex: "issues",
-      render: (issues) =>
-        issues.length ? (
-          <ul className="text-sm text-red-500 list-disc ml-4">
-            {issues.map((i, idx) => (
-              <li key={idx}>{i}</li>
-            ))}
-          </ul>
-        ) : (
-          "-"
-        ),
-    },
-  ];
+      {
+        title: "Issues",
+        dataIndex: "issues",
+        render: (issues) =>
+          issues.length ? (
+            <ul className="text-sm text-red-500 list-disc ml-4">
+              {issues.map((i, idx) => (
+                <li key={idx}>{i}</li>
+              ))}
+            </ul>
+          ) : (
+            "-"
+          ),
+      },
+    ],
+    []
+  );
 
   return (
     <div className="space-y-6">

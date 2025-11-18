@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Select, Button, Row, Col } from "antd";
 import { CheckCircleFilled } from "@ant-design/icons";
 
-export default function ImportStep2Mapping({
+export default function ImportStep2MappingTopic({
   rawData,
   setColumnMap,
   setCurrentStep,
@@ -15,13 +15,18 @@ export default function ImportStep2Mapping({
     const auto = {};
     columns.forEach((col) => {
       const c = col.toLowerCase();
-      if (c.includes("email")) auto.email = col;
-      if (c.includes("displayname") || c.includes("name"))
-        auto.displayName = col;
-      if (c.includes("role")) auto.role = col;
+      if (c.includes("title") || c.includes("topic")) auto.title = col;
+      if (c.includes("description") || c.includes("desc"))
+        auto.description = col;
       if (c.includes("major")) auto.majorName = col;
-      if (c.includes("gender")) auto.gender = col;
-      if (c.includes("student") || c.includes("code")) auto.studentCode = col;
+      if (
+        c.includes("createdby") ||
+        c.includes("creator") ||
+        c.includes("created_by")
+      )
+        auto.createdByName = col;
+      if (c.includes("status")) auto.status = col;
+      if (c.includes("mentor") || c.includes("mentors")) auto.mentorName = col;
     });
     setMapping(auto);
   }, [columns]);
@@ -44,29 +49,23 @@ export default function ImportStep2Mapping({
 
       <Row gutter={[16, 12]} justify="center">
         {[
-          "email",
-          "displayName",
-          "role",
+          "title",
+          "description",
           "majorName",
-          "gender",
-          "studentCode",
+          "createdByName",
+          "status",
+          "mentorName",
         ].map((field) => (
           <Col span={12} key={field}>
             <div className="flex items-center justify-between bg-gray-50 border rounded-lg px-4 py-3 hover:border-blue-400 transition-all">
               <span className="font-medium text-gray-700 capitalize">
-                {field === "displayName"
-                  ? "Display Name"
-                  : field === "majorName"
-                  ? "Major Name"
-                  : field === "studentCode"
-                  ? "Student Code"
-                  : field}
+                {field}
               </span>
               <Select
                 value={mapping[field]}
                 onChange={(val) => setMapping((p) => ({ ...p, [field]: val }))}
                 placeholder="Select column"
-                style={{ width: 200 }}
+                style={{ width: 220 }}
               >
                 {columns.map((col) => (
                   <Select.Option key={col} value={col}>
