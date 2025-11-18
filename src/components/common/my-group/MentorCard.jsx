@@ -15,7 +15,10 @@ export default function MentorCard({ name, label }) {
         />
         <div>
           <p className="!font-semibold !text-gray-800">{name}</p>
-          <p className="!text-sm !text-amber-700 !font-medium">{label || "Mentor"}</p>
+          <p className="!font-semibold !text-gray-800">{name.email}</p>
+          <p className="!text-sm !text-amber-700 !font-medium">
+            {label || "Mentor"}
+          </p>
         </div>
       </div>
     </div>

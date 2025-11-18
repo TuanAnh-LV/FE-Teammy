@@ -1,5 +1,5 @@
-import React from "react";
-import { Modal, Button, Tag, Divider, Tooltip } from "antd";
+import React, { useEffect, useState } from "react";
+import { Modal, Button, Tag, Divider, Tooltip, Spin, message } from "antd";
 import {
   BookOutlined,
   TeamOutlined,
@@ -12,6 +12,7 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
 } from "@ant-design/icons";
+import { TopicService } from "../../services/topic.service";
 
 const InfoCard = ({ icon, label, value, muted }) => (
   <div className="border rounded-xl p-4 shadow-sm">
@@ -39,10 +40,60 @@ const formatDate = (d) => {
   }
 };
 
-export default function TopicDetailModal({ open, onClose, topicDetails }) {
-  if (!topicDetails) return null;
+export default function TopicDetailModal({
+  open,
+  onClose,
+  topicDetails,
+  topicId,
+}) {
+  const [detailData, setDetailData] = useState(topicDetails);
+  const [loading, setLoading] = useState(false);
 
-  const assigned = topicDetails.group && topicDetails.group !== "Not assigned";
+  useEffect(() => {
+    if (!open || !topicId) {
+      setDetailData(topicDetails);
+      return;
+    }
+
+    let mounted = true;
+    const fetchDetails = async () => {
+      setLoading(true);
+      try {
+        const res = await TopicService.getTopicDetail(topicId);
+        const payload = res?.data ?? res;
+        if (mounted) {
+          setDetailData(payload);
+        }
+      } catch (err) {
+        console.error(err);
+        message.error("Failed to load topic details");
+        // Fallback to passed data on error
+        if (mounted) setDetailData(topicDetails);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchDetails();
+    return () => {
+      mounted = false;
+    };
+  }, [open, topicId, topicDetails]);
+
+  if (!detailData) return null;
+
+  // Support both old and new field names
+  const title = detailData.topicName || detailData.title || "-";
+  const mentor = detailData.createdByName || detailData.mentor || "-";
+  const major = detailData.majorName || detailData.major || "-";
+  const created = detailData.createdAt || detailData.date || null;
+  const description = detailData.description || detailData.desc || "-";
+
+  // Determine assigned state: prefer explicit group, else status field
+  const assigned =
+    (detailData.group && detailData.group !== "Not assigned") ||
+    (detailData.status && detailData.status !== "Available");
+
   const statusTag = assigned ? (
     <Tag
       icon={<CheckCircleOutlined />}
@@ -69,8 +120,8 @@ export default function TopicDetailModal({ open, onClose, topicDetails }) {
       title={null}
       destroyOnClose
       maskClosable
-      width={720}
-      bodyStyle={{ padding: 0, overflow: "hidden" }} // không cuộn
+      width={760}
+      bodyStyle={{ padding: 0, overflow: "hidden" }}
       className="rounded-2xl"
       footer={[
         <Button key="close" onClick={onClose}>
@@ -78,99 +129,101 @@ export default function TopicDetailModal({ open, onClose, topicDetails }) {
         </Button>,
       ]}
     >
-      <div className="p-5 sm:p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-gray-500 text-xs uppercase tracking-wide">
-              <BookOutlined /> Topic
+      <Spin spinning={loading}>
+        <div className="p-5 sm:p-6">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-gray-500 text-xs uppercase tracking-wide">
+                <BookOutlined /> Topic
+              </div>
+              <h2 className="text-2xl font-bold leading-tight mt-1">{title}</h2>
+              <div className="mt-2">{statusTag}</div>
             </div>
-            <h2 className="text-2xl font-bold leading-tight mt-1">
-              {topicDetails.title || "-"}
-            </h2>
-            <div className="mt-2">{statusTag}</div>
           </div>
-        </div>
 
-        {/* Info grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-          <InfoCard
-            icon={<TeamOutlined />}
-            label="Assigned Group"
-            value={topicDetails.group || "Not assigned"}
-            muted={!assigned}
-          />
-          <InfoCard
-            icon={<UserOutlined />}
-            label="Mentor"
-            value={topicDetails.mentor || "-"}
-            muted={!topicDetails.mentor}
-          />
-          <InfoCard
-            icon={<ApartmentOutlined />}
-            label="Major"
-            value={topicDetails.major || "-"}
-            muted={!topicDetails.major}
-          />
-          <InfoCard
-            icon={<CalendarOutlined />}
-            label="Created"
-            value={formatDate(topicDetails.date)}
-            muted={!topicDetails.date}
-          />
-        </div>
-
-        <Divider className="!my-6" />
-
-        {/* Resources */}
-        <div>
-          <div className="text-sm text-gray-500 font-medium mb-3">
-            Resources
+          {/* Info grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+            <InfoCard
+              icon={<UserOutlined />}
+              label="Mentor"
+              value={mentor}
+              muted={!mentor || mentor === "-"}
+            />
+            <InfoCard
+              icon={<ApartmentOutlined />}
+              label="Major"
+              value={major}
+              muted={!major || major === "-"}
+            />
+            <InfoCard
+              icon={<CalendarOutlined />}
+              label="Created"
+              value={formatDate(created)}
+              muted={!created}
+            />
           </div>
-          <div className="flex flex-wrap gap-3">
-            {topicDetails.downloadLink ? (
-              <Button
-                type="primary"
-                icon={<DownloadOutlined />}
-                href={topicDetails.downloadLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="!bg-blue-600 hover:!bg-blue-700"
-              >
-                Download document
-              </Button>
-            ) : (
-              <Tooltip title="No document provided">
-                <Button type="primary" icon={<DownloadOutlined />} disabled>
+
+          {/* Description (hidden in table, visible here) */}
+          <div className="mt-6">
+            <div className="text-sm text-gray-500 font-medium mb-2">
+              Description
+            </div>
+            <div className="prose max-w-none text-gray-800">{description}</div>
+          </div>
+
+          <Divider className="!my-6" />
+
+          {/* Resources */}
+          <div>
+            <div className="text-sm text-gray-500 font-medium mb-3">
+              Resources
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {detailData.downloadLink ? (
+                <Button
+                  type="primary"
+                  icon={<DownloadOutlined />}
+                  href={detailData.downloadLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="!bg-blue-600 hover:!bg-blue-700"
+                >
                   Download document
                 </Button>
-              </Tooltip>
-            )}
+              ) : (
+                <Tooltip title="No document provided">
+                  <Button type="primary" icon={<DownloadOutlined />} disabled>
+                    Download document
+                  </Button>
+                </Tooltip>
+              )}
 
-            {topicDetails.githubLink && (
-              <Button
-                icon={<GithubOutlined />}
-                href={topicDetails.githubLink}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open GitHub
-              </Button>
-            )}
+              {detailData.githubLink && (
+                <Button
+                  icon={<GithubOutlined />}
+                  href={detailData.githubLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open GitHub
+                </Button>
+              )}
 
-            {topicDetails.moreLink && (
-              <Button
-                icon={<LinkOutlined />}
-                href={topicDetails.moreLink}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open link
-              </Button>
-            )}
+              {detailData.moreLink && (
+                <Button
+                  icon={<LinkOutlined />}
+                  href={detailData.moreLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open link
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </Spin>
     </Modal>
   );
 }

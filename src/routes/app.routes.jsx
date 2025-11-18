@@ -26,15 +26,20 @@ const Forum = lazy(() => import("../pages/common/Forum"));
 const Workspace = lazy(() => import("../pages/common/Workspace"));
 const Login = lazy(() => import("../pages/common/Login"));
 
-const MyGroupsPage = lazy(() => import("../pages/common/MyGroups")); 
-const MyGroup = lazy(() => import("../pages/common/MyGroup"));       
+const MyGroupsPage = lazy(() => import("../pages/common/MyGroups"));
+const MyGroup = lazy(() => import("../pages/common/MyGroup"));
 
 // Moderator
 const Dashboard = lazy(() => import("../pages/moderator/Dashboard"));
-const TopicManagement = lazy(() => import("../pages/moderator/TopicManagement"));
-const GroupManagement = lazy(() => import("../pages/moderator/GroupManagement"));
+const TopicManagement = lazy(() =>
+  import("../pages/moderator/TopicManagement")
+);
+const GroupManagement = lazy(() =>
+  import("../pages/moderator/GroupManagement")
+);
 const AIAssistant = lazy(() => import("../pages/moderator/AIAssistant"));
 const NotificationsMO = lazy(() => import("../pages/moderator/Notifications"));
+const ImportTopics = lazy(() => import("../pages/moderator/ImportTopics"));
 
 const routes = [
   // Public
@@ -87,7 +92,7 @@ const routes = [
           { path: "my-groups", element: <MyGroups /> },
           { path: "notifications", element: <Notifications /> },
           { path: "profile", element: <Profile /> },
-          { path: "my-groups/:id", element: <GroupDetail /> }, 
+          { path: "my-groups/:id", element: <GroupDetail /> },
         ],
       },
     ],
@@ -108,6 +113,7 @@ const routes = [
           { path: "ai-assistant", element: <AIAssistant /> },
           { path: "notifications", element: <NotificationsMO /> },
           { path: "profile", element: <Profile /> },
+          { path: "import-topics", element: <ImportTopics /> },
         ],
       },
     ],

@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, Tag, Avatar, Divider } from "antd";
+import { Modal, Tag, Avatar, Divider, Spin } from "antd";
 import {
   MailOutlined,
   PhoneOutlined,
@@ -8,7 +8,7 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 
-export default function UserDetailModal({ open, onClose, user }) {
+export default function UserDetailModal({ open, onClose, user, loading }) {
   if (!user) return null;
 
   const colorMap = {
@@ -70,25 +70,27 @@ export default function UserDetailModal({ open, onClose, user }) {
         </div>
       }
     >
-      <div className="bg-white p-5 rounded-xl shadow-sm space-y-2">
-        {infoRow(<MailOutlined />, "Email", user.email)}
-        {infoRow(<PhoneOutlined />, "Phone", user.phone)}
-        {infoRow(<BookOutlined />, "Major", user.major)}
+      <Spin spinning={loading}>
+        <div className="bg-white p-5 rounded-xl shadow-sm space-y-2">
+          {infoRow(<MailOutlined />, "Email", user.email)}
+          {infoRow(<PhoneOutlined />, "Phone", user.phone)}
+          {infoRow(<BookOutlined />, "Major", user.major)}
 
-        {user.role === "Student" &&
-          infoRow(<IdcardOutlined />, "Student Code", user.studentCode)}
+          {user.role === "Student" &&
+            infoRow(<IdcardOutlined />, "Student Code", user.studentCode)}
 
-        <Divider className="my-4" />
+          <Divider className="my-4" />
 
-        <div>
-          <div className="text-gray-600 text-sm font-medium mb-1">
-            Notes / Description
-          </div>
-          <div className="text-gray-700 leading-relaxed bg-gray-50 border rounded-lg p-3">
-            {user.note || "No additional information provided."}
+          <div>
+            <div className="text-gray-600 text-sm font-medium mb-1">
+              Notes / Description
+            </div>
+            <div className="text-gray-700 leading-relaxed bg-gray-50 border rounded-lg p-3">
+              {user.note || "No additional information provided."}
+            </div>
           </div>
         </div>
-      </div>
+      </Spin>
     </Modal>
   );
 }

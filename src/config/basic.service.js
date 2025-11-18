@@ -74,27 +74,27 @@ const checkLoading = (isLoading = false) => {
 };
 
 export const BaseService = {
-  get({ url, isLoading = true, params = {}, headers = {} }) {
+  get({ url, isLoading = true, params = {}, headers = {}, responseType, onDownloadProgress }) {
     const cleanedParams = { ...params };
     for (const k in cleanedParams) {
       if (cleanedParams[k] === "" && cleanedParams[k] !== 0) delete cleanedParams[k];
     }
     checkLoading(isLoading);
-    return axiosInstance.get(url, { params: cleanedParams, headers });
+    return axiosInstance.get(url, { params: cleanedParams, headers, ...(responseType ? { responseType } : {}), ...(onDownloadProgress ? { onDownloadProgress } : {}) });
   },
 
-  post({ url, isLoading = true, payload = {}, headers = {} }) {
+  post({ url, isLoading = true, payload = {}, headers = {}, responseType }) {
     checkLoading(isLoading);
     const isFormData = payload instanceof FormData;
     const finalHeaders = { ...headers, ...(isFormData ? { "Content-Type": "multipart/form-data" } : {}) };
-    return axiosInstance.post(url, payload, { headers: finalHeaders });
+    return axiosInstance.post(url, payload, { headers: finalHeaders, ...(responseType ? { responseType } : {}), });
   },
 
-  put({ url, isLoading = true, payload = {}, headers = {} }) {
+  put({ url, isLoading = true, payload = {}, headers = {}, responseType  }) {
     checkLoading(isLoading);
     const isFormData = payload instanceof FormData;
     const finalHeaders = { ...headers, ...(isFormData ? { "Content-Type": "multipart/form-data" } : {}) };
-    return axiosInstance.put(url, payload, { headers: finalHeaders });
+    return axiosInstance.put(url, payload, { headers: finalHeaders, ...(responseType ? { responseType } : {}) });
   },
 
   remove({ url, isLoading = true, payload = {}, headers = {} }) {
@@ -107,11 +107,11 @@ export const BaseService = {
     return axiosInstance.get(url, { params: payload, headers });
   },
 
-  patch({ url, isLoading = true, payload = {}, headers = {} }) {
+  patch({ url, isLoading = true, payload = {}, headers = {}, responseType }) {
     checkLoading(isLoading);
     const isFormData = payload instanceof FormData;
     const finalHeaders = { ...headers, ...(isFormData ? { "Content-Type": "multipart/form-data" } : {}) };
-    return axiosInstance.patch(url, payload, { headers: finalHeaders });
+    return axiosInstance.patch(url, payload, { headers: finalHeaders, ...(responseType ? { responseType } : {}) });
   },
 
   // ---- FIX uploadMedia: dùng token đúng field, có thể xài axiosInstance cho tiện
