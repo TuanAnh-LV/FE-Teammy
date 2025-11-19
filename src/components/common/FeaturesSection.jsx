@@ -70,10 +70,17 @@ const FeaturesSection = () => {
       </div>
       {/* Section title */}
       <div className="text-center mb-5 py-10">
-        <h2 className="text-[40px] md:text-[48px] font-black text-[#1a1a1a] mb-4">
+        <h2 className="text-[40px] md:text-[48px] font-black mb-4"
+          style={{
+                background: "linear-gradient(90deg,#3182ED,#43D08A)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}>
           {t("featuresTitle") || "Key Features"}
         </h2>
-        <p className="text-gray-500 text-[16px]">
+        <p className=" text-[16px]"
+        
+        >
           {t("featuresSubtitle") ||
             "Everything you need to succeed in your capstone project."}
         </p>

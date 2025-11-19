@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   filterColumns,
   findColumnOfTask,
@@ -194,6 +194,8 @@ export function useKanbanBoard(groupId) {
   const [filterPriority, setFilterPriority] = useState("All");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const commentsLoadedRef = useRef(false);
+  const dragProcessingRef = useRef(false);
 
   const buildStateFromApi = (data) => {
     const colState = {};
@@ -273,10 +275,23 @@ export function useKanbanBoard(groupId) {
   };
 
   useEffect(() => {
+    commentsLoadedRef.current = false;
     fetchBoard();
     fetchGroupMembers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId]);
+
+  // Auto-load comments for all tasks when board data is available (only once)
+  useEffect(() => {
+    const hasColumns = columns && typeof columns === "object" && Object.keys(columns).length > 0;
+    const hasMembers = groupMembers && groupMembers.length > 0;
+    
+    if (hasColumns && hasMembers && !commentsLoadedRef.current) {
+      commentsLoadedRef.current = true;
+      loadAllTasksComments(columns);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columns, groupMembers]);
 
   useEffect(() => {
     if (!groupMembers || groupMembers.length === 0) return;
@@ -344,6 +359,15 @@ export function useKanbanBoard(groupId) {
 
   const handleDragEnd = async ({ active, over }) => {
     if (!over) return;
+    
+    // Prevent multiple simultaneous drag operations
+    if (dragProcessingRef.current) {
+      console.log('Drag already in progress, skipping...');
+      return;
+    }
+    
+    dragProcessingRef.current = true;
+    
     let newState = columns;
     const activeId = active.id;
     const overId = over.id;
@@ -361,21 +385,39 @@ export function useKanbanBoard(groupId) {
         ? overId
         : findColumnOfTask(newState, activeId, dynamicIds));
 
-    if (!groupId || !toCol || !newState?.[toCol]) return;
+    if (!groupId || !toCol || !newState?.[toCol]) {
+      dragProcessingRef.current = false;
+      return;
+    }
 
     try {
       const ids = newState[toCol].map((t) => t.id);
       const index = ids.indexOf(activeId);
       const prevTaskId = index > 0 ? ids[index - 1] : null;
       const nextTaskId = index >= 0 && index < ids.length - 1 ? ids[index + 1] : null;
+      
+      // Get target column status from column name
+      const targetColumnName = columnMeta?.[toCol]?.title || toCol;
+      const targetStatus = normalizeStatus(targetColumnName);
+      
+      // Move task to new column
       await BoardService.moveTask(groupId, activeId, {
         columnId: toCol,
         prevTaskId,
         nextTaskId,
       });
+      
+      // Update task status to match the new column (without triggering moveTaskToColumn again)
+      if (targetStatus) {
+        await updateTaskFields(activeId, { status: targetStatus }, { skipMove: true });
+      }
     } catch (err) {
       console.error(err);
       fetchBoard();
+    } finally {
+      setTimeout(() => {
+        dragProcessingRef.current = false;
+      }, 300);
     }
   };
 
@@ -455,21 +497,24 @@ export function useKanbanBoard(groupId) {
     if (typeof value === "string") {
       const trimmed = value.trim();
       if (!trimmed) return null;
+      // If already ISO format, return as is
+      if (trimmed.includes('T') || trimmed.includes('Z')) {
+        return trimmed;
+      }
+      // Convert YYYY-MM-DD to ISO string
       const match = trimmed.match(/^(\d{4}-\d{2}-\d{2})/);
       if (match) {
-        return match[1];
+        return `${match[1]}T00:00:00.000Z`;
       }
     }
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return null;
-    const year = date.getFullYear();
-    const month = `${date.getMonth() + 1}`.padStart(2, "0");
-    const day = `${date.getDate()}`.padStart(2, "0");
-    return `${year}-${month}-${day}`;
+    return date.toISOString();
   };
 
-  const updateTaskFields = async (taskId, changes) => {
+  const updateTaskFields = async (taskId, changes, options = {}) => {
     if (!groupId || !taskId) return;
+    const { skipMove = false } = options;
     const normalizedChanges = { ...changes };
     if ("dueDate" in normalizedChanges) {
       normalizedChanges.dueDate = normalizeDueDate(normalizedChanges.dueDate);
@@ -485,7 +530,9 @@ export function useKanbanBoard(groupId) {
         dueDate: snapshot.dueDate || null,
         ...normalizedChanges,
       });
+      // Only trigger moveTaskToColumn if status changed and skipMove is false
       if (
+        !skipMove &&
         normalizedChanges.status &&
         normalizeStatus(normalizedChanges.status) !==
           normalizeStatus(snapshot.status || "")
@@ -546,7 +593,9 @@ export function useKanbanBoard(groupId) {
     const targetList = newState?.[targetColumnId] || [];
     const prevTaskId =
       targetList.length > 1 ? targetList[targetList.length - 2].id : null;
+    
     try {
+      // API moveTask already handles status update based on column, no need to call updateTaskFields
       await BoardService.moveTask(groupId, taskId, {
         columnId: targetColumnId,
         prevTaskId,
@@ -590,6 +639,39 @@ export function useKanbanBoard(groupId) {
     } catch (err) {
       console.error(err);
       return [];
+    }
+  };
+
+  const loadAllTasksComments = async (columnsData) => {
+    if (!groupId) return;
+    const data = columnsData || columns;
+    if (!data || typeof data !== "object") return;
+    
+    const taskIds = [];
+    Object.values(data).forEach((tasks) => {
+      if (Array.isArray(tasks)) {
+        tasks.forEach((task) => {
+          if (task?.id) {
+            taskIds.push(task.id);
+          }
+        });
+      }
+    });
+    
+    // Load comments for all tasks in parallel
+    if (taskIds.length > 0) {
+      const promises = taskIds.map((taskId) =>
+        loadTaskComments(taskId).catch((err) => {
+          console.error(`Failed to load comments for task ${taskId}:`, err);
+          return [];
+        })
+      );
+      
+      try {
+        await Promise.all(promises);
+      } catch (err) {
+        console.error("Error loading all task comments:", err);
+      }
     }
   };
 
@@ -683,6 +765,7 @@ export function useKanbanBoard(groupId) {
     refetchBoard: fetchBoard,
     groupMembers,
     loadTaskComments,
+    loadAllTasksComments,
     addTaskComment,
     updateTaskComment,
     deleteTaskComment,

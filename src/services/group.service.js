@@ -48,6 +48,13 @@ export const GroupService = {
     });
   },
 
+  kickMember(groupId, memberId) {
+    return BaseService.remove({
+      url: API.GROUP.REMOVE_MEMBER(groupId, memberId),
+      isLoading: true,
+    });
+  },
+
   getJoinRequests(groupId) {
     return BaseService.get({
       url: API.GROUP.PENDING_REQUESTS(groupId),
