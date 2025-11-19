@@ -1,5 +1,5 @@
 import React from "react";
-import { UserRound, UserPlus } from "lucide-react";
+import { UserRound, UserPlus, UserX } from "lucide-react";
 import { avatarFromEmail } from "../../../utils/helpers";
 
 const formatRoleLabel = (role) => {
@@ -17,6 +17,9 @@ export default function MembersList({
   inviteLabel = "Invite Members",
   emptyLabel = "No members yet",
   onInvite,
+  onKick,
+  canEdit = false,
+  currentUserEmail = "",
 }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-md">
@@ -51,6 +54,22 @@ export default function MembersList({
                 <p className="text-[12px] text-gray-400">{member.email}</p>
               )}
             </div>
+            {(canEdit || onKick) && (
+              <div className="flex items-center gap-2">
+                {onKick && member.id &&
+                  (member.email || "").toLowerCase() !==
+                    (currentUserEmail || "").toLowerCase() && (
+                    <button
+                      type="button"
+                      onClick={() => onKick(member)}
+                      className="ml-2 inline-flex items-center gap-2 rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                    >
+                      <UserX className="h-4 w-4" />
+                      Kick
+                    </button>
+                  )}
+              </div>
+            )}
           </div>
         ))}
       </div>

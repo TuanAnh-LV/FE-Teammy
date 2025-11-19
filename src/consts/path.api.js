@@ -31,6 +31,7 @@ export const API = {
         UPDATE_GROUP: (id) => `/groups/${id}`,
         LIST_MEMBERS: "/groups/:id/members",
         INVITE_MEMBER: "/groups/:id/invites",
+        REMOVE_MEMBER: (groupId, memberId) => `/groups/${groupId}/members/${memberId}`,
         JOIN_REQUESTS: (groupId) => `/groups/${groupId}/join-requests`,
         PENDING_REQUESTS: (groupId) => `/groups/${groupId}/pending`,
         ACCEPT_JOIN: (groupId, requestId) =>

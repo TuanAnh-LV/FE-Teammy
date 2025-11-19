@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
 import { useAuth } from "../../context/AuthContext";
 import { GroupService } from "../../services/group.service";
+import { BoardService } from "../../services/board.service";
 import InfoCard from "../../components/common/my-group/InfoCard";
 import DescriptionCard from "../../components/common/my-group/DescriptionCard";
 import MentorCard from "../../components/common/my-group/MentorCard";
@@ -22,6 +23,7 @@ export default function MyGroup() {
 
   const [group, setGroup] = useState(null);
   const [groupMembers, setGroupMembers] = useState([]);
+  const [board, setBoard] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -43,9 +45,10 @@ export default function MyGroup() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [detailRes, membersRes] = await Promise.allSettled([
+        const [detailRes, membersRes, boardRes] = await Promise.allSettled([
           GroupService.getGroupDetail(id),
           GroupService.getListMembers(id),
+          BoardService.getBoard(id),
         ]);
 
         const d = detailRes.status === "fulfilled" ? detailRes.value.data : {};
@@ -56,8 +59,8 @@ export default function MyGroup() {
           typeof semesterInfo.season === "string"
             ? semesterInfo.season.trim()
             : semesterInfo.season
-            ? String(semesterInfo.season)
-            : "";
+              ? String(semesterInfo.season)
+              : "";
         const formattedSeason = season
           ? season.charAt(0).toUpperCase() + season.slice(1)
           : "";
@@ -67,13 +70,16 @@ export default function MyGroup() {
           membersRes.status === "fulfilled" && Array.isArray(membersRes.value?.data)
             ? membersRes.value.data
             : [];
-
         const normalizedMembers = members.map((m) => {
           const email = m.email || "";
           const normalizedEmail = email.toLowerCase();
           const currentEmail = (userInfo?.email || "").toLowerCase();
 
+          const memberId =
+            m.id || m.memberId || m.userId || m.userID || m.accountId || "";
+
           return {
+            id: memberId,
             name: m.displayName || m.name || "",
             email,
             role: m.role || m.status || "",
@@ -109,7 +115,7 @@ export default function MyGroup() {
           end: rawEndDate ? rawEndDate.slice(0, 10) : "",
           semester: semesterLabel,
           progress: Math.min(100, Math.max(0, Number(d.progress) || 0)),
-          mentor: d.mentorName || "",
+          mentor: d.mentor,
           statusText: d.status || "",
           maxMembers: Number(d.maxMembers || d.capacity || 5),
           majorId:
@@ -128,6 +134,9 @@ export default function MyGroup() {
         });
 
         setGroupMembers(normalizedMembers);
+
+        const boardData = boardRes.status === "fulfilled" ? boardRes.value?.data : null;
+        setBoard(boardData);
       } catch (err) {
         console.error(err);
       } finally {
@@ -204,13 +213,13 @@ export default function MyGroup() {
       setGroup((prev) =>
         prev
           ? {
-              ...prev,
-              title: payload.name,
-              description: payload.description,
-              maxMembers: payload.maxMembers,
-              majorId: payload.majorId ?? prev.majorId,
-              topicId: payload.topicId ?? prev.topicId,
-            }
+            ...prev,
+            title: payload.name,
+            description: payload.description,
+            maxMembers: payload.maxMembers,
+            majorId: payload.majorId ?? prev.majorId,
+            topicId: payload.topicId ?? prev.topicId,
+          }
           : prev
       );
       setEditOpen(false);
@@ -247,15 +256,28 @@ export default function MyGroup() {
           )}
 
           <div className="mx-auto flex w-full max-w-[79rem] flex-col gap-6 lg:flex-row">
-            <div className="flex-1 space-y-6">
+            <div className="flex-1 space-y-6 pt-10">
               {group && (
                 <>
                   <DescriptionCard description={group.description} />
-                  <RecentActivityCard />
+                  <RecentActivityCard 
+                    items={board?.columns?.flatMap(col => col.tasks || []) || []}
+                  />
                 </>
               )}
             </div>
-            <div className="w-full max-w-sm space-y-6">
+            <div className="w-full max-w-sm space-y-6 relative pt-10">
+              {group && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate(`/workspace?groupId=${group.id || id}`)
+                  }
+                  className="absolute -top-3 right-0 inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2 text-sm font-semibold text-blue-600 bg-white hover:bg-blue-50 shadow-sm"
+                >
+                  {t("openWorkspace") || "Open Workspace"}
+                </button>
+              )}
               <MembersList
                 members={groupMembers}
                 title={t("teamMembers") || "Team Members"}
@@ -264,18 +286,35 @@ export default function MyGroup() {
                 onInvite={
                   group?.canEdit ? () => setShowModal(true) : undefined
                 }
+                canEdit={group?.canEdit}
+                currentUserEmail={userInfo?.email}
+                onKick={async (member) => {
+                  if (!member || !member.id) {
+                    notification.error({ message: t("error") || "Invalid member" });
+                    return;
+                  }
+                  if (!group?.id) {
+                    notification.error({ message: t("error") || "Group id missing" });
+                    return;
+                  }
+
+                  const confirmMsg = t("confirmKick") || `Are you sure you want to remove ${member.name || member.email}?`;
+                  if (!window.confirm(confirmMsg)) return;
+
+                  try {
+                    await GroupService.kickMember(group.id, member.id);
+                    setGroupMembers((prev) => prev.filter((m) => m.id !== member.id));
+                    notification.success({ message: t("removeSuccess") || "Member removed" });
+                  } catch (err) {
+                    console.error(err);
+                    notification.error({ message: t("error") || "Failed to remove member" });
+                  }
+                }}
               />
               {group && (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/workspace?groupId=${group.id || id}`)}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
-                >
-                  M? Workspace
-                </button>
-              )}
-              {group && (
-                <MentorCard name={group.mentor} label={t("projectMentor")} />
+                <MentorCard name={group.mentor.displayName}
+                  email={group.mentor.email}
+                  label={t("projectMentor")} />
               )}
             </div>
           </div>
