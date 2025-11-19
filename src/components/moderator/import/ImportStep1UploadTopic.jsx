@@ -2,22 +2,19 @@ import React from "react";
 import { Upload, Button, message } from "antd";
 import { CloudUploadOutlined, DownloadOutlined } from "@ant-design/icons";
 import * as XLSX from "xlsx";
-import { AdminService } from "../../../services/admin.service";
+import { TopicService } from "../../../services/topic.service";
+import { downloadBlob } from "../../../utils/download";
 
-export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
+export default function ImportStep1UploadTopic({ setRawData, setCurrentStep }) {
   const handleFile = async (file) => {
     try {
-      // Call API to import file
-      const res = await AdminService.importUsers(file, true);
+      const res = await TopicService.importTopics(file, true);
       if (res?.data) {
-        // If API returns full parsed rows (array), use it
         if (Array.isArray(res.data) && res.data.length > 0) {
           setRawData(res.data);
           setCurrentStep(1);
           message.success("File imported successfully");
         } else if (res.data && (res.data.totalRows || res.data.createdCount)) {
-          // API returned only a summary (server processed import). We still want
-          // to show the original rows for mapping/preview, so parse the file locally.
           const parsed = await parseFile(file);
           setRawData(parsed);
           setCurrentStep(1);
@@ -25,7 +22,6 @@ export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
             "API returned summary only — using local parse for preview"
           );
         } else {
-          // Fallback: attempt to parse locally
           const parsed = await parseFile(file);
           setRawData(parsed);
           setCurrentStep(1);
@@ -36,7 +32,6 @@ export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
       }
     } catch (err) {
       console.error(err);
-      // Fallback: parse file locally if API fails
       const parsed = await parseFile(file);
       setRawData(parsed);
       setCurrentStep(1);
@@ -68,43 +63,34 @@ export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
 
   const handleDownloadTemplate = async () => {
     try {
-      // Download template from API
-      const res = await AdminService.downloadUsersTemplate(true);
+      const res = await TopicService.exportTopics(true);
       if (res && res.data) {
-        const url = window.URL.createObjectURL(new Blob([res.data]));
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", "UserImportTemplate.xlsx");
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        const blob = res.data;
+        const disposition = res?.headers?.["content-disposition"];
+        downloadBlob(blob, "TeammyTopicsTemplate.xlsx", disposition);
         message.success("Template downloaded");
       }
     } catch (err) {
       console.error(err);
-      // Fallback: generate template locally
       const template = [
         {
-          Email: "alex@example.com",
-          DisplayName: "Alice Nguyen",
-          Role: "admin",
-          MajorName: "Artificial Intelligence",
-          Gender: "female",
-          StudentCode: "SE150001",
+          title: "AI Capstone",
+          description: "Build an AI assistant",
+          majorName: "Software Engineering",
+          createdByName: "Alice Nguyen",
+          status: "open",
         },
       ];
       const ws = XLSX.utils.json_to_sheet(template);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Template");
-      XLSX.writeFile(wb, "UserImportTemplate.xlsx");
+      XLSX.writeFile(wb, "TeammyTopicsTemplate.xlsx");
       message.warning("Template generated locally (API error)");
     }
   };
 
   return (
     <div className="flex flex-col items-center w-full text-center mt-6">
-      {/* Upload Box */}
       <Upload.Dragger
         multiple={false}
         accept=".xlsx,.xls,.csv"
@@ -136,7 +122,6 @@ export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
         </Button>
       </Upload.Dragger>
 
-      {/* Download Template */}
       <Button
         icon={<DownloadOutlined />}
         className="!mt-8 !px-5 !py-2 !border-gray-300 hover:!border-orange-400 hover:!text-orange-500"

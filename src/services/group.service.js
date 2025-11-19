@@ -2,6 +2,13 @@ import { BaseService } from "../config/basic.service";
 import { API } from "../consts/path.api";
 
 export const GroupService = {
+  getListGroup() {
+    return BaseService.get({
+      url: API.GROUP.LIST_GROUP,
+      isLoading: true,
+    });
+  },
+
   createGroup(payload) {
     return BaseService.post({
       url: API.GROUP.CREATE_GROUP,
