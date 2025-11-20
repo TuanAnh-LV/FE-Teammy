@@ -1,6 +1,15 @@
 import React from "react";
-import { Modal, Input, Button, Form, InputNumber, message } from "antd";
+import {
+  Modal,
+  Input,
+  Button,
+  Form,
+  InputNumber,
+  message,
+  DatePicker,
+} from "antd";
 import { PostService } from "../../../services/post.service";
+import moment from "moment";
 
 const { TextArea } = Input;
 
@@ -15,7 +24,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
 
   const handleSubmit = async () => {
     try {
-      const { groupId, title, description, position_needed } =
+      const { groupId, title, description, position_needed, expiresAt } =
         await form.validateFields();
 
       await PostService.createRecruitmentPost({
@@ -23,6 +32,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
         title,
         description,
         position_needed,
+        expiresAt: expiresAt?.toISOString(),
       });
 
       message.success("Tạo recruitment post thành công!");
@@ -55,6 +65,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           title: "",
           description: "",
           position_needed: "",
+          expiresAt: null, // Đặt giá trị mặc định cho expiresAt là null
         }}
       >
         <Form.Item
@@ -89,6 +100,29 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           ]}
         >
           <Input placeholder="VD: Git, Azure" />
+        </Form.Item>
+
+        {/* Expires At Field */}
+        <Form.Item
+          label="Expires At"
+          name="expiresAt"
+          rules={[
+            { required: true, message: "Vui lòng chọn ngày hết hạn" },
+            {
+              validator: (_, value) =>
+                value && value.isAfter(moment())
+                  ? Promise.resolve()
+                  : Promise.reject("Ngày hết hạn phải lớn hơn ngày hiện tại!"),
+            },
+          ]}
+        >
+          <DatePicker
+            style={{ width: "100%" }}
+            disabledDate={(current) =>
+              current && current < moment().endOf("day")
+            } // Disable past dates
+            placeholder="Chọn ngày hết hạn"
+          />
         </Form.Item>
 
         <div className="flex justify-between mt-4">
