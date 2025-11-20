@@ -92,7 +92,7 @@ export const normalizeGroup = (group, idx = 0) => {
       group.majorID ||
       "",
     role,
-    displayRole: group.role || "Member",
+    displayRole: group.role || "Member",  
     isLeader: role === "leader",
     members: membersCount,
     maxMembers: Number(group.maxMembers ?? 5),
@@ -131,17 +131,30 @@ export const mapPendingRequest = (req = {}) => {
 
 
 export const calculateProgressFromTasks = (board) => {
-  if (!board || !board.columns || !Array.isArray(board.columns)) {
+  if (!board || !board.columns) {
     return 0;
   }
 
   let totalTasks = 0;
   let completedTasks = 0;
 
-  board.columns.forEach((column) => {
-    const tasks = column.tasks || column.taskResponses || [];
-    const taskCount = tasks.length;
+  // Handle both array and object formats
+  const columnsArray = Array.isArray(board.columns) 
+    ? board.columns 
+    : Object.values(board.columns);
+
+  columnsArray.forEach((column) => {
+    // Handle both array and object task formats
+    let tasks = [];
+    if (Array.isArray(column.tasks)) {
+      tasks = column.tasks;
+    } else if (column.tasks && typeof column.tasks === 'object') {
+      tasks = Object.values(column.tasks);
+    } else if (Array.isArray(column.taskResponses)) {
+      tasks = column.taskResponses;
+    }
     
+    const taskCount = tasks.length;
     totalTasks += taskCount;
     
     if (column.isDone) {
