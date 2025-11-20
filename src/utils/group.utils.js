@@ -106,6 +106,7 @@ export const normalizeGroup = (group, idx = 0) => {
       ? 0
       : Math.min(100, Math.max(0, progress)),
     memberPreview: normalizedMembers,
+    mentor: group.mentor?.displayName || group.mentorName || "",
   };
 };
 
