@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { signInWithPopup } from "firebase/auth";
-import { auth, provider } from "../../config/firebase.config";
-import { Globe, Bell, MessageSquare, Users, FolderKanban, Search } from "lucide-react";
+import { Globe, Bell, MessageSquare, Users, Search } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { getTranslation } from "../../translations";
@@ -135,7 +133,7 @@ const Navbar = () => {
               <Users className="!w-4 !h-4" />
               <span>{getTranslation("myGroups", language)}</span>
             </Link>
-            <button
+            {/* <button
               type="button"
               onClick={handleWorkspaceNav}
               className={`!flex !items-center !gap-2 !hover:text-blue-600 !bg-transparent !border-0 !p-0 ${
@@ -144,7 +142,7 @@ const Navbar = () => {
             >
               <FolderKanban className="!w-4 !h-4" />
               <span>{getTranslation("workspace", language)}</span>
-            </button>
+            </button> */}
           </div>
         </div>
 

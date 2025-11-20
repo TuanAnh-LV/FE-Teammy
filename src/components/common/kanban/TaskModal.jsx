@@ -57,9 +57,15 @@ const TaskModal = ({
 
   useEffect(() => {
     if (task) {
+      let normalizedDueDate = "";
+      if (task.dueDate) {
+        const match = String(task.dueDate).match(/^(\d{4}-\d{2}-\d{2})/);
+        normalizedDueDate = match ? match[1] : "";
+      }
+      
       setDetailForm({
         assignees: task.assignees || [],
-        dueDate: task.dueDate || "",
+        dueDate: normalizedDueDate,
         status: task.status || "",
         priority: task.priority || "",
         description: task.description || "",
@@ -455,12 +461,18 @@ const TaskModal = ({
                     <div className="relative flex items-center gap-2 flex-1">
                       <input
                         type="date"
-                        value={detailForm.dueDate ? detailForm.dueDate.slice(0, 10) : ""}
-                        onChange={(e) =>
-                          setDetailForm((prev) => ({ ...prev, dueDate: e.target.value }))
-                        }
-                        onBlur={() => handleFieldBlur("dueDate")}
-                        className="w-full px-3 py-2 text-sm outline-none pr-10 border border-gray-300 rounded-lg"
+                        value={detailForm.dueDate ? String(detailForm.dueDate).slice(0, 10) : ""}
+                        onChange={(e) => {
+                          const newDate = e.target.value;
+                          setDetailForm((prev) => ({ ...prev, dueDate: newDate }));
+                        }}
+                        onBlur={(e) => {
+                          const dateValue = e.target.value;
+                          if (dateValue && dateValue !== String(task.dueDate || "").slice(0, 10)) {
+                            onUpdateTask(task.id, { dueDate: dateValue });
+                          }
+                        }}
+                        className="w-full px-3 py-2 text-sm outline-none pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-200"
                       />
                     </div>
                   </div>

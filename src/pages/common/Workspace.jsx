@@ -103,29 +103,29 @@ const Workspace = () => {
   return (
     <div className="relative">
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-start pt-28 xl:pt-40 pb-20">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-between pt-28 xl:pt-20 pb-20">
         {/* Title */}
-        <div className="mx-auto ml-48 mb-8">
-          <h1 className="text-4xl font-extrabold text-[#1a1a1a] mb-2">
+        <div className="mx-auto ml-20 xl:ml-48 mb-8">
+          <h1 className="text-3xl font-black text-[#1a1a1a] mb-2">
             Team Workspace
           </h1>
-          <p className="!text-gray-500 !text-lg">
+          <p className="text-gray-400 text-muted-foreground">
             Manage tasks, share documents and track progress.
           </p>
         </div>
 
         {/* Toolbar */}
         <div className="mt-10 w-full max-w-7xl px-6">
-          <div className="backdrop-blur border border-gray-200 rounded-2xl p-4 shadow-sm">
+          <div className="">
             <div className="flex flex-col md:flex-row items-center gap-3">
               <div className="flex items-center gap-2 flex-1 w-full">
-                <div className="flex items-center bg-[#F5F5F5] rounded-xl w-full px-5 py-4 shadow-sm hover:shadow-md transition">
+                <div className="flex items-center border border-gray-400 rounded-xl w-full px-4 py-3">
                   <Search className="w-5 h-5 text-gray-500 mr-3" />
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search tasks by title or description..."
-                    className="bg-transparent outline-none w-full text-gray-700 placeholder-gray-500 text-[16px]"
+                    className="bg-transparent outline-none w-full text-gray-700  text-[16px]"
                   />
                 </div>
               </div>
@@ -182,7 +182,7 @@ const Workspace = () => {
           onDragEnd={handleDragEnd}
         >
           {hasData ? (
-            <div className="mt-8 flex gap-6 overflow-x-auto max-w-8xl mx-auto px-6 pb-2">
+            <div className="mt-8 flex gap-6 overflow-x-auto max-w-7xl mx-auto px-6 pb-2">
               {Object.entries(columnMeta)
                 .sort((a, b) => (a[1]?.position || 0) - (b[1]?.position || 0))
                 .map(([colId, meta]) => {

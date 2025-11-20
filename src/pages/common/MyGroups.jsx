@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
 import CreateGroupModal from "../../components/common/my-groups/CreateGroupModal";
-import SelectTopicModal from "../../components/common/my-groups/SelectTopicModal";
 import { useMyGroupsPage } from "../../hook/useMyGroupsPage";
 
 export default function MyGroupsPage() {
@@ -81,20 +80,8 @@ export default function MyGroupsPage() {
     handleLeaveGroup,
     handleApprove,
     handleReject,
-    topicModalGroup,
-    topics,
-    topicsLoading,
-    assigningTopic,
-    selectedTopicId,
-    topicSearch,
     majors,
     majorsLoading,
-    handleOpenTopicModal,
-    handleCloseTopicModal,
-    handleSearchTopics,
-    handleAssignTopic,
-    setSelectedTopicId,
-    canSelectTopic,
   } = useMyGroupsPage(t, navigate);
 
   const tabs = [
@@ -193,8 +180,8 @@ export default function MyGroupsPage() {
               <div>
                 <h3 className="mt-1 text-[18px] font-bold text-gray-900">
                   {group.title}
-                </h3> 
-                <p className="text-sm pt-1 text-[#627084]">
+                </h3>
+                <p className="pt-1 text-sm text-[#627084]">
                   {group.field}
                 </p>
 
@@ -204,12 +191,13 @@ export default function MyGroupsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <span
-                  className={`inline-flex items-center rounded-full px-4 py-1.5 text-xs font-semibold ${group.isLeader
+                  className={`inline-flex items-center rounded-full px-4 py-1.5 text-xs font-semibold ${
+                    group.isLeader
                       ? "bg-[#3182ed] text-white"
                       : "bg-gray-100 text-gray-700"
-                    }`}
+                  }`}
                 >
-                  <span className="capitalize leading-none whitespace-nowrap">
+                  <span className="whitespace-nowrap capitalize leading-none">
                     {getRoleLabel(group)}
                   </span>
                 </span>
@@ -308,34 +296,14 @@ export default function MyGroupsPage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 onClick={() => handleViewGroup(group.id)}
-                className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 cursor-pointer hover:border-gray-300"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-300"
               >
                 {t("view") || "View"}
                 <ArrowRight className="!h-4 !w-4" />
               </button>
-              {group.isLeader && (
-                <button
-                  onClick={() => handleOpenTopicModal(group)}
-                  disabled={!canSelectTopic(group)}
-                  title={
-                    canSelectTopic(group)
-                      ? ""
-                      : t("topicRequirement") ||
-                      "Topic can be selected when the group is full."
-                  }
-                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${canSelectTopic(group)
-                      ? "border-emerald-200 text-emerald-600 hover:border-emerald-300"
-                      : "border-gray-100 text-gray-400 cursor-not-allowed"
-                    }`}
-                >
-                  {group.topicTitle
-                    ? t("changeTopic") || "Change topic"
-                    : t("selectTopic") || "Select topic"}
-                </button>
-              )}
               <button
                 onClick={() => handleLeaveGroup(group.id)}
-                className="inline-flex items-center gap-2 rounded-full border border-red-100 px-4 py-2 text-sm font-semibold cursor-pointer text-red-600 hover:border-red-200"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-red-100 px-4 py-2 text-sm font-semibold text-red-600 hover:border-red-200"
               >
                 {t("leaveGroup") || "Leave Group"}
               </button>
@@ -429,7 +397,9 @@ export default function MyGroupsPage() {
                         <p className="text-sm font-semibold text-gray-900">
                           {request.name}
                         </p>
-                        <p className="text-xs text-gray-500">{request.email}</p>
+                        <p className="text-xs text-gray-500">
+                          {request.email}
+                        </p>
                         {request.message && (
                           <p className="mt-1 text-xs text-gray-500">
                             {request.message}
@@ -469,7 +439,9 @@ export default function MyGroupsPage() {
           className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
         >
           <p className="text-sm font-semibold text-gray-500">{card.title}</p>
-          <p className="mt-3 text-3xl font-bold text-gray-900">{card.value}</p>
+          <p className="mt-3 text-3xl font-bold text-gray-900">
+            {card.value}
+          </p>
           <p className="mt-2 text-sm text-gray-500">{card.description}</p>
         </div>
       ))}
@@ -486,7 +458,7 @@ export default function MyGroupsPage() {
               <h1 className="mt-2 text-3xl font-black tracking-tight text-gray-900">
                 {t("myGroupsProjectsTitle") || "My Groups & Projects"}
               </h1>
-              <p className="mt-3 max-w-3xl text-muted-foreground text-gray-400">
+              <p className="mt-3 max-w-3xl text-gray-400 text-muted-foreground">
                 {t("myGroupsProjectsSubtitle") ||
                   "Manage your capstone project teams, track progress, and collaborate with teammates."}
                 <br />
@@ -539,10 +511,11 @@ export default function MyGroupsPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-1.5 transition ${activeTab === tab.key
+                className={`flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-1.5 transition ${
+                  activeTab === tab.key
                     ? "bg-[#f7f9fa] text-[#1d3a66] shadow"
                     : "bg-[#f2f4f5] text-[#7d889c] hover:text-[#1d3a66]"
-                  }`}
+                }`}
               >
                 {tab.icon}
                 <span className="capitalize">{tab.label}</span>
@@ -570,20 +543,6 @@ export default function MyGroupsPage() {
         onClose={requestCloseModal}
         onSubmit={handleCreateGroup}
         onChange={handleFormChange}
-      />
-      <SelectTopicModal
-        t={t}
-        open={Boolean(topicModalGroup)}
-        group={topicModalGroup}
-        topics={topics}
-        loading={topicsLoading}
-        assigning={assigningTopic}
-        search={topicSearch}
-        selectedTopicId={selectedTopicId}
-        onClose={handleCloseTopicModal}
-        onSearch={handleSearchTopics}
-        onSelect={setSelectedTopicId}
-        onSubmit={handleAssignTopic}
       />
     </div>
   );

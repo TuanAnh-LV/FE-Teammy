@@ -19,7 +19,7 @@ const Column = ({ id, meta, tasks, onOpen, onCreate, onDelete }) => {
   return (
     <div
       ref={setNodeRef}
-      className={`w-80 md:w-96 min-h-[560px] rounded-2xl p-5 border
+      className={`w-80 md:w-96 min-h-[560px] rounded-2xl p-5
       ${isOver ? "bg-[#EEF2FF] border-indigo-200" : "bg-[#F7F8FA] border-gray-200"}
       transition`}
     >
@@ -36,7 +36,7 @@ const Column = ({ id, meta, tasks, onOpen, onCreate, onDelete }) => {
             <button
               type="button"
               onClick={onDelete}
-              className="text-xs text-red-500 hover:text-red-700"
+              className="text-xs text-red-500 hover:text-red-700 "
               title="Delete column"
             >
               ✕
