@@ -12,8 +12,10 @@ import RecentActivityCard from "../../components/common/my-group/RecentActivityC
 import MembersList from "../../components/common/my-group/MembersList";
 import AddMemberModal from "../../components/common/my-group/AddMemberModal";
 import EditGroupModal from "../../components/common/my-group/EditGroupModal";
+import SelectTopicModal from "../../components/common/my-group/SelectTopicModal";
 import LoadingState from "../../components/common/LoadingState";
-import { notification } from "antd";
+import { notification, Modal } from "antd";
+import { calculateProgressFromTasks } from "../../utils/group.utils";
 
 export default function MyGroup() {
   const { id } = useParams();
@@ -27,6 +29,7 @@ export default function MyGroup() {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [selectTopicOpen, setSelectTopicOpen] = useState(false);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "",
@@ -101,6 +104,9 @@ export default function MyGroup() {
             (member.role || "").toLowerCase() === "leader"
         );
 
+        const boardData = boardRes.status === "fulfilled" ? boardRes.value?.data : null;
+        const calculatedProgress = calculateProgressFromTasks(boardData);
+
         setGroup({
           id: d.id || id,
           title: d.name || "",
@@ -114,7 +120,7 @@ export default function MyGroup() {
           start: rawStartDate ? rawStartDate.slice(0, 10) : "",
           end: rawEndDate ? rawEndDate.slice(0, 10) : "",
           semester: semesterLabel,
-          progress: Math.min(100, Math.max(0, Number(d.progress) || 0)),
+          progress: calculatedProgress,
           mentor: d.mentor,
           statusText: d.status || "",
           maxMembers: Number(d.maxMembers || d.capacity || 5),
@@ -134,8 +140,6 @@ export default function MyGroup() {
         });
 
         setGroupMembers(normalizedMembers);
-
-        const boardData = boardRes.status === "fulfilled" ? boardRes.value?.data : null;
         setBoard(boardData);
       } catch (err) {
         console.error(err);
@@ -233,6 +237,63 @@ export default function MyGroup() {
     }
   };
 
+  const handleSelectTopic = async (topicId, topicData) => {
+    if (!group || !topicId) return;
+    console.log("Assigning topic:", { topicId, topicData });
+    
+    try {
+      await GroupService.assignTopic(group.id, topicId);
+      
+      const topicName = topicData?.name || topicData?.title || "Selected Topic";
+      console.log("Topic assigned successfully, updating UI with:", topicName);
+      
+      // Update local state immediately for instant feedback
+      setGroup((prev) => {
+        const updated = prev
+          ? {
+              ...prev,
+              topicId: topicId,
+              topicName: topicName,
+            }
+          : prev;
+        console.log("Updated group state:", updated);
+        return updated;
+      });
+      
+      notification.success({
+        message: t("topicAssignedSuccess") || "Topic assigned successfully.",
+      });
+      
+      setSelectTopicOpen(false);
+      
+      // Reload group detail to get latest data from server
+      setTimeout(async () => {
+        try {
+          const res = await GroupService.getGroupDetail(group.id);
+          const d = res?.data || {};
+          console.log("Reloaded group data:", d);
+          
+          setGroup((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  topicId: d.topicId || d.topic?.id || prev.topicId,
+                  topicName: d.topicName || d.topic?.title || d.topic?.name || prev.topicName,
+                }
+              : prev
+          );
+        } catch (reloadErr) {
+          console.error("Failed to reload group data:", reloadErr);
+        }
+      }, 500);
+    } catch (err) {
+      console.error("Error assigning topic:", err);
+      notification.error({
+        message: t("error") || "Failed to assign topic.",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <LoadingState
@@ -251,6 +312,9 @@ export default function MyGroup() {
               group={group}
               memberCount={groupMembers.length}
               onBack={() => navigate(-1)}
+              onSelectTopic={
+                group.canEdit ? () => setSelectTopicOpen(true) : undefined
+              }
               onEdit={group.canEdit ? () => setEditOpen(true) : null}
             />
           )}
@@ -298,23 +362,41 @@ export default function MyGroup() {
                     return;
                   }
 
-                  const confirmMsg = t("confirmKick") || `Are you sure you want to remove ${member.name || member.email}?`;
-                  if (!window.confirm(confirmMsg)) return;
+                  Modal.confirm({
+                    title: t("confirmKick") || "Remove Member",
+                    content: t("confirmKickMessage") || `Are you sure you want to remove ${member.name || member.email} from this group?`,
+                    okText: t("remove") || "Remove",
+                    cancelText: t("cancel") || "Cancel",
+                    okButtonProps: { danger: true },
+                    onOk: async () => {
+                      // Check if group is active before kicking member
+                      if (group.statusText?.toLowerCase() === "active" || group.status?.toLowerCase() === "active") {
+                        notification.error({
+                          message: t("cannotKickFromActiveGroup") || "Cannot remove member from active group",
+                          description: t("cannotKickFromActiveGroupDesc") || "You cannot remove members from a group that is currently active. Please wait until the group status changes or contact your mentor.",
+                          duration: 5,
+                        });
+                        return;
+                      }
 
-                  try {
-                    await GroupService.kickMember(group.id, member.id);
-                    setGroupMembers((prev) => prev.filter((m) => m.id !== member.id));
-                    notification.success({ message: t("removeSuccess") || "Member removed" });
-                  } catch (err) {
-                    console.error(err);
-                    notification.error({ message: t("error") || "Failed to remove member" });
-                  }
+                      try {
+                        await GroupService.kickMember(group.id, member.id);
+                        setGroupMembers((prev) => prev.filter((m) => m.id !== member.id));
+                        notification.success({ message: t("removeSuccess") || "Member removed successfully" });
+                      } catch (err) {
+                        console.error(err);
+                        notification.error({ message: t("error") || "Failed to remove member" });
+                      }
+                    },
+                  });
                 }}
               />
               {group && (
-                <MentorCard name={group.mentor.displayName}
-                  email={group.mentor.email}
-                  label={t("projectMentor")} />
+                <MentorCard 
+                  name={group.mentor?.displayName || t("noMentorAssigned") || "No mentor assigned"}
+                  email={group.mentor?.email || ""}
+                  label={t("projectMentor")} 
+                />
               )}
             </div>
           </div>
@@ -341,6 +423,13 @@ export default function MyGroup() {
           }}
           onChange={handleEditChange}
           onSubmit={handleSubmitEdit}
+        />
+        <SelectTopicModal
+          t={t}
+          open={selectTopicOpen}
+          currentTopicId={group?.topicId}
+          onClose={() => setSelectTopicOpen(false)}
+          onSelect={handleSelectTopic}
         />
       </div>
     </div>

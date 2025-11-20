@@ -116,31 +116,6 @@ export default function EditGroupModal({
               <p className="mt-1 text-xs text-red-600">{errors.maxMembers}</p>
             )}
           </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                {label("majorId", "Major ID")}
-              </label>
-              <input
-                value={form.majorId}
-                onChange={(e) => onChange("majorId", e.target.value)}
-                placeholder="uuid-123..."
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-4 ring-blue-100 transition"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                {label("topicId", "Topic ID")}
-              </label>
-              <input
-                value={form.topicId}
-                onChange={(e) => onChange("topicId", e.target.value)}
-                placeholder="uuid-123..."
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-4 ring-blue-100 transition"
-              />
-            </div>
-          </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 border-t px-6 py-4">

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { notification } from "antd";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../config/firebase.config";
@@ -14,7 +14,8 @@ const campuses = [
 ];
 
 const Login = () => {
-  const { loginGoogle } = useAuth();
+  const { loginGoogle, userInfo } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [campus, setCampus] = useState("");
 
@@ -36,6 +37,20 @@ const Login = () => {
       });
 
       notification.success({ message: "Signed in with Google" });
+
+      // Redirect based on role after successful login
+      // Wait a bit for userInfo to be set
+      setTimeout(() => {
+        const role = localStorage.getItem("role")?.toLowerCase();
+        if (role === "mentor") {
+          navigate("/mentor");
+        } else if (role === "student") {
+          navigate("/");
+        } else {
+          // Default fallback
+          navigate("/");
+        }
+      }, 100);
     } catch (error) {
       console.error(error);
       notification.error({
