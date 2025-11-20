@@ -355,6 +355,7 @@ export const translations = {
     ctaBenefitUI: "Simple, friendly UI",
     ctaBenefitSupport: "24/7 support",
     ctaBenefitSecure: "Secure by design",
+    alreadyInvited: "Already Invited"
   },
   
   VIE: {
@@ -714,6 +715,7 @@ export const translations = {
     ctaBenefitUI: "Giao diện thân thiện đơn giản",
     ctaBenefitSupport: "Hỗ trợ 24/7",
     ctaBenefitSecure: "Thiết kế bảo mật",
+    alreadyInvited: "Đã được mời"
   },
 };
 
