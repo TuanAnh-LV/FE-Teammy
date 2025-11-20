@@ -229,9 +229,7 @@ export default function MyGroupsPage() {
             {(() => {
               const progressPercent = Math.min(
                 100,
-                Math.round(
-                  ((group.members || 0) / (group.maxMembers || 1)) * 100
-                )
+                Math.max(0, Math.round(group.progress || 0))
               );
               return (
                 <div className="mt-4">
@@ -400,27 +398,46 @@ export default function MyGroupsPage() {
                         <p className="text-xs text-gray-500">
                           {request.email}
                         </p>
-                        {request.message && (
-                          <p className="mt-1 text-xs text-gray-500">
-                            {request.message}
-                          </p>
-                        )}
+                        {request.message && (() => {
+                          const parts = request.message.split('-');
+                          if (parts.length >= 2) {
+                            const badge = parts[0].trim();
+                            const message = parts.slice(1).join('-').trim();
+                            return (
+                              <div className="mt-2 flex items-center gap-2">
+                                <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200">
+                                  {badge}
+                                </span>
+                                <p className="text-xs text-gray-600">
+                                  {message}
+                                </p>
+                              </div>
+                            );
+                          }
+                          return (
+                            <p className="mt-1 text-xs text-gray-500">
+                              {request.message}
+                            </p>
+                          );
+                        })()}
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleReject(groupId, request)}
-                        className="inline-flex h-10 items-center justify-center rounded-full border border-red-200 px-4 text-sm font-semibold text-red-600 hover:bg-red-50"
-                      >
-                        {t("reject") || "Reject"}
-                      </button>
-                      <button
-                        onClick={() => handleApprove(groupId, request)}
-                        className="inline-flex h-10 items-center justify-center rounded-full bg-emerald-500 px-4 text-sm font-semibold text-white hover:bg-emerald-600"
-                      >
-                        {t("approve") || "Approve"}
-                      </button>
-                    </div>
+                    {request.type !== "invitation" && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleReject(groupId, request)}
+                          className="inline-flex h-10 items-center justify-center rounded-full border border-red-200 px-4 text-sm font-semibold text-red-600 hover:bg-red-50"
+                        >
+                          {t("reject") || "Reject"}
+                        </button>
+                        <button
+                          onClick={() => handleApprove(groupId, request)}
+                          className="inline-flex h-10 items-center justify-center rounded-full bg-emerald-500 px-4 text-sm font-semibold text-white hover:bg-emerald-600"
+                        >
+                          {t("approve") || "Approve"}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

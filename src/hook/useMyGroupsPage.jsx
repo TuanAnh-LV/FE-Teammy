@@ -1,12 +1,12 @@
 // src/hooks/useMyGroupsPage.js
 import { useEffect, useMemo, useRef, useState } from "react";
-import { notification } from "antd";
+import { notification, Modal } from "antd";
 import { GroupService } from "../services/group.service";
 import { TopicService } from "../services/topic.service";
 import { MajorService } from "../services/major.service";
 import { BoardService } from "../services/board.service";
 
-import { normalizeGroup, mapPendingRequest } from "../utils/group.utils";
+import { normalizeGroup, mapPendingRequest, calculateProgressFromTasks } from "../utils/group.utils";
 import { use } from "react";
 
 export const useMyGroupsPage = (t, navigate) => {
@@ -140,19 +140,42 @@ export const useMyGroupsPage = (t, navigate) => {
   const handleViewGroup = (groupId) => navigate(`/my-group/${groupId}`);
 
   const handleLeaveGroup = async (groupId) => {
-    if (!window.confirm(`Leave group ${groupId}?`)) return;
-    try {
-      await GroupService.leaveGroup(groupId);
-      notification.success({
-        message: t("leaveGroup") || "Leave group",
-      });
-      await fetchMyGroups();
-    } catch (error) {
-      console.error(error);
-      notification.error({
-        message: t("error") || "Failed to leave group.",
-      });
-    }
+    const group = groups.find((g) => g.id === groupId);
+    const isActiveGroup = group && group.status === "active";
+
+    Modal.confirm({
+      title: t("confirmLeaveGroup") || "Leave Group",
+      content: isActiveGroup
+        ? (t("leaveActiveGroupWarning") || "This group is currently active. Leaving will remove you from all ongoing activities. Are you sure you want to leave?")
+        : (t("confirmLeaveGroupMessage") || `Are you sure you want to leave this group?`),
+      okText: t("leave") || "Leave",
+      cancelText: t("cancel") || "Cancel",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        // Check if group is active before attempting to leave
+        if (isActiveGroup) {
+          notification.error({
+            message: t("cannotLeaveActiveGroup") || "Cannot leave active group",
+            description: t("cannotLeaveActiveGroupDesc") || "You cannot leave a group that is currently active. Please wait until the group status changes or contact your mentor.",
+            duration: 5,
+          });
+          return;
+        }
+
+        try {
+          await GroupService.leaveGroup(groupId);
+          notification.success({
+            message: t("leaveGroupSuccess") || "Successfully left the group",
+          });
+          await fetchMyGroups();
+        } catch (error) {
+          console.error(error);
+          notification.error({
+            message: t("error") || "Failed to leave group.",
+          });
+        }
+      },
+    });
   };
 
   const handleApprove = async (groupId, request) => {
@@ -323,8 +346,27 @@ export const useMyGroupsPage = (t, navigate) => {
       const res = await GroupService.getMyGroups();
       const arr = Array.isArray(res?.data) ? res.data : [];
       const normalized = arr.map((g, idx) => normalizeGroup(g, idx));
-      setGroups(normalized);
-      await loadPendingApplications(normalized);
+      
+      // Load board data for each group to calculate progress from tasks
+      const groupsWithProgress = await Promise.all(
+        normalized.map(async (group) => {
+          try {
+            const boardRes = await BoardService.getBoard(group.id);
+            const boardData = boardRes?.data || null;
+            const calculatedProgress = calculateProgressFromTasks(boardData);
+            return {
+              ...group,
+              progress: calculatedProgress,
+            };
+          } catch (error) {
+            console.error(`Failed to load board for group ${group.id}:`, error);
+            return group; // Return group with original progress if board fetch fails
+          }
+        })
+      );
+      
+      setGroups(groupsWithProgress);
+      await loadPendingApplications(groupsWithProgress);
     } catch (error) {
       console.error(error);
       setGroups([]);
