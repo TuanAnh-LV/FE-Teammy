@@ -8,6 +8,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { Search, Filter, Plus } from "lucide-react";
+import { Modal, Input, Form } from "antd";
 
 import Column from "../../components/common/kanban/Column";
 import TaskModal from "../../components/common/kanban/TaskModal";
@@ -58,6 +59,21 @@ const Workspace = () => {
     updateTaskComment,
     deleteTaskComment,
   } = useKanbanBoard(resolvedGroupId);
+
+  const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
+  const [columnForm] = Form.useForm();
+
+  const handleCreateColumn = () => {
+    columnForm.validateFields().then((values) => {
+      const payload = {
+        columnName: values.columnName,
+        position: Number(values.position) || 0,
+      };
+      createColumn(payload);
+      setIsColumnModalOpen(false);
+      columnForm.resetFields();
+    });
+  };
 
   // Fallback: if groupId missing, pick the first of my groups
   useEffect(() => {
@@ -158,14 +174,7 @@ const Workspace = () => {
               </div>
               <button
                 className="flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
-                onClick={() => {
-                  const name = window.prompt("Column name?");
-                  if (!name) return;
-                  const positionInput = window.prompt("Position?", "1");
-                  const position = Number(positionInput) || 0;
-                  const payload = { columnName: name, position };
-                  createColumn(payload);
-                }}
+                onClick={() => setIsColumnModalOpen(true)}
               >
                 <Plus className="w-5 h-5" />
                 New Column
@@ -243,6 +252,36 @@ const Workspace = () => {
           setSelectedTask(null);
         }}
       />
+
+      {/* New Column Modal */}
+      <Modal
+        title="New Column"
+        open={isColumnModalOpen}
+        onOk={handleCreateColumn}
+        onCancel={() => {
+          setIsColumnModalOpen(false);
+          columnForm.resetFields();
+        }}
+        okText="Create"
+        cancelText="Cancel"
+      >
+        <Form form={columnForm} layout="vertical">
+          <Form.Item
+            name="columnName"
+            label="Column Name"
+            rules={[{ required: true, message: "Please enter column name" }]}
+          >
+            <Input placeholder="Enter column name" />
+          </Form.Item>
+          <Form.Item
+            name="position"
+            label="Position"
+            initialValue={0}
+          >
+            <Input type="number" placeholder="0" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

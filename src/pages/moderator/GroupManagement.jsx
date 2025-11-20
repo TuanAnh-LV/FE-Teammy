@@ -50,7 +50,7 @@ export default function GroupManagement() {
           key: g.id,
           groupName: g.title,
           topic: g.topicTitle || "Not Assigned",
-          mentor: g.leaderName || "Not Assigned",
+          mentor: g.mentor || "Not Assigned",
           members: g.members || 0,
           capacity: g.maxMembers || 5,
           isFull: g.members >= (g.maxMembers || 5),
