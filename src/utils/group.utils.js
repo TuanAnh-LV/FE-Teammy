@@ -127,3 +127,31 @@ export const mapPendingRequest = (req = {}) => {
     message: req.message || "",
   };
 };
+
+
+export const calculateProgressFromTasks = (board) => {
+  if (!board || !board.columns || !Array.isArray(board.columns)) {
+    return 0;
+  }
+
+  let totalTasks = 0;
+  let completedTasks = 0;
+
+  board.columns.forEach((column) => {
+    const tasks = column.tasks || column.taskResponses || [];
+    const taskCount = tasks.length;
+    
+    totalTasks += taskCount;
+    
+    if (column.isDone) {
+      completedTasks += taskCount;
+    }
+  });
+
+  if (totalTasks === 0) {
+    return 0;
+  }
+
+  const progress = Math.round((completedTasks / totalTasks) * 100);
+  return Math.min(100, Math.max(0, progress));
+};

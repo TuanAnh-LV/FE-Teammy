@@ -14,7 +14,7 @@ export default function MentorCard({ name,email, label }) {
           className="w-12 h-12 rounded-full object-cover border border-white shadow"
         />
         <div>
-          <p className="text-sm font-semibold text-gray-800">{name}</p>
+          <p className="text-sm font-semibold text-gray-800">{name}  </p>
           <p className="text-[12px] text-gray-400">{label || "Mentor"}</p>
           <p className="text-[12px] text-gray-400">{email}</p>
         </div>

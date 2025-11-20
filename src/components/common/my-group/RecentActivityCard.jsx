@@ -23,26 +23,6 @@ const getStatusColor = (status) => {
 export default function RecentActivityCard({ items = [] }) {
   const { t } = useTranslation();
 
-  // If no items provided, show a small set of mock activities
-  const fallback = [
-    {
-      id: 1,
-      title: t("activityTaskAssigned") || "New task assigned: Implement user registration",
-      description: t("activityTaskAssignedDesc") || "Implement the registration API and UI.",
-      assignees: [{ displayName: "Sarah Chen" }],
-      status: "in_progress",
-    },
-    {
-      id: 2,
-      title: t("activityMockupsUploaded") || "UI mockups uploaded",
-      description: t("activityMockupsDesc") || "Figma mockups uploaded to the design folder.",
-      assignees: [{ displayName: "Mike Rodriguez" }],
-      status: "todo",
-    },
-  ];
-
-  const data = items.length > 0 ? items : fallback;
-
   const renderAssignees = (assignees = []) => {
     if (!Array.isArray(assignees) || assignees.length === 0) return <span className="text-xs text-gray-400">No assignees</span>;
     const show = assignees.slice(0, 4);
@@ -75,7 +55,17 @@ export default function RecentActivityCard({ items = [] }) {
       </div>
 
       <div className="mt-5 space-y-4">
-        {data.map((item) => (
+        {items.length === 0 ? (
+          <div className="py-8 text-center">
+            <p className="text-sm text-gray-500">
+              {t("noRecentActivity") || "No recent activity yet"}
+            </p>
+            <p className="mt-1 text-xs text-gray-400">
+              {t("activityWillAppearHere") || "Tasks and updates will appear here"}
+            </p>
+          </div>
+        ) : (
+          items.map((item) => (
           <div key={item.id || item.taskId || Math.random()} className="space-y-2">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
@@ -87,12 +77,6 @@ export default function RecentActivityCard({ items = [] }) {
                   )}
                 </div>
               </div>
-
-              <div className="flex items-center gap-3">
-                <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
-                  {String(item.status || "").replace(/_/g, " ")}
-                </span>
-              </div>
             </div>
 
             <div className="pl-7">
@@ -103,7 +87,7 @@ export default function RecentActivityCard({ items = [] }) {
               <div className="h-px w-full bg-gray-100" />
             </div>
           </div>
-        ))}
+        )))}
       </div>
     </div>
   );

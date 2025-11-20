@@ -15,9 +15,9 @@ const campuses = [
 
 const Login = () => {
   const { loginGoogle } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [campus, setCampus] = useState("");
-  const navigate = useNavigate();
 
   const handleGoogleLogin = async () => {
     if (loading) return;
