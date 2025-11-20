@@ -84,7 +84,7 @@ const Forum = () => {
   const [isCreatePersonalPostModalOpen, setIsCreatePersonalPostModalOpen] =
     useState(false);
 
-  const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const savedUser = JSON.parse(localStorage.getItem("userInfo") || "{}");
   const currentUserName = savedUser.name || "";
 
   // search
@@ -231,7 +231,25 @@ const Forum = () => {
     }
   };
 
-  const onInvite = (id) => alert(`Invite user ${id} vào nhóm của bạn`);
+  const onInvite = async (id) => {
+    const user = paged.find((u) => u.id === id);
+    const userId = user?.user?.userId;
+    const groupId = membership.groupId;
+    const payload = {
+      userId,
+    };
+
+    try {
+      // Call the inviteMember API method
+      await GroupService.inviteMember(groupId, payload);
+
+      // Display success message when the invite is successful
+      message.success("User invited to the group successfully!");
+    } catch (error) {
+      console.error("Failed to send invitation", error);
+      message.error("Failed to invite user.");
+    }
+  };
 
   const openDetail = (post) => {
     const gid =
@@ -537,9 +555,12 @@ const Forum = () => {
                       <button
                         onClick={() => onInvite(u.id)}
                         className="inline-flex items-center rounded-lg bg-[#FF7A00] hover:opacity-90 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                        disabled={u.emailSent} // Optionally disable the button if the user has already been invited
                       >
                         <UserPlus className="mr-1 h-4 w-4" />
-                        {t("inviteToGroup") || "Invite to Group"}
+                        {u.emailSent
+                          ? t("alreadyInvited") || "Already Invited"
+                          : t("inviteToGroup") || "Invite to Group"}
                       </button>
                     </div>
                   </div>
