@@ -1,29 +1,135 @@
-import React from "react";
-import { Tag, Progress, Card, List, Avatar, Button } from "antd";
+import React, { useState, useEffect } from "react";
+import { Tag, Progress, Card, List, Avatar, Button, Spin } from "antd";
 import {
   TeamOutlined,
   CalendarOutlined,
   PieChartOutlined,
   UserOutlined,
 } from "@ant-design/icons";
+import { GroupService } from "../../services/group.service";
+import { BoardService } from "../../services/board.service";
+import { calculateProgressFromTasks } from "../../utils/group.utils";
 
-export default function GroupOverview() {
-  const group = {
-    description: "Exploring deep learning models for healthcare applications.",
-    tags: ["AI", "Deep Learning", "Healthcare"],
-    major: "Computer Science",
-    mentor: "Dr. Sarah Williams",
-    members: 5,
-    progress: 78,
-    activeWeeks: 9,
-    status: "On Track",
+export default function GroupOverview({ groupId, groupDetail }) {
+  const [loading, setLoading] = useState(false);
+  const [members, setMembers] = useState([]);
+  const [progress, setProgress] = useState(0);
+  const [boardData, setBoardData] = useState(null);
+
+  useEffect(() => {
+    if (groupId && groupDetail) {
+      fetchData();
+    }
+  }, [groupId, groupDetail]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch board data
+      const boardResponse = await BoardService.getBoard(groupId);
+      const board = boardResponse?.data || null;
+
+      console.log("Board data:", board);
+
+      // Calculate progress from tasks
+      const calculatedProgress = board ? calculateProgressFromTasks(board) : 0;
+      console.log("Calculated progress:", calculatedProgress);
+      
+      setProgress(calculatedProgress);
+      setBoardData(board);
+
+      // Get all members from groupDetail (leader + members)
+      const allMembers = [];
+      if (groupDetail?.leader) {
+        allMembers.push({
+          ...groupDetail.leader,
+          fullName: groupDetail.leader.displayName,
+          avatar: groupDetail.leader.avatarUrl,
+        });
+      }
+      if (groupDetail?.members && Array.isArray(groupDetail.members)) {
+        groupDetail.members.forEach(member => {
+          allMembers.push({
+            ...member,
+            fullName: member.displayName,
+            avatar: member.avatarUrl,
+          });
+        });
+      }
+
+      // Calculate member contributions
+      const membersWithContribution = calculateMemberContributions(allMembers, board);
+      setMembers(membersWithContribution);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+      setMembers([]);
+      setProgress(0);
+    } finally {
+      setLoading(false);
+    }
   };
-  const members = [
-    { name: "Nguyễn Văn A", contribution: 35, status: "Active" },
-    { name: "Lê Thị B", contribution: 25, status: "Active" },
-    { name: "Trần C", contribution: 20, status: "Idle" },
-    { name: "Phạm D", contribution: 20, status: "Idle" },
-  ];
+
+  const calculateMemberContributions = (membersList, board) => {
+    if (!board || !board.columns) return membersList.map(m => ({ ...m, contribution: 0, status: "Idle" }));
+
+    // Count tasks assigned to each member
+    const memberTaskCount = {};
+    let totalTasks = 0;
+
+    Object.values(board.columns).forEach(column => {
+      if (column.tasks) {
+        Object.values(column.tasks).forEach(task => {
+          totalTasks++;
+          if (task.assignees && Array.isArray(task.assignees)) {
+            task.assignees.forEach(assigneeId => {
+              memberTaskCount[assigneeId] = (memberTaskCount[assigneeId] || 0) + 1;
+            });
+          }
+        });
+      }
+    });
+
+    // Calculate contribution percentage
+    return membersList.map(member => {
+      const taskCount = memberTaskCount[member.userId] || 0;
+      const contribution = totalTasks > 0 ? Math.round((taskCount / totalTasks) * 100) : 0;
+      const status = contribution > 0 ? "Active" : "Idle";
+      
+      return {
+        ...member,
+        contribution,
+        status,
+      };
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <Spin size="large" tip="Loading overview..." />
+      </div>
+    );
+  }
+
+  // currentMembers already includes leader, so don't add 1
+  const totalMembers = groupDetail?.currentMembers || 0;
+  
+  // Determine status based on progress (same logic as MyGroups)
+  let status = "On track";
+  if (progress < 30) status = "At risk";
+  else if (progress < 60) status = "Behind";
+
+  const group = {
+    description: groupDetail?.description || "No description available.",
+    tags: groupDetail?.topicName ? [groupDetail.topicName] : [],
+    major: groupDetail?.major?.majorName || "N/A",
+    mentor: groupDetail?.mentor?.displayName || "No mentor assigned",
+    members: totalMembers,
+    progress: progress,
+    activeWeeks: groupDetail?.activeWeeks || 0,
+    status: status,
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-8 space-y-8">
@@ -74,22 +180,16 @@ export default function GroupOverview() {
           <div className="mt-6">
             <Progress
               percent={group.progress}
-              strokeColor="#43D08A"
-              trailColor="#e5e7eb"
-              strokeWidth={10}
-              showInfo={false}
+              size="small"
+              status={group.status === "At risk" ? "exception" : "active"}
+              strokeColor={group.status === "At risk" ? "#fa541c" : "#43D08A"}
             />
-            <div className="flex justify-between items-center mt-2">
-              <Tag
-                color="success"
-                className="rounded-full text-xs font-medium px-2 py-0.5"
-              >
-                {group.status}
-              </Tag>
-              <span className="text-gray-600 text-sm font-medium">
-                {group.progress}%
-              </span>
-            </div>
+            <Tag
+              color={group.status === "At risk" ? "volcano" : group.status === "Behind" ? "orange" : "green"}
+              className="mt-1 rounded-md"
+            >
+              {group.status}
+            </Tag>
           </div>
         </div>
 
@@ -127,9 +227,9 @@ export default function GroupOverview() {
           dataSource={members}
           renderItem={(m) => (
             <List.Item>
-              <Avatar icon={<UserOutlined />} />
+              <Avatar icon={<UserOutlined />} src={m.avatar} />
               <div className="ml-3 flex-1">
-                <p className="font-medium text-gray-700">{m.name}</p>
+                <p className="font-medium text-gray-700">{m.fullName || m.name}</p>
                 <Progress
                   percent={m.contribution}
                   strokeColor={m.status === "Active" ? "#3182ED" : "#D1D5DB"}
