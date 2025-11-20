@@ -3,13 +3,18 @@ import { Activity } from "lucide-react";
 import { useTranslation } from "../../../hook/useTranslation";
 
 const getStatusColor = (status) => {
-  switch (status) {
-    case "info":
+  const normalized = String(status || "").toLowerCase();
+  switch (normalized) {
+    case "todo":
+      return "bg-gray-400";
+    case "in_progress":
+    case "in progress":
       return "bg-blue-500";
-    case "success":
-      return "bg-green-500";
-    case "warning":
+    case "review":
       return "bg-orange-500";
+    case "done":
+    case "completed":
+      return "bg-green-500";
     default:
       return "bg-gray-300";
   }
@@ -18,79 +23,71 @@ const getStatusColor = (status) => {
 export default function RecentActivityCard({ items = [] }) {
   const { t } = useTranslation();
 
-  const data =
-    items.length > 0
-      ? items
-      : [
-          {
-            id: 1,
-            title: t("activityTaskAssigned") || "New task assigned: Implement user registration",
-            author: "Sarah Chen",
-            timeAgo: t("activityTime2Hours") || "2 hours ago",
-            status: "info",
-          },
-          {
-            id: 2,
-            title: t("activityMockupsUploaded") || "UI mockups uploaded",
-            author: "Mike Rodriguez",
-            timeAgo: t("activityTime1Day") || "1 day ago",
-            status: "warning",
-          },
-          {
-            id: 3,
-            title: t("activityMemberJoined") || "Emma joined the team",
-            author: "Emma Johnson",
-            timeAgo: t("activityTime3Days") || "3 days ago",
-            status: "success",
-          },
-          {
-            id: 4,
-            title: t("activityTaskCompleted") || "Completed: Database schema design",
-            author: "Sarah Chen",
-            timeAgo: t("activityTime4Days") || "4 days ago",
-            status: "info",
-          },
-          {
-            id: 5,
-            title: t("activityMeetingScheduled") || "Team meeting scheduled for next week",
-            author: "Sarah Chen",
-            timeAgo: t("activityTime5Days") || "5 days ago",
-            status: "success",
-          },
-        ];
+  const renderAssignees = (assignees = []) => {
+    if (!Array.isArray(assignees) || assignees.length === 0) return <span className="text-xs text-gray-400">No assignees</span>;
+    const show = assignees.slice(0, 4);
+    return (
+      <div className="flex items-center gap-2">
+        <div className="flex -space-x-2">
+          {show.map((a, i) => (
+            <img
+              key={i}
+              src={a.avatarUrl || a.avatar || a.photoURL || ""}
+              alt={a.displayName || a.name || "assignee"}
+              title={a.displayName || a.name}
+              className="h-6 w-6 rounded-full border border-white object-cover"
+            />
+          ))}
+        </div>
+        <div className="text-xs text-gray-600">
+          {show.map((a) => a.displayName || a.name).join(", ")}
+          {assignees.length > show.length && ` +${assignees.length - show.length}`}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-md">
       <div className="flex items-center gap-2 text-gray-900">
         <Activity className="h-5 w-5 text-[#4b6bfb]" />
-        <h3 className="text-lg font-semibold">
-          {t("recentActivity") || "Recent Activity"}
-        </h3>
+        <h3 className="text-lg font-semibold">{t("recentActivity") || "Recent Activity"}</h3>
       </div>
 
       <div className="mt-5 space-y-4">
-        {data.map((item) => (
-          <div key={item.id} className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span
-                className={`h-2.5 w-2.5 rounded-full ${getStatusColor(
-                  item.status
-                )}`}
-              />
-              <p className="text-sm font-semibold text-gray-800">
-                {item.title}
-              </p>
+        {items.length === 0 ? (
+          <div className="py-8 text-center">
+            <p className="text-sm text-gray-500">
+              {t("noRecentActivity") || "No recent activity yet"}
+            </p>
+            <p className="mt-1 text-xs text-gray-400">
+              {t("activityWillAppearHere") || "Tasks and updates will appear here"}
+            </p>
+          </div>
+        ) : (
+          items.map((item) => (
+          <div key={item.id || item.taskId || Math.random()} className="space-y-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <span className={`mt-1 h-2.5 w-2.5 rounded-full ${getStatusColor(item.status)}`} />
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">{item.title}</p>
+                  {item.description && (
+                    <p className="mt-1 text-xs text-gray-500">{item.description}</p>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="pl-4 text-xs text-gray-500">
-              <span className="font-medium text-gray-700">{item.author}</span>
-              <span className="mx-2 text-gray-300">•</span>
-              <span>{item.timeAgo}</span>
+
+            <div className="pl-7">
+              {renderAssignees(item.assignees)}
             </div>
+
             <div className="pl-4">
               <div className="h-px w-full bg-gray-100" />
             </div>
           </div>
-        ))}
+        )))}
       </div>
     </div>
   );

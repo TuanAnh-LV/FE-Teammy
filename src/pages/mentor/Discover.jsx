@@ -1,11 +1,12 @@
-import React, { useState } from "react";
-import { Card, Input, Select, Tag, Button } from "antd";
+import React, { useState, useEffect } from "react";
+import { Card, Input, Select, Tag, Button, Spin } from "antd";
 import {
   SearchOutlined,
   UserOutlined,
   ClockCircleOutlined,
 } from "@ant-design/icons";
 import GroupDetailModal from "../../components/mentor/GroupDetailModal";
+import { GroupService } from "../../services/group.service";
 
 const { Option } = Select;
 
@@ -16,44 +17,99 @@ const Discover = () => {
     status: "",
   });
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const mockGroups = [
-    {
-      id: 1,
-      name: "AI Research Group",
-      shortDesc: "Machine Learning Applications",
-      detail: "Exploring deep learning models for healthcare applications.",
-      members: 5,
-      lastActive: "2 hours ago",
-      major: "Computer Science",
-      urgent: true,
-      tags: ["Python", "TensorFlow", "Healthcare AI"],
-    },
-    {
-      id: 2,
-      name: "Web Innovation Lab",
-      shortDesc: "Full-stack Web Solutions",
-      detail: "Building scalable cloud-based web systems.",
-      members: 6,
-      lastActive: "3 hours ago",
-      major: "Information Systems",
-      urgent: false,
-      tags: ["React", "Node.js", "Docker"],
-    },
-    {
-      id: 3,
-      name: "Blockchain Pioneers",
-      shortDesc: "Decentralized Applications",
-      detail: "Exploring blockchain frameworks for digital identity.",
-      members: 4,
-      lastActive: "1 day ago",
-      major: "Computer Science",
-      urgent: true,
-      tags: ["Solidity", "Web3", "Smart Contracts"],
-    },
-  ];
+  useEffect(() => {
+    fetchGroups();
+  }, []);
 
-  const filteredGroups = mockGroups.filter(
+  const fetchGroups = async () => {
+    try {
+      setLoading(true);
+      const response = await GroupService.getListGroup();
+      const groupsList = Array.isArray(response?.data) ? response.data : [];
+      
+      // Fetch detail for each group to get mentor info
+      const groupsWithDetails = await Promise.all(
+        groupsList.map(async (group) => {
+          try {
+            const detailRes = await GroupService.getGroupDetail(group.id);
+            const detail = detailRes?.data || {};
+            return {
+              ...group,
+              mentor: detail.mentor,
+              mentorId: detail.mentorId,
+            };
+          } catch (err) {
+            console.error(`Failed to fetch detail for group ${group.id}:`, err);
+            return group;
+          }
+        })
+      );
+      
+      console.log("Groups with mentor info:", groupsWithDetails);
+      setGroups(groupsWithDetails);
+    } catch (error) {
+      console.error("Failed to fetch groups:", error);
+      setGroups([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchGroupDetail = async (groupId) => {
+    try {
+      const response = await GroupService.getGroupDetail(groupId);
+      return response?.data || null;
+    } catch (error) {
+      console.error("Failed to fetch group detail:", error);
+      return null;
+    }
+  };
+
+  const handleViewDetails = async (group) => {
+    const detailData = await fetchGroupDetail(group.id);
+    if (detailData) {
+      setSelectedGroup(detailData);
+    }
+  };
+
+  const normalizeGroup = (group) => {
+    // Check if mentor exists - could be mentor object, mentorId, or other variations
+    const mentorExists = group.mentor && typeof group.mentor === 'object' && Object.keys(group.mentor).length > 0;
+    const mentorIdExists = group.mentorId || group.mentor_id;
+    const mentorInfoExists = group.mentorInfo && typeof group.mentorInfo === 'object' && Object.keys(group.mentorInfo).length > 0;
+    
+    const hasMentor = Boolean(mentorExists || mentorIdExists || mentorInfoExists);
+    
+    console.log(`Group ${group.name}:`, {
+      mentor: group.mentor,
+      mentorId: group.mentorId,
+      hasMentor
+    }); // Debug each group
+
+    return {
+      id: group.id || group.groupId,
+      name: group.name || "Unnamed Group",
+      shortDesc: group.major?.name || group.field || "No major specified",
+      detail: group.description || "No description available",
+      members: group.currentMembers || group.members || 0,
+      maxMembers: group.maxMembers || 5,
+      lastActive: group.updatedAt || group.createdAt || "Unknown",
+      major: group.major?.name || group.field || "Unknown",
+      urgent: !hasMentor || group.status === "recruiting",
+      tags: [],
+      status: group.status || "unknown",
+      mentor: group.mentor || group.mentorInfo,
+      hasMentor: hasMentor,
+      topicName: group.topic?.title || group.topicName || "No topic",
+    };
+  };
+
+  const normalizedGroups = groups.map(normalizeGroup);
+
+  const filteredGroups = normalizedGroups.filter(
     (g) =>
       g.name.toLowerCase().includes(filters.query.toLowerCase()) &&
       (filters.major ? g.major === filters.major : true) &&
@@ -78,8 +134,8 @@ const Discover = () => {
           Find student groups that need mentoring and make a difference
         </p>
         <p className="text-gray-400 text-xs">
-          {mockGroups.length} groups available •{" "}
-          {mockGroups.filter((g) => g.urgent).length} need mentor
+          {normalizedGroups.length} groups available •{" "}
+          {normalizedGroups.filter((g) => g.urgent).length} need mentor
         </p>
       </div>
 
@@ -111,9 +167,17 @@ const Discover = () => {
         </div>
       </Card>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-20">
+          <Spin size="large" tip="Loading groups..." />
+        </div>
+      )}
+
       {/* Cards Section */}
-      <div className="grid md:grid-cols-3 gap-6 mt-8">
-        {filteredGroups.map((g) => (
+      {!loading && (
+        <div className="grid md:grid-cols-3 gap-6 mt-8">
+          {filteredGroups.map((g) => (
           <Card
             key={g.id}
             className="shadow-md rounded-2xl border-gray-100 hover:shadow-lg transition-all"
@@ -155,23 +219,26 @@ const Discover = () => {
 
             <div className="flex gap-3 mt-4">
               <Button
-                className="flex-1 bg-gray-100 hover:bg-gray-200"
-                onClick={() => setSelectedGroup(g)}
+                className={`${!g.hasMentor ? 'flex-1' : 'w-full'} bg-gray-100 hover:bg-gray-200`}
+                onClick={() => handleViewDetails(g)}
               >
                 View Details
               </Button>
-              <Button
-                type="primary"
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Mentor Now
-              </Button>
+              {!g.hasMentor && (
+                <Button
+                  type="primary"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Mentor Now
+                </Button>
+              )}
             </div>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
 
-      {filteredGroups.length === 0 && (
+      {!loading && filteredGroups.length === 0 && (
         <div className="text-center text-gray-400 mt-16">
           No groups found matching your filters.
         </div>

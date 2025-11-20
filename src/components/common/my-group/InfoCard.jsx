@@ -12,7 +12,9 @@ export default function InfoCard({
   memberCount = 0,
   onBack,
   onEdit,
+  onSelectTopic,
 }) {
+  const hasTopicAssigned = group?.topicId && group?.topicId.trim() !== "";
   const { t } = useTranslation();
   const statusLabel =
     formatText(group.statusText) ||
@@ -39,15 +41,28 @@ export default function InfoCard({
           ) : (
             <span />
           )}
-          {onEdit && (
-            <button
-              type="button"
-              onClick={onEdit}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
-            >
-              {t("editGroup") || "Edit group"}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={onEdit}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
+              >
+                {t("editGroup") || "Edit group"}
+              </button>
+            )}
+            {onSelectTopic && (
+              <button
+                type="button"
+                onClick={onSelectTopic}
+                className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-orange-700 focus:outline-none focus:ring-4 focus:ring-green-100"
+              >
+                {hasTopicAssigned
+                  ? (t("changeTopic") || "Change Topic")
+                  : (t("selectTopic") || "Select Topic")}
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="mt-3 flex flex-col gap-2">

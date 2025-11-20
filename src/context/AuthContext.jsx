@@ -19,11 +19,7 @@ const normalizeUserInfo = (raw) => {
     email: raw.email,
     name: raw.displayName || raw.name || "",
     photoURL:
-      raw.avatarUrl ||
-      raw.avatarURL ||
-      raw.photoURL ||
-      raw.photoUrl ||
-      "",
+      raw.avatarUrl || raw.avatarURL || raw.photoURL || raw.photoUrl || "",
     role: raw.role,
     emailVerified: !!raw.emailVerified,
     skillsCompleted: !!raw.skillsCompleted,
@@ -76,15 +72,17 @@ export const AuthProvider = ({ children }) => {
         throw new Error("Invalid Google login response");
       }
 
-      await handleLogin(token);
+      const user = await handleLogin(token);
+
+      return user;
     } catch (error) {
       console.error("Failed to login with Google:", error);
       throw error instanceof HttpException
         ? error
         : new HttpException(
-          "Failed to login with Google",
-          HTTP_STATUS.INTERNALSERVER_ERROR
-        );
+            "Failed to login with Google",
+            HTTP_STATUS.INTERNALSERVER_ERROR
+          );
     }
   };
 
@@ -99,30 +97,32 @@ export const AuthProvider = ({ children }) => {
       let userData = userFromLogin;
 
       if (!userData) {
-        const response = await AuthService.me(); 
+        const response = await AuthService.me();
         userData = response.data;
       }
 
       if (!userData) throw new Error("No user info");
 
-      // Normalize backend fields → UI shape used across the app
       const normalized = normalizeUserInfo(userData);
 
       setUserInfo(normalized);
       setRole(normalized.role);
+
       localStorage.setItem("userInfo", JSON.stringify(normalized));
       localStorage.setItem("role", normalized.role);
 
+      return normalized;
     } catch (error) {
       console.error("Failed to get user info:", error);
       throw error instanceof HttpException
         ? error
         : new HttpException(
-          "Failed to get user info",
-          HTTP_STATUS.INTERNALSERVER_ERROR
-        );
+            "Failed to get user info",
+            HTTP_STATUS.INTERNALSERVER_ERROR
+          );
     }
   };
+
   const logout = () => {
     setToken(null);
     setRole(null);

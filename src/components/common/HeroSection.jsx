@@ -6,7 +6,7 @@ import heroImage from "../../assets/banner.png";
 const HeroSection = () => {
   const { t } = useTranslation();
   return (
-    <div className="relative min-h-[65vh] flex items-center justify-center overflow-hidden ">
+    <div className="relative min-h-[65vh] flex items-center justify-center overflow-hidden lg:mt-20 ">
       {/* Main Content Container */}
       <div className="relative z-10 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">

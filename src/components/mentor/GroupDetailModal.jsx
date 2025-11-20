@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   Tag,
@@ -8,6 +8,7 @@ import {
   Divider,
   Space,
   Tooltip,
+  Spin,
 } from "antd";
 import {
   UserOutlined,
@@ -17,46 +18,53 @@ import {
   ProjectOutlined,
   BookOutlined,
 } from "@ant-design/icons";
+import { GroupService } from "../../services/group.service";
 
 export default function GroupDetailModal({ group, open, onClose }) {
+  const [groupDetail, setGroupDetail] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (open && group?.id) {
+      fetchGroupDetails();
+    }
+  }, [open, group?.id]);
+
+  const fetchGroupDetails = async () => {
+    if (!group?.id) return;
+    
+    try {
+      setLoading(true);
+      const [detailRes, membersRes] = await Promise.allSettled([
+        GroupService.getGroupDetail(group.id),
+        GroupService.getListMembers(group.id),
+      ]);
+
+      if (detailRes.status === "fulfilled") {
+        setGroupDetail(detailRes.value?.data || null);
+      }
+
+      if (membersRes.status === "fulfilled") {
+        const membersList = Array.isArray(membersRes.value?.data) 
+          ? membersRes.value.data 
+          : [];
+        setMembers(membersList);
+      }
+    } catch (error) {
+      console.error("Failed to fetch group details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!group) return null;
 
-  const detail = {
-    abbreviation: "TEAMMY",
-    vietnameseTitle:
-      "Teammy – Giải pháp số cho việc hình thành và quản lý nhóm đồ án sinh viên",
-    profession: "Information Technology",
-    specialty: "Software Engineering",
-    createdAt: "8/30/2025 10:26:17 PM",
-    description:
-      "Students face team challenges and fragmented tools; a platform for team formation and project management improves coordination and visibility.",
-    keywords: ["Education", "Project Management", "Group Formation"],
-    maxMembers: 5,
-    availableSlot: 1,
-    members: [
-      {
-        name: "Nguyễn Phi Hùng",
-        email: "hungnpse172907@fpt.edu.vn",
-        role: "Owner | Leader",
-        avatar: "https://i.pravatar.cc/150?img=12",
-      },
-      {
-        name: "Anh Lê",
-        email: "anhlvtse172914@fpt.edu.vn",
-        role: "Member",
-      },
-      {
-        name: "Hoàng Trần",
-        email: "hoangtmse172926@fpt.edu.vn",
-        role: "Member",
-      },
-      {
-        name: "Sơn Thái",
-        email: "sonthse172913@fpt.edu.vn",
-        role: "Member",
-      },
-    ],
-  };
+  const detail = groupDetail || group;
+  const membersList = members.length > 0 ? members : [];
+  const maxMembers = detail.maxMembers || detail.capacity || 5;
+  const currentMembers = membersList.length || detail.currentMembers || 0;
+  const availableSlot = maxMembers - currentMembers;
 
   return (
     <Modal
@@ -68,128 +76,155 @@ export default function GroupDetailModal({ group, open, onClose }) {
       destroyOnClose
       title={
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">{group.name}</h2>
+          <h2 className="text-xl font-semibold text-gray-800">
+            {detail.name || "Group Details"}
+          </h2>
           <p className="text-gray-400 text-xs mt-1">
-            Created at: {detail.createdAt}
+            Created at: {detail.createdAt ? new Date(detail.createdAt).toLocaleString() : "N/A"}
           </p>
         </div>
       }
     >
-      {/* SECTION: INFO */}
-      <section className="text-sm text-gray-700">
-        <div className="grid grid-cols-2 gap-y-2 mb-4">
-          <div>
-            <span className="text-gray-500 font-medium">Abbreviation: </span>
-            <span className="italic text-gray-800">{detail.abbreviation}</span>
-          </div>
-          <div>
-            <span className="text-gray-500 font-medium">
-              Vietnamese Title:{" "}
-            </span>
-            <span className="italic text-gray-800">
-              {detail.vietnameseTitle}
-            </span>
-          </div>
-          <div>
-            <span className="text-gray-500 font-medium">Profession: </span>
-            <span className="italic text-gray-800">{detail.profession}</span>
-          </div>
-          <div>
-            <span className="text-gray-500 font-medium">Specialty: </span>
-            <span className="italic text-gray-800">{detail.specialty}</span>
-          </div>
+      {loading ? (
+        <div className="flex justify-center items-center py-20">
+          <Spin size="large" tip="Loading group details..." />
         </div>
+      ) : (
+        <>
+          {/* SECTION: INFO */}
+          <section className="text-sm text-gray-700">
+            <div className="grid grid-cols-2 gap-y-2 mb-4">
+              <div>
+                <span className="text-gray-500 font-medium">Major: </span>
+                <span className="italic text-gray-800">
+                  {detail.major?.name || detail.field || "N/A"}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500 font-medium">Topic: </span>
+                <span className="italic text-gray-800">
+                  {detail.topic?.title || detail.topicName || "No topic assigned"}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500 font-medium">Status: </span>
+                <span className="italic text-gray-800 capitalize">
+                  {detail.status || "Unknown"}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500 font-medium">Semester: </span>
+                <span className="italic text-gray-800">
+                  {detail.semester?.season && detail.semester?.year
+                    ? `${detail.semester.season} ${detail.semester.year}`
+                    : "N/A"}
+                </span>
+              </div>
+            </div>
 
-        <Divider className="my-3" />
+            <Divider className="my-3" />
 
-        <div>
-          <h4 className="font-semibold text-gray-700 mb-1">Description</h4>
-          <p className="text-gray-600 text-sm leading-relaxed">
-            {detail.description}
-          </p>
-        </div>
+            <div>
+              <h4 className="font-semibold text-gray-700 mb-1">Description</h4>
+              <p className="text-gray-600 text-sm leading-relaxed">
+                {detail.description || "No description available"}
+              </p>
+            </div>
 
-        <div className="mt-4">
-          <h4 className="font-semibold text-gray-700 mb-2">Keywords</h4>
-          <Space wrap>
-            {detail.keywords.map((kw) => (
-              <Tag
-                key={kw}
-                color="blue"
-                className="rounded-md text-xs font-medium px-3 py-1"
-              >
-                {kw}
-              </Tag>
-            ))}
-          </Space>
-        </div>
-      </section>
-
-      <Divider className="my-4" />
-
-      {/* SECTION: MEMBERS */}
-      <section>
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-            <TeamOutlined /> Members
-          </h3>
-          <span className="text-sm text-gray-500">
-            Max: {detail.maxMembers} | Available Slot:{" "}
-            <strong>{detail.availableSlot}</strong>
-          </span>
-        </div>
-
-        <List
-          dataSource={detail.members}
-          renderItem={(m, i) => (
-            <List.Item
-              className={`rounded-lg px-2 py-2 ${
-                i % 2 === 0 ? "bg-gray-50" : "bg-white"
-              }`}
-            >
-              <div className="flex justify-between items-center w-full">
-                <div className="flex items-center gap-3">
+            {detail.mentor && (
+              <div className="mt-4">
+                <h4 className="font-semibold text-gray-700 mb-2">Current Mentor</h4>
+                <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg">
                   <Avatar
-                    src={m.avatar}
-                    icon={!m.avatar && <UserOutlined />}
+                    src={detail.mentor.avatarUrl}
+                    icon={<UserOutlined />}
                     size={40}
-                    style={{
-                      backgroundColor: !m.avatar ? "#b3d4fc" : undefined,
-                      color: "#fff",
-                    }}
                   />
                   <div>
-                    <div className="font-medium text-gray-800 text-sm">
-                      {m.email}
+                    <div className="font-medium text-gray-800">
+                      {detail.mentor.displayName || detail.mentor.name}
                     </div>
-                    <div className="text-xs text-gray-500">{m.name}</div>
+                    <div className="text-xs text-gray-500">
+                      {detail.mentor.email}
+                    </div>
                   </div>
                 </div>
-                <div className="text-sm text-gray-500 flex items-center gap-2">
-                  <span>{m.role}</span>
-                  <Tooltip title="Send email">
-                    <MailOutlined className="cursor-pointer text-blue-500" />
-                  </Tooltip>
-                </div>
               </div>
-            </List.Item>
-          )}
-        />
-      </section>
+            )}
+          </section>
 
-      <Divider className="my-4" />
+          <Divider className="my-4" />
 
-      {/* SECTION: ACTIONS */}
-      <div className="flex justify-end gap-3 mt-4">
-        <Button onClick={onClose}>Close</Button>
-        <Button
-          type="primary"
-          icon={<BookOutlined />}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          Mentor This Group
-        </Button>
-      </div>
+          {/* SECTION: MEMBERS */}
+          <section>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-semibold text-gray-700 flex items-center gap-2">
+                <TeamOutlined /> Members
+              </h3>
+              <span className="text-sm text-gray-500">
+                Max: {maxMembers} | Available Slot:{" "}
+                <strong>{availableSlot}</strong>
+              </span>
+            </div>
+
+            <List
+              dataSource={membersList}
+              locale={{ emptyText: "No members yet" }}
+              renderItem={(m, i) => (
+                <List.Item
+                  className={`rounded-lg px-2 py-2 ${
+                    i % 2 === 0 ? "bg-gray-50" : "bg-white"
+                  }`}
+                >
+                  <div className="flex justify-between items-center w-full">
+                    <div className="flex items-center gap-3">
+                      <Avatar
+                        src={m.avatarUrl || m.avatarURL || m.photoURL}
+                        icon={<UserOutlined />}
+                        size={40}
+                        style={{
+                          backgroundColor: "#b3d4fc",
+                          color: "#fff",
+                        }}
+                      />
+                      <div>
+                        <div className="font-medium text-gray-800 text-sm">
+                          {m.displayName || m.name || m.email}
+                        </div>
+                        <div className="text-xs text-gray-500">{m.email}</div>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-500 flex items-center gap-2">
+                      <span className="capitalize">{m.role || "Member"}</span>
+                      <Tooltip title="Send email">
+                        <a href={`mailto:${m.email}`}>
+                          <MailOutlined className="cursor-pointer text-blue-500" />
+                        </a>
+                      </Tooltip>
+                    </div>
+                  </div>
+                </List.Item>
+              )}
+            />
+          </section>
+
+          <Divider className="my-4" />
+
+          {/* SECTION: ACTIONS */}
+          <div className="flex justify-end gap-3 mt-4">
+            <Button onClick={onClose}>Close</Button>
+            {!detail.mentor && (
+              <Button
+                type="primary"
+                icon={<BookOutlined />}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Mentor This Group
+              </Button>
+            )}
+          </div>
+        </>
+      )}
     </Modal>
   );
 }

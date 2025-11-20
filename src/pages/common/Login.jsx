@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { notification } from "antd";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../config/firebase.config";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const campuses = [
   "FU-Hòa Lạc",
@@ -15,27 +15,39 @@ const campuses = [
 
 const Login = () => {
   const { loginGoogle } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [campus, setCampus] = useState("");
 
   const handleGoogleLogin = async () => {
     if (loading) return;
     setLoading(true);
+
     try {
       const result = await signInWithPopup(auth, provider);
       const fbUser = result.user;
       const idToken = await fbUser.getIdToken();
 
-      await loginGoogle(idToken, {
-        email: fbUser.email ?? "",
-        displayName: fbUser.displayName ?? "",
-        photoURL: fbUser.photoURL ?? "",
-        avatarUrl: fbUser.photoURL ?? "",
-        // TODO: gửi campus lên API sau này
-        campus,
-      });
+      const userData = await loginGoogle(idToken);
 
       notification.success({ message: "Signed in with Google" });
+
+      const userRole = userData.role;
+      console.log("User role:", userRole);
+
+      switch (userRole) {
+        case "admin":
+          navigate("/admin/dashboard");
+          break;
+        case "mentor":
+          navigate("/mentor/dashboard");
+          break;
+        case "moderator":
+          navigate("/moderator/dashboard");
+          break;
+        default:
+          navigate("/login");
+      }
     } catch (error) {
       console.error(error);
       notification.error({
@@ -49,6 +61,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f6fb] flex flex-col items-center justify-center px-4 py-12">
+      {/* Logo + Title */}
       <div className="flex flex-col items-center mb-8">
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-[#4264d7] to-[#4ccdbb] text-white flex items-center justify-center text-2xl font-bold">
           T
@@ -56,21 +69,25 @@ const Login = () => {
         <div className="mt-3 text-2xl font-bold text-gray-900">Teammy</div>
       </div>
 
+      {/* Main box */}
       <div className="w-full max-w-md bg-white rounded-3xl shadow-lg border border-gray-100 px-8 py-10 space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-extrabold text-gray-900">Welcome back</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900">
+            Welcome back
+          </h1>
           <p className="text-gray-500 mt-2">
             Sign in with your Google account to access Teammy
           </p>
         </div>
 
-        {/* Row: Campus select + Google button */}
+        {/* Select Campus */}
+        <label className="block text-xs font-semibold text-gray-500 mb-1">
+          Select campus
+        </label>
+
         <div className="flex flex-col sm:flex-row gap-3">
-          {/* Campus dropdown */}
-          <div className="sm:w-1/2">
-            <label className="block text-xs font-semibold text-gray-500 mb-1">
-              Select campus
-            </label>
+          {/* Dropdown */}
+          <div className="flex-1">
             <div className="relative">
               <select
                 value={campus}
@@ -84,20 +101,18 @@ const Login = () => {
                   </option>
                 ))}
               </select>
-              {/* caret icon */}
               <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 text-xs">
                 ▼
               </span>
             </div>
           </div>
 
-          {/* Google login button */}
+          {/* Google Login Button */}
           <button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="sm:flex-1 border border-gray-200 rounded-2xl py-3 px-4 flex items-center justify-center gap-3 font-semibold text-gray-700 hover:bg-gray-50 transition disabled:opacity-60"
+            className="flex-1 border border-gray-200 rounded-2xl py-3 px-4 flex items-center justify-center gap-3 font-semibold text-gray-700 hover:bg-gray-50 transition disabled:opacity-60 whitespace-nowrap"
           >
-            {/* Custom Google "G" icon */}
             <div className="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-sm font-bold">
               <span className="text-[#4285F4]">G</span>
             </div>

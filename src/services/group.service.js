@@ -38,12 +38,24 @@ export const GroupService = {
     });
   },
   assignTopic(groupId, topicId) {
-    return GroupService.updateGroup(groupId, { topic: topicId });
+    return BaseService.patch({
+      url: API.GROUP.UPDATE_GROUP(groupId),
+      payload: { topicId },
+      isLoading: true,
+    });
   },
+
 
   getListMembers(id) {
     return BaseService.get({
       url: API.GROUP.LIST_MEMBERS.replace(":id", id),
+      isLoading: true,
+    });
+  },
+
+  kickMember(groupId, memberId) {
+    return BaseService.remove({
+      url: API.GROUP.REMOVE_MEMBER(groupId, memberId),
       isLoading: true,
     });
   },
@@ -67,7 +79,7 @@ export const GroupService = {
   applyToGroup(groupId, payload = {}) {
     return BaseService.post({
       url: API.GROUP.JOIN_REQUESTS(groupId),
-      payload,                 
+      payload,
       isLoading: true,
     });
   },
@@ -94,10 +106,10 @@ export const GroupService = {
       isLoading: true,
     });
   },
-    leaveGroup(groupId) {
-        return BaseService.remove({
-            url: API.GROUP.LEAVE_GROUP(groupId),
-            isLoading: true,
-        });
-    },
+  leaveGroup(groupId) {
+    return BaseService.remove({
+      url: API.GROUP.LEAVE_GROUP(groupId),
+      isLoading: true,
+    });
+  },
 };

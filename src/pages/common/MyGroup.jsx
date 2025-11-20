@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
 import { useAuth } from "../../context/AuthContext";
 import { GroupService } from "../../services/group.service";
+import { BoardService } from "../../services/board.service";
 import InfoCard from "../../components/common/my-group/InfoCard";
 import DescriptionCard from "../../components/common/my-group/DescriptionCard";
 import MentorCard from "../../components/common/my-group/MentorCard";
@@ -11,8 +12,10 @@ import RecentActivityCard from "../../components/common/my-group/RecentActivityC
 import MembersList from "../../components/common/my-group/MembersList";
 import AddMemberModal from "../../components/common/my-group/AddMemberModal";
 import EditGroupModal from "../../components/common/my-group/EditGroupModal";
+import SelectTopicModal from "../../components/common/my-group/SelectTopicModal";
 import LoadingState from "../../components/common/LoadingState";
-import { notification } from "antd";
+import { notification, Modal } from "antd";
+import { calculateProgressFromTasks } from "../../utils/group.utils";
 
 export default function MyGroup() {
   const { id } = useParams();
@@ -22,9 +25,11 @@ export default function MyGroup() {
 
   const [group, setGroup] = useState(null);
   const [groupMembers, setGroupMembers] = useState([]);
+  const [board, setBoard] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [selectTopicOpen, setSelectTopicOpen] = useState(false);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "",
@@ -43,9 +48,10 @@ export default function MyGroup() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [detailRes, membersRes] = await Promise.allSettled([
+        const [detailRes, membersRes, boardRes] = await Promise.allSettled([
           GroupService.getGroupDetail(id),
           GroupService.getListMembers(id),
+          BoardService.getBoard(id),
         ]);
 
         const d = detailRes.status === "fulfilled" ? detailRes.value.data : {};
@@ -56,8 +62,8 @@ export default function MyGroup() {
           typeof semesterInfo.season === "string"
             ? semesterInfo.season.trim()
             : semesterInfo.season
-            ? String(semesterInfo.season)
-            : "";
+              ? String(semesterInfo.season)
+              : "";
         const formattedSeason = season
           ? season.charAt(0).toUpperCase() + season.slice(1)
           : "";
@@ -67,13 +73,16 @@ export default function MyGroup() {
           membersRes.status === "fulfilled" && Array.isArray(membersRes.value?.data)
             ? membersRes.value.data
             : [];
-
         const normalizedMembers = members.map((m) => {
           const email = m.email || "";
           const normalizedEmail = email.toLowerCase();
           const currentEmail = (userInfo?.email || "").toLowerCase();
 
+          const memberId =
+            m.id || m.memberId || m.userId || m.userID || m.accountId || "";
+
           return {
+            id: memberId,
             name: m.displayName || m.name || "",
             email,
             role: m.role || m.status || "",
@@ -95,6 +104,9 @@ export default function MyGroup() {
             (member.role || "").toLowerCase() === "leader"
         );
 
+        const boardData = boardRes.status === "fulfilled" ? boardRes.value?.data : null;
+        const calculatedProgress = calculateProgressFromTasks(boardData);
+
         setGroup({
           id: d.id || id,
           title: d.name || "",
@@ -108,8 +120,8 @@ export default function MyGroup() {
           start: rawStartDate ? rawStartDate.slice(0, 10) : "",
           end: rawEndDate ? rawEndDate.slice(0, 10) : "",
           semester: semesterLabel,
-          progress: Math.min(100, Math.max(0, Number(d.progress) || 0)),
-          mentor: d.mentorName || "",
+          progress: calculatedProgress,
+          mentor: d.mentor,
           statusText: d.status || "",
           maxMembers: Number(d.maxMembers || d.capacity || 5),
           majorId:
@@ -128,6 +140,7 @@ export default function MyGroup() {
         });
 
         setGroupMembers(normalizedMembers);
+        setBoard(boardData);
       } catch (err) {
         console.error(err);
       } finally {
@@ -204,13 +217,13 @@ export default function MyGroup() {
       setGroup((prev) =>
         prev
           ? {
-              ...prev,
-              title: payload.name,
-              description: payload.description,
-              maxMembers: payload.maxMembers,
-              majorId: payload.majorId ?? prev.majorId,
-              topicId: payload.topicId ?? prev.topicId,
-            }
+            ...prev,
+            title: payload.name,
+            description: payload.description,
+            maxMembers: payload.maxMembers,
+            majorId: payload.majorId ?? prev.majorId,
+            topicId: payload.topicId ?? prev.topicId,
+          }
           : prev
       );
       setEditOpen(false);
@@ -221,6 +234,63 @@ export default function MyGroup() {
       });
     } finally {
       setEditSubmitting(false);
+    }
+  };
+
+  const handleSelectTopic = async (topicId, topicData) => {
+    if (!group || !topicId) return;
+    console.log("Assigning topic:", { topicId, topicData });
+    
+    try {
+      await GroupService.assignTopic(group.id, topicId);
+      
+      const topicName = topicData?.name || topicData?.title || "Selected Topic";
+      console.log("Topic assigned successfully, updating UI with:", topicName);
+      
+      // Update local state immediately for instant feedback
+      setGroup((prev) => {
+        const updated = prev
+          ? {
+              ...prev,
+              topicId: topicId,
+              topicName: topicName,
+            }
+          : prev;
+        console.log("Updated group state:", updated);
+        return updated;
+      });
+      
+      notification.success({
+        message: t("topicAssignedSuccess") || "Topic assigned successfully.",
+      });
+      
+      setSelectTopicOpen(false);
+      
+      // Reload group detail to get latest data from server
+      setTimeout(async () => {
+        try {
+          const res = await GroupService.getGroupDetail(group.id);
+          const d = res?.data || {};
+          console.log("Reloaded group data:", d);
+          
+          setGroup((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  topicId: d.topicId || d.topic?.id || prev.topicId,
+                  topicName: d.topicName || d.topic?.title || d.topic?.name || prev.topicName,
+                }
+              : prev
+          );
+        } catch (reloadErr) {
+          console.error("Failed to reload group data:", reloadErr);
+        }
+      }, 500);
+    } catch (err) {
+      console.error("Error assigning topic:", err);
+      notification.error({
+        message: t("error") || "Failed to assign topic.",
+      });
     }
   };
 
@@ -242,20 +312,36 @@ export default function MyGroup() {
               group={group}
               memberCount={groupMembers.length}
               onBack={() => navigate(-1)}
+              onSelectTopic={
+                group.canEdit ? () => setSelectTopicOpen(true) : undefined
+              }
               onEdit={group.canEdit ? () => setEditOpen(true) : null}
             />
           )}
 
           <div className="mx-auto flex w-full max-w-[79rem] flex-col gap-6 lg:flex-row">
-            <div className="flex-1 space-y-6">
+            <div className="flex-1 space-y-6 pt-10">
               {group && (
                 <>
                   <DescriptionCard description={group.description} />
-                  <RecentActivityCard />
+                  <RecentActivityCard 
+                    items={board?.columns?.flatMap(col => col.tasks || []) || []}
+                  />
                 </>
               )}
             </div>
-            <div className="w-full max-w-sm space-y-6">
+            <div className="w-full max-w-sm space-y-6 relative pt-10">
+              {group && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate(`/workspace?groupId=${group.id || id}`)
+                  }
+                  className="absolute -top-3 right-0 inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2 text-sm font-semibold text-blue-600 bg-white hover:bg-blue-50 shadow-sm"
+                >
+                  {t("openWorkspace") || "Open Workspace"}
+                </button>
+              )}
               <MembersList
                 members={groupMembers}
                 title={t("teamMembers") || "Team Members"}
@@ -264,18 +350,53 @@ export default function MyGroup() {
                 onInvite={
                   group?.canEdit ? () => setShowModal(true) : undefined
                 }
+                canEdit={group?.canEdit}
+                currentUserEmail={userInfo?.email}
+                onKick={async (member) => {
+                  if (!member || !member.id) {
+                    notification.error({ message: t("error") || "Invalid member" });
+                    return;
+                  }
+                  if (!group?.id) {
+                    notification.error({ message: t("error") || "Group id missing" });
+                    return;
+                  }
+
+                  Modal.confirm({
+                    title: t("confirmKick") || "Remove Member",
+                    content: t("confirmKickMessage") || `Are you sure you want to remove ${member.name || member.email} from this group?`,
+                    okText: t("remove") || "Remove",
+                    cancelText: t("cancel") || "Cancel",
+                    okButtonProps: { danger: true },
+                    onOk: async () => {
+                      // Check if group is active before kicking member
+                      if (group.statusText?.toLowerCase() === "active" || group.status?.toLowerCase() === "active") {
+                        notification.error({
+                          message: t("cannotKickFromActiveGroup") || "Cannot remove member from active group",
+                          description: t("cannotKickFromActiveGroupDesc") || "You cannot remove members from a group that is currently active. Please wait until the group status changes or contact your mentor.",
+                          duration: 5,
+                        });
+                        return;
+                      }
+
+                      try {
+                        await GroupService.kickMember(group.id, member.id);
+                        setGroupMembers((prev) => prev.filter((m) => m.id !== member.id));
+                        notification.success({ message: t("removeSuccess") || "Member removed successfully" });
+                      } catch (err) {
+                        console.error(err);
+                        notification.error({ message: t("error") || "Failed to remove member" });
+                      }
+                    },
+                  });
+                }}
               />
               {group && (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/workspace?groupId=${group.id || id}`)}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
-                >
-                  M? Workspace
-                </button>
-              )}
-              {group && (
-                <MentorCard name={group.mentor} label={t("projectMentor")} />
+                <MentorCard 
+                  name={group.mentor?.displayName || t("noMentorAssigned") || "No mentor assigned"}
+                  email={group.mentor?.email || ""}
+                  label={t("projectMentor")} 
+                />
               )}
             </div>
           </div>
@@ -302,6 +423,13 @@ export default function MyGroup() {
           }}
           onChange={handleEditChange}
           onSubmit={handleSubmitEdit}
+        />
+        <SelectTopicModal
+          t={t}
+          open={selectTopicOpen}
+          currentTopicId={group?.topicId}
+          onClose={() => setSelectTopicOpen(false)}
+          onSelect={handleSelectTopic}
         />
       </div>
     </div>
