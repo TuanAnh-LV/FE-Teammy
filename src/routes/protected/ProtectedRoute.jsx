@@ -1,33 +1,13 @@
-// import { Navigate, Outlet } from "react-router-dom";
-// import { useAuth } from "../../context/AuthContext";
-
-// const ProtectedRoute = ({ allowedRoles, children }) => {
-//   const { role } = useAuth();
-
-//   if (!role) return <Navigate to="/login" replace />;
-//   if (!allowedRoles.includes(role))
-//     return <Navigate to="/unauthorize" replace />;
-
-//   return children ? children : <Outlet />;
-// };
-
-// export default ProtectedRoute;
-import React from "react";
+// ProtectedRoute.jsx
 import { Navigate, Outlet } from "react-router-dom";
-
-// ⚙️ Giả lập user (sau này thay bằng auth context hoặc token decode)
-const getMockUser = () => {
-  // 🧠 Lấy role từ localStorage hoặc đặt mặc định
-  const role = localStorage.getItem("role") || "mentor";
-  return { role };
-};
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const ProtectedRoute = ({ allowedRoles }) => {
-  const user = getMockUser();
+  const { role } = useAuth(); // Retrieve user role from auth context
 
-  if (!user || !allowedRoles.includes(user.role)) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!role) return <Navigate to="/login" replace />;
+  if (!allowedRoles.includes(role))
+    return <Navigate to="/unauthorize" replace />;
 
   return <Outlet />;
 };

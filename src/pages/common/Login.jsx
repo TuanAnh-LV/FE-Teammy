@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { notification } from "antd";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../config/firebase.config";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const campuses = [
   "FU-Hòa Lạc",
@@ -17,6 +17,7 @@ const Login = () => {
   const { loginGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [campus, setCampus] = useState("");
+  const navigate = useNavigate();
 
   const handleGoogleLogin = async () => {
     if (loading) return;
@@ -27,15 +28,26 @@ const Login = () => {
       const fbUser = result.user;
       const idToken = await fbUser.getIdToken();
 
-      await loginGoogle(idToken, {
-        email: fbUser.email ?? "",
-        displayName: fbUser.displayName ?? "",
-        photoURL: fbUser.photoURL ?? "",
-        avatarUrl: fbUser.photoURL ?? "",
-        campus,
-      });
+      const userData = await loginGoogle(idToken);
 
       notification.success({ message: "Signed in with Google" });
+
+      const userRole = userData.role;
+      console.log("User role:", userRole);
+
+      switch (userRole) {
+        case "admin":
+          navigate("/admin/dashboard");
+          break;
+        case "mentor":
+          navigate("/mentor/dashboard");
+          break;
+        case "moderator":
+          navigate("/moderator/dashboard");
+          break;
+        default:
+          navigate("/login");
+      }
     } catch (error) {
       console.error(error);
       notification.error({
@@ -60,20 +72,20 @@ const Login = () => {
       {/* Main box */}
       <div className="w-full max-w-md bg-white rounded-3xl shadow-lg border border-gray-100 px-8 py-10 space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-extrabold text-gray-900">Welcome back</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900">
+            Welcome back
+          </h1>
           <p className="text-gray-500 mt-2">
             Sign in with your Google account to access Teammy
           </p>
         </div>
 
-        {/* Label tách khỏi flex để không làm lệch layout */}
+        {/* Select Campus */}
         <label className="block text-xs font-semibold text-gray-500 mb-1">
           Select campus
         </label>
 
-        {/* Row: Select + Google button */}
         <div className="flex flex-col sm:flex-row gap-3">
-
           {/* Dropdown */}
           <div className="flex-1">
             <div className="relative">
@@ -89,7 +101,6 @@ const Login = () => {
                   </option>
                 ))}
               </select>
-
               <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 text-xs">
                 ▼
               </span>
