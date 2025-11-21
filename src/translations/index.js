@@ -167,6 +167,9 @@ export const translations = {
     // MyGroup Page
     addMember: "Add Member",
     openWorkspace: "Open Workspace",
+    workspaceNotAvailable: "Workspace Not Available",
+    groupStillRecruiting: "This group is still recruiting members. Workspace will be available once the group is active.",
+    groupNotActive: "This group is not active. Please contact your mentor or admin.",
     groupInformation: "Group Information",
     onTrack: "On Track",
     mentor: "Mentor",
@@ -192,7 +195,12 @@ export const translations = {
     members: "members",
     totalMembers: "Total",
     addMemberByEmail: "Add Member by Email",
+    addMember: "Add Member",
     enterMemberEmail: "Enter member email...",
+    searchByEmailOrName: "Search by email or name",
+    pleaseSelectUser: "Please select a user",
+    noResultsFound: "No Results Found",
+    searchFailed: "Search Failed",
     add: "Add",
     projectMentor: "Mentor",
     noMentorAssigned: "No mentor assigned",
@@ -200,6 +208,7 @@ export const translations = {
     userAlreadyInGroup: "This user is already in the group.",
     userAddedSuccessfully: "has been added.",
     failedToAddMember: "Failed to add member. Please try again.",
+    groupIsFull: "Group is Full",
     
     // Profile Page
     mentorProfile: "Mentor Profile",
@@ -565,6 +574,9 @@ export const translations = {
     // MyGroup Page
     addMember: "Thêm Thành Viên",
     openWorkspace: "Mở Không Gian Làm Việc",
+    workspaceNotAvailable: "Workspace Chưa Khả Dụng",
+    groupStillRecruiting: "Nhóm này đang tuyển thành viên. Workspace sẽ khả dụng khi nhóm chuyển sang trạng thái hoạt động.",
+    groupNotActive: "Nhóm này không hoạt động. Vui lòng liên hệ mentor hoặc admin.",
     groupInformation: "Thông Tin Nhóm",
     onTrack: "Đúng Tiến Độ",
     mentor: "Người Hướng Dẫn",
@@ -590,7 +602,12 @@ export const translations = {
     members: "Thành viên",
     totalMembers: "Tổng",
     addMemberByEmail: "Thêm Thành Viên Bằng Email",
+    addMember: "Thêm Thành Viên",
     enterMemberEmail: "Nhập email thành viên...",
+    searchByEmailOrName: "Tìm kiếm theo email hoặc tên",
+    pleaseSelectUser: "Vui lòng chọn người dùng",
+    noResultsFound: "Không Tìm Thấy Kết Quả",
+    searchFailed: "Tìm Kiếm Thất Bại",
     add: "Thêm",
     projectMentor: "Người Hướng Dẫn",
     noMentorAssigned: "Chưa có người hướng dẫn",
@@ -598,6 +615,7 @@ export const translations = {
     userAlreadyInGroup: "Người dùng này đã có trong nhóm.",
     userAddedSuccessfully: "đã được thêm.",
     failedToAddMember: "Không thể thêm thành viên. Vui lòng thử lại.",
+    groupIsFull: "Nhóm Đã Đầy",
     
     // Profile Page
     mentorProfile: "Hồ Sơ Người Hướng Dẫn",

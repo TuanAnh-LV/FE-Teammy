@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Search } from "lucide-react";
 import { TopicService } from "../../../services/topic.service";
+import { notification } from "antd";
 
 export default function SelectTopicModal({
   t,
@@ -27,8 +28,13 @@ export default function SelectTopicModal({
       const res = await TopicService.getTopics();
       const topicList = res?.data?.data || res?.data || [];
       const validTopics = Array.isArray(topicList) ? topicList : [];
-      console.log("Loaded topics:", validTopics.map(t => ({ id: t.id, name: t.name })));
-      setTopics(validTopics);
+      const openTopics = validTopics.filter(
+        (topic) =>
+          String(topic?.status || topic?.topicStatus || topic?.state || "").toLowerCase() ===
+          "open"
+      );
+      console.log("Loaded topics:", openTopics.map(t => ({ id: t.id, name: t.name })));
+      setTopics(openTopics);
     } catch (err) {
       console.error("Failed to load topics:", err);
       setTopics([]);
@@ -38,6 +44,12 @@ export default function SelectTopicModal({
   };
 
   const filteredTopics = topics.filter((topic) => {
+    // Filter out topics without mentor
+    if (!topic.mentorId && !topic.mentor) return false;
+    
+    // Filter out topics already assigned to a group
+    if (topic.isAssigned || topic.groupId) return false;
+    
     const searchTerm = search.toLowerCase();
     const name = (topic.name || topic.title || "").toLowerCase();
     const description = (topic.description || "").toLowerCase();
@@ -50,6 +62,16 @@ export default function SelectTopicModal({
         const topicId = t.id || t._id;
         return String(topicId) === String(selectedTopicId);
       });
+      
+      // Validate: check if topic has mentor
+      if (!selectedTopic || (!selectedTopic.mentorId && !selectedTopic.mentor)) {
+        notification.error({
+          message: t("topicNoMentor") || "Topic Error",
+          description: "Selected topic does not have an assigned mentor",
+        });
+        return;
+      }
+      
       console.log("Submitting topic:", selectedTopicId, selectedTopic);
       onSelect(selectedTopicId, selectedTopic);
     }

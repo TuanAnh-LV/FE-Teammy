@@ -52,8 +52,10 @@ const Login = () => {
         case "moderator":
           navigate("/moderator/dashboard");
           break;
+        case "student":
+          navigate("/");
+          break;
         default:
-          // Default to home for undefined/other roles so we don't bounce back to login
           navigate("/");
       }
     } catch (error) {

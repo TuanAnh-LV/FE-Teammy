@@ -31,8 +31,12 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
       setLoading(true);
       const res = await UserService.list({ email: value });
       const data = Array.isArray(res.data) ? res.data : [];
+      
+      // Filter out users who already have a group in this semester
+      const filteredData = data.filter(u => u.hasGroupInSemester !== true);
+      
       setResults(
-        data.map((u) => ({
+        filteredData.map((u) => ({
           userId: u.userId,
           name: u.displayName,
           email: u.email,
