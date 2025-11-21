@@ -124,6 +124,7 @@ export const translations = {
     searchProjects: "Search projects...",
     communityForum: "Community Forum",
     forumSubtitle: "Share experiences, ask questions and connect with the IT student community.",
+    topics: "Topics",
     
     // Homepage
     heroHeadlinePrefix: "Empowering students to",
@@ -384,6 +385,25 @@ export const translations = {
     ctaBenefitUI: "Simple, friendly UI",
     ctaBenefitSupport: "24/7 support",
     ctaBenefitSecure: "Secure by design",
+    
+    // Footer
+    footerTagline: "The student platform for team formation, mentoring, and efficient capstone delivery.",
+    footerFeaturesTitle: "Features",
+    footerFeatureFindTeammates: "Find Teammates",
+    footerFeatureChooseMentors: "Choose Mentors",
+    footerFeatureProjectManagement: "Project Management",
+    footerFeatureTeamCommunication: "Team Communication",
+    footerSupportTitle: "Support",
+    footerSupportHelpCenter: "Help Center",
+    footerSupportGuides: "Guides",
+    footerSupportFAQs: "FAQs",
+    footerSupportContact: "Contact",
+    footerConnectTitle: "Connect",
+    footerConnectFacebook: "Facebook",
+    footerConnectLinkedIn: "LinkedIn",
+    footerConnectEmail: "Email",
+    footerConnectGithub: "GitHub",
+
     alreadyInvited: "Already Invited"
   },
   
@@ -400,6 +420,7 @@ export const translations = {
     confirmLogout: "Xác Nhận Đăng Xuất",
     confirmLogoutMessage: "Bạn có chắc chắn muốn đăng xuất?",
     signIn: "Đăng nhập",
+    topics: "Chủ Đề",
     
     // Common
     loading: "Đang tải...",
@@ -722,7 +743,6 @@ export const translations = {
     searchTopicPlaceholder: "Tìm kiếm theo từ khóa hoặc giảng viên",
     noTopicsFound: "Không tìm thấy chủ đề phù hợp",
     noDescription: "Không có mô tả",
-    saving: "Đang lưu",
     assignTopic: "Gán chủ đề",
     approveFailed: "Chấp nhận thất bại",
     rejectFailed: "Từ chối thất bại",
@@ -773,6 +793,25 @@ export const translations = {
     ctaBenefitUI: "Giao diện thân thiện đơn giản",
     ctaBenefitSupport: "Hỗ trợ 24/7",
     ctaBenefitSecure: "Thiết kế bảo mật",
+    
+    // Footer
+    footerTagline: "Nền tảng dành cho sinh viên để kết nối nhóm, tìm mentor và hoàn thành capstone hiệu quả.",
+    footerFeaturesTitle: "Tính năng",
+    footerFeatureFindTeammates: "Tìm đồng đội",
+    footerFeatureChooseMentors: "Chọn mentor",
+    footerFeatureProjectManagement: "Quản lý dự án",
+    footerFeatureTeamCommunication: "Giao tiếp nhóm",
+    footerSupportTitle: "Hỗ trợ",
+    footerSupportHelpCenter: "Trung tâm trợ giúp",
+    footerSupportGuides: "Hướng dẫn",
+    footerSupportFAQs: "Câu hỏi thường gặp",
+    footerSupportContact: "Liên hệ",
+    footerConnectTitle: "Kết nối",
+    footerConnectFacebook: "Facebook",
+    footerConnectLinkedIn: "LinkedIn",
+    footerConnectEmail: "Email",
+    footerConnectGithub: "GitHub",
+
     alreadyInvited: "Đã được mời"
   },
 };

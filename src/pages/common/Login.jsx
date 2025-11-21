@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { notification } from "antd";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../config/firebase.config";
@@ -14,10 +14,17 @@ const campuses = [
 ];
 
 const Login = () => {
-  const { loginGoogle } = useAuth();
+  const { loginGoogle, token, userInfo } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [campus, setCampus] = useState("");
+
+  // If already authenticated, keep user on the app instead of showing login again
+  useEffect(() => {
+    if (token && userInfo) {
+      navigate("/", { replace: true });
+    }
+  }, [token, userInfo, navigate]);
 
   const handleGoogleLogin = async () => {
     if (loading) return;
