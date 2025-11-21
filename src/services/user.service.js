@@ -26,4 +26,19 @@ export const UserService = {
       isLoading: false,
     });
   },
+
+  getMyProfile(isLoading = true) {
+    return BaseService.get({
+      url: API.USERS.MY_PROFILE,
+      isLoading,
+    });
+  },
+
+  updateMyProfile(payload, isLoading = true) {
+    return BaseService.put({
+      url: API.USERS.UPDATE_PROFILE,
+      payload,
+      isLoading,
+    });
+  },
 };
