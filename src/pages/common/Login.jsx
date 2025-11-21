@@ -45,8 +45,11 @@ const Login = () => {
         case "moderator":
           navigate("/moderator/dashboard");
           break;
+        case "student":
+          navigate("/");
+          break;
         default:
-          navigate("/login");
+          navigate("/");
       }
     } catch (error) {
       console.error(error);
