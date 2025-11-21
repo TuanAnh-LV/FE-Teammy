@@ -1,12 +1,30 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { Users, GraduationCap, BarChart3 } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
 import heroImage from "../../assets/banner.png";
 
 const HeroSection = () => {
   const { t } = useTranslation();
+
+  const headingStyle = {
+    background: "linear-gradient(90deg,#3182ED,#43D08A,#3182ED)",
+    backgroundSize: "200% 200%",
+    backgroundPosition: "0% 50%",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    animation: "heroGradientShift 6s ease-in-out infinite",
+  };
+
   return (
     <div className="relative min-h-[65vh] flex items-center justify-center overflow-hidden lg:mt-20 ">
+      <style>{`
+        @keyframes heroGradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
       {/* Main Content Container */}
       <div className="relative z-10 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
@@ -15,11 +33,7 @@ const HeroSection = () => {
             {/* Headline */}
             <h1
               className="!font-sans !font-black text-[42px] md:text-[54px] !leading-[120%] !tracking-tight "
-              style={{
-                background: "linear-gradient(90deg,#3182ED,#43D08A)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
+              style={headingStyle}
             >
               {t("heroBuildYourFuture") ||
                 "Build your future, one capstone at a time."}
@@ -56,15 +70,15 @@ const HeroSection = () => {
               {/* Stats */}
               <div className="flex flex-wrap gap-6 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">👥</span>
+                  <Users className="w-5 h-5 text-blue-600" />
                   <span>{t("hero1000Students") || "1000+ students"}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">👨‍🏫</span>
+                  <GraduationCap className="w-5 h-5 text-emerald-600" />
                   <span>{t("hero50Mentors") || "50+ mentors"}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">📊</span>
+                  <BarChart3 className="w-5 h-5 text-indigo-600" />
                   <span>{t("hero300Projects") || "300+ projects"}</span>
                 </div>
               </div>
