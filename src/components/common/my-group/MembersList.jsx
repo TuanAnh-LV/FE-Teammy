@@ -1,6 +1,7 @@
 import React from "react";
 import { UserRound, UserPlus, UserX } from "lucide-react";
 import { avatarFromEmail } from "../../../utils/helpers";
+import { useTranslation } from "../../../hook/useTranslation";
 
 const formatRoleLabel = (role) => {
   if (!role) return "";
@@ -21,6 +22,7 @@ export default function MembersList({
   canEdit = false,
   currentUserEmail = "",
 }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-md">
       <div className="mb-4 flex items-center gap-3">
@@ -42,9 +44,16 @@ export default function MembersList({
               className="h-10 w-10 rounded-full object-cover shadow"
             />
             <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-900">
-                {member.name || member.email}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold text-gray-900">
+                  {member.name || member.email}
+                </p>
+                {member.status === 'pending' && (
+                  <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-700">
+                    {t('invitation')}
+                  </span>
+                )}
+              </div>
               {member.role && (
                 <p className="text-xs font-medium text-gray-500 capitalize">
                   {formatRoleLabel(member.role)}
@@ -65,7 +74,7 @@ export default function MembersList({
                       className="ml-2 inline-flex items-center gap-2 rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
                     >
                       <UserX className="h-4 w-4" />
-                      Kick
+                      {t('kick')}
                     </button>
                   )}
               </div>

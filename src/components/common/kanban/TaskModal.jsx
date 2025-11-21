@@ -28,9 +28,18 @@ const getAssigneeLabel = (assignee) => {
   );
 };
 
+const formatColumnName = (name) => {
+  if (!name) return "";
+  return name
+    .split("_")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 const TaskModal = ({
   task,
   members = [],
+  columnMeta = {},
   onClose,
   onFetchComments = null,
   onAddComment = () => {},
@@ -491,11 +500,11 @@ const TaskModal = ({
                       }
                       className="w-full  px-3 py-2 text-sm  bg-white"
                     >
-                      <option value="todo">To do</option>
-                      <option value="in_progress">In progress</option>
-                      <option value="review">Review</option>
-                      <option value="blocked">Blocked</option>
-                      <option value="done">Done</option>
+                      {Object.entries(columnMeta).map(([columnId, meta]) => (
+                        <option key={columnId} value={columnId}>
+                          {formatColumnName(meta?.title || columnId)}
+                        </option>
+                      ))}
                     </select>
                   </div>
 

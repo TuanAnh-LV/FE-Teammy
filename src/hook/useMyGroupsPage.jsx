@@ -118,9 +118,7 @@ export const useMyGroupsPage = (t, navigate) => {
         name: form.name.trim(),
         description: form.description.trim(),
         maxMembers: Number(form.maxMembers) || 1,
-        majorId: form.majorId.trim(),
       };
-      if (form.topicId.trim()) payload.topicId = form.topicId.trim();
       const res = await GroupService.createGroup(payload);
       if (res?.data) {
         notification.success({ message: t("success") || "Group created!" });

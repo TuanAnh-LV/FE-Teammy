@@ -28,7 +28,15 @@ const getAssigneeLabel = (assignee) => {
   );
 };
 
-const TaskCard = ({ task, onOpen }) => {
+const formatColumnName = (name) => {
+  if (!name) return "";
+  return name
+    .split("_")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
+const TaskCard = ({ task, onOpen, columnMeta = {} }) => {
   const {
     attributes,
     listeners,
@@ -75,7 +83,7 @@ const TaskCard = ({ task, onOpen }) => {
 
       <div className="flex items-center gap-2 mt-3">
         <span className={`text-xs px-2 py-1 rounded-full ${statusClass}`}>
-          {task.status}
+          {formatColumnName(columnMeta[task.status]?.title || task.status)}
         </span>
       </div>
 
