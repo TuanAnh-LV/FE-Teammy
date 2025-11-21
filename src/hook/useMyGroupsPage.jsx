@@ -73,12 +73,12 @@ export const useMyGroupsPage = (t, navigate) => {
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = t("groupName") || "Group name is required";
-    if (!form.majorId.trim()) {
-      e.majorId = t("majorIdRequired") || "Major ID is required";
-    }
+    
+    // Remove majorId validation - no longer required
+    
     const mm = Number(form.maxMembers);
-    if (!mm || mm < 1 || mm > 50) {
-      e.maxMembers = t("maxMembers") || "Members must be between 1 and 50";
+    if (!mm || mm < 4 || mm > 6) {
+      e.maxMembers = "Max members must be between 4 and 6";
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -118,9 +118,7 @@ export const useMyGroupsPage = (t, navigate) => {
         name: form.name.trim(),
         description: form.description.trim(),
         maxMembers: Number(form.maxMembers) || 1,
-        majorId: form.majorId.trim(),
       };
-      if (form.topicId.trim()) payload.topicId = form.topicId.trim();
       const res = await GroupService.createGroup(payload);
       if (res?.data) {
         notification.success({ message: t("success") || "Group created!" });
@@ -254,8 +252,17 @@ export const useMyGroupsPage = (t, navigate) => {
         majorId: group.majorId || undefined,
       };
       const res = await TopicService.getTopics(params);
-      const list = Array.isArray(res?.data) ? res.data : [];
-      setTopics(list);
+      const raw = Array.isArray(res?.data?.data)
+        ? res.data.data
+        : Array.isArray(res?.data)
+          ? res.data
+          : [];
+      const openTopics = raw.filter(
+        (topic) =>
+          String(topic?.status || topic?.topicStatus || topic?.state || "").toLowerCase() ===
+          "open"
+      );
+      setTopics(openTopics);
     } catch (error) {
       console.error(error);
       notification.error({

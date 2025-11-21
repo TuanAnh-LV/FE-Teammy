@@ -12,7 +12,6 @@ import RecentActivityCard from "../../components/common/my-group/RecentActivityC
 import MembersList from "../../components/common/my-group/MembersList";
 import AddMemberModal from "../../components/common/my-group/AddMemberModal";
 import EditGroupModal from "../../components/common/my-group/EditGroupModal";
-import SelectTopicModal from "../../components/common/my-group/SelectTopicModal";
 import LoadingState from "../../components/common/LoadingState";
 import { notification, Modal } from "antd";
 import { calculateProgressFromTasks } from "../../utils/group.utils";
@@ -29,7 +28,6 @@ export default function MyGroup() {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [selectTopicOpen, setSelectTopicOpen] = useState(false);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "",
@@ -122,6 +120,7 @@ export default function MyGroup() {
           semester: semesterLabel,
           progress: calculatedProgress,
           mentor: d.mentor,
+          status: d.status || "",
           statusText: d.status || "",
           maxMembers: Number(d.maxMembers || d.capacity || 5),
           majorId:
@@ -163,19 +162,8 @@ export default function MyGroup() {
   }, [group, groupMembers.length]);
 
   const handleAddMember = (user) => {
-    if (!user || !user.email) {
-      notification.warning({
-        message: t("pleaseSelectUser") || "Please select a user first",
-      });
-      return;
-    }
-    if (groupMembers.some((m) => m.email === user.email)) {
-      notification.info({
-        message: t("userAlreadyInGroup") || "This user is already in the group.",
-      });
-      return;
-    }
-    setGroupMembers((prev) => [...prev, user]);
+    // Just close modal, don't add to state
+    // Members will only show after they accept the invitation
     setShowModal(false);
   };
 
@@ -237,63 +225,6 @@ export default function MyGroup() {
     }
   };
 
-  const handleSelectTopic = async (topicId, topicData) => {
-    if (!group || !topicId) return;
-    console.log("Assigning topic:", { topicId, topicData });
-    
-    try {
-      await GroupService.assignTopic(group.id, topicId);
-      
-      const topicName = topicData?.name || topicData?.title || "Selected Topic";
-      console.log("Topic assigned successfully, updating UI with:", topicName);
-      
-      // Update local state immediately for instant feedback
-      setGroup((prev) => {
-        const updated = prev
-          ? {
-              ...prev,
-              topicId: topicId,
-              topicName: topicName,
-            }
-          : prev;
-        console.log("Updated group state:", updated);
-        return updated;
-      });
-      
-      notification.success({
-        message: t("topicAssignedSuccess") || "Topic assigned successfully.",
-      });
-      
-      setSelectTopicOpen(false);
-      
-      // Reload group detail to get latest data from server
-      setTimeout(async () => {
-        try {
-          const res = await GroupService.getGroupDetail(group.id);
-          const d = res?.data || {};
-          console.log("Reloaded group data:", d);
-          
-          setGroup((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  topicId: d.topicId || d.topic?.id || prev.topicId,
-                  topicName: d.topicName || d.topic?.title || d.topic?.name || prev.topicName,
-                }
-              : prev
-          );
-        } catch (reloadErr) {
-          console.error("Failed to reload group data:", reloadErr);
-        }
-      }, 500);
-    } catch (err) {
-      console.error("Error assigning topic:", err);
-      notification.error({
-        message: t("error") || "Failed to assign topic.",
-      });
-    }
-  };
-
   if (loading) {
     return (
       <LoadingState
@@ -313,7 +244,7 @@ export default function MyGroup() {
               memberCount={groupMembers.length}
               onBack={() => navigate(-1)}
               onSelectTopic={
-                group.canEdit ? () => setSelectTopicOpen(true) : undefined
+                group.canEdit ? () => navigate('/discover') : undefined
               }
               onEdit={group.canEdit ? () => setEditOpen(true) : null}
             />
@@ -334,10 +265,19 @@ export default function MyGroup() {
               {group && (
                 <button
                   type="button"
-                  onClick={() =>
-                    navigate(`/workspace?groupId=${group.id || id}`)
-                  }
-                  className="absolute -top-3 right-0 inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2 text-sm font-semibold text-blue-600 bg-white hover:bg-blue-50 shadow-sm"
+                  onClick={() => {
+                    if (group.status !== 'active') {
+                      notification.warning({
+                        message: t("workspaceNotAvailable") || "Workspace Not Available",
+                        description: group.status === 'recruiting' 
+                          ? t("groupStillRecruiting") || "This group is still recruiting members. Workspace will be available once the group is active."
+                          : t("groupNotActive") || "This group is not active. Please contact your mentor or admin.",
+                      });
+                      return;
+                    }
+                    navigate(`/workspace?groupId=${group.id || id}`);
+                  }}
+                  className="absolute -top-3 right-0 z-10 inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2 text-sm font-semibold text-blue-600 bg-white hover:bg-blue-50 shadow-sm transition cursor-pointer"
                 >
                   {t("openWorkspace") || "Open Workspace"}
                 </button>
@@ -407,6 +347,7 @@ export default function MyGroup() {
           onClose={() => setShowModal(false)}
           onAdd={handleAddMember}
           t={t}
+          groupInfo={group}
         />
         <EditGroupModal
           t={t}
@@ -423,13 +364,6 @@ export default function MyGroup() {
           }}
           onChange={handleEditChange}
           onSubmit={handleSubmitEdit}
-        />
-        <SelectTopicModal
-          t={t}
-          open={selectTopicOpen}
-          currentTopicId={group?.topicId}
-          onClose={() => setSelectTopicOpen(false)}
-          onSelect={handleSelectTopic}
         />
       </div>
     </div>

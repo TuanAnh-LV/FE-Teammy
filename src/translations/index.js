@@ -124,6 +124,7 @@ export const translations = {
     searchProjects: "Search projects...",
     communityForum: "Community Forum",
     forumSubtitle: "Share experiences, ask questions and connect with the IT student community.",
+    topics: "Topics",
     
     // Homepage
     heroHeadlinePrefix: "Empowering students to",
@@ -166,6 +167,9 @@ export const translations = {
     // MyGroup Page
     addMember: "Add Member",
     openWorkspace: "Open Workspace",
+    workspaceNotAvailable: "Workspace Not Available",
+    groupStillRecruiting: "This group is still recruiting members. Workspace will be available once the group is active.",
+    groupNotActive: "This group is not active. Please contact your mentor or admin.",
     groupInformation: "Group Information",
     onTrack: "On Track",
     mentor: "Mentor",
@@ -191,7 +195,12 @@ export const translations = {
     members: "members",
     totalMembers: "Total",
     addMemberByEmail: "Add Member by Email",
+    addMember: "Add Member",
     enterMemberEmail: "Enter member email...",
+    searchByEmailOrName: "Search by email or name",
+    pleaseSelectUser: "Please select a user",
+    noResultsFound: "No Results Found",
+    searchFailed: "Search Failed",
     add: "Add",
     projectMentor: "Mentor",
     noMentorAssigned: "No mentor assigned",
@@ -199,6 +208,7 @@ export const translations = {
     userAlreadyInGroup: "This user is already in the group.",
     userAddedSuccessfully: "has been added.",
     failedToAddMember: "Failed to add member. Please try again.",
+    groupIsFull: "Group is Full",
     
     // Profile Page
     mentorProfile: "Mentor Profile",
@@ -375,7 +385,60 @@ export const translations = {
     ctaBenefitUI: "Simple, friendly UI",
     ctaBenefitSupport: "24/7 support",
     ctaBenefitSecure: "Secure by design",
-    alreadyInvited: "Already Invited"
+    
+    // Footer
+    footerTagline: "The student platform for team formation, mentoring, and efficient capstone delivery.",
+    footerFeaturesTitle: "Features",
+    footerFeatureFindTeammates: "Find Teammates",
+    footerFeatureChooseMentors: "Choose Mentors",
+    footerFeatureProjectManagement: "Project Management",
+    footerFeatureTeamCommunication: "Team Communication",
+    footerSupportTitle: "Support",
+    footerSupportHelpCenter: "Help Center",
+    footerSupportGuides: "Guides",
+    footerSupportFAQs: "FAQs",
+    footerSupportContact: "Contact",
+    footerConnectTitle: "Connect",
+    footerConnectFacebook: "Facebook",
+    footerConnectLinkedIn: "LinkedIn",
+    footerConnectEmail: "Email",
+    footerConnectGithub: "GitHub",
+
+    alreadyInvited: "Already Invited",
+
+    // Discover Page
+    noGroupFound: "No Group Found",
+    pleaseCreateOrJoinGroup: "Please create or join a group first.",
+    groupNotFull: "Group Not Full",
+    groupMustBeFull: "Group must be full to select a topic. Current:",
+    members: "members",
+    topicSelected: "Topic Selected",
+    successfullySelected: "Successfully selected",
+    forYourGroup: "for your group.",
+    failedToSelectTopic: "Failed to Select Topic",
+    pleaseTryAgain: "Please try again.",
+    selectTopic: "Select Topic",
+    topicClosed: "Topic Closed",
+    selecting: "Selecting...",
+
+    // MembersList
+    invitation: "Invitation",
+    kick: "Kick",
+
+    // Form Validations
+    pleaseEnterColumnName: "Please enter column name",
+    signedInWithGoogle: "Signed in with Google",
+    signInFailed: "Sign in failed",
+    connectionTimeout: "Connection timeout exceeded",
+    pleaseEnterGroupId: "Please enter group ID",
+    pleaseEnterTitle: "Please enter title",
+    pleaseEnterDescription: "Please enter description",
+    pleaseEnterPosition: "Please enter the position needed",
+    pleaseSelectDeadline: "Please select deadline",
+    pleaseEnterFullName: "Please enter full name",
+    selectARole: "Select a role",
+    sending: "Sending...",
+    send: "Send"
   },
   
   VIE: {
@@ -391,6 +454,7 @@ export const translations = {
     confirmLogout: "Xác Nhận Đăng Xuất",
     confirmLogoutMessage: "Bạn có chắc chắn muốn đăng xuất?",
     signIn: "Đăng nhập",
+    topics: "Chủ Đề",
     
     // Common
     loading: "Đang tải...",
@@ -544,6 +608,9 @@ export const translations = {
     // MyGroup Page
     addMember: "Thêm Thành Viên",
     openWorkspace: "Mở Không Gian Làm Việc",
+    workspaceNotAvailable: "Workspace Chưa Khả Dụng",
+    groupStillRecruiting: "Nhóm này đang tuyển thành viên. Workspace sẽ khả dụng khi nhóm chuyển sang trạng thái hoạt động.",
+    groupNotActive: "Nhóm này không hoạt động. Vui lòng liên hệ mentor hoặc admin.",
     groupInformation: "Thông Tin Nhóm",
     onTrack: "Đúng Tiến Độ",
     mentor: "Người Hướng Dẫn",
@@ -569,7 +636,12 @@ export const translations = {
     members: "Thành viên",
     totalMembers: "Tổng",
     addMemberByEmail: "Thêm Thành Viên Bằng Email",
+    addMember: "Thêm Thành Viên",
     enterMemberEmail: "Nhập email thành viên...",
+    searchByEmailOrName: "Tìm kiếm theo email hoặc tên",
+    pleaseSelectUser: "Vui lòng chọn người dùng",
+    noResultsFound: "Không Tìm Thấy Kết Quả",
+    searchFailed: "Tìm Kiếm Thất Bại",
     add: "Thêm",
     projectMentor: "Người Hướng Dẫn",
     noMentorAssigned: "Chưa có người hướng dẫn",
@@ -577,6 +649,7 @@ export const translations = {
     userAlreadyInGroup: "Người dùng này đã có trong nhóm.",
     userAddedSuccessfully: "đã được thêm.",
     failedToAddMember: "Không thể thêm thành viên. Vui lòng thử lại.",
+    groupIsFull: "Nhóm Đã Đầy",
     
     // Profile Page
     mentorProfile: "Hồ Sơ Người Hướng Dẫn",
@@ -704,7 +777,6 @@ export const translations = {
     searchTopicPlaceholder: "Tìm kiếm theo từ khóa hoặc giảng viên",
     noTopicsFound: "Không tìm thấy chủ đề phù hợp",
     noDescription: "Không có mô tả",
-    saving: "Đang lưu",
     assignTopic: "Gán chủ đề",
     approveFailed: "Chấp nhận thất bại",
     rejectFailed: "Từ chối thất bại",
@@ -755,6 +827,25 @@ export const translations = {
     ctaBenefitUI: "Giao diện thân thiện đơn giản",
     ctaBenefitSupport: "Hỗ trợ 24/7",
     ctaBenefitSecure: "Thiết kế bảo mật",
+    
+    // Footer
+    footerTagline: "Nền tảng dành cho sinh viên để kết nối nhóm, tìm mentor và hoàn thành capstone hiệu quả.",
+    footerFeaturesTitle: "Tính năng",
+    footerFeatureFindTeammates: "Tìm đồng đội",
+    footerFeatureChooseMentors: "Chọn mentor",
+    footerFeatureProjectManagement: "Quản lý dự án",
+    footerFeatureTeamCommunication: "Giao tiếp nhóm",
+    footerSupportTitle: "Hỗ trợ",
+    footerSupportHelpCenter: "Trung tâm trợ giúp",
+    footerSupportGuides: "Hướng dẫn",
+    footerSupportFAQs: "Câu hỏi thường gặp",
+    footerSupportContact: "Liên hệ",
+    footerConnectTitle: "Kết nối",
+    footerConnectFacebook: "Facebook",
+    footerConnectLinkedIn: "LinkedIn",
+    footerConnectEmail: "Email",
+    footerConnectGithub: "GitHub",
+
     alreadyInvited: "Đã được mời"
   },
 };

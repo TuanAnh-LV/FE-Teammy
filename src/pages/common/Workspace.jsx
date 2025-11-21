@@ -121,7 +121,7 @@ const Workspace = () => {
       {/* Content */}
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-between pt-28 xl:pt-20 pb-20">
         {/* Title */}
-        <div className="mx-auto ml-20 xl:ml-48 mb-8">
+        <div className="mx-auto ml-96 xl:ml-[22rem] mb-8">
           <h1 className="text-3xl font-black text-[#1a1a1a] mb-2">
             Team Workspace
           </h1>
@@ -205,6 +205,7 @@ const Workspace = () => {
                       id={colId}
                       meta={meta}
                       tasks={filteredColumns[colId] || []}
+                      columnMeta={columnMeta}
                       onOpen={setSelectedTask}
                       onCreate={
                         allowQuickCreate
@@ -221,10 +222,13 @@ const Workspace = () => {
                           : undefined
                       }
                       onDelete={() => {
-                        const confirmDelete = window.confirm(
-                          `Delete column "${columnMeta[colId]?.title || colId}"?`
-                        );
-                        if (confirmDelete) deleteColumn(colId);
+                        Modal.confirm({
+                          title: 'Delete Column',
+                          content: `Delete column "${columnMeta[colId]?.title || colId}"?`,
+                          okText: 'OK',
+                          cancelText: 'Cancel',
+                          onOk: () => deleteColumn(colId),
+                        });
                       }}
                     />
                   );
@@ -240,6 +244,7 @@ const Workspace = () => {
       <TaskModal
         task={selectedTask}
         members={groupMembers}
+        columnMeta={columnMeta}
         onFetchComments={loadTaskComments}
         onClose={() => setSelectedTask(null)}
         onAddComment={addTaskComment}

@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { notification } from "antd";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../config/firebase.config";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "../../hook/useTranslation";
 
 const campuses = [
   "FU-Hòa Lạc",
@@ -14,10 +15,18 @@ const campuses = [
 ];
 
 const Login = () => {
-  const { loginGoogle } = useAuth();
+  const { loginGoogle, token, userInfo } = useAuth();
   const navigate = useNavigate();
+  const t = useTranslation();
   const [loading, setLoading] = useState(false);
   const [campus, setCampus] = useState("");
+
+  // If already authenticated, keep user on the app instead of showing login again
+  useEffect(() => {
+    if (token && userInfo) {
+      navigate("/", { replace: true });
+    }
+  }, [token, userInfo, navigate]);
 
   const handleGoogleLogin = async () => {
     if (loading) return;
@@ -30,7 +39,7 @@ const Login = () => {
 
       const userData = await loginGoogle(idToken);
 
-      notification.success({ message: "Signed in with Google" });
+      notification.success({ message: t('signedInWithGoogle') });
 
       const userRole = userData.role;
       console.log("User role:", userRole);
@@ -45,14 +54,17 @@ const Login = () => {
         case "moderator":
           navigate("/moderator/dashboard");
           break;
+        case "student":
+          navigate("/");
+          break;
         default:
-          navigate("/login");
+          navigate("/");
       }
     } catch (error) {
       console.error(error);
       notification.error({
-        message: "Sign in failed",
-        description: error?.message || "Please try again.",
+        message: t('signInFailed'),
+        description: error?.message || t('pleaseTryAgain'),
       });
     } finally {
       setLoading(false);
