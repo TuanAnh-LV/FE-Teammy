@@ -18,4 +18,12 @@ export const UserService = {
       isLoading,
     });
   },
+
+  getUsersWithoutGroup(params = {}) {
+    return BaseService.get({
+      url: API.USERS.LIST,
+      params,
+      isLoading: false,
+    });
+  },
 };

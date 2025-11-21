@@ -334,10 +334,19 @@ export default function MyGroup() {
               {group && (
                 <button
                   type="button"
-                  onClick={() =>
-                    navigate(`/workspace?groupId=${group.id || id}`)
-                  }
-                  className="absolute -top-3 right-0 inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2 text-sm font-semibold text-blue-600 bg-white hover:bg-blue-50 shadow-sm"
+                  onClick={() => {
+                    if (group.status !== 'active') {
+                      notification.warning({
+                        message: t("workspaceNotAvailable") || "Workspace Not Available",
+                        description: group.status === 'recruiting' 
+                          ? t("groupStillRecruiting") || "This group is still recruiting members. Workspace will be available once the group is active."
+                          : t("groupNotActive") || "This group is not active. Please contact your mentor or admin.",
+                      });
+                      return;
+                    }
+                    navigate(`/workspace?groupId=${group.id || id}`);
+                  }}
+                  className="absolute -top-3 right-0 z-10 inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2 text-sm font-semibold text-blue-600 bg-white hover:bg-blue-50 shadow-sm transition cursor-pointer"
                 >
                   {t("openWorkspace") || "Open Workspace"}
                 </button>
@@ -407,6 +416,7 @@ export default function MyGroup() {
           onClose={() => setShowModal(false)}
           onAdd={handleAddMember}
           t={t}
+          groupInfo={group}
         />
         <EditGroupModal
           t={t}

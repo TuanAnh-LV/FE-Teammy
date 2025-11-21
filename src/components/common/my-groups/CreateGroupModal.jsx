@@ -71,40 +71,6 @@ export default function CreateGroupModal({
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              {t("majorId") || "Major"} <span className="text-red-500">*</span>
-            </label>
-            <div
-              className={`rounded-lg border px-3 py-2 transition focus-within:ring-4 ${
-                errors.majorId
-                  ? "border-red-400 ring-red-100"
-                  : "border-gray-200 focus-within:border-blue-400 ring-blue-100"
-              }`}
-            >
-              <select
-                value={form.majorId}
-                onChange={(e) => onChange("majorId", e.target.value)}
-                disabled={majorsLoading}
-                className="w-full border-none bg-transparent text-sm outline-none"
-              >
-                <option value="">
-                  {majorsLoading
-                    ? t("loading") || "Loading..."
-                    : t("selectMajor") || "Select major"}
-                </option>
-                {majors.map((major) => (
-                  <option key={major.majorId || major.id} value={major.majorId || major.id}>
-                    {major.majorName || major.name || major.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {errors.majorId && (
-              <p className="mt-1 text-xs text-red-600">{errors.majorId}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
               {t("description") || "Description"}
             </label>
             <textarea
@@ -123,8 +89,8 @@ export default function CreateGroupModal({
             </label>
             <input
               type="number"
-              min={1}
-              max={50}
+              min={4}
+              max={6}
               value={form.maxMembers}
               onChange={(e) => onChange("maxMembers", e.target.value)}
               className={`w-40 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-4 transition ${
