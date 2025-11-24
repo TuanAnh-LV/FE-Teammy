@@ -1,5 +1,5 @@
 import React from "react";
-import { Upload, Button, message } from "antd";
+import { Upload, Button, notification } from "antd";
 import { CloudUploadOutlined, DownloadOutlined } from "@ant-design/icons";
 import * as XLSX from "xlsx";
 import { AdminService } from "../../../services/admin.service";
@@ -14,14 +14,14 @@ export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
         if (Array.isArray(res.data) && res.data.length > 0) {
           setRawData(res.data);
           setCurrentStep(1);
-          message.success("File imported successfully");
+          notification.success("File imported successfully");
         } else if (res.data && (res.data.totalRows || res.data.createdCount)) {
           // API returned only a summary (server processed import). We still want
           // to show the original rows for mapping/preview, so parse the file locally.
           const parsed = await parseFile(file);
           setRawData(parsed);
           setCurrentStep(1);
-          message.warning(
+          notification.warning(
             "API returned summary only — using local parse for preview"
           );
         } else {
@@ -29,7 +29,7 @@ export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
           const parsed = await parseFile(file);
           setRawData(parsed);
           setCurrentStep(1);
-          message.warning(
+          notification.warning(
             "File parsed locally (API returned unexpected response)"
           );
         }
@@ -40,7 +40,7 @@ export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
       const parsed = await parseFile(file);
       setRawData(parsed);
       setCurrentStep(1);
-      message.warning("File parsed locally (API error)");
+      notification.warning("File parsed locally (API error)");
     }
     return false;
   };
@@ -79,7 +79,7 @@ export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
         link.click();
         link.parentNode.removeChild(link);
         window.URL.revokeObjectURL(url);
-        message.success("Template downloaded");
+        notification.success("Template downloaded");
       }
     } catch (err) {
       console.error(err);
@@ -98,7 +98,7 @@ export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Template");
       XLSX.writeFile(wb, "UserImportTemplate.xlsx");
-      message.warning("Template generated locally (API error)");
+      notification.warning("Template generated locally (API error)");
     }
   };
 

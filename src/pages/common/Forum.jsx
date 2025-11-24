@@ -22,7 +22,7 @@ import {
   initials,
 } from "../../utils/helpers";
 import GroupDetailModal from "../../components/common/forum/GroupDetailModal";
-import { message } from "antd";
+import { notification } from "antd";
 import ApplyModal from "../../components/common/forum/ApplyModal";
 /** ---------- UI SMALLS ---------- */
 function Chip({ children }) {
@@ -221,7 +221,7 @@ const Forum = () => {
             : item
         )
       );
-      message.success("Đã gửi yêu cầu tham gia nhóm!");
+      notification.success(t("inviteRequestSent") || "Invite request sent!");
     } catch (e) {
       console.error(e);
     } finally {
@@ -244,10 +244,10 @@ const Forum = () => {
       await GroupService.inviteMember(groupId, payload);
 
       // Display success message when the invite is successful
-      message.success("User invited to the group successfully!");
+      notification.success("User invited to the group successfully!");
     } catch (error) {
       console.error("Failed to send invitation", error);
-      message.error("Failed to invite user.");
+      notification.error("Failed to invite user.");
     }
   };
 

@@ -8,7 +8,7 @@ import {
   Space,
   Card,
   Modal,
-  message,
+  notification,
 } from "antd";
 import {
   UploadOutlined,
@@ -69,7 +69,7 @@ const ManageUsers = () => {
       setSelectedUser(enriched);
     } catch (err) {
       console.error(err);
-      message.error("Failed to load user details");
+      notification.error("Failed to load user details");
     } finally {
       setDetailLoading(false);
     }
@@ -115,10 +115,10 @@ const ManageUsers = () => {
               u.key === user.key ? { ...u, status: "Suspended" } : u
             )
           );
-          message.success(`${user.name} has been banned.`);
+          notification.success(`${user.name} has been banned.`);
         } catch (err) {
           console.error(err);
-          message.error(`Failed to ban ${user.name}`);
+          notification.error(`Failed to ban ${user.name}`);
         }
       },
     });
@@ -158,7 +158,7 @@ const ManageUsers = () => {
         if (mounted) setUserList(mapped);
       } catch (err) {
         console.error(err);
-        message.error("Failed to load users");
+        notification.error("Failed to load users");
       } finally {
         if (mounted) setLoading(false);
       }

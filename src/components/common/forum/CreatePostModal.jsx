@@ -5,7 +5,7 @@ import {
   Button,
   Form,
   InputNumber,
-  message,
+  notification,
   DatePicker,
 } from "antd";
 import { PostService } from "../../../services/post.service";
@@ -35,7 +35,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
         expiresAt: expiresAt?.toISOString(),
       });
 
-      message.success("Tạo recruitment post thành công!");
+      notification.success("Tạo recruitment post thành công!");
       form.resetFields();
       closeModal();
       onCreated?.();
