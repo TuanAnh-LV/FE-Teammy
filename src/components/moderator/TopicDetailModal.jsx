@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Button, Tag, Divider, Tooltip, Spin, message } from "antd";
+import { Modal, Button, Tag, Divider, Tooltip, Spin, notification } from "antd";
 import {
   BookOutlined,
   TeamOutlined,
@@ -66,7 +66,7 @@ export default function TopicDetailModal({
         }
       } catch (err) {
         console.error(err);
-        message.error("Failed to load topic details");
+        notification.error("Failed to load topic details");
         // Fallback to passed data on error
         if (mounted) setDetailData(topicDetails);
       } finally {

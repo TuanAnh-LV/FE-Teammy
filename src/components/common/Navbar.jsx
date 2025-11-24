@@ -4,13 +4,13 @@ import { Globe, Bell, MessageSquare, Users, Search } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { getTranslation } from "../../translations";
-import { message } from "antd";
+import { notification } from "antd";
 import NotificationDrawer from "./NotificationDrawer";
 import { InvitationService } from "../../services/invitation.service";
 
 const Navbar = () => {
   const location = useLocation();
-  const { logout, loginGoogle, userInfo, token } = useAuth();
+  const { logout, userInfo, token } = useAuth();
   const navigate = useNavigate();
   const [user, setUser] = useState(userInfo);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -20,8 +20,7 @@ const Navbar = () => {
   const dropdownRef = useRef(null);
   const inviteFetchTokenRef = useRef(null);
 
-  const [signingIn, setSigningIn] = useState(false);
-  const [messageApi, contextHolder] = message.useMessage();
+  const [notificationApi, contextHolder] = notification.useNotification();
 
   useEffect(() => {
     setUser(userInfo || null);
@@ -44,10 +43,14 @@ const Navbar = () => {
         const data = Array.isArray(res?.data) ? res.data : [];
         const items = data.map((i) => ({
           id: i.invitationId || i.id,
-          title: "Lời mời tham gia nhóm",
-          message: `${i.invitedByName || "Ai đó"} đã mời bạn tham gia dự án: ${
-            i.groupName || ""
-          }`,
+          title:
+            getTranslation("groupInviteTitle", language) || "Group invitation",
+          message: `${
+            i.invitedByName || getTranslation("someone", language) || "Someone"
+          } ${
+            getTranslation("invitedToProject", language) ||
+            "invited you to the project:"
+          } ${i.groupName || ""}`,
           time: formatRelative(i.createdAt),
           actions: ["reject", "accept"],
         }));
@@ -76,7 +79,7 @@ const Navbar = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [token]);
+  }, [token, language]);
 
   const isActive = (path) => location.pathname === path;
 
@@ -90,7 +93,10 @@ const Navbar = () => {
     } finally {
       setUser(null);
       setMenuOpen(false);
-      messageApi.info("You have logged out.");
+      notificationApi.info({
+        message:
+          getTranslation("loggedOut", language) || "You have logged out.",
+      });
       navigate("/");
     }
   };
@@ -300,20 +306,30 @@ const Navbar = () => {
           try {
             await InvitationService.accept(n.id);
             setNotifications((prev) => prev.filter((x) => x.id !== n.id));
-            messageApi.success("Signed in successfully.");
+            notificationApi.success({
+              message: getTranslation("acceptSuccess", language) || "Accepted",
+            });
           } catch (e) {
             console.error(e);
-            messageApi.error("Chấp nhận thất bại");
+            notificationApi.error({
+              message:
+                getTranslation("approveFailed", language) || "Accept failed",
+            });
           }
         }}
         onReject={async (n) => {
           try {
             await InvitationService.decline(n.id);
             setNotifications((prev) => prev.filter((x) => x.id !== n.id));
-            messageApi.info("You have logged out.");
+            notificationApi.info({
+              message: getTranslation("declineInfo", language) || "Declined",
+            });
           } catch (e) {
             console.error(e);
-            messageApi.error("Từ chối thất bại");
+            notificationApi.error({
+              message:
+                getTranslation("rejectFailed", language) || "Decline failed",
+            });
           }
         }}
       />

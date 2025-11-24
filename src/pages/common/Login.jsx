@@ -14,17 +14,36 @@ const campuses = [
 ];
 
 const Login = () => {
-  const { loginGoogle, token, userInfo } = useAuth();
+  const { loginGoogle, token, userInfo, role } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [campus, setCampus] = useState("");
 
   // If already authenticated, keep user on the app instead of showing login again
   useEffect(() => {
-    if (token && userInfo) {
-      navigate("/", { replace: true });
+    // If already authenticated, redirect to the correct dashboard based on role
+    if (token && (role || userInfo)) {
+      let userRole = role || userInfo?.role;
+      if (Array.isArray(userRole)) userRole = userRole[0];
+      userRole = String(userRole || "")
+        .toLowerCase()
+        .replace(/^role[_-]?/i, "");
+
+      switch (userRole) {
+        case "admin":
+          navigate("/admin/dashboard", { replace: true });
+          break;
+        case "mentor":
+          navigate("/mentor/dashboard", { replace: true });
+          break;
+        case "moderator":
+          navigate("/moderator/dashboard", { replace: true });
+          break;
+        default:
+          navigate("/", { replace: true });
+      }
     }
-  }, [token, userInfo, navigate]);
+  }, [token, userInfo, role, navigate]);
 
   const handleGoogleLogin = async () => {
     if (loading) return;
@@ -39,7 +58,12 @@ const Login = () => {
 
       notification.success({ message: "Signed in with Google" });
 
-      const userRole = userData.role;
+      // Normalize role (handle ROLE_ prefix or array shape)
+      let userRole = userData?.role;
+      if (Array.isArray(userRole)) userRole = userRole[0];
+      userRole = String(userRole || "")
+        .toLowerCase()
+        .replace(/^role[_-]?/i, "");
       console.log("User role:", userRole);
 
       switch (userRole) {
@@ -51,9 +75,6 @@ const Login = () => {
           break;
         case "moderator":
           navigate("/moderator/dashboard");
-          break;
-        case "student":
-          navigate("/");
           break;
         default:
           navigate("/");

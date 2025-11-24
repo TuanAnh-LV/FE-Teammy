@@ -9,7 +9,7 @@ import {
   Tag,
   Space,
   Tooltip,
-  message,
+  notification,
 } from "antd";
 import {
   SearchOutlined,
@@ -19,12 +19,14 @@ import {
   BellOutlined,
 } from "@ant-design/icons";
 import GroupDetailModal from "../../components/moderator/GroupDetailModal";
+import { useTranslation } from "../../hook/useTranslation";
 import { GroupService } from "../../services/group.service";
 import { normalizeGroup } from "../../utils/group.utils";
 
 const { Option } = Select;
 
 export default function GroupManagement() {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState({
     status: "All Status",
     major: "All Major",
@@ -65,29 +67,35 @@ export default function GroupManagement() {
         if (mounted) setRows(mapped);
       } catch (err) {
         console.error(err);
-        message.error("Không thể tải danh sách nhóm");
+        notification.error({
+          message: t("failedLoadGroups") || "Failed to load groups",
+        });
       } finally {
         if (mounted) setLoading(false);
       }
     };
     fetchList();
     return () => (mounted = false);
-  }, []);
+  }, [t]);
 
   const toggleFull = (record) => {
     setRows((prev) =>
       prev.map((r) => (r.key === record.key ? { ...r, isFull: !r.isFull } : r))
     );
-    message.success(
-      !record.isFull ? "Đã đánh dấu nhóm: Full" : "Đã mở lại tuyển thành viên"
-    );
+    notification.success({
+      message: !record.isFull
+        ? t("groupMarkedFull") || "Marked group as full"
+        : t("groupReopened") || "Reopened recruiting",
+    });
   };
 
   const remindTopic = (record) => {
-    // TODO: gọi API thật ở đây
-    message.info(
-      `Đã gửi nhắc nhở nộp/chọn Topic cho nhóm "${record.groupName}".`
-    );
+    // TODO: call real API here
+    notification.info({
+      message:
+        t("topicReminderSent") ||
+        `Reminder sent for group "${record.groupName}".`,
+    });
   };
 
   const columns = [
@@ -174,7 +182,11 @@ export default function GroupManagement() {
                     }
                   } catch (err) {
                     console.error(err);
-                    message.error("Không thể tải chi tiết nhóm");
+                    notification.error({
+                      message:
+                        t("failedLoadGroupDetail") ||
+                        "Failed to load group detail",
+                    });
                   }
                 }}
               />

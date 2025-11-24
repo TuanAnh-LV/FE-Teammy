@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, Input, Button, Form, message } from "antd";
+import { Modal, Input, Button, Form, notification } from "antd";
 import { PostService } from "../../../services/post.service";
 
 const { TextArea } = Input;
@@ -33,7 +33,7 @@ const CreatePersonalPostModal = ({
         skills: skillsCsv,
       });
 
-      message.success("Tạo profile post thành công!");
+      notification.success("Tạo profile post thành công!");
       form.resetFields();
       closeModal();
       onCreated?.();

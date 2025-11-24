@@ -3,7 +3,7 @@ import FilterSidebar from "../../components/common/discover/FilterSidebar";
 import ProjectCard from "../../components/common/discover/ProjectCard";
 import { useTranslation } from "../../hook/useTranslation";
 import { TopicService } from "../../services/topic.service";
-import { message } from "antd";
+import { notification } from "antd";
 
 const Discover = () => {
   const { t } = useTranslation();
@@ -41,7 +41,7 @@ const Discover = () => {
         if (mounted) setProjects(mapped);
       } catch (err) {
         console.error(err);
-        message.error("Failed to load topics");
+        notification.error("Failed to load topics");
       } finally {
         // no-op
       }
