@@ -9,7 +9,7 @@ import {
   Radio,
   Tag,
   Space,
-  message,
+  notification,
 } from "antd";
 import {
   BellOutlined,
@@ -43,13 +43,13 @@ export default function ModeratorNotifications() {
   };
 
   const sendNow = () => {
-    if (!selected) return message.warning("Please select a group.");
-    message.success(`Sent to ${selected.name} ✅`);
+    if (!selected) return notification.warning("Please select a group.");
+    notification.success(`Sent to ${selected.name} `);
     setMsg("");
   };
 
   const schedule = () =>
-    message.info("Scheduled reminder for tomorrow 9:00 AM (mock)");
+    notification.info("Scheduled reminder for tomorrow 9:00 AM (mock)");
 
   return (
     <div className="space-y-8">

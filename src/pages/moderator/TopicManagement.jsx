@@ -8,7 +8,7 @@ import {
   Button,
   Space,
   Tooltip,
-  message,
+  notification,
 } from "antd";
 import {
   SearchOutlined,
@@ -68,7 +68,7 @@ const TopicManagement = () => {
         if (mounted) setTopics(mapped);
       } catch (err) {
         console.error(err);
-        message.error("Failed to load topics");
+        notification.error("Failed to load topics");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -181,7 +181,7 @@ const TopicManagement = () => {
                 const blob = res?.data ?? res;
                 const disposition = res?.headers?.["content-disposition"];
                 downloadBlob(blob, "TeammyTopicsTemplate.xlsx", disposition);
-                message.success("Template downloaded");
+                notification.success("Template downloaded");
               } catch (err) {
                 console.error(err);
                 // Fallback: generate a small template and download
@@ -198,7 +198,7 @@ const TopicManagement = () => {
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Template");
                 XLSX.writeFile(wb, "TeammyTopicsTemplate.xlsx");
-                message.warning("Template generated locally (API error)");
+                notification.warning("Template generated locally (API error)");
               }
             }}
           >

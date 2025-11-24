@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { Modal, Select, Input, message, Button } from "antd";
+import { Modal, Select, Input, notification, Button } from "antd";
 import { useTranslation } from "../../../hook/useTranslation";
 
 // post.position_needed: "Frontend Developer, Backend Developer"
@@ -26,7 +26,7 @@ const ApplyModal = ({ open, onClose, post, onSubmit }) => {
 
   const handleOk = () => {
     if (!position || !desc) {
-      message.error(t("pleaseFillAllFields") || "Please fill all fields");
+      notification.error(t("pleaseFillAllFields") || "Please fill all fields");
       return;
     }
     // BE chỉ nhận 1 trường message: "<position> - <description>"

@@ -6,7 +6,7 @@ import {
   Space,
   Tag,
   Divider,
-  message,
+  notification,
   Switch,
 } from "antd";
 import {
@@ -60,19 +60,19 @@ export default function AIAssistantModerator() {
   ];
 
   const runAnalysis = () => {
-    message.success("AI analysis complete!");
+    notification.success("AI analysis complete!");
   };
 
   const sendNotice = (group) => {
-    message.info(`Notification sent to ${group}`);
+    notification.info(`Notification sent to ${group}`);
   };
 
   const autoMergeHandler = (group) => {
-    message.success(`AI merged ${group} successfully!`);
+    notification.success(`AI merged ${group} successfully!`);
   };
 
   const applySuggestion = (group) => {
-    message.success(`Applied AI suggestions for ${group}`);
+    notification.success(`Applied AI suggestions for ${group}`);
   };
 
   return (

@@ -105,11 +105,18 @@ export const AuthProvider = ({ children }) => {
 
       const normalized = normalizeUserInfo(userData);
 
+      // Normalize role to a single lowercase string without common prefixes
+      let roleVal = normalized.role;
+      if (Array.isArray(roleVal)) roleVal = roleVal[0];
+      roleVal = String(roleVal || "")
+        .toLowerCase()
+        .replace(/^role[_-]?/i, "");
+
       setUserInfo(normalized);
-      setRole(normalized.role);
+      setRole(roleVal || null);
 
       localStorage.setItem("userInfo", JSON.stringify(normalized));
-      localStorage.setItem("role", normalized.role);
+      if (roleVal) localStorage.setItem("role", roleVal);
 
       return normalized;
     } catch (error) {
