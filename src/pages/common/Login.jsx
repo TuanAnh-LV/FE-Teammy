@@ -4,6 +4,7 @@ import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../config/firebase.config";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "../../hook/useTranslation";
 
 const campuses = [
   "FU-Hòa Lạc",
@@ -16,6 +17,7 @@ const campuses = [
 const Login = () => {
   const { loginGoogle, token, userInfo, role } = useAuth();
   const navigate = useNavigate();
+  const t = useTranslation();
   const [loading, setLoading] = useState(false);
   const [campus, setCampus] = useState("");
 
@@ -56,7 +58,7 @@ const Login = () => {
 
       const userData = await loginGoogle(idToken);
 
-      notification.success({ message: "Signed in with Google" });
+      notification.success({ message: t('signedInWithGoogle') });
 
       // Normalize role (handle ROLE_ prefix or array shape)
       let userRole = userData?.role;
@@ -82,8 +84,8 @@ const Login = () => {
     } catch (error) {
       console.error(error);
       notification.error({
-        message: "Sign in failed",
-        description: error?.message || "Please try again.",
+        message: t('signInFailed'),
+        description: error?.message || t('pleaseTryAgain'),
       });
     } finally {
       setLoading(false);

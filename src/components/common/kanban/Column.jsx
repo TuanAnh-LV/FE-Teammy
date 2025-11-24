@@ -7,7 +7,7 @@ import {
 } from "@dnd-kit/sortable";
 import TaskCard from "./TaskCard";
 
-const Column = ({ id, meta, tasks, onOpen, onCreate, onDelete }) => {
+const Column = ({ id, meta, tasks, onOpen, onCreate, onDelete, columnMeta = {} }) => {
   const [showQuickTask, setShowQuickTask] = useState(false);
   const [quickTitle, setQuickTitle] = useState("");
   const { setNodeRef, isOver } = useDroppable({ id });
@@ -50,7 +50,7 @@ const Column = ({ id, meta, tasks, onOpen, onCreate, onDelete }) => {
         strategy={verticalListSortingStrategy}
       >
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} onOpen={onOpen} />
+          <TaskCard key={task.id} task={task} onOpen={onOpen} columnMeta={columnMeta} />
         ))}
       </SortableContext>
 

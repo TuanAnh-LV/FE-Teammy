@@ -1,7 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { Sparkles, Users, Download, FileText } from "lucide-react";
+import { GroupService } from "../../../services/group.service";
+import { notification } from "antd";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "../../../hook/useTranslation";
 
 const ProjectCard = ({ project }) => {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const [loading, setLoading] = useState(false);
   const formattedDate = project.createdAt
     ? new Date(project.createdAt).toLocaleDateString()
     : "";
@@ -104,8 +111,68 @@ const ProjectCard = ({ project }) => {
       </div>
 
       <div className="mt-auto">
-        <button className="w-full bg-[#4264d7] hover:bg-[#3552b0] text-white text-sm font-semibold py-3 rounded-lg transition-colors">
-          Select Topic
+        <button
+          onClick={async () => {
+            if (project.status === 'closed' || !project.topicId) return;
+            
+            try {
+              setLoading(true);
+              
+              // Check if user has a group
+              const myGroupsRes = await GroupService.getMyGroups();
+              const myGroups = myGroupsRes?.data || [];
+              
+              if (!myGroups || myGroups.length === 0) {
+                notification.error({
+                  message: t('noGroupFound'),
+                  description: t('pleaseCreateOrJoinGroup'),
+                });
+                navigate('/my-group');
+                return;
+              }
+
+              // Get the first group (or you can let user select)
+              const group = myGroups[0];
+              const groupId = group.id || group.groupId;
+
+              // Check if group is full
+              const currentMembers = group.currentMembers || 0;
+              const maxMembers = group.maxMembers || 0;
+              
+              if (currentMembers < maxMembers) {
+                notification.error({
+                  message: t('groupNotFull'),
+                  description: `${t('groupMustBeFull')} ${currentMembers}/${maxMembers} ${t('members')}.`,
+                });
+                return;
+              }
+
+              await GroupService.assignTopic(groupId, project.topicId);
+              
+              notification.success({
+                message: t('topicSelected'),
+                description: `${t('successfullySelected')} "${project.title}" ${t('forYourGroup')}`,
+              });
+              
+              navigate(`/my-group`);
+            } catch (err) {
+              console.error('Failed to select topic:', err);
+              notification.error({
+                message: t('failedToSelectTopic'),
+                description: err?.response?.data?.message || t('pleaseTryAgain'),
+              });
+            } finally {
+              setLoading(false);
+            }
+          }}
+          disabled={loading || project.status === 'closed'}
+          className={`w-full text-sm font-semibold py-3 rounded-lg transition-colors ${
+            project.status === 'closed'
+              ? 'bg-gray-400 cursor-not-allowed text-gray-200'
+              : 'bg-[#4264d7] hover:bg-[#3552b0] text-white'
+          }`}
+        >
+          {loading ? t('selecting') : project.status === 'closed' ? t('topicClosed') : t('selectTopic')}
         </button>
       </div>
     </div>

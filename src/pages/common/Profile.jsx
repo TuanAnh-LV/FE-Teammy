@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Edit,
   Mail,
@@ -8,10 +8,15 @@ import {
   ArrowUp,
   LineChart,
   Users,
+  Phone,
+  User,
+  Code,
 } from "lucide-react";
 import { AuthService } from "../../services/auth.service";
+import { UserService } from "../../services/user.service";
 import { useAuth } from "../../context/AuthContext";
 import LoadingState from "../../components/common/LoadingState";
+import EditProfileModal from "../../components/common/EditProfileModal";
 
 const Profile = () => {
   const {
@@ -25,7 +30,10 @@ const Profile = () => {
   } = useAuth();
 
   const profileFetchTokenRef = useRef(null);
+  const [profileData, setProfileData] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Fetch user auth info
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -54,7 +62,7 @@ const Profile = () => {
         localStorage.setItem("userInfo", JSON.stringify(mapped));
         localStorage.setItem("role", mapped.role);
       } catch (e) {
-        console.error("KhA'ng l???y ???c thA'ng tin tA?i kho?n:", e);
+        console.error("Không lấy được thông tin tài khoản:", e);
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -64,19 +72,60 @@ const Profile = () => {
     };
   }, [token, userInfo, setUserInfo, setRole, setIsLoading]);
 
+  // Fetch detailed profile data
+  useEffect(() => {
+    let mounted = true;
+    const fetchProfileData = async () => {
+      if (!token) return;
+      try {
+        const response = await UserService.getMyProfile(false);
+        if (mounted && response?.data) {
+          setProfileData(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching profile data:", error);
+      }
+    };
+    fetchProfileData();
+    return () => {
+      mounted = false;
+    };
+  }, [token]);
+
+
+  const handleUpdateProfile = (updatedData) => {
+    setProfileData(updatedData);
+    // Also update userInfo if needed
+    if (updatedData.displayName) {
+      const updatedUserInfo = {
+        ...userInfo,
+        name: updatedData.displayName,
+        displayName: updatedData.displayName,
+        skillsCompleted: updatedData.skillsCompleted,
+      };
+      setUserInfo(updatedUserInfo);
+      localStorage.setItem("userInfo", JSON.stringify(updatedUserInfo));
+    }
+  };
 
   const profile = {
-    name: userInfo?.name ?? userInfo?.displayName ?? "Unnamed",
-    email: userInfo?.email ?? "",
+    userId: profileData?.userId || userInfo?.userId || "",
+    name: profileData?.displayName || userInfo?.name || userInfo?.displayName || "Unnamed",
+    email: profileData?.email || userInfo?.email || "",
+    phone: profileData?.phone || null,
+    gender: profileData?.gender || null,
+    studentCode: profileData?.studentCode || null,
     role: role ?? userInfo?.role ?? "Student",
-    photoURL: userInfo?.photoURL || userInfo?.avatarUrl || "",
-    skillsCompleted: !!userInfo?.skillsCompleted,
-    major: "Computer Science",
+    photoURL: profileData?.avatarUrl || userInfo?.photoURL || userInfo?.avatarUrl || "",
+    skillsCompleted: profileData?.skillsCompleted ?? userInfo?.skillsCompleted ?? false,
+    skills: profileData?.skills || null,
+    major: profileData?.majorName || "Computer Science",
+    majorId: profileData?.majorId || null,
     university: "FPT University",
     joined: "Jan 2024",
     activeProjects: 1,
     completedProjects: 5,
-    skillCount: 6,
+    skillCount: profileData?.skills ? profileData.skills.split(",").length : 0,
   };
 
   const initials = useMemo(() => {
@@ -129,14 +178,23 @@ const Profile = () => {
               <div className="flex items-center gap-1">
                 <Mail className="w-4 h-4" /> {profile.email}
               </div>
+              {profile.phone && (
+                <div className="flex items-center gap-1">
+                  <Phone className="w-4 h-4" /> {profile.phone}
+                </div>
+              )}
+              {profile.gender && (
+                <div className="flex items-center gap-1">
+                  <User className="w-4 h-4" /> {profile.gender}
+                </div>
+              )}
+              {profile.studentCode && (
+                <div className="flex items-center gap-1">
+                  <GraduationCap className="w-4 h-4" /> {profile.studentCode}
+                </div>
+              )}
               <div className="flex items-center gap-1">
                 <BookOpen className="w-4 h-4" /> {profile.major}
-              </div>
-              <div className="flex items-center gap-1">
-                <GraduationCap className="w-4 h-4" /> {profile.university}
-              </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" /> Joined {profile.joined}
               </div>
             </div>
 
@@ -158,7 +216,10 @@ const Profile = () => {
           </div>
         </div>
 
-        <button className="!flex !items-center !gap-2 !bg-blue-600 !text-white !px-5 !py-2 !rounded-md !hover:bg-blue-700 !transition">
+        <button
+          onClick={() => setIsEditModalOpen(true)}
+          className="!flex !items-center !gap-2 !bg-blue-600 !text-white !px-5 !py-2 !rounded-md !hover:bg-blue-700 !transition"
+        >
           <Edit className="!w-4 !h-4" />
           Edit Profile
         </button>
@@ -185,12 +246,50 @@ const Profile = () => {
             <p className="text-gray-500 text-sm">Skills</p>
             <h2 className="text-3xl font-bold">{profile.skillCount}</h2>
           </div>
-          <ArrowUp className="text-green-500 w-6 h-6" />
+          <Code className="text-green-500 w-6 h-6" />
         </div>
       </div>
 
-      {/* Main Grid (giữ nguyên phần dưới) */}
-      {/* ... */}
+      {/* Skills Section */}
+      {profile.skills && (
+        <div className="bg-white shadow rounded-2xl p-6">
+          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Code className="w-5 h-5" />
+            Skills
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {profile.skills.split(',').map((skill, index) => {
+              const colors = [
+                'bg-blue-100 text-blue-700 border-blue-300',
+                'bg-green-100 text-green-700 border-green-300',
+                'bg-purple-100 text-purple-700 border-purple-300',
+                'bg-orange-100 text-orange-700 border-orange-300',
+                'bg-pink-100 text-pink-700 border-pink-300',
+                'bg-indigo-100 text-indigo-700 border-indigo-300',
+                'bg-teal-100 text-teal-700 border-teal-300',
+                'bg-red-100 text-red-700 border-red-300',
+              ];
+              const colorClass = colors[index % colors.length];
+              return (
+                <span
+                  key={index}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border ${colorClass}`}
+                >
+                  {skill.trim()}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        profileData={profileData}
+        onUpdate={handleUpdateProfile}
+      />
     </div>
   );
 };

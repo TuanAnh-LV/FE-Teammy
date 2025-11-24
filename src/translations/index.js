@@ -411,6 +411,38 @@ export const translations = {
     groupMarkedFull: "Marked group as full",
     groupReopened: "Reopened recruiting",
     topicReminderSent: "Reminder sent for the group",
+
+    // Discover Page
+    noGroupFound: "No Group Found",
+    pleaseCreateOrJoinGroup: "Please create or join a group first.",
+    groupNotFull: "Group Not Full",
+    groupMustBeFull: "Group must be full to select a topic. Current:",
+    topicSelected: "Topic Selected",
+    successfullySelected: "Successfully selected",
+    forYourGroup: "for your group.",
+    failedToSelectTopic: "Failed to Select Topic",
+    pleaseTryAgain: "Please try again.",
+    topicClosed: "Topic Closed",
+    selecting: "Selecting...",
+
+    // MembersList
+    invitation: "Invitation",
+    kick: "Kick",
+
+    // Form Validations
+    pleaseEnterColumnName: "Please enter column name",
+    signedInWithGoogle: "Signed in with Google",
+    signInFailed: "Sign in failed",
+    connectionTimeout: "Connection timeout exceeded",
+    pleaseEnterGroupId: "Please enter group ID",
+    pleaseEnterTitle: "Please enter title",
+    pleaseEnterDescription: "Please enter description",
+    pleaseEnterPosition: "Please enter the position needed",
+    pleaseSelectDeadline: "Please select deadline",
+    pleaseEnterFullName: "Please enter full name",
+    selectARole: "Select a role",
+    sending: "Sending...",
+    send: "Send"
   },
   
   VIE: {

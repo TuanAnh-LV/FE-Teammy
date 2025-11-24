@@ -25,6 +25,8 @@ export const API = {
      USERS: {
         LIST: "/users",
         DETAIL: "/users/:id",
+        MY_PROFILE: "/users/me/profile",
+        UPDATE_PROFILE: "/users/me/profile",
     },
     INVITATIONS: {
         LIST: "/invitations",

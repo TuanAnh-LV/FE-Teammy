@@ -534,11 +534,13 @@ export function useKanbanBoard(groupId) {
       if (
         !skipMove &&
         normalizedChanges.status &&
-        normalizeStatus(normalizedChanges.status) !==
-          normalizeStatus(snapshot.status || "")
+        normalizedChanges.status !== snapshot.status
       ) {
-        const targetColumnId = getColumnIdByStatus(normalizedChanges.status);
-        moveTaskToColumn(taskId, targetColumnId);
+        // status is now the columnId directly
+        const targetColumnId = normalizedChanges.status;
+        if (targetColumnId && columns[targetColumnId] !== undefined) {
+          moveTaskToColumn(taskId, targetColumnId);
+        }
       }
     } catch (err) {
       console.error(err);

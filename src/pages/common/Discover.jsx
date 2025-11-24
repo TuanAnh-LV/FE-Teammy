@@ -17,9 +17,11 @@ const Discover = () => {
         const payload = res?.data ?? res;
         const list = Array.isArray(payload) ? payload : payload?.data ?? [];
         const mapped = (list || []).map((t) => ({
+          topicId: t.topicId || t.id,
           title: t.title || t.topicName || "Untitled",
           description: t.description || "",
           domain: t.majorName || "General",
+          status: t.status || "open",
           tags: [t.status || "open"],
           mentor:
             (t.mentors && t.mentors[0] && t.mentors[0].mentorName) ||

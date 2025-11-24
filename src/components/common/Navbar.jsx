@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Globe, Bell, MessageSquare, Users, Search } from "lucide-react";
+import { Globe, BookText, Bell, MessageSquare, Users, Search } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { getTranslation } from "../../translations";
@@ -139,7 +139,7 @@ const Navbar = () => {
                   isActive("/discover") ? "!text-blue-600" : ""
                 }`}
               >
-                <Globe className="!w-4 !h-4" />
+                <BookText className="!w-4 !h-4" />
                 <span>{getTranslation("topics", language)}</span>
               </Link>
               <Link
