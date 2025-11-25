@@ -1,6 +1,49 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { MajorService } from "../../../services/major.service";
+import { notification } from "antd";
 
-const FilterSidebar = () => {
+const FilterSidebar = ({ onFilterChange }) => {
+  const [majors, setMajors] = useState([]);
+  const [selectedMajor, setSelectedMajor] = useState("all");
+  const [selectedDifficulty, setSelectedDifficulty] = useState("all");
+  const [selectedTeamSize, setSelectedTeamSize] = useState("all");
+  const [aiRecommended, setAiRecommended] = useState(false);
+
+  useEffect(() => {
+    const fetchMajors = async () => {
+      try {
+        const res = await MajorService.getMajors();
+        const payload = res?.data ?? res;
+        const list = Array.isArray(payload) ? payload : payload?.data ?? [];
+        setMajors(list || []);
+      } catch (err) {
+        console.error("Failed to fetch majors:", err);
+        notification.error({
+          message: "Failed to load majors",
+          description: "Could not load major categories",
+        });
+      }
+    };
+    fetchMajors();
+  }, []);
+
+  useEffect(() => {
+    if (onFilterChange) {
+      onFilterChange({
+        major: selectedMajor,
+        difficulty: selectedDifficulty,
+        teamSize: selectedTeamSize,
+        aiRecommended,
+      });
+    }
+  }, [
+    selectedMajor,
+    selectedDifficulty,
+    selectedTeamSize,
+    aiRecommended,
+    onFilterChange,
+  ]);
+
   return (
     <div className="!bg-white !rounded-2xl !shadow-md !border !border-gray-100 !p-7 !w-full !max-w-[340px] !mx-auto">
       {/* Title */}
@@ -8,9 +51,16 @@ const FilterSidebar = () => {
 
       {/* AI Recommended */}
       <div className="!flex !items-center !justify-between !mb-5">
-        <span className="!text-sm !text-gray-700 !font-medium">AI Recommended</span>
+        <span className="!text-sm !text-gray-700 !font-medium">
+          AI Recommended
+        </span>
         <label className="!relative !inline-flex !items-center !cursor-pointer">
-          <input type="checkbox" className="!sr-only peer" />
+          <input
+            type="checkbox"
+            className="!sr-only peer"
+            checked={aiRecommended}
+            onChange={(e) => setAiRecommended(e.target.checked)}
+          />
           <div className="!w-10 !h-5 !bg-gray-200 !rounded-full peer-checked:!bg-blue-500 !transition-all"></div>
           <div className="!absolute !left-1 !top-[3px] !bg-white !w-4 !h-4 !rounded-full !transition-all peer-checked:!translate-x-5"></div>
         </label>
@@ -18,31 +68,35 @@ const FilterSidebar = () => {
 
       <hr className="!border-gray-200 !my-5" />
 
-      {/* Domain */}
+      {/* Major */}
       <div className="!mb-6">
-        <h4 className="!font-semibold !text-sm !text-gray-800 !mb-3">Domain</h4>
+        <h4 className="!font-semibold !text-sm !text-gray-800 !mb-3">Major</h4>
         <div className="!space-y-2">
-          {[
-            "All Domains",
-            "Web Development",
-            "Graphic Design",
-            "Marketing & Communications",
-            "UI/UX Design",
-            "Data Science",
-            "Game Development",
-            "Mobile Development",
-          ].map((opt) => (
+          <label className="!flex !items-center !space-x-2 !text-gray-700 !text-sm">
+            <input
+              type="radio"
+              name="major"
+              value="all"
+              checked={selectedMajor === "all"}
+              onChange={(e) => setSelectedMajor(e.target.value)}
+              className="!text-blue-600 focus:!ring-blue-500"
+            />
+            <span>All Majors</span>
+          </label>
+          {majors.map((major) => (
             <label
-              key={opt}
+              key={major.id || major.majorId}
               className="!flex !items-center !space-x-2 !text-gray-700 !text-sm"
             >
               <input
                 type="radio"
-                name="domain"
-                defaultChecked={opt === "All Domains"}
+                name="major"
+                value={major.id || major.majorId}
+                checked={selectedMajor === (major.id || major.majorId)}
+                onChange={(e) => setSelectedMajor(e.target.value)}
                 className="!text-blue-600 focus:!ring-blue-500"
               />
-              <span>{opt}</span>
+              <span>{major.name || major.majorName}</span>
             </label>
           ))}
         </div>
@@ -52,9 +106,11 @@ const FilterSidebar = () => {
 
       {/* Difficulty */}
       <div className="!mb-6">
-        <h4 className="!font-semibold !text-sm !text-gray-800 !mb-3">Difficulty</h4>
+        <h4 className="!font-semibold !text-sm !text-gray-800 !mb-3">
+          Difficulty
+        </h4>
         <div className="!space-y-2">
-          {["All Levels", "Beginner", "Intermediate", "Advanced"].map((opt) => (
+          {["all", "beginner", "intermediate", "advanced"].map((opt) => (
             <label
               key={opt}
               className="!flex !items-center !space-x-2 !text-gray-700 !text-sm"
@@ -62,10 +118,16 @@ const FilterSidebar = () => {
               <input
                 type="radio"
                 name="difficulty"
-                defaultChecked={opt === "All Levels"}
+                value={opt}
+                checked={selectedDifficulty === opt}
+                onChange={(e) => setSelectedDifficulty(e.target.value)}
                 className="!text-blue-600 focus:!ring-blue-500"
               />
-              <span>{opt}</span>
+              <span>
+                {opt === "all"
+                  ? "All Levels"
+                  : opt.charAt(0).toUpperCase() + opt.slice(1)}
+              </span>
             </label>
           ))}
         </div>
@@ -75,20 +137,29 @@ const FilterSidebar = () => {
 
       {/* Team Size */}
       <div>
-        <h4 className="!font-semibold !text-sm !text-gray-800 !mb-3">Team Size</h4>
+        <h4 className="!font-semibold !text-sm !text-gray-800 !mb-3">
+          Team Size
+        </h4>
         <div className="!space-y-2">
-          {["Any Size", "2-4 members", "5-8 members", "9+ members"].map((opt) => (
+          {[
+            { value: "all", label: "Any Size" },
+            { value: "2-4", label: "2-4 members" },
+            { value: "5-8", label: "5-8 members" },
+            { value: "9+", label: "9+ members" },
+          ].map((opt) => (
             <label
-              key={opt}
+              key={opt.value}
               className="!flex !items-center !space-x-2 !text-gray-700 !text-sm"
             >
               <input
                 type="radio"
                 name="team"
-                defaultChecked={opt === "Any Size"}
+                value={opt.value}
+                checked={selectedTeamSize === opt.value}
+                onChange={(e) => setSelectedTeamSize(e.target.value)}
                 className="!text-blue-600 focus:!ring-blue-500"
               />
-              <span>{opt}</span>
+              <span>{opt.label}</span>
             </label>
           ))}
         </div>

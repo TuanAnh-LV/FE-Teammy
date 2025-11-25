@@ -464,6 +464,8 @@ export const translations = {
     pleaseTryAgain: "Please try again.",
     topicClosed: "Topic Closed",
     selecting: "Selecting...",
+    noProjectsFound: "No Projects Found",
+    noProjectsDescription: "No projects match your current filters. Try adjusting your filter criteria.",
 
     // MembersList
     invitation: "Invitation",
@@ -564,7 +566,11 @@ export const translations = {
     searchByEmailAction: "Search by email, action...",
     
     // Topic Management
-    smartFilters: "Smart Filters"
+    smartFilters: "Smart Filters",
+    selectMentor: "Select Mentor",
+    selectStatus: "Select Status",
+    allStatuses: "All Statuses",
+  
   },
   
   VIE: {
@@ -1046,6 +1052,8 @@ export const translations = {
     pleaseTryAgain: "Vui lòng thử lại.",
     topicClosed: "Chủ đề đã đóng",
     selecting: "Đang chọn...",
+    noProjectsFound: "Không tìm thấy dự án",
+    noProjectsDescription: "Không có dự án nào phù hợp với bộ lọc hiện tại. Thử điều chỉnh tiêu chí lọc của bạn.",
 
     // MembersList
     invitation: "Lời mời",
@@ -1146,7 +1154,10 @@ export const translations = {
     searchByEmailAction: "Tìm kiếm theo email, hành động...",
     
     // Topic Management
-    smartFilters: "Bộ lọc thông minh"
+    smartFilters: "Bộ lọc thông minh",
+    selectMentor: "Chọn người hướng dẫn",
+    selectStatus: "Chọn trạng thái",
+    allStatuses: "Tất cả trạng thái",
   },
 };
 

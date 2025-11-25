@@ -76,7 +76,7 @@ export default function GroupManagement() {
     };
     fetchList();
     return () => (mounted = false);
-  }, [t]);
+  }, []);
 
   const toggleFull = (record) => {
     setRows((prev) =>
