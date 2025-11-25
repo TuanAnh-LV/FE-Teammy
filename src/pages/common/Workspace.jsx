@@ -127,24 +127,24 @@ const Workspace = () => {
   return (
     <div className="relative">
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-between pt-28 xl:pt-20 pb-20">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-between pt-20 md:pt-28 xl:pt-20 pb-12 md:pb-20">
         {/* Title */}
-        <div className="mx-auto ml-96 xl:ml-[22rem] mb-8">
-          <h1 className="text-3xl font-black text-[#1a1a1a] mb-2">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-black text-[#1a1a1a] mb-2">
             Team Workspace
           </h1>
-          <p className="text-gray-400 text-muted-foreground">
+          <p className="text-sm md:text-base text-gray-400 text-muted-foreground">
             Manage tasks, share documents and track progress.
           </p>
         </div>
 
         {/* Toolbar */}
-        <div className="mt-10 w-full max-w-7xl px-6">
+        <div className="mt-6 md:mt-10 w-full max-w-7xl px-4 sm:px-6">
           <div className="">
-            <div className="flex flex-col md:flex-row items-center gap-3">
+            <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2 flex-1 w-full">
-                <div className="flex items-center border border-gray-400 rounded-xl w-full px-4 py-3">
-                  <Search className="w-5 h-5 text-gray-500 mr-3" />
+                <div className="flex items-center border border-gray-400 rounded-xl w-full px-3 md:px-4 py-2.5 md:py-3">
+                  <Search className="w-4 h-4 md:w-5 md:h-5 text-gray-500 mr-2 md:mr-3 shrink-0" />
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -152,17 +152,17 @@ const Workspace = () => {
                       t("searchTasksPlaceholder") ||
                       "Search tasks by title or description..."
                     }
-                    className="bg-transparent outline-none w-full text-gray-700  text-[16px]"
+                    className="bg-transparent outline-none w-full text-gray-700 text-sm md:text-[16px]"
                   />
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 md:gap-3">
                 <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-black" />
+                  <Filter className="w-3 h-3 md:w-4 md:h-4 text-black" />
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="bg-white border border-gray-300 rounded-lg px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm"
                   >
                     <option value="All">
                       {t("allStatus") || "All status"}
@@ -179,7 +179,7 @@ const Workspace = () => {
                 <select
                   value={filterPriority}
                   onChange={(e) => setFilterPriority(e.target.value)}
-                  className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  className="bg-white border border-gray-300 rounded-lg px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm"
                 >
                   <option value="All">
                     {t("allPriority") || "All priority"}
@@ -188,14 +188,17 @@ const Workspace = () => {
                   <option value="medium">{t("medium") || "Medium"}</option>
                   <option value="low">{t("low") || "Low"}</option>
                 </select>
+                <button
+                  className="flex items-center gap-1 md:gap-2 border border-gray-300 px-2 md:px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm hover:bg-gray-50 whitespace-nowrap"
+                  onClick={() => setIsColumnModalOpen(true)}
+                >
+                  <Plus className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="hidden sm:inline">
+                    {t("newColumn") || "New Column"}
+                  </span>
+                  <span className="sm:hidden">Column</span>
+                </button>
               </div>
-              <button
-                className="flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
-                onClick={() => setIsColumnModalOpen(true)}
-              >
-                <Plus className="w-5 h-5" />
-                {t("newColumn") || "New Column"}
-              </button>
             </div>
           </div>
         </div>
@@ -208,7 +211,7 @@ const Workspace = () => {
           onDragEnd={handleDragEnd}
         >
           {hasData ? (
-            <div className="mt-8 flex gap-6 overflow-x-auto max-w-7xl mx-auto px-6 pb-2">
+            <div className="mt-6 md:mt-8 flex gap-4 md:gap-6 overflow-x-auto max-w-7xl mx-auto px-4 sm:px-6 pb-2">
               {Object.entries(columnMeta)
                 .sort((a, b) => (a[1]?.position || 0) - (b[1]?.position || 0))
                 .map(([colId, meta]) => {

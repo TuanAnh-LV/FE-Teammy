@@ -1,6 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Globe, BookText, Bell, MessageSquare, Users, Search } from "lucide-react";
+import {
+  Globe,
+  BookText,
+  Bell,
+  MessageSquare,
+  Users,
+  Search,
+  Menu,
+  X,
+} from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { getTranslation } from "../../translations";
@@ -19,6 +28,7 @@ const Navbar = () => {
   const { language, toggleLanguage } = useLanguage();
   const dropdownRef = useRef(null);
   const inviteFetchTokenRef = useRef(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [notificationApi, contextHolder] = notification.useNotification();
 
@@ -101,72 +111,70 @@ const Navbar = () => {
     }
   };
 
-  const handleWorkspaceNav = () => {
-    const lastId =
-      (typeof localStorage !== "undefined" &&
-        localStorage.getItem("last_group_id")) ||
-      "";
-    navigate(lastId ? `/workspace?groupId=${lastId}` : "/workspace");
-  };
+  // const handleWorkspaceNav = () => {
+  //   const lastId =
+  //     (typeof localStorage !== "undefined" &&
+  //       localStorage.getItem("last_group_id")) ||
+  //     "";
+  //   navigate(lastId ? `/workspace?groupId=${lastId}` : "/workspace");
+  // };
 
   return (
     <>
       <nav className="!w-full !h-16 !fixed !top-0 !z-50 !bg-white/80 !backdrop-blur-md !border-b !border-gray-200">
-        <div className="!max-w-7xl !mx-auto !px-4 sm:!px-6 lg:!px-8 !h-full !flex !items-center !gap-6 !justify-between">
+        <div className="max-w-7xl !mx-auto !px-4 sm:!px-6 lg:!px-8 !h-full !flex !items-center !gap-4 md:!gap-6 !justify-between">
           {contextHolder}
           {/* Logo + menu */}
-          <div className="!flex !items-center !gap-10">
+          <div className="!flex !items-center !gap-4 md:!gap-10 !flex-1 md:!flex-initial">
             <Link to="/" className="!no-underline">
-              <h1 className="font-sans text-2xl font-black text-black cursor-pointer !mb-0">
+              <h1 className="font-sans text-xl md:text-2xl font-black text-black cursor-pointer !mb-0">
                 Teammy.
               </h1>
             </Link>
 
-            {/* Nav links */}
-            <div className="!hidden md:!flex !items-center !space-x-8 !font-sans !font-semibold !text-[14px] !text-black">
+            {/* Nav links - Desktop */}
+            <div className="!hidden lg:!flex !items-center !space-x-6 xl:!space-x-8 !font-sans !font-semibold !text-[14px] !text-black">
               <Link
                 to="/forum"
-                className={`!flex !items-center !gap-2 !hover:text-blue-600 ${
-                  isActive("/forum") ? "!text-blue-600" : ""
+                className={`!flex !items-center !gap-2 !transition-colors !duration-200 ${
+                  isActive("/forum")
+                    ? "!text-orange-600"
+                    : "!text-gray-700 hover:!text-orange-600"
                 }`}
               >
                 <MessageSquare className="!w-4 !h-4" />
                 <span>{getTranslation("forum", language)}</span>
               </Link>
+
               <Link
                 to="/discover"
-                className={`!flex !items-center !gap-2 !hover:text-blue-600 ${
-                  isActive("/discover") ? "!text-blue-600" : ""
+                className={`!flex !items-center !gap-2 !transition-colors !duration-200 ${
+                  isActive("/discover")
+                    ? "!text-orange-600"
+                    : "!text-gray-700 hover:!text-orange-600"
                 }`}
               >
                 <BookText className="!w-4 !h-4" />
                 <span>{getTranslation("topics", language)}</span>
               </Link>
+
               <Link
                 to="/my-group"
-                className={`!flex !items-center !gap-2 !hover:text-blue-600 ${
-                  isActive("/my-group") ? "!text-blue-600" : ""
+                className={`!flex !items-center !gap-2 !transition-colors !duration-200 ${
+                  isActive("/my-group")
+                    ? "!text-orange-600"
+                    : "!text-gray-700 hover:!text-orange-600"
                 }`}
               >
                 <Users className="!w-4 !h-4" />
                 <span>{getTranslation("myGroups", language)}</span>
               </Link>
-              {/* <button
-              type="button"
-              onClick={handleWorkspaceNav}
-              className={`!flex !items-center !gap-2 !hover:text-blue-600 !bg-transparent !border-0 !p-0 ${
-                isActive("/workspace") ? "!text-blue-600" : ""
-              }`}
-            >
-              <FolderKanban className="!w-4 !h-4" />
-              <span>{getTranslation("workspace", language)}</span>
-            </button> */}
             </div>
           </div>
 
-          {/* Search */}
-          <div className="!hidden lg:!flex !flex-1 !justify-center">
-            <label className="!relative !w-full !max-w-md">
+          {/* Search - Desktop only */}
+          <div className="!hidden xl:!flex !flex-1 !justify-center">
+            <label className="!relative !w-full !max-w-xl">
               <Search className="!absolute !left-4 !top-1/2 !-translate-y-1/2 !w-4 !h-4 !text-gray-400" />
               <input
                 type="search"
@@ -179,7 +187,7 @@ const Navbar = () => {
 
           {/* Right side */}
           <div
-            className="!flex !items-center !gap-4 !relative"
+            className="!flex !items-center !gap-2 md:!gap-4 !relative"
             ref={dropdownRef}
           >
             {user && (
@@ -196,13 +204,13 @@ const Navbar = () => {
                 ) : null}
               </button>
             )}
-            {/* Language toggle */}
+            {/* Language toggle - Desktop only */}
             <button
               onClick={toggleLanguage}
               title={`Switch to ${
                 language === "EN" ? "Vietnamese" : "English"
               }`}
-              className="!flex !items-center !gap-1 !px-2 !py-1 !rounded-full hover:!bg-gray-100 !transition-colors !duration-200"
+              className="!hidden md:!flex !items-center !gap-1 !px-2 !py-1 !rounded-full hover:!bg-gray-100 !transition-colors !duration-200"
             >
               <Globe className="!w-5 !h-5 !text-gray-700" />
               <span className="!text-sm !font-semibold !text-gray-700">
@@ -215,7 +223,7 @@ const Navbar = () => {
               <>
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
-                  className="!flex !items-center !space-x-3 !focus:outline-none"
+                  className="!flex !items-center !space-x-2 md:!space-x-3 !focus:outline-none"
                 >
                   {(() => {
                     const avatarSource =
@@ -237,11 +245,11 @@ const Navbar = () => {
                           "avatar"
                         }
                         referrerPolicy="no-referrer"
-                        className="!w-9 !h-9 !rounded-full !border !border-gray-300 !object-cover !bg-gray-100"
+                        className="!w-8 !h-8 md:!w-9 md:!h-9 !rounded-full !border !border-gray-300 !object-cover !bg-gray-100"
                       />
                     );
                   })()}
-                  <span className="!text-sm !font-semibold !text-gray-800 !hidden sm:!inline-block">
+                  <span className="!text-sm !font-semibold !text-gray-800 !hidden lg:!inline-block">
                     {user.displayName || user.name || user.email}
                   </span>
                 </button>
@@ -277,7 +285,7 @@ const Navbar = () => {
             ) : (
               <button
                 onClick={handleSignIn}
-                className="!px-4 !py-2 !rounded-full !bg-black !text-white !text-sm !font-medium hover:!bg-gray-800 !transition-colors !duration-200 !flex !items-center !space-x-1 !font-sans"
+                className="!px-3 md:!px-4 !py-2 !rounded-full !bg-black !text-white !text-xs md:!text-sm !font-medium hover:!bg-gray-800 !transition-colors !duration-200 !flex !items-center !space-x-1 !font-sans"
               >
                 <span>{getTranslation("signIn", language)}</span>
                 <svg
@@ -295,8 +303,95 @@ const Navbar = () => {
                 </svg>
               </button>
             )}
+
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:!hidden !p-2 !rounded-lg hover:!bg-gray-100 !transition-colors"
+            >
+              {mobileMenuOpen ? (
+                <X className="!w-6 !h-6 !text-gray-700" />
+              ) : (
+                <Menu className="!w-6 !h-6 !text-gray-700" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="lg:!hidden !absolute !top-16 !left-0 !right-0 !bg-white !border-b !border-gray-200 !shadow-lg">
+            <div className="!px-4 !py-4 !space-y-3">
+              {/* Mobile nav links */}
+              <Link
+                to="/forum"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`!flex !items-center !gap-2 !px-4 !py-3 !rounded-lg !font-semibold !text-sm !transition-colors ${
+                  isActive("/forum")
+                    ? "!bg-orange-50 !text-orange-600"
+                    : "!text-gray-700 hover:!bg-orange-50 hover:!text-orange-600 active:!bg-orange-100 active:!text-orange-700"
+                }`}
+              >
+                <MessageSquare className="!w-4 !h-4" />
+                <span>{getTranslation("forum", language)}</span>
+              </Link>
+
+              <Link
+                to="/discover"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`!flex !items-center !gap-2 !px-4 !py-3 !rounded-lg !font-semibold !text-sm !transition-colors ${
+                  isActive("/discover")
+                    ? "!bg-orange-50 !text-orange-600"
+                    : "!text-gray-700 hover:!bg-orange-50 hover:!text-orange-600 active:!bg-orange-100 active:!text-orange-700"
+                }`}
+              >
+                <BookText className="!w-4 !h-4" />
+                <span>{getTranslation("topics", language)}</span>
+              </Link>
+
+              <Link
+                to="/my-group"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`!flex !items-center !gap-2 !px-4 !py-3 !rounded-lg !font-semibold !text-sm !transition-colors ${
+                  isActive("/my-group")
+                    ? "!bg-orange-50 !text-orange-600"
+                    : "!text-gray-700 hover:!bg-orange-50 hover:!text-orange-600 active:!bg-orange-100 active:!text-orange-700"
+                }`}
+              >
+                <Users className="!w-4 !h-4" />
+                <span>{getTranslation("myGroups", language)}</span>
+              </Link>
+
+              {/* Mobile search */}
+              <div className="!pt-3 !border-t !border-gray-200">
+                <label className="!relative !w-full">
+                  <Search className="!absolute !left-4 !top-1/2 !-translate-y-1/2 !w-4 !h-4 !text-gray-400" />
+                  <input
+                    type="search"
+                    placeholder="Search..."
+                    className="!w-full !rounded-lg !border !border-gray-200 !py-2.5 !pl-11 !pr-4 !text-sm !text-gray-700 placeholder:!text-gray-400 focus:!outline-none focus:!border-blue-400 focus:!ring-2 focus:!ring-blue-100"
+                  />
+                </label>
+              </div>
+
+              {/* Mobile language toggle */}
+              <button
+                onClick={() => {
+                  toggleLanguage();
+                  setMobileMenuOpen(false);
+                }}
+                className="!w-full !flex !items-center !gap-2 !px-4 !py-3 !rounded-lg !text-gray-700 hover:!bg-gray-50 !transition-colors !border-t !border-gray-200"
+              >
+                <Globe className="!w-4 !h-4" />
+                <span className="!text-sm !font-semibold">
+                  {language === "EN"
+                    ? "Switch to Vietnamese"
+                    : "Chuyển sang English"}
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
       <NotificationDrawer
         open={notifOpen}

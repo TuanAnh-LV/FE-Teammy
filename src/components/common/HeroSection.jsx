@@ -17,7 +17,7 @@ const HeroSection = () => {
   };
 
   return (
-    <div className="relative min-h-[65vh] flex items-center justify-center overflow-hidden lg:mt-20 ">
+    <div className="relative min-h-[50vh] md:min-h-[65vh] flex items-center justify-center overflow-hidden mt-16 md:mt-20 lg:mt-20 px-4 sm:px-6">
       <style>{`
         @keyframes heroGradientShift {
           0% { background-position: 0% 50%; }
@@ -26,30 +26,30 @@ const HeroSection = () => {
         }
       `}</style>
       {/* Main Content Container */}
-      <div className="relative z-10 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+      <div className="relative z-10 w-full max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 items-center">
           {/* Left Content */}
-          <div className="flex flex-col space-y-8">
+          <div className="flex flex-col space-y-6 md:space-y-8">
             {/* Headline */}
             <h1
-              className="!font-sans !font-black text-[42px] md:text-[54px] !leading-[120%] !tracking-tight "
+              className="!font-sans !font-black text-[32px] sm:text-[42px] md:text-[54px] !leading-[120%] !tracking-tight "
               style={headingStyle}
             >
               {t("heroBuildYourFuture") ||
                 "Build your future, one capstone at a time."}
             </h1>
             {/* Description */}
-            <p className="!font-sans text-[16px] md:text-[18px] leading-[28px] ">
+            <p className="!font-sans text-sm sm:text-[16px] md:text-[18px] leading-[24px] sm:leading-[28px] ">
               {t("heroDescription") ||
                 "Find teammates across majors, connect with mentors, and manage milestones—so you learn faster and deliver better."}
             </p>
 
             {/* Buttons & Stats */}
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <div className="flex flex-col gap-4 md:gap-6">
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                 <Link
                   to="/discover"
-                  className="!font-sans inline-flex items-center justify-center px-6 py-2.5 rounded-full text-base font-semibold text-white"
+                  className="!font-sans inline-flex items-center justify-center px-5 md:px-6 py-2.5 rounded-full text-sm md:text-base font-semibold text-white"
                   style={{
                     background: "linear-gradient(90deg,#43D08A,#3182ED)",
                     WebkitBackgroundClip: "border-box",
@@ -61,24 +61,24 @@ const HeroSection = () => {
 
                 <Link
                   to="/how-it-works"
-                  className="text-gray-700 text-base !font-medium !font-sans hover:text-blue-600 transition-colors duration-200"
+                  className="text-gray-700 text-sm md:text-base !font-medium !font-sans hover:text-blue-600 transition-colors duration-200 text-center"
                 >
                   {t("seeHowItWorks") || "See How It Works"}
                 </Link>
               </div>
 
               {/* Stats */}
-              <div className="flex flex-wrap gap-6 text-sm text-gray-600">
+              <div className="flex flex-wrap gap-4 md:gap-6 text-xs sm:text-sm text-gray-600">
                 <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-blue-600" />
+                  <Users className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
                   <span>{t("hero1000Students") || "1000+ students"}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-emerald-600" />
+                  <GraduationCap className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" />
                   <span>{t("hero50Mentors") || "50+ mentors"}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-indigo-600" />
+                  <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" />
                   <span>{t("hero300Projects") || "300+ projects"}</span>
                 </div>
               </div>

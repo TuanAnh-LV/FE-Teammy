@@ -30,9 +30,7 @@ export default function MyGroupsPage() {
     const trimmed = name.trim();
     if (!trimmed) return "?";
     const parts = trimmed.split(/\s+/).slice(0, 2);
-    return parts
-      .map((part) => part.charAt(0).toUpperCase())
-      .join("");
+    return parts.map((part) => part.charAt(0).toUpperCase()).join("");
   };
 
   const getRoleLabel = (group) => {
@@ -170,28 +168,28 @@ export default function MyGroupsPage() {
     }
 
     return (
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
         {groups.map((group) => (
           <div
             key={group.id}
-            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+            className="rounded-lg border border-gray-200 bg-white p-4 md:p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
           >
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-3 md:gap-4">
               <div>
-                <h3 className="mt-1 text-[18px] font-bold text-gray-900">
+                <h3 className="mt-1 text-base md:text-[18px] font-bold text-gray-900">
                   {group.title}
                 </h3>
-                <p className="pt-1 text-sm text-[#627084]">
+                <p className="pt-1 text-xs md:text-sm text-[#627084]">
                   {group.field}
                 </p>
 
-                <p className="mt-2 line-clamp-3 text-sm text-[#1d2530]">
+                <p className="mt-2 line-clamp-3 text-xs md:text-sm text-[#1d2530]">
                   {group.description}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <span
-                  className={`inline-flex items-center rounded-full px-4 py-1.5 text-xs font-semibold ${
+                  className={`inline-flex items-center rounded-full px-3 md:px-4 py-1.5 text-[10px] md:text-xs font-semibold ${
                     group.isLeader
                       ? "bg-[#3182ed] text-white"
                       : "bg-gray-100 text-gray-700"
@@ -202,7 +200,7 @@ export default function MyGroupsPage() {
                   </span>
                 </span>
                 {group.isLeader && (
-                  <Crown className="!h-4 !w-4 text-amber-400" />
+                  <Crown className="!h-3.5 !w-3.5 md:!h-4 md:!w-4 text-amber-400" />
                 )}
               </div>
             </div>
@@ -291,17 +289,17 @@ export default function MyGroupsPage() {
                 {group.members}/{group.maxMembers}
               </p>
             </div>
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-4 md:mt-6 flex flex-col sm:flex-row flex-wrap gap-2 md:gap-3">
               <button
                 onClick={() => handleViewGroup(group.id)}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-300"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-xs md:text-sm font-semibold text-gray-700 hover:border-gray-300"
               >
                 {t("view") || "View"}
                 <ArrowRight className="!h-4 !w-4" />
               </button>
               <button
                 onClick={() => handleLeaveGroup(group.id)}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-red-100 px-4 py-2 text-sm font-semibold text-red-600 hover:border-red-200"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-red-100 px-4 py-2 text-xs md:text-sm font-semibold text-red-600 hover:border-red-200"
               >
                 {t("leaveGroup") || "Leave Group"}
               </button>
@@ -345,23 +343,23 @@ export default function MyGroupsPage() {
     }
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {activeApplications.map(([groupId, requests]) => {
           const group = groupsById.get(groupId);
           return (
             <div
               key={groupId}
-              className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm"
+              className="rounded-2xl md:rounded-3xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm"
             >
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase text-blue-500">
                     {group?.field || t("group") || "Group"}
                   </p>
-                  <h3 className="text-lg font-bold text-gray-900">
+                  <h3 className="text-base md:text-lg font-bold text-gray-900">
                     {group?.title || t("group") || "Group"}
                   </h3>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs md:text-sm text-gray-500">
                     {requests.length}{" "}
                     {requests.length > 1
                       ? t("applications") || "applications"
@@ -374,11 +372,11 @@ export default function MyGroupsPage() {
                 </span>
               </div>
 
-              <div className="mt-5 space-y-4">
+              <div className="mt-4 md:mt-5 space-y-3 md:space-y-4">
                 {requests.map((request) => (
                   <div
                     key={request.id}
-                    className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-gray-50/60 p-4 md:flex-row md:items-center md:justify-between"
+                    className="flex flex-col gap-3 md:gap-4 rounded-2xl border border-gray-100 bg-gray-50/60 p-3 md:p-4 md:flex-row md:items-center md:justify-between"
                   >
                     <div className="flex items-center gap-4">
                       <img
@@ -395,44 +393,43 @@ export default function MyGroupsPage() {
                         <p className="text-sm font-semibold text-gray-900">
                           {request.name}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {request.email}
-                        </p>
-                        {request.message && (() => {
-                          const parts = request.message.split('-');
-                          if (parts.length >= 2) {
-                            const badge = parts[0].trim();
-                            const message = parts.slice(1).join('-').trim();
+                        <p className="text-xs text-gray-500">{request.email}</p>
+                        {request.message &&
+                          (() => {
+                            const parts = request.message.split("-");
+                            if (parts.length >= 2) {
+                              const badge = parts[0].trim();
+                              const message = parts.slice(1).join("-").trim();
+                              return (
+                                <div className="mt-2 flex items-center gap-2">
+                                  <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200">
+                                    {badge}
+                                  </span>
+                                  <p className="text-xs text-gray-600">
+                                    {message}
+                                  </p>
+                                </div>
+                              );
+                            }
                             return (
-                              <div className="mt-2 flex items-center gap-2">
-                                <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200">
-                                  {badge}
-                                </span>
-                                <p className="text-xs text-gray-600">
-                                  {message}
-                                </p>
-                              </div>
+                              <p className="mt-1 text-xs text-gray-500">
+                                {request.message}
+                              </p>
                             );
-                          }
-                          return (
-                            <p className="mt-1 text-xs text-gray-500">
-                              {request.message}
-                            </p>
-                          );
-                        })()}
+                          })()}
                       </div>
                     </div>
                     {request.type !== "invitation" && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleReject(groupId, request)}
-                          className="inline-flex h-10 items-center justify-center rounded-full border border-red-200 px-4 text-sm font-semibold text-red-600 hover:bg-red-50"
+                          className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center rounded-full border border-red-200 px-3 md:px-4 text-xs md:text-sm font-semibold text-red-600 hover:bg-red-50"
                         >
                           {t("reject") || "Reject"}
                         </button>
                         <button
                           onClick={() => handleApprove(groupId, request)}
-                          className="inline-flex h-10 items-center justify-center rounded-full bg-emerald-500 px-4 text-sm font-semibold text-white hover:bg-emerald-600"
+                          className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center rounded-full bg-emerald-500 px-3 md:px-4 text-xs md:text-sm font-semibold text-white hover:bg-emerald-600"
                         >
                           {t("approve") || "Approve"}
                         </button>
@@ -449,17 +446,21 @@ export default function MyGroupsPage() {
   };
 
   const renderOverviewTab = () => (
-    <div className="grid gap-5 md:grid-cols-3">
+    <div className="grid gap-4 md:gap-5 sm:grid-cols-2 md:grid-cols-3">
       {overviewCards.map((card) => (
         <div
           key={card.title}
-          className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+          className="rounded-2xl border border-gray-200 bg-white p-4 md:p-5 shadow-sm"
         >
-          <p className="text-sm font-semibold text-gray-500">{card.title}</p>
-          <p className="mt-3 text-3xl font-bold text-gray-900">
+          <p className="text-xs md:text-sm font-semibold text-gray-500">
+            {card.title}
+          </p>
+          <p className="mt-2 md:mt-3 text-2xl md:text-3xl font-bold text-gray-900">
             {card.value}
           </p>
-          <p className="mt-2 text-sm text-gray-500">{card.description}</p>
+          <p className="mt-1 md:mt-2 text-xs md:text-sm text-gray-500">
+            {card.description}
+          </p>
         </div>
       ))}
     </div>
@@ -467,35 +468,35 @@ export default function MyGroupsPage() {
 
   return (
     <div className="min-h-screen bg-[#f6f8fb] pb-16 pt-10">
-      <div className="mx-auto w-full max-w-[76rem] px-6 pt-10 lg:px-0">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 pt-10 lg:px-8">
         {/* Header */}
-        <div className="border-b border-gray-200 pb-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="border-b border-gray-200 pb-6 md:pb-8">
+          <div className="flex flex-col gap-4 md:gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-gray-900">
+              <h1 className="mt-2 text-2xl md:text-3xl font-black tracking-tight text-gray-900">
                 {t("myGroupsProjectsTitle") || "My Groups & Projects"}
               </h1>
-              <p className="mt-3 max-w-3xl text-gray-400 text-muted-foreground">
+              <p className="mt-3 max-w-3xl text-sm md:text-base text-gray-400 text-muted-foreground">
                 {t("myGroupsProjectsSubtitle") ||
                   "Manage your capstone project teams, track progress, and collaborate with teammates."}
-                <br />
+                <br className="hidden md:block" />
                 {t("myGroupsProjectsCTA") ||
                   "Create new groups or join existing ones to build amazing projects together."}
               </p>
 
-              <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:justify-between lg:gap-8">
+              <div className="mt-4 md:mt-5 flex flex-col gap-3 md:gap-4 lg:flex-row lg:justify-between lg:gap-8">
                 {/* Buttons */}
-                <div className="flex flex-wrap items-center gap-3 lg:flex-none">
+                <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 lg:flex-none">
                   <button
                     onClick={() => setOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 md:px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
                   >
                     <span>+</span>
                     {t("createNewGroup") || "Create New Group"}
                   </button>
                   <button
                     onClick={() => navigate("/discover")}
-                    className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-orange-600"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 md:px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-orange-600"
                   >
                     <UserPlus className="!h-4 !w-4" />
                     {t("joinGroup") || "Join Group"}
@@ -503,7 +504,7 @@ export default function MyGroupsPage() {
                 </div>
 
                 {/* Stats */}
-                <div className="ml-[33rem] flex w-full flex-wrap items-center gap-4 text-sm font-semibold text-[#627084] lg:flex-1 lg:justify-end lg:text-right">
+                <div className="flex flex-wrap items-center gap-3 md:gap-4 text-xs md:text-sm font-semibold text-[#627084] lg:flex-1 lg:justify-end">
                   {heroStatsWithIcons.map((stat) => (
                     <div
                       key={stat.label}
@@ -522,20 +523,20 @@ export default function MyGroupsPage() {
         </div>
 
         {/* Tabs + content */}
-        <div className="mt-8">
-          <div className="flex h-10 w-full max-w-2xl gap-2 rounded-md border border-gray-200 bg-[#f2f4f5] px-2 py-1 text-sm font-semibold text-[#7d889c]">
+        <div className="mt-6 md:mt-8">
+          <div className="flex h-auto md:h-10 w-full max-w-full md:max-w-2xl gap-1 md:gap-2 rounded-md border border-gray-200 bg-[#f2f4f5] p-1 text-xs md:text-sm font-semibold text-[#7d889c]">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-sm px-3 py-1.5 transition ${
+                className={`flex flex-1 items-center justify-center gap-1 md:gap-2 rounded-sm px-2 md:px-3 py-2 md:py-1.5 transition ${
                   activeTab === tab.key
                     ? "bg-[#f7f9fa] text-[#1d3a66] shadow"
                     : "bg-[#f2f4f5] text-[#7d889c] hover:text-[#1d3a66]"
                 }`}
               >
                 {tab.icon}
-                <span className="capitalize">{tab.label}</span>
+                <span className="capitalize hidden sm:inline">{tab.label}</span>
               </button>
             ))}
           </div>
