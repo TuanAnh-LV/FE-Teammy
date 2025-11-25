@@ -15,11 +15,12 @@ import {
   EllipsisOutlined,
   InfoCircleOutlined,
 } from "@ant-design/icons";
-
+import { useTranslation } from "../../hook/useTranslation";
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const AuditLogs = () => {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState({
     search: "",
     action: "All Action",
@@ -231,7 +232,9 @@ const AuditLogs = () => {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <Input
             prefix={<SearchOutlined className="text-gray-400" />}
-            placeholder="Search by email, action..."
+            placeholder={
+              t("searchByEmailAction") || "Search by email, action..."
+            }
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
           />

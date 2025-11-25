@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { useTranslation } from "../../hook/useTranslation";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -29,6 +30,7 @@ const TopicManagement = () => {
     search: "",
   });
 
+  const { t } = useTranslation();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentTopic, setCurrentTopic] = useState(null);
   const [topics, setTopics] = useState([]);
@@ -68,7 +70,9 @@ const TopicManagement = () => {
         if (mounted) setTopics(mapped);
       } catch (err) {
         console.error(err);
-        notification.error("Failed to load topics");
+        notification.error({
+          message: t("failedLoadTopics") || "Failed to load topics",
+        });
       } finally {
         if (mounted) setLoading(false);
       }
@@ -138,7 +142,7 @@ const TopicManagement = () => {
       key: "actions",
       render: (_, record) => (
         <Space size="middle">
-          <Tooltip title="View details">
+          <Tooltip title={t("viewDetails") || "View details"}>
             <Button
               type="text"
               icon={<EyeOutlined />}
@@ -148,7 +152,7 @@ const TopicManagement = () => {
               }}
             />
           </Tooltip>
-          <Tooltip title="Copy topic">
+          <Tooltip title={t("copyTopic") || "Copy topic"}>
             <Button type="text" icon={<CopyOutlined />} />
           </Tooltip>
         </Space>
@@ -181,7 +185,9 @@ const TopicManagement = () => {
                 const blob = res?.data ?? res;
                 const disposition = res?.headers?.["content-disposition"];
                 downloadBlob(blob, "TeammyTopicsTemplate.xlsx", disposition);
-                notification.success("Template downloaded");
+                notification.success({
+                  message: t("templateDownloaded") || "Template downloaded",
+                });
               } catch (err) {
                 console.error(err);
                 // Fallback: generate a small template and download
@@ -198,7 +204,11 @@ const TopicManagement = () => {
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Template");
                 XLSX.writeFile(wb, "TeammyTopicsTemplate.xlsx");
-                notification.warning("Template generated locally (API error)");
+                notification.warning({
+                  message:
+                    t("templateGeneratedLocally") ||
+                    "Template generated locally (API error)",
+                });
               }
             }}
           >
@@ -216,7 +226,10 @@ const TopicManagement = () => {
           <div className="flex flex-col sm:flex-row justify-between gap-3 mb-4">
             <Input
               prefix={<SearchOutlined className="text-gray-400" />}
-              placeholder="Search by topic title or mentor..."
+              placeholder={
+                t("searchByTopicOrMentor") ||
+                "Search by topic title or mentor..."
+              }
               value={filters.search}
               onChange={(e) =>
                 setFilters({ ...filters, search: e.target.value })
@@ -229,9 +242,15 @@ const TopicManagement = () => {
                 onChange={(v) => setFilters({ ...filters, status: v })}
                 className="w-40"
               >
-                <Option value="All Status">All Status</Option>
-                <Option value="Available">Available</Option>
-                <Option value="Not Available">Not Available</Option>
+                <Option value="All Status">
+                  {t("allStatus") || "All Status"}
+                </Option>
+                <Option value="Available">
+                  {t("available") || "Available"}
+                </Option>
+                <Option value="Not Available">
+                  {t("notAvailable") || "Not Available"}
+                </Option>
               </Select>
             </div>
           </div>

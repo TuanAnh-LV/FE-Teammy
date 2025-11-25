@@ -20,10 +20,11 @@ import {
   MessageOutlined,
   BarChartOutlined,
 } from "@ant-design/icons";
-
+import { useTranslation } from "../../hook/useTranslation";
 const { Option } = Select;
 
 export default function MentorDashboard() {
+  const { t } = useTranslation();
   const discoverGroups = [
     {
       id: 1,
@@ -80,7 +81,9 @@ export default function MentorDashboard() {
           </p>
         </div>
         <Space className="mt-4 md:mt-0">
-          <Button icon={<MessageOutlined />}>Send Announcement</Button>
+          <Button icon={<MessageOutlined />}>
+            {t("sendAnnouncement") || "Send Announcement"}
+          </Button>
           <Button type="primary" icon={<FileTextOutlined />}>
             Export Report
           </Button>
@@ -133,10 +136,15 @@ export default function MentorDashboard() {
         <div className="flex flex-wrap gap-3 mb-5">
           <Input
             prefix={<SearchOutlined />}
-            placeholder="Search by topic or keyword..."
+            placeholder={
+              t("searchByKeyword") || "Search by topic or keyword..."
+            }
             className="w-64"
           />
-          <Select placeholder="Filter by Department" className="w-52">
+          <Select
+            placeholder={t("filterByDepartment") || "Filter by Department"}
+            className="w-52"
+          >
             <Option>All Departments</Option>
             <Option>Computer Science</Option>
             <Option>Engineering</Option>
@@ -212,7 +220,7 @@ export default function MentorDashboard() {
               />
               <Tag color="blue">Contrib {group.contribution}%</Tag>
               <Rate value={group.rating} disabled />
-              <Tooltip title="View Group Details">
+              <Tooltip title={t("viewGroupDetails") || "View Group Details"}>
                 <Button icon={<EyeOutlined />} shape="circle" />
               </Tooltip>
             </Space>

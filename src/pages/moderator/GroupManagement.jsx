@@ -115,7 +115,7 @@ export default function GroupManagement() {
       key: "topic",
       render: (text) =>
         text === "Not Assigned" ? (
-          <Tag color="orange">Not Assigned</Tag>
+          <Tag color="orange">{t("notAssigned") || "Not Assigned"}</Tag>
         ) : (
           <span>{text}</span>
         ),
@@ -126,7 +126,7 @@ export default function GroupManagement() {
       key: "mentor",
       render: (text) =>
         text === "Not Assigned" ? (
-          <Tag color="orange">Not Assigned</Tag>
+          <Tag color="orange">{t("notAssigned") || "Not Assigned"}</Tag>
         ) : (
           <span>{text}</span>
         ),
@@ -169,7 +169,7 @@ export default function GroupManagement() {
         const noTopic = record.topic === "Not Assigned";
         return (
           <Space size="middle">
-            <Tooltip title="View details">
+            <Tooltip title={t("viewDetails") || "View details"}>
               <Button
                 type="text"
                 icon={<EyeOutlined />}
@@ -250,7 +250,9 @@ export default function GroupManagement() {
         <div className="flex flex-col sm:flex-row gap-3 justify-between">
           <Input
             prefix={<SearchOutlined className="text-gray-400" />}
-            placeholder="Search by group name or mentor..."
+            placeholder={
+              t("searchByGroupOrMentor") || "Search by group name or mentor..."
+            }
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
             className="sm:w-1/2"
@@ -261,11 +263,15 @@ export default function GroupManagement() {
               onChange={(v) => setFilters({ ...filters, major: v })}
               className="w-40"
             >
-              <Option value="All Major">All Major</Option>
-              <Option value="Computer Science">Computer Science</Option>
-              <Option value="Engineering">Engineering</Option>
+              <Option value="All Major">{t("allMajor") || "All Major"}</Option>
+              <Option value="Computer Science">
+                {t("computerScience") || "Computer Science"}
+              </Option>
+              <Option value="Engineering">
+                {t("engineering") || "Engineering"}
+              </Option>
               <Option value="Information Technology">
-                Information Technology
+                {t("informationTechnology") || "Information Technology"}
               </Option>
             </Select>
             <Select
@@ -273,10 +279,12 @@ export default function GroupManagement() {
               onChange={(v) => setFilters({ ...filters, status: v })}
               className="w-36"
             >
-              <Option value="All Status">All Status</Option>
-              <Option value="Active">Active</Option>
-              <Option value="Pending">Pending</Option>
-              <Option value="Inactive">Inactive</Option>
+              <Option value="All Status">
+                {t("allStatus") || "All Status"}
+              </Option>
+              <Option value="Active">{t("active") || "Active"}</Option>
+              <Option value="Pending">{t("pending") || "Pending"}</Option>
+              <Option value="Inactive">{t("inactive") || "Inactive"}</Option>
             </Select>
           </div>
         </div>

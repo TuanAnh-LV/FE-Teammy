@@ -244,10 +244,15 @@ const Forum = () => {
       await GroupService.inviteMember(groupId, payload);
 
       // Display success message when the invite is successful
-      notification.success("User invited to the group successfully!");
+      notification.success({
+        message:
+          t("userInvitedToGroup") || "User invited to the group successfully!",
+      });
     } catch (error) {
       console.error("Failed to send invitation", error);
-      notification.error("Failed to invite user.");
+      notification.error({
+        message: t("failedToInviteUser") || "Failed to invite user.",
+      });
     }
   };
 
@@ -649,12 +654,14 @@ const Forum = () => {
           closeModal={() => setIsCreatePostModalOpen(false)}
           onCreated={handleCreated}
           defaultGroupId={membership.groupId || ""}
+          destroyOnClose
         />
         <CreatePersonalPostModal
           isOpen={isCreatePersonalPostModalOpen}
           closeModal={() => setIsCreatePersonalPostModalOpen(false)}
           onCreated={handleCreated}
           currentUserName={currentUserName}
+          destroyOnClose
         />
         <GroupDetailModal
           isOpen={detailOpen}
