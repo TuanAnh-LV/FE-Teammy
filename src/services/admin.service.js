@@ -48,6 +48,18 @@ export const AdminService = {
     });
   },
 
+  /** UPDATE USER
+   * - userId: string
+   * - payload: object containing fields to update
+   */
+  updateUser(userId, payload = {}, isLoading = true) {
+    return BaseService.put({
+      url: API.ADMIN.UPDATE_USER(userId),
+      payload,
+      isLoading,
+    });
+  },
+
   /** EXPORT TEMPLATE
    * - tải file template (excel/csv)
    * - responseType: "blob" để nhận file nhị phân

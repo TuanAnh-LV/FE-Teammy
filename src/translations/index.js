@@ -175,16 +175,16 @@ export const translations = {
     mentor: "Mentor",
     start: "Start",
     end: "End",
-    semester: "Semester",
-    description: "Description",
-    progress: "Progress",
-    currentProgress: "Current progress",
-    majorId: "Major ID",
-    topicId: "Topic ID",
-    semesterId: "Semester ID",
-    majorIdRequired: "Major ID is required",
-    semesterIdRequired: "Semester ID is required",
-    maxMembersValidation: "Max members must be at least the current member count.",
+    
+    // Manage Users / Admin
+    failedLoadUsers: "Failed to load users",
+    failedLoadUserDetails: "Failed to load user details",
+    confirmBanTitle: "Ban {name}?",
+    confirmBanContent: "Are you sure you want to ban this user? This action can be undone later.",
+    confirmBanOk: "Confirm Ban",
+    confirmBanCancel: "Cancel",
+    userBannedSuccess: "{name} has been banned.",
+    userBanFailed: "Failed to ban {name}",
     updateGroupDetails: "Update group details",
     selectMajor: "Select major",
     selectTopic: "Select topic",
@@ -203,7 +203,6 @@ export const translations = {
     add: "Add",
     projectMentor: "Mentor",
     noMentorAssigned: "No mentor assigned",
-    pleaseEnterEmail: "Please enter an email address.",
     userAlreadyInGroup: "This user is already in the group.",
     userAddedSuccessfully: "has been added.",
     failedToAddMember: "Failed to add member. Please try again.",
@@ -289,6 +288,29 @@ export const translations = {
     forumPersonalSubtitle: "Publish your profile and let project teams invite you.",
     createRecruitPost: "Create group post",
     createPersonalPost: "Create personal post",
+    createPersonalProfileTitle: "Create Personal Profile",
+    publishProfile: "Publish Profile",
+    titleLabel: "Title",
+    descriptionLabel: "Description",
+    skillsLabel: "Skills",
+    placeholderTitle: "E.g.: Looking for FE team member",
+    placeholderDescription: "Short description about your need/experience",
+    placeholderSkills: "Node, Postgres",
+    createRecruitPostTitle: "Create Recruitment Post",
+    publishPost: "Publish Post",
+    placeholderExpiresAt: "Select expiry date",
+    editUserTitle: "Edit User Information",
+    addNewUserTitle: "Add New User",
+    studentCode: "Student Code",
+    notesDescription: "Notes / Description",
+    noAdditionalInfo: "No additional information provided.",
+    enterFullNamePlaceholder: "Enter full name",
+    enterEmailPlaceholder: "Enter email",
+    enterPhonePlaceholder: "Enter phone number",
+    enterMajorPlaceholder: "Enter major",
+    enterStudentCodePlaceholder: "Enter student code",
+    addUser: "Add User",
+    groupDetail: "Group Detail",
     activePosts: "Active Posts",
     activeProfiles: "Active Profiles",
     openPositions: "Open Positions",
@@ -321,6 +343,8 @@ export const translations = {
     created: "Created",
     status: "Status",
     updateSuccess: "Updated successfully",
+    userUpdatedSuccess: "User updated successfully",
+    userUpdateFailed: "Failed to update user",
     due: "Due",
     applying: "Applying…",
     currentTopic: "Current topic",
@@ -411,6 +435,22 @@ export const translations = {
     groupMarkedFull: "Marked group as full",
     groupReopened: "Reopened recruiting",
     topicReminderSent: "Reminder sent for the group",
+    // Import / Upload messages
+    fileImportedSuccess: "File imported successfully",
+    fileParsedLocally: "File parsed locally (API error)",
+    templateDownloaded: "Template downloaded",
+    templateGeneratedLocally: "Template generated locally (API error)",
+    // Create post/profile
+    createRecruitPostSuccess: "Recruitment post created",
+    createProfilePostSuccess: "Profile post created",
+    // Topics / Loading
+    failedLoadTopics: "Failed to load topics",
+    failedLoadTopicDetails: "Failed to load topic details",
+    // Moderator notifications
+    pleaseSelectGroup: "Please select a group.",
+    sentToGroup: "Sent to ",
+    scheduledReminderInfo: "Scheduled reminder for tomorrow 9:00 AM (mock)",
+    aiAnalysisComplete: "AI analysis complete!",
 
     // Discover Page
     noGroupFound: "No Group Found",
@@ -431,6 +471,7 @@ export const translations = {
 
     // Form Validations
     pleaseEnterColumnName: "Please enter column name",
+    columnName: "Column Name",
     signedInWithGoogle: "Signed in with Google",
     signInFailed: "Sign in failed",
     connectionTimeout: "Connection timeout exceeded",
@@ -439,10 +480,91 @@ export const translations = {
     pleaseEnterDescription: "Please enter description",
     pleaseEnterPosition: "Please enter the position needed",
     pleaseSelectDeadline: "Please select deadline",
+    deadlineMustBeFuture: "Expires date must be after now!",
     pleaseEnterFullName: "Please enter full name",
+    pleaseEnterEmail: "Please enter an email address.",
+    invalidEmail: "Invalid email",
+    displayName: "Display Name",
+    pleaseEnterDisplayName: "Please enter display name",
+    enterDisplayNamePlaceholder: "Enter display name",
     selectARole: "Select a role",
     sending: "Sending...",
-    send: "Send"
+    send: "Send",
+    
+    // Workspace
+    newColumn: "New Column",
+    enterColumnName: "Enter column name",
+    position: "Position",
+    searchTasksPlaceholder: "Search tasks by title or description...",
+    allStatus: "All status",
+    allPriority: "All priority",
+    deleteColumn: "Delete Column",
+    deleteColumnConfirm: "Delete column",
+    
+    // Common UI
+    copyTopic: "Copy topic",
+    searchByTopicOrMentor: "Search by topic title or mentor...",
+    enterNotificationMessage: "Enter your notification message...",
+    searchByGroupOrMentor: "Search by group name or mentor...",
+    searchByKeyword: "Search by topic or keyword...",
+    filterByDepartment: "Filter by Department",
+    viewGroupDetails: "View Group Details",
+    searchGroupsTopics: "Search groups, topics...",
+    notAssigned: "Not Assigned",
+    allMajor: "All Major",
+    computerScience: "Computer Science",
+    informationTechnology: "Information Technology",
+    business: "Business",
+    engineering: "Engineering",
+    notAvailable: "Not Available",
+    
+    // Notifications Page
+    groupsWithoutTopics: "Groups Without Topics",
+    groupsWithoutMentors: "Groups Without Mentors",
+    groupsMissingMembers: "Groups Missing Members",
+    composeNotification: "Compose Notification",
+    selectAll: "Select All",
+    autoReminders: "Auto Reminders",
+    quickStats: "Quick Stats",
+    sentToday: "Sent Today",
+    thisWeek: "This Week",
+    
+    // Mentor Dashboard
+    sendAnnouncement: "Send Announcement",
+    pendingReviews: "Pending Reviews",
+    averageProgress: "Average Progress",
+    feedbackGiven: "Feedback Given",
+    allDepartments: "All Departments",
+    
+    // Mentor Group List
+    avgProgress: "Avg Progress",
+    needAttention: "Need Attention",
+    highPriority: "High Priority",
+    quickOverview: "Quick Overview",
+    nextDigest: "Next digest:",
+    taskEvents: "Task Events",
+    weeklyDigest: "Weekly Digest",
+    
+    // AI Assistant
+    suggestMatches: "Suggest Matches",
+    autoMerge: "Auto Merge Mode",
+    aiInsightsSummary: "AI Insights Summary",
+    suggestedTopic: "Suggested Topic",
+    suggestedMentor: "Suggested Mentor",
+    mergeSuggestion: "Merge Suggestion",
+    mergeWith: "Merge with",
+    
+    // Import
+    importTopics: "Import Topics",
+    
+    // Profile
+    preparingProfile: "Preparing your profile...",
+    
+    // Audit Logs
+    searchByEmailAction: "Search by email, action...",
+    
+    // Topic Management
+    smartFilters: "Smart Filters"
   },
   
   VIE: {
@@ -648,7 +770,6 @@ export const translations = {
     add: "Thêm",
     projectMentor: "Người Hướng Dẫn",
     noMentorAssigned: "Chưa có người hướng dẫn",
-    pleaseEnterEmail: "Vui lòng nhập địa chỉ email.",
     userAlreadyInGroup: "Người dùng này đã có trong nhóm.",
     userAddedSuccessfully: "đã được thêm.",
     failedToAddMember: "Không thể thêm thành viên. Vui lòng thử lại.",
@@ -736,6 +857,29 @@ export const translations = {
     forumPersonalSubtitle: "Đăng hồ sơ để các nhóm mời bạn tham gia.",
     createRecruitPost: "Tạo bài tuyển thành viên",
     createPersonalPost: "Tạo bài đăng cá nhân",
+    createPersonalProfileTitle: "Tạo hồ sơ cá nhân",
+    publishProfile: "Đăng hồ sơ",
+    titleLabel: "Tiêu đề",
+    descriptionLabel: "Mô tả",
+    skillsLabel: "Kỹ năng",
+    placeholderTitle: "VD: Tìm thành viên FE",
+    placeholderDescription: "Mô tả ngắn về nhu cầu/kinh nghiệm",
+    placeholderSkills: "Node, Postgres",
+    createRecruitPostTitle: "Tạo bài tuyển thành viên",
+    publishPost: "Đăng bài",
+    placeholderExpiresAt: "Chọn ngày hết hạn",
+    editUserTitle: "Chỉnh sửa thông tin người dùng",
+    addNewUserTitle: "Thêm người dùng mới",
+    studentCode: "Mã sinh viên",
+    notesDescription: "Ghi chú / Mô tả",
+    noAdditionalInfo: "Không có thông tin bổ sung.",
+    enterFullNamePlaceholder: "Nhập họ tên",
+    enterEmailPlaceholder: "Nhập email",
+    enterPhonePlaceholder: "Nhập số điện thoại",
+    enterMajorPlaceholder: "Nhập chuyên ngành",
+    enterStudentCodePlaceholder: "Nhập mã sinh viên",
+    addUser: "Thêm người dùng",
+    groupDetail: "Chi tiết nhóm",
     activePosts: "Bài Đang Mở",
     activeProfiles: "Hồ Sơ Đang Mở",
     openPositions: "Vị Trí Cần Tuyển",
@@ -768,6 +912,8 @@ export const translations = {
     created: "Được tạo",
     status: "Trạng thái",
     updateSuccess: "Cập nhật thành công",
+    userUpdatedSuccess: "Cập nhật người dùng thành công",
+    userUpdateFailed: "Cập nhật người dùng thất bại",
     due: "Hạn",
     applying: "Đang ứng tuyển…",
     currentTopic: "Chủ đề hiện tại",
@@ -859,6 +1005,148 @@ export const translations = {
     groupMarkedFull: "Đã đánh dấu nhóm: Full",
     groupReopened: "Đã mở lại tuyển thành viên",
     topicReminderSent: "Đã gửi nhắc nhở cho nhóm",
+    // Manage Users / Admin
+    failedLoadUsers: "Không thể tải danh sách người dùng",
+    failedLoadUserDetails: "Không thể tải chi tiết người dùng",
+    confirmBanTitle: "Cấm {name}?",
+    confirmBanContent: "Bạn có chắc chắn muốn cấm người dùng này? Hành động này có thể hoàn tác sau.",
+    confirmBanOk: "Xác nhận cấm",
+    confirmBanCancel: "Hủy",
+    userBannedSuccess: "{name} đã bị cấm.",
+    userBanFailed: "Không thể cấm {name}",
+        // Import / Upload messages
+    fileImportedSuccess: "Nhập file thành công",
+    fileParsedLocally: "File đã được xử lý cục bộ (lỗi API)",
+    templateDownloaded: "Đã tải mẫu xuống",
+    templateGeneratedLocally: "Mẫu được tạo cục bộ (lỗi API)",
+
+    // Create post/profile
+    createRecruitPostSuccess: "Đã tạo bài tuyển thành viên",
+    createProfilePostSuccess: "Đã tạo bài đăng hồ sơ",
+
+    // Topics / Loading
+    failedLoadTopics: "Không thể tải danh sách chủ đề",
+    failedLoadTopicDetails: "Không thể tải chi tiết chủ đề",
+
+    // Moderator notifications (bổ sung)
+    pleaseSelectGroup: "Vui lòng chọn một nhóm.",
+    sentToGroup: "Đã gửi đến ",
+    scheduledReminderInfo: "Đã lên lịch nhắc nhở vào ngày mai lúc 9:00 (giả lập)",
+    aiAnalysisComplete: "Phân tích bằng AI đã hoàn tất!",
+
+    // Discover Page
+    noGroupFound: "Không tìm thấy nhóm nào",
+    pleaseCreateOrJoinGroup: "Vui lòng tạo hoặc tham gia một nhóm trước.",
+    groupNotFull: "Nhóm Chưa Đủ Thành Viên",
+    groupMustBeFull: "Nhóm phải đủ số thành viên mới được chọn chủ đề. Hiện tại:",
+    topicSelected: "Đã chọn chủ đề",
+    successfullySelected: "Đã chọn thành công",
+    forYourGroup: "cho nhóm của bạn.",
+    failedToSelectTopic: "Chọn chủ đề thất bại",
+    pleaseTryAgain: "Vui lòng thử lại.",
+    topicClosed: "Chủ đề đã đóng",
+    selecting: "Đang chọn...",
+
+    // MembersList
+    invitation: "Lời mời",
+    kick: "Xóa khỏi nhóm",
+
+    // Form Validations
+    pleaseEnterColumnName: "Vui lòng nhập tên cột",
+    columnName: "Tên cột",
+    pleaseEnterTitle: "Vui lòng nhập tiêu đề",
+    pleaseEnterDescription: "Vui lòng nhập mô tả",
+    pleaseEnterPosition: "Vui lòng nhập vị trí cần tuyển",
+    pleaseSelectDeadline: "Vui lòng chọn hạn chót",
+    deadlineMustBeFuture: "Ngày hết hạn phải lớn hơn ngày hiện tại!",
+    pleaseEnterFullName: "Vui lòng nhập họ tên",
+    pleaseEnterEmail: "Vui lòng nhập địa chỉ email.",
+    invalidEmail: "Email không hợp lệ",
+    displayName: "Tên hiển thị",
+    pleaseEnterDisplayName: "Vui lòng nhập tên hiển thị",
+    enterDisplayNamePlaceholder: "Nhập tên hiển thị",
+    pleaseEnterGroupId: "Vui lòng nhập mã nhóm",
+    selectARole: "Chọn một vai trò",
+    signedInWithGoogle: "Đăng nhập bằng Google",
+    signInFailed: "Đăng nhập thất bại",
+    connectionTimeout: "Hết thời gian kết nối",
+    sending: "Đang gửi...",
+    send: "Gửi",
+    
+    // Workspace
+    newColumn: "Cột mới",
+    enterColumnName: "Nhập tên cột",
+    position: "Vị trí",
+    searchTasksPlaceholder: "Tìm kiếm công việc theo tiêu đề hoặc mô tả...",
+    allStatus: "Tất cả trạng thái",
+    allPriority: "Tất cả ưu tiên",
+    deleteColumn: "Xóa cột",
+    deleteColumnConfirm: "Xóa cột",
+    
+    // Common UI
+    copyTopic: "Sao chép chủ đề",
+    searchByTopicOrMentor: "Tìm kiếm theo chủ đề hoặc người hướng dẫn...",
+    enterNotificationMessage: "Nhập thông báo của bạn...",
+    searchByGroupOrMentor: "Tìm kiếm theo tên nhóm hoặc người hướng dẫn...",
+    searchByKeyword: "Tìm kiếm theo chủ đề hoặc từ khóa...",
+    filterByDepartment: "Lọc theo khoa",
+    viewGroupDetails: "Xem chi tiết nhóm",
+    searchGroupsTopics: "Tìm kiếm nhóm, chủ đề...",
+    notAssigned: "Chưa phân công",
+    allMajor: "Tất cả chuyên ngành",
+    computerScience: "Khoa học máy tính",
+    informationTechnology: "Công nghệ thông tin",
+    business: "Kinh doanh",
+    engineering: "Kỹ thuật",
+    notAvailable: "Không có",
+    
+    // Notifications Page
+    groupsWithoutTopics: "Nhóm chưa có chủ đề",
+    groupsWithoutMentors: "Nhóm chưa có người hướng dẫn",
+    groupsMissingMembers: "Nhóm thiếu thành viên",
+    composeNotification: "Soạn thông báo",
+    selectAll: "Chọn tất cả",
+    autoReminders: "Nhắc nhở tự động",
+    quickStats: "Thống kê nhanh",
+    sentToday: "Đã gửi hôm nay",
+    thisWeek: "Tuần này",
+    
+    // Mentor Dashboard
+    sendAnnouncement: "Gửi thông báo",
+    pendingReviews: "Đang chờ đánh giá",
+    averageProgress: "Tiến độ trung bình",
+    feedbackGiven: "Phản hồi đã cho",
+    allDepartments: "Tất cả khoa",
+    
+    // Mentor Group List
+    avgProgress: "Tiến độ trung bình",
+    needAttention: "Cần chú ý",
+    highPriority: "Ưu tiên cao",
+    quickOverview: "Tổng quan nhanh",
+    nextDigest: "Tóm tắt tiếp theo:",
+    taskEvents: "Sự kiện công việc",
+    weeklyDigest: "Tóm tắt tuần",
+    
+    // AI Assistant
+    suggestMatches: "Gợi ý phù hợp",
+    autoMerge: "Chế độ tự động ghép",
+    aiInsightsSummary: "Tóm tắt thông tin AI",
+    suggestedTopic: "Chủ đề gợi ý",
+    suggestedMentor: "Người hướng dẫn gợi ý",
+    mergeSuggestion: "Gợi ý ghép",
+    mergeWith: "Ghép với",
+    
+    // Import
+    importTopics: "Nhập chủ đề",
+    
+    // Profile
+    preparingProfile: "Đang chuẩn bị hồ sơ của bạn...",
+    
+    // Audit Logs
+    searchByEmailAction: "Tìm kiếm theo email, hành động...",
+    
+    // Topic Management
+    smartFilters: "Bộ lọc thông minh"
   },
 };
 

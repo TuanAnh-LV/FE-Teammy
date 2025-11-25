@@ -13,6 +13,7 @@ import { Modal, Input, Form } from "antd";
 import Column from "../../components/common/kanban/Column";
 import TaskModal from "../../components/common/kanban/TaskModal";
 import useKanbanBoard from "../../hook/useKanbanBoard";
+import { useTranslation } from "../../hook/useTranslation";
 import { useLocation, useParams } from "react-router-dom";
 import { GroupService } from "../../services/group.service";
 
@@ -21,8 +22,13 @@ const Workspace = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const queryGroupId = searchParams.get("groupId");
-  const storedGroupId = typeof localStorage !== "undefined" ? localStorage.getItem("last_group_id") || "" : "";
-  const [resolvedGroupId, setResolvedGroupId] = useState(queryGroupId || routeGroupId || storedGroupId);
+  const storedGroupId =
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem("last_group_id") || ""
+      : "";
+  const [resolvedGroupId, setResolvedGroupId] = useState(
+    queryGroupId || routeGroupId || storedGroupId
+  );
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -59,6 +65,7 @@ const Workspace = () => {
     updateTaskComment,
     deleteTaskComment,
   } = useKanbanBoard(resolvedGroupId);
+  const { t } = useTranslation();
 
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const [columnForm] = Form.useForm();
@@ -114,7 +121,8 @@ const Workspace = () => {
   }
 
   const hasData = filteredColumns && Object.keys(filteredColumns).length > 0;
-  const normalizeTitle = (value = "") => value.toLowerCase().replace(/\s+/g, "_");
+  const normalizeTitle = (value = "") =>
+    value.toLowerCase().replace(/\s+/g, "_");
 
   return (
     <div className="relative">
@@ -140,7 +148,10 @@ const Workspace = () => {
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search tasks by title or description..."
+                    placeholder={
+                      t("searchTasksPlaceholder") ||
+                      "Search tasks by title or description..."
+                    }
                     className="bg-transparent outline-none w-full text-gray-700  text-[16px]"
                   />
                 </div>
@@ -153,12 +164,16 @@ const Workspace = () => {
                     onChange={(e) => setFilterStatus(e.target.value)}
                     className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm"
                   >
-                    <option value="All">All status</option>
-                    <option value="todo">To do</option>
-                    <option value="in_progress">In progress</option>
-                    <option value="review">Review</option>
-                    <option value="blocked">Blocked</option>
-                    <option value="done">Done</option>
+                    <option value="All">
+                      {t("allStatus") || "All status"}
+                    </option>
+                    <option value="todo">{t("toDo") || "To do"}</option>
+                    <option value="in_progress">
+                      {t("inProgress") || "In progress"}
+                    </option>
+                    <option value="review">{t("review") || "Review"}</option>
+                    <option value="blocked">{t("blocked") || "Blocked"}</option>
+                    <option value="done">{t("done") || "Done"}</option>
                   </select>
                 </div>
                 <select
@@ -166,10 +181,12 @@ const Workspace = () => {
                   onChange={(e) => setFilterPriority(e.target.value)}
                   className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 >
-                  <option value="All">All priority</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
+                  <option value="All">
+                    {t("allPriority") || "All priority"}
+                  </option>
+                  <option value="high">{t("high") || "High"}</option>
+                  <option value="medium">{t("medium") || "Medium"}</option>
+                  <option value="low">{t("low") || "Low"}</option>
                 </select>
               </div>
               <button
@@ -177,7 +194,7 @@ const Workspace = () => {
                 onClick={() => setIsColumnModalOpen(true)}
               >
                 <Plus className="w-5 h-5" />
-                New Column
+                {t("newColumn") || "New Column"}
               </button>
             </div>
           </div>
@@ -195,9 +212,13 @@ const Workspace = () => {
               {Object.entries(columnMeta)
                 .sort((a, b) => (a[1]?.position || 0) - (b[1]?.position || 0))
                 .map(([colId, meta]) => {
-                  const normalizedTitleValue = normalizeTitle(meta?.title || colId);
+                  const normalizedTitleValue = normalizeTitle(
+                    meta?.title || colId
+                  );
                   const statusForColumn =
-                    normalizedTitleValue === "to_do" ? "todo" : normalizedTitleValue;
+                    normalizedTitleValue === "to_do"
+                      ? "todo"
+                      : normalizedTitleValue;
                   const allowQuickCreate = statusForColumn === "todo";
                   return (
                     <Column
@@ -223,10 +244,12 @@ const Workspace = () => {
                       }
                       onDelete={() => {
                         Modal.confirm({
-                          title: 'Delete Column',
-                          content: `Delete column "${columnMeta[colId]?.title || colId}"?`,
-                          okText: 'OK',
-                          cancelText: 'Cancel',
+                          title: "Delete Column",
+                          content: `Delete column "${
+                            columnMeta[colId]?.title || colId
+                          }"?`,
+                          okText: "OK",
+                          cancelText: "Cancel",
                           onOk: () => deleteColumn(colId),
                         });
                       }}
@@ -260,27 +283,34 @@ const Workspace = () => {
 
       {/* New Column Modal */}
       <Modal
-        title="New Column"
+        title={t("newColumn") || "New Column"}
         open={isColumnModalOpen}
         onOk={handleCreateColumn}
         onCancel={() => {
           setIsColumnModalOpen(false);
           columnForm.resetFields();
         }}
-        okText="Create"
-        cancelText="Cancel"
+        okText={t("create") || "Create"}
+        cancelText={t("cancel") || "Cancel"}
+        destroyOnClose
       >
         <Form form={columnForm} layout="vertical">
           <Form.Item
             name="columnName"
-            label="Column Name"
-            rules={[{ required: true, message: "Please enter column name" }]}
+            label={t("columnName") || "Column Name"}
+            rules={[
+              {
+                required: true,
+                message:
+                  t("pleaseEnterColumnName") || "Please enter column name",
+              },
+            ]}
           >
-            <Input placeholder="Enter column name" />
+            <Input placeholder={t("enterColumnName") || "Enter column name"} />
           </Form.Item>
           <Form.Item
             name="position"
-            label="Position"
+            label={t("position") || "Position"}
             initialValue={0}
           >
             <Input type="number" placeholder="0" />

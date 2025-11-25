@@ -12,6 +12,7 @@ export const API = {
         BAN_USER: (id) => `/users/admin/${id}`,
         IMPORT_USERS: "/users/import",
         EXPORT_USERS: "/users/import/template",
+        UPDATE_USER: (id) => `/users/admin/${id}`,
     },
     POST: {
         GET_PERSONAL: "/profile-posts",

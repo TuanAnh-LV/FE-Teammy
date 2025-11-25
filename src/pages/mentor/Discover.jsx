@@ -7,7 +7,7 @@ import {
 } from "@ant-design/icons";
 import GroupDetailModal from "../../components/mentor/GroupDetailModal";
 import { GroupService } from "../../services/group.service";
-
+import { useTranslation } from "../../hook/useTranslation";
 const { Option } = Select;
 
 const Discover = () => {
@@ -19,7 +19,7 @@ const Discover = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  const { t } = useTranslation();
   useEffect(() => {
     fetchGroups();
   }, []);
@@ -29,7 +29,7 @@ const Discover = () => {
       setLoading(true);
       const response = await GroupService.getListGroup();
       const groupsList = Array.isArray(response?.data) ? response.data : [];
-      
+
       // Fetch detail for each group to get mentor info
       const groupsWithDetails = await Promise.all(
         groupsList.map(async (group) => {
@@ -47,7 +47,7 @@ const Discover = () => {
           }
         })
       );
-      
+
       console.log("Groups with mentor info:", groupsWithDetails);
       setGroups(groupsWithDetails);
     } catch (error) {
@@ -77,16 +77,24 @@ const Discover = () => {
 
   const normalizeGroup = (group) => {
     // Check if mentor exists - could be mentor object, mentorId, or other variations
-    const mentorExists = group.mentor && typeof group.mentor === 'object' && Object.keys(group.mentor).length > 0;
+    const mentorExists =
+      group.mentor &&
+      typeof group.mentor === "object" &&
+      Object.keys(group.mentor).length > 0;
     const mentorIdExists = group.mentorId || group.mentor_id;
-    const mentorInfoExists = group.mentorInfo && typeof group.mentorInfo === 'object' && Object.keys(group.mentorInfo).length > 0;
-    
-    const hasMentor = Boolean(mentorExists || mentorIdExists || mentorInfoExists);
-    
+    const mentorInfoExists =
+      group.mentorInfo &&
+      typeof group.mentorInfo === "object" &&
+      Object.keys(group.mentorInfo).length > 0;
+
+    const hasMentor = Boolean(
+      mentorExists || mentorIdExists || mentorInfoExists
+    );
+
     console.log(`Group ${group.name}:`, {
       mentor: group.mentor,
       mentorId: group.mentorId,
-      hasMentor
+      hasMentor,
     }); // Debug each group
 
     return {
@@ -141,10 +149,12 @@ const Discover = () => {
 
       {/* Filter Section */}
       <Card className="shadow-sm border-gray-100">
-        <h3 className="text-gray-800 font-semibold mb-4">Smart Filters</h3>
+        <h3 className="text-gray-800 font-semibold mb-4">
+          {t("smartFilters") || "Smart Filters"}
+        </h3>
         <div className="grid md:grid-cols-3 gap-4">
           <Input
-            placeholder="Search groups, topics..."
+            placeholder={t("searchGroupsTopics") || "Search groups, topics..."}
             prefix={<SearchOutlined />}
             value={filters.query}
             onChange={(e) => setFilters({ ...filters, query: e.target.value })}
@@ -178,63 +188,65 @@ const Discover = () => {
       {!loading && (
         <div className="grid md:grid-cols-3 gap-6 mt-8">
           {filteredGroups.map((g) => (
-          <Card
-            key={g.id}
-            className="shadow-md rounded-2xl border-gray-100 hover:shadow-lg transition-all"
-            bodyStyle={{ padding: "20px" }}
-          >
-            <div className="flex justify-between items-start mb-2">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-teal-500 inline-block"></span>
-                <h3 className="font-semibold text-gray-800 text-lg">
-                  {g.name}
-                </h3>
+            <Card
+              key={g.id}
+              className="shadow-md rounded-2xl border-gray-100 hover:shadow-lg transition-all"
+              bodyStyle={{ padding: "20px" }}
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-teal-500 inline-block"></span>
+                  <h3 className="font-semibold text-gray-800 text-lg">
+                    {g.name}
+                  </h3>
+                </div>
+                {g.urgent && (
+                  <Tag color="red" className="font-semibold">
+                    Urgent
+                  </Tag>
+                )}
               </div>
-              {g.urgent && (
-                <Tag color="red" className="font-semibold">
-                  Urgent
+
+              <p className="text-gray-500 text-sm font-medium">{g.shortDesc}</p>
+              <p className="text-gray-400 text-sm mt-1">{g.detail}</p>
+
+              <div className="flex items-center gap-4 mt-3 text-gray-500 text-sm">
+                <div className="flex items-center gap-1">
+                  <UserOutlined />
+                  {g.members}
+                </div>
+                <div className="flex items-center gap-1">
+                  <ClockCircleOutlined />
+                  {g.lastActive}
+                </div>
+              </div>
+
+              <div className="mt-2">
+                <Tag color="blue" className="rounded-md text-xs">
+                  {g.major}
                 </Tag>
-              )}
-            </div>
-
-            <p className="text-gray-500 text-sm font-medium">{g.shortDesc}</p>
-            <p className="text-gray-400 text-sm mt-1">{g.detail}</p>
-
-            <div className="flex items-center gap-4 mt-3 text-gray-500 text-sm">
-              <div className="flex items-center gap-1">
-                <UserOutlined />
-                {g.members}
               </div>
-              <div className="flex items-center gap-1">
-                <ClockCircleOutlined />
-                {g.lastActive}
-              </div>
-            </div>
 
-            <div className="mt-2">
-              <Tag color="blue" className="rounded-md text-xs">
-                {g.major}
-              </Tag>
-            </div>
-
-            <div className="flex gap-3 mt-4">
-              <Button
-                className={`${!g.hasMentor ? 'flex-1' : 'w-full'} bg-gray-100 hover:bg-gray-200`}
-                onClick={() => handleViewDetails(g)}
-              >
-                View Details
-              </Button>
-              {!g.hasMentor && (
+              <div className="flex gap-3 mt-4">
                 <Button
-                  type="primary"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  className={`${
+                    !g.hasMentor ? "flex-1" : "w-full"
+                  } bg-gray-100 hover:bg-gray-200`}
+                  onClick={() => handleViewDetails(g)}
                 >
-                  Mentor Now
+                  View Details
                 </Button>
-              )}
-            </div>
-          </Card>
-        ))}
+                {!g.hasMentor && (
+                  <Button
+                    type="primary"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Mentor Now
+                  </Button>
+                )}
+              </div>
+            </Card>
+          ))}
         </div>
       )}
 

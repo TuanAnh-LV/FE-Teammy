@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "../../hook/useTranslation";
 import { Modal, Button, Tag, Divider, Tooltip, Spin, notification } from "antd";
 import {
   BookOutlined,
-  TeamOutlined,
   UserOutlined,
   ApartmentOutlined,
   CalendarOutlined,
@@ -46,6 +46,7 @@ export default function TopicDetailModal({
   topicDetails,
   topicId,
 }) {
+  const { t } = useTranslation();
   const [detailData, setDetailData] = useState(topicDetails);
   const [loading, setLoading] = useState(false);
 
@@ -66,7 +67,10 @@ export default function TopicDetailModal({
         }
       } catch (err) {
         console.error(err);
-        notification.error("Failed to load topic details");
+        notification.error({
+          message:
+            t("failedLoadTopicDetails") || "Failed to load topic details",
+        });
         // Fallback to passed data on error
         if (mounted) setDetailData(topicDetails);
       } finally {

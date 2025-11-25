@@ -1,10 +1,12 @@
 import React from "react";
+import { useTranslation } from "../../../hook/useTranslation";
 import { Upload, Button, notification } from "antd";
 import { CloudUploadOutlined, DownloadOutlined } from "@ant-design/icons";
 import * as XLSX from "xlsx";
 import { AdminService } from "../../../services/admin.service";
 
 export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
+  const { t } = useTranslation();
   const handleFile = async (file) => {
     try {
       // Call API to import file
@@ -14,24 +16,30 @@ export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
         if (Array.isArray(res.data) && res.data.length > 0) {
           setRawData(res.data);
           setCurrentStep(1);
-          notification.success("File imported successfully");
+          notification.success({
+            message: t("fileImportedSuccess") || "File imported successfully",
+          });
         } else if (res.data && (res.data.totalRows || res.data.createdCount)) {
           // API returned only a summary (server processed import). We still want
           // to show the original rows for mapping/preview, so parse the file locally.
           const parsed = await parseFile(file);
           setRawData(parsed);
           setCurrentStep(1);
-          notification.warning(
-            "API returned summary only — using local parse for preview"
-          );
+          notification.warning({
+            message:
+              t("fileParsedLocally") ||
+              "API returned summary only — using local parse for preview",
+          });
         } else {
           // Fallback: attempt to parse locally
           const parsed = await parseFile(file);
           setRawData(parsed);
           setCurrentStep(1);
-          notification.warning(
-            "File parsed locally (API returned unexpected response)"
-          );
+          notification.warning({
+            message:
+              t("fileParsedLocally") ||
+              "File parsed locally (API returned unexpected response)",
+          });
         }
       }
     } catch (err) {
@@ -40,7 +48,9 @@ export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
       const parsed = await parseFile(file);
       setRawData(parsed);
       setCurrentStep(1);
-      notification.warning("File parsed locally (API error)");
+      notification.warning({
+        message: t("fileParsedLocally") || "File parsed locally (API error)",
+      });
     }
     return false;
   };
@@ -79,7 +89,9 @@ export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
         link.click();
         link.parentNode.removeChild(link);
         window.URL.revokeObjectURL(url);
-        notification.success("Template downloaded");
+        notification.success({
+          message: t("templateDownloaded") || "Template downloaded",
+        });
       }
     } catch (err) {
       console.error(err);
@@ -98,7 +110,11 @@ export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Template");
       XLSX.writeFile(wb, "UserImportTemplate.xlsx");
-      notification.warning("Template generated locally (API error)");
+      notification.warning({
+        message:
+          t("templateGeneratedLocally") ||
+          "Template generated locally (API error)",
+      });
     }
   };
 

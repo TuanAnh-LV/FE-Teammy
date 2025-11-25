@@ -49,22 +49,18 @@ const Sidebar = ({ role, collapsed: collapsedProp, onToggle, onLogout }) => {
         mode="inline"
         selectedKeys={[location.pathname]}
         className="mt-2 flex-1"
-      >
-        {menus.map((m) => {
+        items={menus.map((m) => {
           const isActive = location.pathname === m.path;
-          return (
-            <Menu.Item
-              key={m.path}
-              icon={m.icon}
-              className={`!rounded-md ${
-                isActive ? "bg-orange-50 text-white-600" : "hover:text-white"
-              }`}
-            >
-              <Link to={m.path}>{m.label}</Link>
-            </Menu.Item>
-          );
+          return {
+            key: m.path,
+            icon: m.icon,
+            label: <Link to={m.path}>{m.label}</Link>,
+            className: `!rounded-md ${
+              isActive ? "bg-orange-50 text-white-600" : "hover:text-white"
+            }`,
+          };
         })}
-      </Menu>
+      />
 
       {/* Nút Logout cố định ở đáy */}
       <div className="absolute bottom-3 left-0 w-full flex justify-center">

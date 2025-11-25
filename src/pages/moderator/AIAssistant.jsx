@@ -15,10 +15,12 @@ import {
   UsergroupAddOutlined,
   CheckOutlined,
 } from "@ant-design/icons";
+import { useTranslation } from "../../hook/useTranslation";
 
 const { Option } = Select;
 
 export default function AIAssistantModerator() {
+  const { t } = useTranslation();
   const [mode, setMode] = useState("Identify Missing Elements");
   const [autoMerge, setAutoMerge] = useState(false);
 
@@ -60,19 +62,25 @@ export default function AIAssistantModerator() {
   ];
 
   const runAnalysis = () => {
-    notification.success("AI analysis complete!");
+    notification.success({
+      message: t("aiAnalysisComplete") || "AI analysis complete!",
+    });
   };
 
   const sendNotice = (group) => {
-    notification.info(`Notification sent to ${group}`);
+    const tmpl = t("notificationSentTo") || "Notification sent to {name}";
+    notification.info({ message: tmpl.replace("{name}", group) });
   };
 
   const autoMergeHandler = (group) => {
-    notification.success(`AI merged ${group} successfully!`);
+    const tmpl = t("aiMergedSuccess") || "AI merged {name} successfully!";
+    notification.success({ message: tmpl.replace("{name}", group) });
   };
 
   const applySuggestion = (group) => {
-    notification.success(`Applied AI suggestions for ${group}`);
+    const tmpl =
+      t("appliedAISuggestions") || "Applied AI suggestions for {name}";
+    notification.success({ message: tmpl.replace("{name}", group) });
   };
 
   return (

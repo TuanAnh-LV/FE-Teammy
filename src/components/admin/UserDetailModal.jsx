@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal, Tag, Avatar, Divider, Spin } from "antd";
+import { useTranslation } from "../../hook/useTranslation";
 import {
   MailOutlined,
   PhoneOutlined,
@@ -9,6 +10,7 @@ import {
 } from "@ant-design/icons";
 
 export default function UserDetailModal({ open, onClose, user, loading }) {
+  const { t } = useTranslation();
   if (!user) return null;
 
   const colorMap = {
@@ -72,21 +74,27 @@ export default function UserDetailModal({ open, onClose, user, loading }) {
     >
       <Spin spinning={loading}>
         <div className="bg-white p-5 rounded-xl shadow-sm space-y-2">
-          {infoRow(<MailOutlined />, "Email", user.email)}
-          {infoRow(<PhoneOutlined />, "Phone", user.phone)}
-          {infoRow(<BookOutlined />, "Major", user.major)}
+          {infoRow(<MailOutlined />, t("email") || "Email", user.email)}
+          {infoRow(<PhoneOutlined />, t("phone") || "Phone", user.phone)}
+          {infoRow(<BookOutlined />, t("major") || "Major", user.major)}
 
           {user.role === "Student" &&
-            infoRow(<IdcardOutlined />, "Student Code", user.studentCode)}
+            infoRow(
+              <IdcardOutlined />,
+              t("studentCode") || "Student Code",
+              user.studentCode
+            )}
 
           <Divider className="my-4" />
 
           <div>
             <div className="text-gray-600 text-sm font-medium mb-1">
-              Notes / Description
+              {t("notesDescription") || "Notes / Description"}
             </div>
             <div className="text-gray-700 leading-relaxed bg-gray-50 border rounded-lg p-3">
-              {user.note || "No additional information provided."}
+              {user.note ||
+                t("noAdditionalInfo") ||
+                "No additional information provided."}
             </div>
           </div>
         </div>

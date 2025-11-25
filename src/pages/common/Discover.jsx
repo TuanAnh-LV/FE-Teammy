@@ -43,7 +43,9 @@ const Discover = () => {
         if (mounted) setProjects(mapped);
       } catch (err) {
         console.error(err);
-        notification.error("Failed to load topics");
+        notification.error({
+          message: t("failedLoadTopics") || "Failed to load topics",
+        });
       } finally {
         // no-op
       }
@@ -52,7 +54,7 @@ const Discover = () => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [t]);
 
   return (
     <div className="min-h-screen bg-[#f7fafc] pt-24 pb-12">

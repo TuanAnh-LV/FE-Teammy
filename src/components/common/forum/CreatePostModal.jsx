@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "../../../hook/useTranslation";
 import {
   Modal,
   Input,
@@ -20,7 +21,29 @@ const { TextArea } = Input;
  * - defaultGroupId?: string (nếu có thể auto-fill từ membership)
  */
 const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
+  const [groupName, setGroupName] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+    const loadGroupName = async () => {
+      try {
+        if (!defaultGroupId) return;
+        const res = await import("../../../services/group.service").then((m) =>
+          m.GroupService.getGroupDetail(defaultGroupId)
+        );
+        const name = res?.data?.title || res?.data?.name || "";
+        if (mounted) setGroupName(name);
+      } catch {
+        // ignore silently
+      }
+    };
+    loadGroupName();
+    return () => {
+      mounted = false;
+    };
+  }, [defaultGroupId]);
 
   const handleSubmit = async () => {
     try {
@@ -35,7 +58,9 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
         expiresAt: expiresAt?.toISOString(),
       });
 
-      notification.success("Tạo recruitment post thành công!");
+      notification.success({
+        message: t("createRecruitPostSuccess") || "Recruitment post created",
+      });
       form.resetFields();
       closeModal();
       onCreated?.();
@@ -46,7 +71,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
 
   return (
     <Modal
-      title="Create Recruitment Post"
+      title={t("createRecruitPostTitle") || "Create Recruitment Post"}
       open={isOpen}
       onCancel={() => {
         form.resetFields();
@@ -68,51 +93,82 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           expiresAt: null, // Đặt giá trị mặc định cho expiresAt là null
         }}
       >
-        <Form.Item
-          label="Group ID"
-          name="groupId"
-          rules={[{ required: true, message: "Vui lòng nhập groupId" }]}
-        >
-          <Input placeholder="39181a00-c01e-45bd-8fd6-2bf976b6afc0" />
+        {/* Keep groupId as a hidden form field, display the group name as a disabled field */}
+        <Form.Item name="groupId" hidden>
+          <Input />
+        </Form.Item>
+
+        <Form.Item label={t("group") || "Group"} shouldUpdate>
+          <Input value={groupName || defaultGroupId || ""} disabled />
         </Form.Item>
 
         <Form.Item
-          label="Title"
+          label={t("pleaseEnterTitle") ? "Title" : "Title"}
           name="title"
-          rules={[{ required: true, message: "Vui lòng nhập title" }]}
-        >
-          <Input placeholder="VD: Tuyển FE cho project" />
-        </Form.Item>
-
-        <Form.Item
-          label="Description"
-          name="description"
-          rules={[{ required: true, message: "Vui lòng nhập description" }]}
-        >
-          <TextArea rows={4} placeholder="Mô tả yêu cầu, stack..." />
-        </Form.Item>
-
-        <Form.Item
-          label="Position Needed"
-          name="position_needed"
           rules={[
-            { required: true, message: "Vui lòng nhập vị trí cần tuyển" },
+            {
+              required: true,
+              message: t("pleaseEnterTitle") || "Please enter title",
+            },
           ]}
         >
-          <Input placeholder="VD: Git, Azure" />
+          <Input
+            placeholder={t("placeholderTitle") || "VD: Tuyển FE cho project"}
+          />
+        </Form.Item>
+
+        <Form.Item
+          label={t("pleaseEnterDescription") ? "Description" : "Description"}
+          name="description"
+          rules={[
+            {
+              required: true,
+              message:
+                t("pleaseEnterDescription") || "Please enter description",
+            },
+          ]}
+        >
+          <TextArea
+            rows={4}
+            placeholder={
+              t("placeholderDescription") || "Mô tả yêu cầu, stack..."
+            }
+          />
+        </Form.Item>
+
+        <Form.Item
+          label={
+            t("pleaseEnterPosition") ? "Position Needed" : "Position Needed"
+          }
+          name="position_needed"
+          rules={[
+            {
+              required: true,
+              message:
+                t("pleaseEnterPosition") || "Please enter the position needed",
+            },
+          ]}
+        >
+          <Input placeholder={t("placeholderSkills") || "VD: Git, Azure"} />
         </Form.Item>
 
         {/* Expires At Field */}
         <Form.Item
-          label="Expires At"
+          label={t("pleaseSelectDeadline") ? "Expires At" : "Expires At"}
           name="expiresAt"
           rules={[
-            { required: true, message: "Vui lòng chọn ngày hết hạn" },
+            {
+              required: true,
+              message: t("pleaseSelectDeadline") || "Please select deadline",
+            },
             {
               validator: (_, value) =>
                 value && value.isAfter(moment())
                   ? Promise.resolve()
-                  : Promise.reject("Ngày hết hạn phải lớn hơn ngày hiện tại!"),
+                  : Promise.reject(
+                      t("deadlineMustBeFuture") ||
+                        "Expires date must be after now!"
+                    ),
             },
           ]}
         >
@@ -133,14 +189,14 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
             }}
             className="inline-flex items-center rounded-lg px-3.5 py-2 text-xs font-bold shadow-sm hover:!border-orange-400 hover:!text-orange-400 transition-all focus:outline-none focus:ring-4 focus:ring-blue-100"
           >
-            Cancel
+            {t("cancel") || "Cancel"}
           </Button>
           <Button
             type="primary"
             htmlType="submit"
             className="inline-flex items-center rounded-lg !bg-[#FF7A00] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:!opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-60"
           >
-            Publish Post
+            {t("publishPost") || "Publish Post"}
           </Button>
         </div>
       </Form>
