@@ -1,20 +1,31 @@
-import React, { useEffect, useRef, useState } from "react";
+﻿import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
 import { useAuth } from "../../context/AuthContext";
 import { GroupService } from "../../services/group.service";
 import { BoardService } from "../../services/board.service";
 import InfoCard from "../../components/common/my-group/InfoCard";
-import DescriptionCard from "../../components/common/my-group/DescriptionCard";
-import MentorCard from "../../components/common/my-group/MentorCard";
-import RecentActivityCard from "../../components/common/my-group/RecentActivityCard";
-import MembersList from "../../components/common/my-group/MembersList";
 import AddMemberModal from "../../components/common/my-group/AddMemberModal";
 import EditGroupModal from "../../components/common/my-group/EditGroupModal";
 import LoadingState from "../../components/common/LoadingState";
-import { notification, Modal } from "antd";
+import { notification } from "antd";
 import { calculateProgressFromTasks } from "../../utils/group.utils";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { Plus } from "lucide-react";
+import { Modal, Form } from "antd";
+import Column from "../../components/common/kanban/Column";
+import TaskModal from "../../components/common/kanban/TaskModal";
+import useKanbanBoard from "../../hook/useKanbanBoard";
+import TabSwitcher from "../../components/common/my-group/TabSwitcher";
+import OverviewSection from "../../components/common/my-group/OverviewSection";
+import MembersPanel from "../../components/common/my-group/MembersPanel";
+import FilesPanel from "../../components/common/my-group/FilesPanel";
 
 export default function MyGroup() {
   const { id } = useParams();
@@ -38,43 +49,88 @@ export default function MyGroup() {
   });
   const [editErrors, setEditErrors] = useState({});
   const loadedGroupIdRef = useRef(null);
+  const [activeTab, setActiveTab] = useState("overview");
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    })
+  );
 
+  const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
+  const [columnForm] = Form.useForm();
+
+  // ---------------------------
+  // Load Group & Board Data
+  // ---------------------------
   useEffect(() => {
     if (!id) return;
     if (loadedGroupIdRef.current === id) return;
+
     loadedGroupIdRef.current = id;
+
     const loadData = async () => {
       try {
         setLoading(true);
+
         const [detailRes, membersRes, boardRes] = await Promise.allSettled([
           GroupService.getGroupDetail(id),
           GroupService.getListMembers(id),
           BoardService.getBoard(id),
         ]);
 
+        // Group detail
         const d = detailRes.status === "fulfilled" ? detailRes.value.data : {};
+
         const semesterInfo = d.semester || {};
         const rawStartDate = semesterInfo.startDate || d.startDate;
         const rawEndDate = semesterInfo.endDate || d.endDate;
+
         const season =
           typeof semesterInfo.season === "string"
             ? semesterInfo.season.trim()
             : semesterInfo.season
-              ? String(semesterInfo.season)
-              : "";
+            ? String(semesterInfo.season)
+            : "";
+
         const formattedSeason = season
           ? season.charAt(0).toUpperCase() + season.slice(1)
           : "";
-        const semesterLabel = [formattedSeason, semesterInfo.year].filter(Boolean).join(" ");
 
+        const semesterLabel = [formattedSeason, semesterInfo.year]
+          .filter(Boolean)
+          .join(" ");
+
+        // Members
         const members =
-          membersRes.status === "fulfilled" && Array.isArray(membersRes.value?.data)
+          membersRes.status === "fulfilled" &&
+          Array.isArray(membersRes.value?.data)
             ? membersRes.value.data
             : [];
+
         const normalizedMembers = members.map((m) => {
           const email = m.email || "";
           const normalizedEmail = email.toLowerCase();
           const currentEmail = (userInfo?.email || "").toLowerCase();
+
+          const avatarFromApi =
+            m.avatarUrl ||
+            m.avatarURL ||
+            m.avatar_url ||
+            m.avatar ||
+            m.imageUrl ||
+            m.imageURL ||
+            m.image_url ||
+            m.photoURL ||
+            m.photoUrl ||
+            m.photo_url ||
+            m.profileImage ||
+            m.user?.avatarUrl ||
+            m.user?.avatar ||
+            m.user?.photoURL ||
+            m.user?.photoUrl ||
+            m.user?.imageUrl ||
+            m.user?.profileImage ||
+            "";
 
           const memberId =
             m.id || m.memberId || m.userId || m.userID || m.accountId || "";
@@ -86,11 +142,10 @@ export default function MyGroup() {
             role: m.role || m.status || "",
             joinedAt: m.joinedAt,
             avatarUrl:
-              m.avatarUrl ||
-              m.avatarURL ||
-              m.photoURL ||
-              m.photoUrl ||
-              (currentEmail && normalizedEmail === currentEmail ? userInfo?.photoURL : ""),
+              avatarFromApi ||
+              (currentEmail && normalizedEmail === currentEmail
+                ? userInfo?.photoURL || ""
+                : ""),
           };
         });
 
@@ -102,7 +157,9 @@ export default function MyGroup() {
             (member.role || "").toLowerCase() === "leader"
         );
 
-        const boardData = boardRes.status === "fulfilled" ? boardRes.value?.data : null;
+        const boardData =
+          boardRes.status === "fulfilled" ? boardRes.value?.data : null;
+
         const calculatedProgress = calculateProgressFromTasks(boardData);
 
         setGroup({
@@ -131,10 +188,7 @@ export default function MyGroup() {
             "",
           topicId: d.topicId || d.topic?.id || "",
           topicName:
-            d.topicName ||
-            d.topic?.title ||
-            d.topic?.name ||
-            "",
+            d.topicName || d.topic?.title || d.topic?.name || "",
           canEdit: detailRole === "leader" || leaderFromMembers,
         });
 
@@ -146,6 +200,7 @@ export default function MyGroup() {
         setLoading(false);
       }
     };
+
     loadData();
   }, [id, userInfo]);
 
@@ -162,8 +217,6 @@ export default function MyGroup() {
   }, [group, groupMembers.length]);
 
   const handleAddMember = (user) => {
-    // Just close modal, don't add to state
-    // Members will only show after they accept the invitation
     setShowModal(false);
   };
 
@@ -189,31 +242,38 @@ export default function MyGroup() {
   const handleSubmitEdit = async (e) => {
     e?.preventDefault();
     if (!group || !validateEditForm()) return;
+
     try {
       setEditSubmitting(true);
+
       const payload = {
         name: editForm.name.trim(),
         description: editForm.description.trim(),
         maxMembers: Number(editForm.maxMembers),
       };
+
       if (editForm.majorId.trim()) payload.majorId = editForm.majorId.trim();
       if (editForm.topicId.trim()) payload.topicId = editForm.topicId.trim();
+
       await GroupService.updateGroup(group.id, payload);
+
       notification.success({
         message: t("updateSuccess") || "Group updated successfully.",
       });
+
       setGroup((prev) =>
         prev
           ? {
-            ...prev,
-            title: payload.name,
-            description: payload.description,
-            maxMembers: payload.maxMembers,
-            majorId: payload.majorId ?? prev.majorId,
-            topicId: payload.topicId ?? prev.topicId,
-          }
+              ...prev,
+              title: payload.name,
+              description: payload.description,
+              maxMembers: payload.maxMembers,
+              majorId: payload.majorId ?? prev.majorId,
+              topicId: payload.topicId ?? prev.topicId,
+            }
           : prev
       );
+
       setEditOpen(false);
     } catch (err) {
       console.error(err);
@@ -225,6 +285,139 @@ export default function MyGroup() {
     }
   };
 
+  // Kanban Logic
+  const {
+    filteredColumns,
+    columnMeta,
+    groupMembers: kanbanMembers,
+    selectedTask,
+    setSelectedTask,
+    handleDragOver,
+    handleDragEnd,
+    createColumn,
+    createTask,
+    updateTaskFields,
+    updateTaskAssignees,
+    deleteTask,
+    deleteColumn,
+    loading: kanbanLoading,
+    error: kanbanError,
+    refetchBoard,
+    loadTaskComments,
+    addTaskComment,
+    updateTaskComment,
+    deleteTaskComment,
+  } = useKanbanBoard(id);
+
+  const tasks =
+    board?.columns?.flatMap((col) => col.tasks || [])?.filter(Boolean) || [];
+
+  const recentActivity = tasks
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt || 0) -
+        new Date(a.updatedAt || a.createdAt || 0)
+    )
+    .slice(0, 4);
+
+  const descriptionText = (group?.description || "").trim();
+  const mentor = group?.mentor || null;
+
+  const fileItems = tasks
+    .slice(0, 3)
+    .map((task, idx) => ({
+      name: task.title || `File ${idx + 1}`,
+      owner: task.assignee || task.owner || "Team",
+      size: task.size || "N/A",
+      date:
+        (task.updatedAt && new Date(task.updatedAt)) ||
+        (task.createdAt && new Date(task.createdAt)) ||
+        null,
+    }))
+    .filter(Boolean);
+
+  const statusMeta = {
+    todo: { label: "To Do", dot: "bg-gray-300" },
+    to_do: { label: "To Do", dot: "bg-gray-300" },
+    inprogress: { label: "In Progress", dot: "bg-amber-400" },
+    in_progress: { label: "In Progress", dot: "bg-amber-400" },
+    doing: { label: "Doing", dot: "bg-amber-400" },
+    done: { label: "Done", dot: "bg-green-500" },
+    completed: { label: "Done", dot: "bg-green-500" },
+    review: { label: "Review", dot: "bg-blue-400" },
+  };
+
+  const findAssignees = (task) => {
+    const list = task?.assignees || task?.assignee || [];
+    if (Array.isArray(list)) return list;
+    if (typeof list === "string" || typeof list === "object") return [list];
+    return [];
+  };
+
+  const renderAssignee = (assignee) => {
+    const name =
+      (assignee?.displayName ||
+        assignee?.name ||
+        assignee?.email ||
+        assignee) ?? "";
+    const initials = String(name || "U")
+      .trim()
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+
+    return { name, initials };
+  };
+
+  // Contribution statistics
+  const contributionStats = (() => {
+    const total = tasks.length || 1;
+    return groupMembers.map((m) => {
+      const emailLower = (m.email || "").toLowerCase();
+      const matches = tasks.filter((task) =>
+        findAssignees(task).some((assignee) => {
+          const rendered = renderAssignee(assignee);
+          return (rendered.name || "").toLowerCase() === emailLower;
+        })
+      );
+      const completed = matches.filter((task) => {
+        const status = (task.status || "").toLowerCase();
+        return status === "done" || status === "completed";
+      }).length;
+
+      const percent = Math.round((matches.length / total) * 100);
+
+      return {
+        ...m,
+        taskCount: matches.length,
+        completed,
+        contribution: percent,
+      };
+    });
+  })();
+
+  const handleCreateColumn = () => {
+    columnForm.validateFields().then((values) => {
+      const payload = {
+        columnName: values.columnName,
+        position: Number(values.position) || 0,
+      };
+      createColumn(payload);
+      setIsColumnModalOpen(false);
+      columnForm.resetFields();
+    });
+  };
+
+  const hasKanbanData =
+    filteredColumns && Object.keys(filteredColumns).length > 0;
+
+  const normalizeTitle = (value = "") =>
+    value.toLowerCase().replace(/\s+/g, "_");
+
   if (loading) {
     return (
       <LoadingState
@@ -234,6 +427,9 @@ export default function MyGroup() {
     );
   }
 
+  // ---------------------------
+  // PAGE RENDER
+  // ---------------------------
   return (
     <div className="relative bg-[#f7fafc]">
       <div className="relative z-10 min-h-screen flex flex-col items-center pt-4 xl:pt-8 pb-24">
@@ -244,132 +440,211 @@ export default function MyGroup() {
               memberCount={groupMembers.length}
               onBack={() => navigate(-1)}
               onSelectTopic={
-                group.canEdit ? () => navigate('/discover') : undefined
+                group.canEdit ? () => navigate("/discover") : undefined
               }
               onEdit={group.canEdit ? () => setEditOpen(true) : null}
             />
           )}
 
-          <div className="mx-auto flex w-full max-w-[79rem] flex-col gap-6 lg:flex-row">
-            <div className="flex-1 space-y-6 pt-10">
-              {group && (
-                <>
-                  <DescriptionCard description={group.description} />
-                  <RecentActivityCard 
-                    items={board?.columns?.flatMap(col => col.tasks || []) || []}
-                  />
-                </>
-              )}
-            </div>
-            <div className="w-full max-w-sm space-y-6 relative pt-10">
-              {group && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (group.status !== 'active') {
-                      notification.warning({
-                        message: t("workspaceNotAvailable") || "Workspace Not Available",
-                        description: group.status === 'recruiting' 
-                          ? t("groupStillRecruiting") || "This group is still recruiting members. Workspace will be available once the group is active."
-                          : t("groupNotActive") || "This group is not active. Please contact your mentor or admin.",
-                      });
-                      return;
-                    }
-                    navigate(`/workspace?groupId=${group.id || id}`);
-                  }}
-                  className="absolute -top-3 right-0 z-10 inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500 px-4 py-2 text-sm font-semibold text-blue-600 bg-white hover:bg-blue-50 shadow-sm transition cursor-pointer"
-                >
-                  {t("openWorkspace") || "Open Workspace"}
-                </button>
-              )}
-              <MembersList
-                members={groupMembers}
-                title={t("teamMembers") || "Team Members"}
-                inviteLabel={t("inviteMembers") || "Invite Members"}
-                emptyLabel={t("noMembersYet") || "No members yet"}
-                onInvite={
-                  group?.canEdit ? () => setShowModal(true) : undefined
-                }
-                canEdit={group?.canEdit}
-                currentUserEmail={userInfo?.email}
-                onKick={async (member) => {
-                  if (!member || !member.id) {
-                    notification.error({ message: t("error") || "Invalid member" });
-                    return;
-                  }
-                  if (!group?.id) {
-                    notification.error({ message: t("error") || "Group id missing" });
-                    return;
-                  }
+          <div className="mx-auto w-full max-w-7xl px-2 sm:px-8">
+            <TabSwitcher
+              activeTab={activeTab}
+              onChange={setActiveTab}
+              tabs={[
+                { key: "overview", label: t("overview") || "Overview" },
+                { key: "members", label: t("teamMembers") || "Members" },
+                { key: "workspace", label: t("workspace") || "Workspace" },
+                { key: "files", label: t("files") || "Files" },
+              ]}
+            />
 
-                  Modal.confirm({
-                    title: t("confirmKick") || "Remove Member",
-                    content: t("confirmKickMessage") || `Are you sure you want to remove ${member.name || member.email} from this group?`,
-                    okText: t("remove") || "Remove",
-                    cancelText: t("cancel") || "Cancel",
-                    okButtonProps: { danger: true },
-                    onOk: async () => {
-                      // Check if group is active before kicking member
-                      if (group.statusText?.toLowerCase() === "active" || group.status?.toLowerCase() === "active") {
-                        notification.error({
-                          message: t("cannotKickFromActiveGroup") || "Cannot remove member from active group",
-                          description: t("cannotKickFromActiveGroupDesc") || "You cannot remove members from a group that is currently active. Please wait until the group status changes or contact your mentor.",
-                          duration: 5,
-                        });
-                        return;
-                      }
-
-                      try {
-                        await GroupService.kickMember(group.id, member.id);
-                        setGroupMembers((prev) => prev.filter((m) => m.id !== member.id));
-                        notification.success({ message: t("removeSuccess") || "Member removed successfully" });
-                      } catch (err) {
-                        console.error(err);
-                        notification.error({ message: t("error") || "Failed to remove member" });
-                      }
-                    },
-                  });
-                }}
-              />
-              {group && (
-                <MentorCard 
-                  name={group.mentor?.displayName || t("noMentorAssigned") || "No mentor assigned"}
-                  email={group.mentor?.email || ""}
-                  label={t("projectMentor")} 
+            {/* OVERVIEW */}
+            {activeTab === "overview" && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <OverviewSection
+                  descriptionText={descriptionText}
+                  recentActivity={recentActivity}
+                  statusMeta={statusMeta}
+                  findAssignees={findAssignees}
+                  renderAssignee={renderAssignee}
+                  t={t}
                 />
-              )}
-            </div>
+                <MembersPanel
+                  groupMembers={groupMembers}
+                  mentor={mentor}
+                  group={group}
+                  onInvite={() => setShowModal(true)}
+                  t={t}
+                  showStats={false}
+                />
+              </div>
+            )}
+
+            {/* MEMBERS */}
+            {activeTab === "members" && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-3">
+                  <MembersPanel
+                    groupMembers={groupMembers}
+                    mentor={mentor}
+                    group={group}
+                    onInvite={() => setShowModal(true)}
+                    t={t}
+                    showStats
+                    contributionStats={contributionStats}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* WORKSPACE */}
+            {activeTab === "workspace" && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      {t("workspace") || "Workspace"}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {t("workspaceIntro") ||
+                        "Drag tasks across columns, assign owners, and keep momentum."}
+                    </p>
+                  </div>
+                  <button
+                    className="flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
+                    onClick={() => setIsColumnModalOpen(true)}
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t("newColumn") || "New Column"}
+                  </button>
+                </div>
+
+                {kanbanLoading ? (
+                  <div className="text-sm text-gray-500">
+                    {t("loading") || "Loading..."}
+                  </div>
+                ) : kanbanError ? (
+                  <div className="text-sm text-red-500">
+                    {kanbanError || t("error") || "Something went wrong"}
+                  </div>
+                ) : (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragOver={handleDragOver}
+                    onDragEnd={handleDragEnd}
+                  >
+                    {hasKanbanData ? (
+                      <div className="mt-4 flex gap-6 overflow-x-auto pb-2">
+                        {Object.entries(columnMeta || {})
+                          .sort(
+                            (a, b) =>
+                              (a[1]?.position || 0) -
+                              (b[1]?.position || 0)
+                          )
+                          .map(([colId, meta]) => {
+                            const normalizedTitleValue = normalizeTitle(
+                              meta?.title || colId
+                            );
+                            const statusForColumn =
+                              normalizedTitleValue === "to_do"
+                                ? "todo"
+                                : normalizedTitleValue;
+
+                            const allowQuickCreate = statusForColumn === "todo";
+
+                            return (
+                              <Column
+                                key={colId}
+                                id={colId}
+                                meta={meta}
+                                tasks={filteredColumns[colId] || []}
+                                columnMeta={columnMeta}
+                                onOpen={setSelectedTask}
+                                onCreate={
+                                  allowQuickCreate
+                                    ? (quickPayload) => {
+                                        createTask({
+                                          columnId: colId,
+                                          title:
+                                            quickPayload?.title || "New Task",
+                                          description: "",
+                                          priority: "medium",
+                                          status: statusForColumn,
+                                          dueDate: null,
+                                        });
+                                      }
+                                    : undefined
+                                }
+                                onDelete={() => {
+                                  Modal.confirm({
+                                    title:
+                                      t("deleteColumn") || "Delete Column",
+                                    content:
+                                      t("deleteColumnConfirm") ||
+                                      `Delete column "${
+                                        columnMeta[colId]?.title || colId
+                                      }"?`,
+                                    okText: t("ok") || "OK",
+                                    cancelText: t("cancel") || "Cancel",
+                                    onOk: () => deleteColumn(colId),
+                                  });
+                                }}
+                              />
+                            );
+                          })}
+                      </div>
+                    ) : (
+                      <div className="mt-4 text-gray-500">
+                        {t("noBoardData") || "No board data available."}
+                      </div>
+                    )}
+                  </DndContext>
+                )}
+              </div>
+            )}
+
+            {/* FILES */}
+            {activeTab === "files" && (
+              <FilesPanel fileItems={fileItems} t={t} />
+            )}
           </div>
         </div>
-
-        <AddMemberModal
-          open={showModal}
-          onClose={() => setShowModal(false)}
-          onAdd={handleAddMember}
-          t={t}
-          groupInfo={group}
-        />
-        <EditGroupModal
-          t={t}
-          open={editOpen}
-          submitting={editSubmitting}
-          form={editForm}
-          errors={editErrors}
-          memberCount={groupMembers.length}
-          onClose={() => {
-            if (!editSubmitting) {
-              setEditOpen(false);
-              setEditErrors({});
-            }
-          }}
-          onChange={handleEditChange}
-          onSubmit={handleSubmitEdit}
-        />
       </div>
+
+      {/* ---------------------
+           MODALS
+      ---------------------- */}
+      <AddMemberModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        onAdd={handleAddMember}
+        t={t}
+      />
+
+      <EditGroupModal
+        open={editOpen}
+        submitting={editSubmitting}
+        formData={editForm}
+        errors={editErrors}
+        onChange={handleEditChange}
+        onSubmit={handleSubmitEdit}
+        onClose={() => setEditOpen(false)}
+      />
+
+      <TaskModal
+        task={selectedTask}
+        members={kanbanMembers}
+        updateTaskFields={updateTaskFields}
+        updateTaskAssignees={updateTaskAssignees}
+        deleteTask={deleteTask}
+        loadComments={loadTaskComments}
+        addComment={addTaskComment}
+        updateComment={updateTaskComment}
+        deleteComment={deleteTaskComment}
+        onClose={() => setSelectedTask(null)}
+      />
+
     </div>
   );
 }
-
-
-
-
