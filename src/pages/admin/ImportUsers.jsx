@@ -5,6 +5,7 @@ import {
   SwapOutlined,
   EyeOutlined,
   CheckCircleOutlined,
+  ArrowLeftOutlined,
 } from "@ant-design/icons";
 
 import ImportStep1Upload from "../../components/admin/import/ImportStep1Upload";
@@ -12,11 +13,15 @@ import ImportStep2Mapping from "../../components/admin/import/ImportStep2Mapping
 import ImportStep3Preview from "../../components/admin/import/ImportStep3Preview";
 import ImportStep4Result from "../../components/admin/import/ImportStep4Result";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "../../hook/useTranslation";
 const ImportUsers = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [rawData, setRawData] = useState([]);
   const [mappedUsers, setMappedUsers] = useState([]);
   const [columnMap, setColumnMap] = useState({});
+  const [validationResult, setValidationResult] = useState(null);
+  const [originalFile, setOriginalFile] = useState(null);
+  const { t } = useTranslation();
 
   // Wrap setMappedUsers in useCallback to provide stable reference
   const handleSetMappedUsers = useCallback((users) => {
@@ -34,6 +39,7 @@ const ImportUsers = () => {
           <ImportStep1Upload
             setRawData={setRawData}
             setCurrentStep={setCurrentStep}
+            setOriginalFile={setOriginalFile}
           />
         ),
       },
@@ -45,6 +51,7 @@ const ImportUsers = () => {
             rawData={rawData}
             setColumnMap={setColumnMap}
             setCurrentStep={setCurrentStep}
+            setValidationResult={setValidationResult}
           />
         ),
       },
@@ -57,6 +64,8 @@ const ImportUsers = () => {
             columnMap={columnMap}
             setMappedUsers={handleSetMappedUsers}
             setCurrentStep={setCurrentStep}
+            validationResult={validationResult}
+            originalFile={originalFile}
           />
         ),
       },
@@ -71,14 +80,31 @@ const ImportUsers = () => {
         ),
       },
     ],
-    [rawData, columnMap, mappedUsers, handleSetMappedUsers]
+    [
+      rawData,
+      columnMap,
+      mappedUsers,
+      handleSetMappedUsers,
+      validationResult,
+      originalFile,
+    ]
   );
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Import Users</h1>
-        <Button onClick={() => navigate("/admin/users")}>Back to Users</Button>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          {t("importUsers") || "Import Users"}
+        </h1>
+
+        <Button
+          type="default"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/moderator/topics")}
+          className="mt-2 sm:mt-0 !border-gray-300 hover:!border-orange-400 hover:!text-orange-500"
+        >
+          {t("backToUsers") || "Back to Users"}
+        </Button>
       </div>
 
       <Steps

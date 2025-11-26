@@ -1,13 +1,18 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Select, Button, Row, Col } from "antd";
+import { Select, Button, Row, Col, notification } from "antd";
 import { CheckCircleFilled } from "@ant-design/icons";
+import { TopicService } from "../../../services/topic.service";
+import { useTranslation } from "../../../hook/useTranslation";
 
 export default function ImportStep2MappingTopic({
   rawData,
   setColumnMap,
   setCurrentStep,
+  setValidationResult,
 }) {
+  const { t } = useTranslation();
   const [mapping, setMapping] = useState({});
+  const [validating, setValidating] = useState(false);
   const firstRow = useMemo(() => rawData[0] || {}, [rawData]);
   const columns = useMemo(() => Object.keys(firstRow), [firstRow]);
 
@@ -19,21 +24,52 @@ export default function ImportStep2MappingTopic({
       if (c.includes("description") || c.includes("desc"))
         auto.description = col;
       if (c.includes("major")) auto.majorName = col;
-      if (
-        c.includes("createdby") ||
-        c.includes("creator") ||
-        c.includes("created_by")
-      )
-        auto.createdByName = col;
+      if (c.includes("semester")) auto.semesterCode = col;
       if (c.includes("status")) auto.status = col;
-      if (c.includes("mentor") || c.includes("mentors")) auto.mentorName = col;
+      if (c.includes("mentor") && c.includes("email")) auto.mentorEmails = col;
     });
     setMapping(auto);
   }, [columns]);
 
-  const handleContinue = () => {
-    setColumnMap(mapping);
-    setCurrentStep(2);
+  const handleContinue = async () => {
+    try {
+      setValidating(true);
+      setColumnMap(mapping);
+
+      // Map raw data theo column mapping
+      const mappedData = rawData.map((row) => ({
+        title: row[mapping.title] || "",
+        description: row[mapping.description] || "",
+        majorName: row[mapping.majorName] || "",
+        semesterCode: row[mapping.semesterCode] || "",
+        status: row[mapping.status] || "open",
+        mentorEmails: row[mapping.mentorEmails]
+          ? [row[mapping.mentorEmails]]
+          : [],
+      }));
+
+      // Gọi API validate
+      const res = await TopicService.validateImportTopics(mappedData, true);
+
+      if (res?.data) {
+        setValidationResult(res.data);
+        setCurrentStep(2);
+        notification.success({
+          message: t("validationComplete") || "Validation Complete",
+          description: `${res.data.summary?.validRows || 0}/${
+            res.data.summary?.totalRows || 0
+          } valid rows`,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      notification.error({
+        message: t("validationFailed") || "Validation Failed",
+        description: err?.response?.data?.message || t("pleaseTryAgain"),
+      });
+    } finally {
+      setValidating(false);
+    }
   };
 
   return (
@@ -52,14 +88,20 @@ export default function ImportStep2MappingTopic({
           "title",
           "description",
           "majorName",
-          "createdByName",
+          "semesterCode",
           "status",
-          "mentorName",
+          "mentorEmails",
         ].map((field) => (
           <Col span={12} key={field}>
             <div className="flex items-center justify-between bg-gray-50 border rounded-lg px-4 py-3 hover:border-blue-400 transition-all">
               <span className="font-medium text-gray-700 capitalize">
-                {field}
+                {field === "majorName"
+                  ? "Major Name"
+                  : field === "semesterCode"
+                  ? "Semester Code"
+                  : field === "mentorEmails"
+                  ? "Mentor Emails"
+                  : field}
               </span>
               <Select
                 value={mapping[field]}
@@ -91,10 +133,14 @@ export default function ImportStep2MappingTopic({
         <Button
           type="primary"
           size="large"
+          loading={validating}
+          disabled={validating || !mapping.title}
           className="!bg-[#FF7A00] !text-white !border-none !rounded-md !px-6 !py-2 hover:!opacity-90"
           onClick={handleContinue}
         >
-          Continue to Preview
+          {validating
+            ? t("validating") || "Validating..."
+            : t("continueToPreview") || "Continue to Preview"}
         </Button>
       </div>
     </div>

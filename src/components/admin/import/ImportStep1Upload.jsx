@@ -5,51 +5,28 @@ import { CloudUploadOutlined, DownloadOutlined } from "@ant-design/icons";
 import * as XLSX from "xlsx";
 import { AdminService } from "../../../services/admin.service";
 
-export default function ImportStep1Upload({ setRawData, setCurrentStep }) {
+export default function ImportStep1Upload({
+  setRawData,
+  setCurrentStep,
+  setOriginalFile,
+}) {
   const { t } = useTranslation();
   const handleFile = async (file) => {
     try {
-      // Call API to import file
-      const res = await AdminService.importUsers(file, true);
-      if (res?.data) {
-        // If API returns full parsed rows (array), use it
-        if (Array.isArray(res.data) && res.data.length > 0) {
-          setRawData(res.data);
-          setCurrentStep(1);
-          notification.success({
-            message: t("fileImportedSuccess") || "File imported successfully",
-          });
-        } else if (res.data && (res.data.totalRows || res.data.createdCount)) {
-          // API returned only a summary (server processed import). We still want
-          // to show the original rows for mapping/preview, so parse the file locally.
-          const parsed = await parseFile(file);
-          setRawData(parsed);
-          setCurrentStep(1);
-          notification.warning({
-            message:
-              t("fileParsedLocally") ||
-              "API returned summary only — using local parse for preview",
-          });
-        } else {
-          // Fallback: attempt to parse locally
-          const parsed = await parseFile(file);
-          setRawData(parsed);
-          setCurrentStep(1);
-          notification.warning({
-            message:
-              t("fileParsedLocally") ||
-              "File parsed locally (API returned unexpected response)",
-          });
-        }
-      }
-    } catch (err) {
-      console.error(err);
-      // Fallback: parse file locally if API fails
+      // Parse file locally (không gọi API import)
       const parsed = await parseFile(file);
       setRawData(parsed);
+      setOriginalFile(file); // Lưu file gốc để dùng cho import API
       setCurrentStep(1);
-      notification.warning({
-        message: t("fileParsedLocally") || "File parsed locally (API error)",
+      notification.success({
+        message: t("fileUploadedSuccess") || "File uploaded successfully",
+        description: `${parsed.length} rows found`,
+      });
+    } catch (err) {
+      console.error(err);
+      notification.error({
+        message: t("fileUploadFailed") || "Failed to upload file",
+        description: err.message || "Please try again",
       });
     }
     return false;

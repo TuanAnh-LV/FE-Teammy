@@ -207,16 +207,18 @@ const AuditLogs = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="inline-block text-4xl font-extrabold">System Logs</h1>
+          <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
+            System Logs
+          </h1>
         </div>
 
         <Button
           icon={<UploadOutlined />}
           className="!border-gray-300 hover:!border-orange-400  hover:!text-orange-400 transition-all !py-5"
         >
-          Export CSV
+          <span className="hidden sm:inline">Export CSV</span>
         </Button>
       </div>
 
@@ -276,7 +278,7 @@ const AuditLogs = () => {
           }}
           bordered
           className="rounded-lg overflow-hidden"
-          scroll={{ x: true }}
+          scroll={{ x: "max-content" }}
         />
       </Card>
     </div>

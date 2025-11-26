@@ -6,45 +6,28 @@ import * as XLSX from "xlsx";
 import { TopicService } from "../../../services/topic.service";
 import { downloadBlob } from "../../../utils/download";
 
-export default function ImportStep1UploadTopic({ setRawData, setCurrentStep }) {
+export default function ImportStep1UploadTopic({
+  setRawData,
+  setCurrentStep,
+  setOriginalFile,
+}) {
   const { t } = useTranslation();
   const handleFile = async (file) => {
     try {
-      const res = await TopicService.importTopics(file, true);
-      if (res?.data) {
-        if (Array.isArray(res.data) && res.data.length > 0) {
-          setRawData(res.data);
-          setCurrentStep(1);
-          notification.success({
-            message: t("fileImportedSuccess") || "File imported successfully",
-          });
-        } else if (res.data && (res.data.totalRows || res.data.createdCount)) {
-          const parsed = await parseFile(file);
-          setRawData(parsed);
-          setCurrentStep(1);
-          notification.warning({
-            message:
-              t("fileParsedLocally") ||
-              "API returned summary only — using local parse for preview",
-          });
-        } else {
-          const parsed = await parseFile(file);
-          setRawData(parsed);
-          setCurrentStep(1);
-          notification.warning({
-            message:
-              t("fileParsedLocally") ||
-              "File parsed locally (API returned unexpected response)",
-          });
-        }
-      }
-    } catch (err) {
-      console.error(err);
+      // Parse file locally (không gọi API import)
       const parsed = await parseFile(file);
       setRawData(parsed);
+      setOriginalFile(file); // Lưu file gốc để dùng cho import API
       setCurrentStep(1);
-      notification.warning({
-        message: t("fileParsedLocally") || "File parsed locally (API error)",
+      notification.success({
+        message: t("fileUploadedSuccess") || "File uploaded successfully",
+        description: `${parsed.length} rows found`,
+      });
+    } catch (err) {
+      console.error(err);
+      notification.error({
+        message: t("fileUploadFailed") || "Failed to upload file",
+        description: err.message || "Please try again",
       });
     }
     return false;
@@ -86,11 +69,12 @@ export default function ImportStep1UploadTopic({ setRawData, setCurrentStep }) {
       console.error(err);
       const template = [
         {
-          title: "AI Capstone",
-          description: "Build an AI assistant",
-          majorName: "Software Engineering",
-          createdByName: "Alice Nguyen",
+          title: "AI Tutor",
+          description: "LLM-powered tutor",
+          semesterCode: "2025A",
+          majorCode: "SE",
           status: "open",
+          mentorEmails: "mentor1@example.com",
         },
       ];
       const ws = XLSX.utils.json_to_sheet(template);

@@ -11,6 +11,7 @@ export const API = {
         DETAIL_USER: (id) => `/users/admin/${id}`,
         BAN_USER: (id) => `/users/admin/${id}`,
         IMPORT_USERS: "/users/import",
+        VALIDATE_IMPORT: "/users/import/validate",
         EXPORT_USERS: "/users/import/template",
         UPDATE_USER: (id) => `/users/admin/${id}`,
     },
@@ -57,6 +58,7 @@ export const API = {
         DETAIL_TOPIC: (id) => `/topics/${id}`,
         EXPORT_TOPICS: "/topics/template",
         IMPORT_TOPICS: "/topics/import",
+        VALIDATE_IMPORT: "/topics/import/validate",
 
     },
     MAJORS: {

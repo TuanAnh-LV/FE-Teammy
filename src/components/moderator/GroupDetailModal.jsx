@@ -23,7 +23,7 @@ export default function GroupDetailModal({ open, onClose, group }) {
       INACTIVE: "default",
     }[groupStatus] || "default";
 
-  const topic = group.topic.title || "Not Assigned";
+  const topic = group.topic?.title || "Not Assigned";
   const majorName = group.major?.majorName || "";
 
   const mentor = group.mentor || null;

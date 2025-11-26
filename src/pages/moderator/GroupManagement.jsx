@@ -100,7 +100,7 @@ export default function GroupManagement() {
 
   const columns = [
     {
-      title: "Group Name",
+      title: t("groupName") || "Group Name",
       dataIndex: "groupName",
       key: "groupName",
       render: (text) => (
@@ -110,7 +110,7 @@ export default function GroupManagement() {
       ),
     },
     {
-      title: "Topic",
+      title: t("topics") || "Topic",
       dataIndex: "topic",
       key: "topic",
       render: (text) =>
@@ -121,7 +121,7 @@ export default function GroupManagement() {
         ),
     },
     {
-      title: "Mentor",
+      title: t("mentor") || "Mentor",
       dataIndex: "mentor",
       key: "mentor",
       render: (text) =>
@@ -132,7 +132,7 @@ export default function GroupManagement() {
         ),
     },
     {
-      title: "Members",
+      title: t("members") || "Members",
       key: "members",
       align: "center",
       render: (_, r) => {
@@ -141,9 +141,9 @@ export default function GroupManagement() {
         return <Tag color={full ? "green" : "blue"}>{text}</Tag>;
       },
     },
-    { title: "Major", dataIndex: "major", key: "major" },
+    { title: t("major") || "Major", dataIndex: "major", key: "major" },
     {
-      title: "Status",
+      title: t("status") || "Status",
       dataIndex: "status",
       key: "status",
       render: (status) => {
@@ -163,7 +163,7 @@ export default function GroupManagement() {
       },
     },
     {
-      title: "Actions",
+      title: t("actions") || "Actions",
       key: "actions",
       render: (_, record) => {
         const noTopic = record.topic === "Not Assigned";
@@ -193,7 +193,11 @@ export default function GroupManagement() {
             </Tooltip>
 
             <Tooltip
-              title={record.isFull ? "Reopen recruiting" : "Mark as Full"}
+              title={
+                record.isFull
+                  ? t("reopenRecruiting") || "Reopen recruiting"
+                  : t("markAsFull") || "Mark as Full"
+              }
             >
               <Button
                 type="text"
@@ -205,7 +209,11 @@ export default function GroupManagement() {
             </Tooltip>
 
             <Tooltip
-              title={noTopic ? "Send topic reminder" : "Topic already assigned"}
+              title={
+                noTopic
+                  ? t("sendTopicReminder") || "Send topic reminder"
+                  : t("topicAlreadyAssigned") || "Topic already assigned"
+              }
             >
               <Button
                 type="text"
@@ -236,10 +244,9 @@ export default function GroupManagement() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="inline-block text-4xl font-extrabold">
-          Group Management
+        <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
+          {t("groupManagement") || "Group Management"}
         </h1>
-        {/* Moderator không tạo nhóm: bỏ nút Add Group */}
       </div>
 
       {/* Filters */}
@@ -288,17 +295,16 @@ export default function GroupManagement() {
             </Select>
           </div>
         </div>
+        <Table
+          columns={columns}
+          dataSource={filteredRows}
+          pagination={{ pageSize: 5 }}
+          bordered
+          loading={loading}
+          scroll={{ x: "max-content" }}
+          className="rounded-lg mt-5"
+        />
       </Card>
-
-      {/* Table */}
-      <Table
-        columns={columns}
-        dataSource={filteredRows}
-        pagination={{ pageSize: 5 }}
-        bordered
-        loading={loading}
-        className="rounded-lg mt-5"
-      />
 
       {/* Detail Modal (UI giống ảnh) */}
       <GroupDetailModal

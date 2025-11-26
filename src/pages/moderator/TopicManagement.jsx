@@ -86,10 +86,8 @@ const TopicManagement = () => {
 
   const data = topics;
 
-  // Determine status: prefer explicit `status` field, fallback to 'Available'
   const getStatus = (row) => row?.status || "Available";
 
-  // Lọc theo search + status (status không cần hiển thị trong table)
   const filteredData = useMemo(() => {
     const s = filters.search.toLowerCase().trim();
 
@@ -109,7 +107,7 @@ const TopicManagement = () => {
 
   const columns = [
     {
-      title: "Topic",
+      title: t("topics") || "Topic",
       dataIndex: "topicName",
       key: "topicName",
       render: (text) => (
@@ -118,11 +116,19 @@ const TopicManagement = () => {
         </span>
       ),
     },
-    { title: "Mentor", dataIndex: "mentorName", key: "mentorName" },
-    { title: "Major", dataIndex: "majorName", key: "majorName" },
-    { title: "Created Date", dataIndex: "createdAt", key: "createdAt" },
     {
-      title: "Status",
+      title: t("mentor") || "Mentor",
+      dataIndex: "mentorName",
+      key: "mentorName",
+    },
+    { title: t("major") || "Major", dataIndex: "majorName", key: "majorName" },
+    {
+      title: t("createdDate") || "Created Date",
+      dataIndex: "createdAt",
+      key: "createdAt",
+    },
+    {
+      title: t("status") || "Status",
       dataIndex: "status",
       key: "status",
       render: (status) => (
@@ -138,7 +144,7 @@ const TopicManagement = () => {
       ),
     },
     {
-      title: "Actions",
+      title: t("actions") || "Actions",
       key: "actions",
       render: (_, record) => (
         <Space size="middle">
@@ -147,8 +153,8 @@ const TopicManagement = () => {
               type="text"
               icon={<EyeOutlined />}
               onClick={() => {
-                setCurrentTopic(record); // Set the selected topic
-                setIsModalVisible(true); // Open modal
+                setCurrentTopic(record);
+                setIsModalVisible(true);
               }}
             />
           </Tooltip>
@@ -163,17 +169,19 @@ const TopicManagement = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="inline-block text-4xl font-extrabold">
-          Topic Management
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
+          {t("topicManagement") || "Topic Management"}
         </h1>
-        <Space>
+        <Space className="flex-wrap">
           <Button
             icon={<UploadOutlined />}
             className="!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all !py-5"
             onClick={() => navigate("/moderator/import-topics")}
           >
-            Import topics
+            <span className="hidden sm:inline">
+              {t("importTopics") || "Import Topics"}
+            </span>
           </Button>
 
           <Button
@@ -193,11 +201,12 @@ const TopicManagement = () => {
                 // Fallback: generate a small template and download
                 const template = [
                   {
-                    title: "AI Capstone",
-                    description: "Create AI",
-                    majorName: "Software Engineering",
-                    createdByName: "Alice Nguyen",
+                    title: "AI Tutor",
+                    description: "LLM-powered tutor",
+                    semesterCode: "2025A",
+                    majorCode: "SE",
                     status: "open",
+                    mentorEmails: "mentor1@example.com",
                   },
                 ];
                 const ws = XLSX.utils.json_to_sheet(template);
@@ -212,13 +221,15 @@ const TopicManagement = () => {
               }
             }}
           >
-            Export template
+            <span className="hidden sm:inline">
+              {t("exportTemplate") || "Export template"}
+            </span>
           </Button>
         </Space>
       </div>
 
       {/* Layout: Table */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1  gap-6">
         <Card
           className="xl:col-span-3 shadow-sm border-gray-100 rounded-lg"
           bodyStyle={{ padding: "20px 24px" }}
@@ -260,35 +271,12 @@ const TopicManagement = () => {
             columns={columns}
             dataSource={filteredData}
             loading={loading}
-            pagination={false}
+            pagination={{ pageSize: 5 }}
             bordered
+            scroll={{ x: "max-content" }}
             className="rounded-lg"
           />
         </Card>
-
-        {/* Sidebar Summary (tuỳ chọn) */}
-        <div className="flex flex-col gap-6">
-          <Card className="shadow-sm border-gray-100 rounded-lg">
-            <h3 className="font-semibold text-gray-800 mb-3">Summary</h3>
-            {/* Có thể tính lại theo filteredData nếu muốn thống kê theo filter hiện tại */}
-            <p className="text-sm text-gray-600">
-              Total Topics:{" "}
-              <span className="font-semibold text-gray-800">{data.length}</span>
-            </p>
-            <p className="text-sm text-gray-600">
-              Assigned:{" "}
-              <span className="font-semibold text-green-600">
-                {data.filter((d) => getStatus(d) === "Not Available").length}
-              </span>
-            </p>
-            <p className="text-sm text-gray-600">
-              Available:{" "}
-              <span className="font-semibold text-orange-500">
-                {data.filter((d) => getStatus(d) === "Available").length}
-              </span>
-            </p>
-          </Card>
-        </div>
       </div>
       <TopicDetailModal
         open={isModalVisible}
