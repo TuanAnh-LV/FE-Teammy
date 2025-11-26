@@ -475,6 +475,18 @@
     fileParsedLocally: "File parsed locally (API error)",
     templateDownloaded: "Template downloaded",
     templateGeneratedLocally: "Template generated locally (API error)",
+    fileUploadedSuccess: "File uploaded successfully",
+    fileUploadFailed: "Failed to upload file",
+    validating: "Validating...",
+    continueToPreview: "Continue to Preview",
+    validationComplete: "Validation Complete",
+    validationFailed: "Validation Failed",
+    importing: "Importing...",
+    noFileFound: "No file found. Please start over.",
+    importSuccess: "Import Successful",
+    importFailed: "Import Failed",
+    import: "Import",
+    users: "Users",
     // Create post/profile
     createRecruitPostSuccess: "Recruitment post created",
     createProfilePostSuccess: "Profile post created",
@@ -605,6 +617,33 @@
     selectMentor: "Select Mentor",
     selectStatus: "Select Status",
     allStatuses: "All Statuses",
+    available: "Available",
+    assigned: "Assigned",
+    closed: "Closed",
+    
+    // Menu Items
+    discover: "Discover",
+    discoverMentors: "Discover Mentors",
+    groupManagement: "Group Management",
+    topicManagement: "Topic Management",
+    aiAssistant: "AI Assistant",
+    auditLogs: "Audit Logs",
+    managementUsers: "Management Users",
+    report: "Report",
+    
+    // Page Titles & Actions
+    uploadFile: "Upload File",
+    mapColumns: "Map Columns",
+    exportTemplate: "Export template",
+    createdDate: "Created Date",
+    actions: "Actions",
+    reopenRecruiting: "Reopen recruiting",
+    markAsFull: "Mark as Full",
+    sendTopicReminder: "Send topic reminder",
+    topicAlreadyAssigned: "Topic already assigned",
+    backToTopics: "Back to Topics",
+    importUsers: "Import Users",
+    backToUsers: "Back to Users"
   
   },
 
@@ -1063,9 +1102,21 @@
 
     // Import / Upload
     fileImportedSuccess: "Nhập file thành công",
-    fileParsedLocally: "File được xử lý cục bộ (API lỗi)",
-    templateDownloaded: "Đã tải mẫu",
-    templateGeneratedLocally: "Mẫu tạo cục bộ (API lỗi)",
+    fileParsedLocally: "File đã được xử lý cục bộ (lỗi API)",
+    templateDownloaded: "Đã tải mẫu xuống",
+    templateGeneratedLocally: "Mẫu được tạo cục bộ (lỗi API)",
+    fileUploadedSuccess: "Tải file lên thành công",
+    fileUploadFailed: "Tải file lên thất bại",
+    validating: "Đang kiểm tra...",
+    continueToPreview: "Tiếp tục xem trước",
+    validationComplete: "Kiểm tra hoàn tất",
+    validationFailed: "Kiểm tra thất bại",
+    importing: "Đang nhập...",
+    noFileFound: "Không tìm thấy file. Vui lòng bắt đầu lại.",
+    importSuccess: "Nhập thành công",
+    importFailed: "Nhập thất bại",
+    import: "Nhập",
+    users: "Người dùng",
 
     // Topics
     failedLoadTopics: "Không thể tải chủ đề",
@@ -1195,6 +1246,33 @@
     selectMentor: "Chọn người hướng dẫn",
     selectStatus: "Chọn trạng thái",
     allStatuses: "Tất cả trạng thái",
+    available: "Có sẵn",
+    assigned: "Đã giao",
+    closed: "Đã đóng",
+    
+    // Menu Items
+    discover: "Khám Phá",
+    discoverMentors: "Khám Phá Mentor",
+    groupManagement: "Quản Lý Nhóm",
+    topicManagement: "Quản Lý Chủ Đề",
+    aiAssistant: "Trợ Lý AI",
+    auditLogs: "Nhật Ký Kiểm Toán",
+    managementUsers: "Quản Lý Người Dùng",
+    report: "Báo Cáo",
+    
+    // Page Titles & Actions
+    uploadFile: "Tải File Lên",
+    mapColumns: "Ánh Xạ Cột",
+    exportTemplate: "Xuất mẫu",
+    createdDate: "Ngày Tạo",
+    actions: "Hành Động",
+    reopenRecruiting: "Mở lại tuyển thành viên",
+    markAsFull: "Đánh dấu đã đủ",
+    sendTopicReminder: "Gửi nhắc nhở chọn chủ đề",
+    topicAlreadyAssigned: "Đã có chủ đề",
+    backToTopics: "Quay lại chủ đề",
+    importUsers: "Nhập người dùng",
+    backToUsers: "Quay lại người dùng"
   },
 };
 

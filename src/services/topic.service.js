@@ -9,6 +9,14 @@ export const TopicService = {
       isLoading: true,
     });
   },
+
+  validateImportTopics(payload, isLoading = true) {
+    return BaseService.post({
+      url: API.TOPICS.VALIDATE_IMPORT,
+      payload: { rows: payload },
+      isLoading,
+    });
+  },
   getTopicDetail(topicId) {
     return BaseService.get({
       url: API.TOPICS.DETAIL_TOPIC(topicId),

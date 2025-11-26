@@ -245,7 +245,7 @@ const MyGroups = () => {
     <div className="space-y-8 bg-gray-50 min-h-screen">
       <div>
         <h1
-          className="inline-block text-4xl font-extrabold"
+          className="text-2xl sm:text-3xl lg:text-4xl font-extrabold"
           style={{
             backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
             WebkitBackgroundClip: "text",
@@ -265,7 +265,7 @@ const MyGroups = () => {
         </div>
       ) : (
         <>
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="rounded-2xl shadow-md hover:shadow-lg transition-all">
               <TeamOutlined className="text-blue-500 text-xl mb-2" />
               <p className="text-sm text-gray-500">Total Groups</p>
@@ -319,6 +319,7 @@ const MyGroups = () => {
                 showSizeChanger: true,
                 showTotal: (total) => `Total ${total} groups`,
               }}
+              scroll={{ x: "max-content" }}
               rowKey="id"
               rowClassName={(_, i) =>
                 i % 2 === 0 ? "bg-gray-50 hover:bg-blue-50" : "hover:bg-blue-50"

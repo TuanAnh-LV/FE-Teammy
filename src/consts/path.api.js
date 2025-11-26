@@ -11,6 +11,7 @@ export const API = {
     DETAIL_USER: (id) => `/users/admin/${id}`,
     BAN_USER: (id) => `/users/admin/${id}`,
     IMPORT_USERS: "/users/import",
+    VALIDATE_IMPORT: "/users/import/validate",
     EXPORT_USERS: "/users/import/template",
     UPDATE_USER: (id) => `/users/admin/${id}`,
   },
@@ -51,53 +52,56 @@ export const API = {
       `/groups/${groupId}/pending/${requestId}/accept`,
     REJECT_JOIN: (groupId, requestId) =>
       `/groups/${groupId}/pending/${requestId}/reject`,
-    LEAVE_GROUP: (id) => `/groups/${id}/members/me`,
-    JOIN_POST_TO_GROUP: (id) => `recruitment-posts/${id}/applications`,
-  },
-  TOPICS: {
-    LIST: "/topics",
-    DETAIL_TOPIC: (id) => `/topics/${id}`,
-    EXPORT_TOPICS: "/topics/template",
-    IMPORT_TOPICS: "/topics/import",
-  },
-  MAJORS: {
-    LIST: "/majors",
-  },
-  BOARD: {
-    DETAIL: (groupId) => `/groups/${groupId}/board`,
-    CREATE_COLUMN: (groupId) => `/groups/${groupId}/board/columns`,
-    UPDATE_COLUMN: (groupId, columnId) =>
-      `/groups/${groupId}/board/columns/${columnId}`,
-    DELETE_COLUMN: (groupId, columnId) =>
-      `/groups/${groupId}/board/columns/${columnId}`,
-    CREATE_TASK: (groupId) => `/groups/${groupId}/board/tasks`,
-    UPDATE_TASK: (groupId, taskId) =>
-      `/groups/${groupId}/board/tasks/${taskId}`,
-    DELETE_TASK: (groupId, taskId) =>
-      `/groups/${groupId}/board/tasks/${taskId}`,
-    MOVE_TASK: (groupId, taskId) =>
-      `/groups/${groupId}/board/tasks/${taskId}/move`,
-    REPLACE_ASSIGNEES: (groupId, taskId) =>
-      `/groups/${groupId}/board/tasks/${taskId}/assignees`,
-    LIST_COMMENTS: (groupId, taskId) =>
-      `/groups/${groupId}/board/tasks/${taskId}/comments`,
-    CREATE_COMMENT: (groupId, taskId) =>
-      `/groups/${groupId}/board/tasks/${taskId}/comments`,
-    UPDATE_COMMENT: (groupId, commentId) =>
-      `/groups/${groupId}/board/comments/${commentId}`,
-    DELETE_COMMENT: (groupId, commentId) =>
-      `/groups/${groupId}/board/comments/${commentId}`,
-    GROUP_FILES: (groupId) => `/groups/${groupId}/board/files`,
-    TASK_FILES: (groupId, taskId) =>
-      `/groups/${groupId}/board/tasks/${taskId}/files`,
-    UPLOAD_FILE: (groupId) => `/groups/${groupId}/board/files/upload`,
-    DELETE_FILE: (groupId, fileId) =>
-      `/groups/${groupId}/board/files/${fileId}`,
-  },
-
+        LEAVE_GROUP: (id) => `/groups/${id}/members/me`,
+        JOIN_POST_TO_GROUP: (id) => `recruitment-posts/${id}/applications`,
+    },
+    TOPICS: {
+        LIST: "/topics",
+        DETAIL_TOPIC: (id) => `/topics/${id}`,
+        EXPORT_TOPICS: "/topics/template",
+        IMPORT_TOPICS: "/topics/import",
+        VALIDATE_IMPORT: "/topics/import/validate",
+    },
+    MAJORS: {
+        LIST: "/majors",
+    },
+    BOARD: {
+        DETAIL: (groupId) => `/groups/${groupId}/board`,
+        CREATE_COLUMN: (groupId) => `/groups/${groupId}/board/columns`,
+        UPDATE_COLUMN: (groupId, columnId) =>
+            `/groups/${groupId}/board/columns/${columnId}`,
+        DELETE_COLUMN: (groupId, columnId) =>
+            `/groups/${groupId}/board/columns/${columnId}`,
+        CREATE_TASK: (groupId) => `/groups/${groupId}/board/tasks`,
+        UPDATE_TASK: (groupId, taskId) =>
+            `/groups/${groupId}/board/tasks/${taskId}`,
+        DELETE_TASK: (groupId, taskId) =>
+            `/groups/${groupId}/board/tasks/${taskId}`,
+        MOVE_TASK: (groupId, taskId) =>
+            `/groups/${groupId}/board/tasks/${taskId}/move`,
+        REPLACE_ASSIGNEES: (groupId, taskId) =>
+            `/groups/${groupId}/board/tasks/${taskId}/assignees`,
+        LIST_COMMENTS: (groupId, taskId) =>
+            `/groups/${groupId}/board/tasks/${taskId}/comments`,
+        CREATE_COMMENT: (groupId, taskId) =>
+            `/groups/${groupId}/board/tasks/${taskId}/comments`,
+        UPDATE_COMMENT: (groupId, commentId) =>
+            `/groups/${groupId}/board/comments/${commentId}`,
+        DELETE_COMMENT: (groupId, commentId) =>
+            `/groups/${groupId}/board/comments/${commentId}`,
+        GROUP_FILES: (groupId) => `/groups/${groupId}/board/files`,
+        TASK_FILES: (groupId, taskId) =>
+            `/groups/${groupId}/board/tasks/${taskId}/files`,
+        UPLOAD_FILE: (groupId) => `/groups/${groupId}/board/files/upload`,
+        DELETE_FILE: (groupId, fileId) =>
+            `/groups/${groupId}/board/files/${fileId}`,
+   },
   CHAT: {
     CONVERSATIONS: "/chat/conversations",
     MESSAGES: (sessionId) => `/chat/sessions/${sessionId}/messages`,
     SEND_MESSAGE: "/chat/messages",
   },
-};
+}
+
+    
+

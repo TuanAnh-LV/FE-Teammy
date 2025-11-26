@@ -277,26 +277,26 @@ const ManageUsers = () => {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="inline-block text-4xl font-extrabold">
+          <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
             Users & Roles
           </h1>
         </div>
-        <Space>
+        <Space className="flex-wrap">
           <Button
             icon={<UploadOutlined />}
             onClick={() => navigate("/admin/import-users")}
             className="!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all !py-5"
           >
-            Import Users
+            <span className="hidden sm:inline">Import Users</span>
           </Button>
           <Button
             icon={<PlusOutlined />}
             onClick={() => setIsAddOpen(true)}
             className="!bg-[#FF7A00] !text-white !border-none !rounded-md !px-6 !py-5 hover:!opacity-90"
           >
-            Add User
+            <span className="hidden sm:inline">Add User</span>
           </Button>
         </Space>
       </div>
@@ -357,6 +357,7 @@ const ManageUsers = () => {
             loading={loading}
             pagination={{ pageSize: 5 }}
             bordered
+            scroll={{ x: "max-content" }}
             className="rounded-lg mt-5"
           />
         </Card>

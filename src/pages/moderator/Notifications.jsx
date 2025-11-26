@@ -67,7 +67,7 @@ export default function ModeratorNotifications() {
       {/* Header */}
       <div>
         <h1
-          className="inline-block text-4xl font-extrabold"
+          className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold"
           style={{
             backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
             WebkitBackgroundClip: "text",

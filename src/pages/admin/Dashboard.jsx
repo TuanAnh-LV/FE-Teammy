@@ -77,7 +77,9 @@ const AdminDashboard = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="inline-block text-4xl font-extrabold">Dashboard</h1>
+          <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
+            Dashboard
+          </h1>
         </div>
       </div>
 

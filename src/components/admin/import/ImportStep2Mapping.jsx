@@ -1,12 +1,17 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Select, Button, Row, Col } from "antd";
+import { Select, Button, Row, Col, notification } from "antd";
 import { CheckCircleFilled } from "@ant-design/icons";
+import { AdminService } from "../../../services/admin.service";
+import { useTranslation } from "../../../hook/useTranslation";
 
 export default function ImportStep2Mapping({
   rawData,
   setColumnMap,
   setCurrentStep,
+  setValidationResult,
 }) {
+  const { t } = useTranslation();
+  const [validating, setValidating] = useState(false);
   const [mapping, setMapping] = useState({});
   const firstRow = useMemo(() => rawData[0] || {}, [rawData]);
   const columns = useMemo(() => Object.keys(firstRow), [firstRow]);
@@ -26,9 +31,43 @@ export default function ImportStep2Mapping({
     setMapping(auto);
   }, [columns]);
 
-  const handleContinue = () => {
-    setColumnMap(mapping);
-    setCurrentStep(2);
+  const handleContinue = async () => {
+    try {
+      setValidating(true);
+      setColumnMap(mapping);
+
+      // Map raw data theo column mapping
+      const mappedData = rawData.map((row) => ({
+        email: row[mapping.email] || "",
+        displayName: row[mapping.displayName] || "",
+        role: row[mapping.role] || "student",
+        majorName: row[mapping.majorName] || "",
+        gender: row[mapping.gender] || "",
+        studentCode: row[mapping.studentCode] || "",
+      }));
+
+      // Gọi API validate
+      const res = await AdminService.validateImportUsers(mappedData, true);
+
+      if (res?.data) {
+        setValidationResult(res.data);
+        setCurrentStep(2);
+        notification.success({
+          message: t("validationComplete") || "Validation Complete",
+          description: `${res.data.summary?.validRows || 0}/${
+            res.data.summary?.totalRows || 0
+          } valid rows`,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      notification.error({
+        message: t("validationFailed") || "Validation Failed",
+        description: err?.response?.data?.message || t("pleaseTryAgain"),
+      });
+    } finally {
+      setValidating(false);
+    }
   };
 
   return (
@@ -92,10 +131,14 @@ export default function ImportStep2Mapping({
         <Button
           type="primary"
           size="large"
+          loading={validating}
+          disabled={validating || !mapping.email || !mapping.displayName}
           className="!bg-[#FF7A00] !text-white !border-none !rounded-md !px-6 !py-2 hover:!opacity-90"
           onClick={handleContinue}
         >
-          Continue to Preview
+          {validating
+            ? t("validating") || "Validating..."
+            : t("continueToPreview") || "Continue to Preview"}
         </Button>
       </div>
     </div>

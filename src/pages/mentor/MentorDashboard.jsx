@@ -70,9 +70,9 @@ export default function MentorDashboard() {
   return (
     <div className="space-y-8 bg-gray-50 min-h-screen">
       {/* HEADER + OVERVIEW */}
-      <div className="flex flex-col md:flex-row justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-green-400 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-green-400 bg-clip-text text-transparent">
             Mentor Dashboard
           </h1>
           <p className="text-gray-600 mt-1">
@@ -80,12 +80,14 @@ export default function MentorDashboard() {
             teams.
           </p>
         </div>
-        <Space className="mt-4 md:mt-0">
+        <Space className="flex-wrap">
           <Button icon={<MessageOutlined />}>
-            {t("sendAnnouncement") || "Send Announcement"}
+            <span className="hidden sm:inline">
+              {t("sendAnnouncement") || "Send Announcement"}
+            </span>
           </Button>
           <Button type="primary" icon={<FileTextOutlined />}>
-            Export Report
+            <span className="hidden sm:inline">Export Report</span>
           </Button>
         </Space>
       </div>
@@ -133,17 +135,17 @@ export default function MentorDashboard() {
         className="rounded-2xl shadow-sm"
         bodyStyle={{ padding: "24px" }}
       >
-        <div className="flex flex-wrap gap-3 mb-5">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-5">
           <Input
             prefix={<SearchOutlined />}
             placeholder={
               t("searchByKeyword") || "Search by topic or keyword..."
             }
-            className="w-64"
+            className="w-full sm:w-64"
           />
           <Select
             placeholder={t("filterByDepartment") || "Filter by Department"}
-            className="w-52"
+            className="w-full sm:w-52"
           >
             <Option>All Departments</Option>
             <Option>Computer Science</Option>

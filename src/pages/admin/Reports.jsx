@@ -61,9 +61,9 @@ const Reports = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="inline-block text-4xl font-extrabold">
+          <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
             Report & Export
           </h1>
         </div>
@@ -72,7 +72,7 @@ const Reports = () => {
           icon={<UploadOutlined />}
           className="!border-gray-300 hover:!border-orange-400  hover:!text-orange-400 transition-all !py-5"
         >
-          Export CSV
+          <span className="hidden sm:inline">Export CSV</span>
         </Button>
       </div>
 
@@ -157,6 +157,7 @@ const Reports = () => {
             dataSource={data}
             pagination={false}
             bordered
+            scroll={{ x: "max-content" }}
             className="rounded-lg mb-6"
             style={{ backgroundColor: "white" }}
           />

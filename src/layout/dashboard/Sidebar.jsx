@@ -3,12 +3,15 @@ import { Layout, Menu, Button, Tooltip } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import { getRoleMenus } from "../../consts/roleMenus.jsx";
 import { LogoutOutlined } from "@ant-design/icons";
+import { useLanguage } from "../../context/LanguageContext";
+import { getTranslation } from "../../translations";
 
 const { Sider } = Layout;
 
 const Sidebar = ({ role, collapsed: collapsedProp, onToggle, onLogout }) => {
   const location = useLocation();
-  const menus = getRoleMenus(role);
+  const { language } = useLanguage();
+  const menus = getRoleMenus(role, language);
   const [collapsed, setCollapsed] = useState(false);
 
   const isCollapsed =
@@ -64,7 +67,10 @@ const Sidebar = ({ role, collapsed: collapsedProp, onToggle, onLogout }) => {
 
       {/* Nút Logout cố định ở đáy */}
       <div className="absolute bottom-3 left-0 w-full flex justify-center">
-        <Tooltip title={!isCollapsed ? "" : "Logout"} placement="right">
+        <Tooltip
+          title={!isCollapsed ? "" : getTranslation("logout", language)}
+          placement="right"
+        >
           <Button
             type="text"
             icon={<LogoutOutlined style={{ color: "red" }} />}
@@ -73,7 +79,11 @@ const Sidebar = ({ role, collapsed: collapsedProp, onToggle, onLogout }) => {
               !isCollapsed ? "w-[200px]" : "w-full"
             } hover:text-red-500`}
           >
-            {!isCollapsed && <span className="text-gray-700">Logout</span>}
+            {!isCollapsed && (
+              <span className="text-gray-700">
+                {getTranslation("logout", language)}
+              </span>
+            )}
           </Button>
         </Tooltip>
       </div>

@@ -88,7 +88,7 @@ export default function AIAssistantModerator() {
       {/* HEADER */}
       <div>
         <h1
-          className="inline-block text-4xl font-extrabold"
+          className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold"
           style={{
             backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
             WebkitBackgroundClip: "text",
@@ -113,8 +113,8 @@ export default function AIAssistantModerator() {
               Select mode and run AI analysis to find missing elements
             </p>
           </div>
-          <Space>
-            <Select value={mode} onChange={setMode} className="w-64">
+          <Space className="flex-wrap">
+            <Select value={mode} onChange={setMode} className="w-full sm:w-64">
               <Option value="Identify Missing Elements">
                 Identify Missing Elements
               </Option>
