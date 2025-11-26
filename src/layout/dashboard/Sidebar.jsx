@@ -37,7 +37,7 @@ const Sidebar = ({ role, collapsed: collapsedProp, onToggle, onLogout }) => {
       <div className="flex items-center gap-2 px-10 py-[18px] border-b border-gray-100">
         {!isCollapsed && (
           <div>
-            <div className="text-base font-bold text-gray-800 leading-none">
+            <div className="text-base font-black text-gray-800 leading-none">
               Teammy
             </div>
             <div className="text-[11px] text-gray-400 -mt-0.5">

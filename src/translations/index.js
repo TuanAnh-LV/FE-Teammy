@@ -1,4 +1,4 @@
-export const translations = {
+﻿export const translations = {
   EN: {
     // Navbar
     findProjects: "Find Projects",
@@ -12,7 +12,7 @@ export const translations = {
     confirmLogout: "Confirm Logout",
     confirmLogoutMessage: "Are you sure you want to logout?",
     signIn: "Sign in",
-    
+
     // Common
     loading: "Loading...",
     creating: "Creating...",
@@ -44,7 +44,7 @@ export const translations = {
     application: "application",
     approve: "Approve",
     reject: "Reject",
-    
+
     // Auth
     login: "Login",
     register: "Register",
@@ -53,15 +53,15 @@ export const translations = {
     confirmPassword: "Confirm Password",
     forgotPassword: "Forgot Password?",
     rememberMe: "Remember Me",
-    
+
     // Dashboard
     dashboard: "Dashboard",
     overview: "Overview",
     statistics: "Statistics",
     recentActivity: "Recent Activity",
     noRecentActivity: "No recent activity yet",
-      activityWillAppearHere: "Tasks and updates will appear here",
-    
+    activityWillAppearHere: "Tasks and updates will appear here",
+
     // Projects
     projects: "Projects",
     project: "Project",
@@ -73,7 +73,7 @@ export const translations = {
     projectStatus: "Project Status",
     projectType: "Project Type",
     field: "Field",
-    
+
     // Groups
     groups: "Groups",
     group: "Group",
@@ -91,7 +91,7 @@ export const translations = {
     saving: "Saving...",
     teamLeader: "Team Leader",
     noMembersYet: "No members yet",
-    
+
     // Tasks
     tasks: "Tasks",
     task: "Task",
@@ -104,7 +104,7 @@ export const translations = {
     taskPriority: "Task Priority",
     assignedTo: "Assigned To",
     dueDate: "Due Date",
-    
+
     // Status
     active: "Active",
     inactive: "Inactive",
@@ -112,24 +112,27 @@ export const translations = {
     completed: "Completed",
     cancelled: "Cancelled",
     inProgress: "In Progress",
-    
+
     // Priority
     low: "Low",
     medium: "Medium",
     high: "High",
     urgent: "Urgent",
-    
+
     // Pages - Common
-    discoverProjects: "Discover projects across multiple domains and join teams",
+    discoverProjects:
+      "Discover projects across multiple domains and join teams",
     searchProjects: "Search projects...",
     communityForum: "Community Forum",
-    forumSubtitle: "Share experiences, ask questions and connect with the IT student community.",
+    forumSubtitle:
+      "Share experiences, ask questions and connect with the IT student community.",
     topics: "Topics",
-    
+
     // Homepage
     heroHeadlinePrefix: "Empowering students to",
     heroHeadlineHighlight: "Connect, Collaborate, and Create",
-    heroDescription: "Find the perfect teammates and projects with AI-powered recommendations.",
+    heroDescription:
+      "Find the perfect teammates and projects with AI-powered recommendations.",
     heroPrimaryCta: "Get Started",
     heroSecondaryCta: "Sign in with Google",
     heroLoginPrompt: "Already have an account?",
@@ -137,7 +140,8 @@ export const translations = {
     statsStudents: "Students",
     statsSuccessRate: "Success Rate",
     featuresTitle: "Everything you need to succeed",
-    featuresSubtitle: "Powerful features to help you manage your projects and collaborate effectively.",
+    featuresSubtitle:
+      "Powerful features to help you manage your projects and collaborate effectively.",
     activityTaskAssigned: "New task assigned: Implement user registration",
     activityTime2Hours: "2 hours ago",
     activityMockupsUploaded: "UI mockups uploaded",
@@ -149,38 +153,51 @@ export const translations = {
     activityMeetingScheduled: "Team meeting scheduled for next week",
     activityTime5Days: "5 days ago",
     featureAIMatchingTitle: "AI-Powered Matching",
-    featureAIMatchingDesc: "Get personalized teammate and project recommendations based on your skills and interests.",
+    featureAIMatchingDesc:
+      "Get personalized teammate and project recommendations based on your skills and interests.",
     featureProjectManagementTitle: "Project Management",
-    featureProjectManagementDesc: "Track progress, manage tasks, and collaborate seamlessly with your team.",
+    featureProjectManagementDesc:
+      "Track progress, manage tasks, and collaborate seamlessly with your team.",
     featureRealtimeChatTitle: "Real-time Chat",
-    featureRealtimeChatDesc: "Stay connected with instant messaging and file sharing capabilities.",
+    featureRealtimeChatDesc:
+      "Stay connected with instant messaging and file sharing capabilities.",
     featureSkillTrackingTitle: "Skill Tracking",
-    featureSkillTrackingDesc: "Showcase your abilities and find teammates with complementary skills.",
+    featureSkillTrackingDesc:
+      "Showcase your abilities and find teammates with complementary skills.",
     myGroupsProjectsTitle: "My Groups & Projects",
-    myGroupsProjectsSubtitle: "Manage your capstone project teams, track progress, and collaborate with teammates.",
-    myGroupsProjectsCTA: "Create new groups or join existing ones to build amazing projects together.",
+    myGroupsProjectsSubtitle:
+      "Manage your capstone project teams, track progress, and collaborate with teammates.",
+    myGroupsProjectsCTA:
+      "Create new groups or join existing ones to build amazing projects together.",
     activeGroups: "active groups",
     pendingApplications: "pending applications",
     mostRecentGroup: "Most recent group created",
     updating: "Updating",
-    
+
     // MyGroup Page
     addMember: "Add Member",
     openWorkspace: "Open Workspace",
     workspaceNotAvailable: "Workspace Not Available",
-    groupStillRecruiting: "This group is still recruiting members. Workspace will be available once the group is active.",
-    groupNotActive: "This group is not active. Please contact your mentor or admin.",
+    groupStillRecruiting:
+      "This group is still recruiting members. Workspace will be available once the group is active.",
+    groupNotActive:
+      "This group is not active. Please contact your mentor or admin.",
+    tasksCompleted: "Tasks Completed",
+    contributionScore: "Contribution Score",
+    projectFiles: "Project Files",
+    uploadFiles: "Upload Files",
     groupInformation: "Group Information",
     onTrack: "On Track",
     mentor: "Mentor",
     start: "Start",
     end: "End",
-    
+
     // Manage Users / Admin
     failedLoadUsers: "Failed to load users",
     failedLoadUserDetails: "Failed to load user details",
     confirmBanTitle: "Ban {name}?",
-    confirmBanContent: "Are you sure you want to ban this user? This action can be undone later.",
+    confirmBanContent:
+      "Are you sure you want to ban this user? This action can be undone later.",
     confirmBanOk: "Confirm Ban",
     confirmBanCancel: "Cancel",
     userBannedSuccess: "{name} has been banned.",
@@ -207,7 +224,7 @@ export const translations = {
     userAddedSuccessfully: "has been added.",
     failedToAddMember: "Failed to add member. Please try again.",
     groupIsFull: "Group is Full",
-    
+
     // Profile Page
     mentorProfile: "Mentor Profile",
     manageProfilePreferences: "Manage your mentor profile and preferences",
@@ -218,7 +235,8 @@ export const translations = {
     faculty: "Faculty",
     bio: "Bio",
     expertiseSpecialization: "Expertise & Specialization",
-    addExpertiseAreas: "Add your areas of expertise to help match you with relevant groups",
+    addExpertiseAreas:
+      "Add your areas of expertise to help match you with relevant groups",
     availabilityCapacity: "Availability & Capacity",
     officeHours: "Office Hours",
     groupCapacity: "Group Capacity",
@@ -229,7 +247,7 @@ export const translations = {
     viewDetails: "View Details",
     addSkill: "+ Add Skill",
     viewAll: "View All",
-    
+
     // Admin Dashboard
     overviewSystemPerformance: "Overview of system performance and key metrics",
     totalUsers: "Total Users",
@@ -243,7 +261,7 @@ export const translations = {
     userEngagementLast30Days: "User engagement over the last 30 days",
     majorsDistribution: "Majors Distribution",
     studentDistributionMajors: "Student distribution across different majors",
-    
+
     // Moderator Dashboard
     groupsMissingTopics: "Groups Missing Topics",
     groupsMissingMentor: "Groups Missing Mentor",
@@ -254,12 +272,13 @@ export const translations = {
     teamBetaHasntChosenTopic: "Team Beta hasn't chosen a topic",
     weeklyProgressReportsDueSoon: "Weekly progress reports due soon",
     recentSystemAlerts: "Recent System Alerts",
-    latestNotificationsIssues: "Latest notifications and issues requiring attention",
+    latestNotificationsIssues:
+      "Latest notifications and issues requiring attention",
     view: "View",
     hoursAgo: "hours ago",
     dayAgo: "day ago",
     daysAgo: "days ago",
-    
+
     // Workspace
     todo: "To Do",
     review: "Review",
@@ -270,14 +289,14 @@ export const translations = {
     points: "points",
     comments: "comments",
     addComment: "Add comment...",
-    
+
     // Project Detail
     projectId: "ID",
     fields: "Fields",
     leader: "Leader",
     teamMembers: "Team Members",
     teamMember: "Team member",
-    
+
     // Mentor Pages
     groupId: "Group #",
     timelineTasks: "Timeline & Tasks",
@@ -285,7 +304,8 @@ export const translations = {
 
     // Forum
     recruitmentForum: "Recruitment Forum",
-    forumPersonalSubtitle: "Publish your profile and let project teams invite you.",
+    forumPersonalSubtitle:
+      "Publish your profile and let project teams invite you.",
     createRecruitPost: "Create group post",
     createPersonalPost: "Create personal post",
     createPersonalProfileTitle: "Create Personal Profile",
@@ -316,8 +336,8 @@ export const translations = {
     openPositions: "Open Positions",
     desiredRolesTotal: "Desired Roles",
     noData: "No results found.",
-    searchByProject: "Search posts by project, skills…",
-    searchByPeople: "Search people by role, skills…",
+    searchByProject: "Search posts by project, skillsâ€¦",
+    searchByPeople: "Search people by role, skillsâ€¦",
     postPersonal: "Post Personal",
     postGroup: "Post Group",
     positionsNeeded: "Positions Needed",
@@ -334,19 +354,19 @@ export const translations = {
     inviteToGroup: "Invite to Group",
     alwaysOpen: "Always Open",
     availableNow: "Available",
-        groupStatus: "Status",
+    groupStatus: "Status",
     groupMaxMembers: "Max members",
     groupCurrentMembers: "Current",
     major: "Major",
     noDeadline: "No deadline",
-    applications:"Applications",
+    applications: "Applications",
     created: "Created",
     status: "Status",
     updateSuccess: "Updated successfully",
     userUpdatedSuccess: "User updated successfully",
     userUpdateFailed: "Failed to update user",
     due: "Due",
-    applying: "Applying…",
+    applying: "Applyingâ€¦",
     currentTopic: "Current topic",
     noTopicAssigned: "No topic assigned yet",
     searchTopicPlaceholder: "Search by keyword or lecturer",
@@ -360,16 +380,20 @@ export const translations = {
     understood: "Understood",
     confirmLeaveGroup: "Leave Group",
     confirmLeaveGroupMessage: "Are you sure you want to leave this group?",
-    leaveActiveGroupWarning: "This group is currently active. Leaving will remove you from all ongoing activities. Are you sure you want to leave?",
+    leaveActiveGroupWarning:
+      "This group is currently active. Leaving will remove you from all ongoing activities. Are you sure you want to leave?",
     leaveGroupSuccess: "Successfully left the group",
     cannotLeaveActiveGroup: "Cannot leave active group",
-    cannotLeaveActiveGroupDesc: "You cannot leave a group that is currently active. Please wait until the group status changes or contact your mentor.",
+    cannotLeaveActiveGroupDesc:
+      "You cannot leave a group that is currently active. Please wait until the group status changes or contact your mentor.",
     confirmKick: "Remove Member",
-    confirmKickMessage: "Are you sure you want to remove this member from the group?",
+    confirmKickMessage:
+      "Are you sure you want to remove this member from the group?",
     remove: "Remove",
     removeSuccess: "Member removed successfully",
     cannotKickFromActiveGroup: "Cannot remove member from active group",
-    cannotKickFromActiveGroupDesc: "You cannot remove members from a group that is currently active. Please wait until the group status changes or contact your mentor.",
+    cannotKickFromActiveGroupDesc:
+      "You cannot remove members from a group that is currently active. Please wait until the group status changes or contact your mentor.",
     heroBuildYourFuture: "Build your future, one capstone at a time",
     startMatching: "Start Matching",
     seeHowItWorks: "See How It Works",
@@ -377,34 +401,45 @@ export const translations = {
     hero50Mentors: "50+ mentors",
     hero300Projects: "300+ projects",
     featureTeammates: "Teammates",
-    featureTeammatesDesc: "Post openings for your project with clear role descriptions and required skills",
+    featureTeammatesDesc:
+      "Post openings for your project with clear role descriptions and required skills",
     featureMentor: "Mentor",
-    featureMentorDesc: "Connect with experienced lecturers and industry experts for guidance throughout the journey",
+    featureMentorDesc:
+      "Connect with experienced lecturers and industry experts for guidance throughout the journey",
     featureCommunication: "Communication",
-    featureCommunicationDesc: "Chat, discuss, and share ideas easily with teammates and mentors",
+    featureCommunicationDesc:
+      "Chat, discuss, and share ideas easily with teammates and mentors",
     featurePlanSchedule: "Plan & Schedule",
-    featurePlanScheduleDesc: "Create timelines, set deadlines, and get reminders to deliver on time",
+    featurePlanScheduleDesc:
+      "Create timelines, set deadlines, and get reminders to deliver on time",
     featureEvaluation: "Evaluation & Feedback",
-    featureEvaluationDesc: "Receive feedback from mentors and teammates to continuously improve the project",
+    featureEvaluationDesc:
+      "Receive feedback from mentors and teammates to continuously improve the project",
     howItWorks: "How It Works",
     howItWorksSubtitle: "A simple flow to kick-start your capstone journey",
     stepLogin: "Login",
-    stepLoginDesc: "Create your profile with skills, interests, availability, and academic experience",
+    stepLoginDesc:
+      "Create your profile with skills, interests, availability, and academic experience",
     stepSearch: "Search & Connect",
-    stepSearchDesc: "Browse projects recruiting teammates or find mentors that fit your field",
+    stepSearchDesc:
+      "Browse projects recruiting teammates or find mentors that fit your field",
     stepDiscuss: "Discuss & Join",
-    stepDiscussDesc: "Message owners, align on scope and roles, then officially join the team",
+    stepDiscussDesc:
+      "Message owners, align on scope and roles, then officially join the team",
     stepBuild: "Build & Complete",
-    stepBuildDesc: "Work together with mentor guidance and hit every milestone to finish strong",
+    stepBuildDesc:
+      "Work together with mentor guidance and hit every milestone to finish strong",
     ctaReady: "Ready to start your project",
-    ctaDescription: "Join a vibrant student community to find teammates, mentors, and growth opportunities—today",
+    ctaDescription:
+      "Join a vibrant student community to find teammates, mentors, and growth opportunitiesâ€”today",
     ctaBenefitFree: "Free for students",
     ctaBenefitUI: "Simple, friendly UI",
     ctaBenefitSupport: "24/7 support",
     ctaBenefitSecure: "Secure by design",
-    
+
     // Footer
-    footerTagline: "The student platform for team formation, mentoring, and efficient capstone delivery.",
+    footerTagline:
+      "The student platform for team formation, mentoring, and efficient capstone delivery.",
     footerFeaturesTitle: "Features",
     footerFeatureFindTeammates: "Find Teammates",
     footerFeatureChooseMentors: "Choose Mentors",
@@ -504,7 +539,7 @@ export const translations = {
     selectARole: "Select a role",
     sending: "Sending...",
     send: "Send",
-    
+
     // Workspace
     newColumn: "New Column",
     enterColumnName: "Enter column name",
@@ -514,7 +549,7 @@ export const translations = {
     allPriority: "All priority",
     deleteColumn: "Delete Column",
     deleteColumnConfirm: "Delete column",
-    
+
     // Common UI
     copyTopic: "Copy topic",
     searchByTopicOrMentor: "Search by topic title or mentor...",
@@ -531,7 +566,7 @@ export const translations = {
     business: "Business",
     engineering: "Engineering",
     notAvailable: "Not Available",
-    
+
     // Notifications Page
     groupsWithoutTopics: "Groups Without Topics",
     groupsWithoutMentors: "Groups Without Mentors",
@@ -542,14 +577,14 @@ export const translations = {
     quickStats: "Quick Stats",
     sentToday: "Sent Today",
     thisWeek: "This Week",
-    
+
     // Mentor Dashboard
     sendAnnouncement: "Send Announcement",
     pendingReviews: "Pending Reviews",
     averageProgress: "Average Progress",
     feedbackGiven: "Feedback Given",
     allDepartments: "All Departments",
-    
+
     // Mentor Group List
     avgProgress: "Avg Progress",
     needAttention: "Need Attention",
@@ -558,7 +593,7 @@ export const translations = {
     nextDigest: "Next digest:",
     taskEvents: "Task Events",
     weeklyDigest: "Weekly Digest",
-    
+
     // AI Assistant
     suggestMatches: "Suggest Matches",
     autoMerge: "Auto Merge Mode",
@@ -567,16 +602,16 @@ export const translations = {
     suggestedMentor: "Suggested Mentor",
     mergeSuggestion: "Merge Suggestion",
     mergeWith: "Merge with",
-    
+
     // Import
     importTopics: "Import Topics",
-    
+
     // Profile
     preparingProfile: "Preparing your profile...",
-    
+
     // Audit Logs
     searchByEmailAction: "Search by email, action...",
-    
+
     // Topic Management
     smartFilters: "Smart Filters",
     selectMentor: "Select Mentor",
@@ -611,7 +646,7 @@ export const translations = {
     backToUsers: "Back to Users"
   
   },
-  
+
   VIE: {
     // Navbar
     findProjects: "Tìm Dự Án",
@@ -626,7 +661,7 @@ export const translations = {
     confirmLogoutMessage: "Bạn có chắc chắn muốn đăng xuất?",
     signIn: "Đăng nhập",
     topics: "Chủ Đề",
-    
+
     // Common
     loading: "Đang tải...",
     creating: "Đang tạo...",
@@ -657,7 +692,7 @@ export const translations = {
     application: "đơn",
     approve: "Chấp nhận",
     reject: "Từ chối",
-    
+
     // Auth
     login: "Đăng nhập",
     register: "Đăng ký",
@@ -666,7 +701,7 @@ export const translations = {
     confirmPassword: "Xác nhận mật khẩu",
     forgotPassword: "Quên mật khẩu?",
     rememberMe: "Ghi nhớ đăng nhập",
-    
+
     // Dashboard
     dashboard: "Bảng điều khiển",
     overview: "Tổng quan",
@@ -674,7 +709,7 @@ export const translations = {
     recentActivity: "Hoạt động gần đây",
     noRecentActivity: "Chưa có hoạt động gần đây",
     activityWillAppearHere: "Các nhiệm vụ và cập nhật sẽ hiển thị ở đây",
-    
+
     // Projects
     projects: "Dự án",
     project: "Dự án",
@@ -686,7 +721,7 @@ export const translations = {
     projectStatus: "Trạng thái dự án",
     projectType: "Loại dự án",
     field: "Lĩnh vực",
-    
+
     // Groups
     groups: "Nhóm",
     group: "Nhóm",
@@ -704,7 +739,7 @@ export const translations = {
     saving: "Đang lưu...",
     teamLeader: "Trưởng Nhóm",
     noMembersYet: "Chưa có thành viên",
-    
+
     // Tasks
     tasks: "Nhiệm vụ",
     task: "Nhiệm vụ",
@@ -714,10 +749,10 @@ export const translations = {
     taskName: "Tên nhiệm vụ",
     taskDescription: "Mô tả nhiệm vụ",
     taskStatus: "Trạng thái nhiệm vụ",
-    taskPriority: "Độ ưu tiên nhiệm vụ",
+    taskPriority: "Độ ưu tiên",
     assignedTo: "Giao cho",
     dueDate: "Hạn chót",
-    
+
     // Status
     active: "Hoạt động",
     inactive: "Không hoạt động",
@@ -725,31 +760,35 @@ export const translations = {
     completed: "Hoàn thành",
     cancelled: "Đã hủy",
     inProgress: "Đang thực hiện",
-    
+
     // Priority
     low: "Thấp",
     medium: "Trung bình",
     high: "Cao",
     urgent: "Khẩn cấp",
-    
+
     // Pages - Common
-    discoverProjects: "Khám phá các dự án trên nhiều lĩnh vực và tham gia nhóm",
+    discoverProjects: "Khám phá các dự án và tham gia đội nhóm",
     searchProjects: "Tìm kiếm dự án...",
     communityForum: "Diễn Đàn Cộng Đồng",
-    forumSubtitle: "Chia sẻ kinh nghiệm, đặt câu hỏi và kết nối với cộng đồng sinh viên IT.",
-    
+    forumSubtitle:
+      "Chia sẻ kinh nghiệm, đặt câu hỏi và kết nối với cộng đồng sinh viên IT.",
+
     // Homepage
     heroHeadlinePrefix: "Trao quyền cho sinh viên để",
     heroHeadlineHighlight: "Kết nối, Hợp tác và Sáng tạo",
-    heroDescription: "Tìm đồng đội và dự án phù hợp nhờ gợi ý thông minh từ AI.",
+    heroDescription:
+      "Tìm đồng đội và dự án phù hợp nhờ gợi ý thông minh từ AI.",
     heroPrimaryCta: "Bắt đầu ngay",
     heroSecondaryCta: "Đăng nhập bằng Google",
     heroLoginPrompt: "Bạn đã có tài khoản?",
     statsActiveProjects: "Dự án đang hoạt động",
     statsStudents: "Sinh viên",
-    statsSuccessRate: "Tỉ lệ thành công",
+    statsSuccessRate: "Tỷ lệ thành công",
     featuresTitle: "Mọi thứ bạn cần để thành công",
-    featuresSubtitle: "Bộ tính năng mạnh mẽ giúp quản lý dự án và cộng tác hiệu quả.",
+    featuresSubtitle:
+      "Bộ tính năng mạnh mẽ giúp quản lý dự án và cộng tác hiệu quả.",
+
     activityTaskAssigned: "Giao nhiệm vụ mới: Triển khai đăng ký người dùng",
     activityTime2Hours: "2 giờ trước",
     activityMockupsUploaded: "Đã tải lên bản thiết kế UI",
@@ -760,35 +799,44 @@ export const translations = {
     activityTime4Days: "4 ngày trước",
     activityMeetingScheduled: "Đã lên lịch họp nhóm tuần tới",
     activityTime5Days: "5 ngày trước",
+
     featureAIMatchingTitle: "Gợi ý bằng AI",
-    featureAIMatchingDesc: "Nhận đề xuất đồng đội và dự án cá nhân hóa dựa trên kỹ năng và sở thích.",
+    featureAIMatchingDesc:
+      "Nhận đề xuất dự án và đồng đội phù hợp dựa trên kỹ năng của bạn.",
     featureProjectManagementTitle: "Quản lý dự án",
-    featureProjectManagementDesc: "Theo dõi tiến độ, quản lý nhiệm vụ và phối hợp liền mạch với nhóm.",
+    featureProjectManagementDesc: "Theo dõi tiến độ và cộng tác liền mạch.",
     featureRealtimeChatTitle: "Trò chuyện thời gian thực",
-    featureRealtimeChatDesc: "Luôn kết nối với tin nhắn tức thì và chia sẻ tệp.",
+    featureRealtimeChatDesc: "Kết nối tức thì cùng khả năng chia sẻ tệp.",
     featureSkillTrackingTitle: "Theo dõi kỹ năng",
-    featureSkillTrackingDesc: "Thể hiện năng lực và tìm đồng đội có kỹ năng bổ trợ.",
-    myGroupsProjectsTitle: "Nhóm & Dự án của tôi",
-    myGroupsProjectsSubtitle: "Quản lý đội capstone, theo dõi tiến độ và cộng tác với thành viên.",
-    myGroupsProjectsCTA: "Bạn có thể tạo nhóm mới hoặc tham gia những nhóm đang tuyển.",
+    featureSkillTrackingDesc: "Thể hiện năng lực và tìm đồng đội phù hợp.",
+
+    myGroupsProjectsTitle: "Nhóm & Dự án của bạn",
+    myGroupsProjectsSubtitle:
+      "Quản lý nhóm, theo dõi tiến độ và cộng tác dễ dàng.",
+    myGroupsProjectsCTA: "Tạo nhóm mới hoặc tham gia nhóm đang tuyển.",
     activeGroups: "nhóm đang hoạt động",
     pendingApplications: "đơn chờ duyệt",
-    mostRecentGroup: "Nhóm mới tạo gần nhất",
+    mostRecentGroup: "Nhóm tạo gần nhất",
     updating: "Đang cập nhật",
-    
+
     // MyGroup Page
     addMember: "Thêm Thành Viên",
-    openWorkspace: "Mở Không Gian Làm Việc",
-    workspaceNotAvailable: "Workspace Chưa Khả Dụng",
-    groupStillRecruiting: "Nhóm này đang tuyển thành viên. Workspace sẽ khả dụng khi nhóm chuyển sang trạng thái hoạt động.",
-    groupNotActive: "Nhóm này không hoạt động. Vui lòng liên hệ mentor hoặc admin.",
+    openWorkspace: "Mở Khung Làm Việc",
+    workspaceNotAvailable: "Workspace chưa khả dụng",
+    groupStillRecruiting:
+      "Nhóm đang tuyển thành viên, workspace sẽ mở khi nhóm hoạt động.",
+    groupNotActive: "Nhóm không hoạt động. Vui lòng liên hệ mentor hoặc admin.",
+    tasksCompleted: "Nhiệm vụ hoàn thành",
+    contributionScore: "Điểm đóng góp",
+    projectFiles: "Tệp Dự Án",
+    uploadFiles: "Tải tệp lên",
     groupInformation: "Thông Tin Nhóm",
-    onTrack: "Đúng Tiến Độ",
+    onTrack: "Đúng tiến độ",
     mentor: "Người Hướng Dẫn",
-    start: "Bắt Đầu",
-    end: "Kết Thúc",
-    semester: "Học Kỳ",
-    description: "Mô Tả",
+    start: "Bắt đầu",
+    end: "Kết thúc",
+    semester: "Học kỳ",
+    Description: "Mô Tả",
     progress: "Tiến Độ",
     currentProgress: "Tiến độ hiện tại",
     majorId: "Mã chuyên ngành",
@@ -796,30 +844,30 @@ export const translations = {
     semesterId: "Mã học kỳ",
     majorIdRequired: "Vui lòng nhập mã chuyên ngành.",
     semesterIdRequired: "Vui lòng nhập mã học kỳ.",
-    maxMembersValidation: "Số thành viên tối đa không được nhỏ hơn số thành viên hiện tại.",
+    maxMembersValidation:
+      "Số thành viên tối đa không được nhỏ hơn số hiện tại.",
     updateGroupDetails: "Cập nhật thông tin nhóm",
     selectMajor: "Chọn chuyên ngành",
     selectTopic: "Chọn đề tài",
     changeTopic: "Đổi đề tài",
-    chooseTopicForGroup: "Chọn đề tài cho nhóm của bạn",
-    topicRequirement: "Chỉ chọn đề tài khi nhóm đã đủ thành viên.",
+    chooseTopicForGroup: "Chọn đề tài cho nhóm",
+    topicRequirement: "Chỉ chọn đề tài khi nhóm đủ thành viên.",
     inviteMembers: "Mời thành viên",
     members: "Thành viên",
     totalMembers: "Tổng",
-    addMemberByEmail: "Thêm Thành Viên Bằng Email",
+    addMemberByEmail: "Thêm bằng Email",
     enterMemberEmail: "Nhập email thành viên...",
-    searchByEmailOrName: "Tìm kiếm theo email hoặc tên",
+    searchByEmailOrName: "Tìm theo email hoặc tên",
     pleaseSelectUser: "Vui lòng chọn người dùng",
-    noResultsFound: "Không Tìm Thấy Kết Quả",
-    searchFailed: "Tìm Kiếm Thất Bại",
+    noResultsFound: "Không tìm thấy",
+    searchFailed: "Tìm kiếm thất bại",
     add: "Thêm",
-    projectMentor: "Người Hướng Dẫn",
-    noMentorAssigned: "Chưa có người hướng dẫn",
-    userAlreadyInGroup: "Người dùng này đã có trong nhóm.",
+    projectMentor: "Người hướng dẫn",
+    noMentorAssigned: "Chưa có mentor",
+    userAlreadyInGroup: "Người này đã trong nhóm.",
     userAddedSuccessfully: "đã được thêm.",
-    failedToAddMember: "Không thể thêm thành viên. Vui lòng thử lại.",
-    groupIsFull: "Nhóm Đã Đầy",
-    
+    failedToAddMember: "Không thể thêm thành viên.",
+    groupIsFull: "Nhóm đã đầy",
     // Profile Page
     mentorProfile: "Hồ Sơ Người Hướng Dẫn",
     manageProfilePreferences: "Quản lý hồ sơ và tùy chọn của bạn",
@@ -830,7 +878,7 @@ export const translations = {
     faculty: "Khoa",
     bio: "Tiểu Sử",
     expertiseSpecialization: "Chuyên Môn & Chuyên Ngành",
-    addExpertiseAreas: "Thêm các lĩnh vực chuyên môn để giúp kết nối với các nhóm phù hợp",
+    addExpertiseAreas: "Thêm lĩnh vực chuyên môn để gợi ý nhóm phù hợp",
     availabilityCapacity: "Khả Năng & Sức Chứa",
     officeHours: "Giờ Làm Việc",
     groupCapacity: "Sức Chứa Nhóm",
@@ -842,37 +890,36 @@ export const translations = {
     addSkill: "+ Thêm Kỹ Năng",
     viewAll: "Xem tất cả",
 
-    
     // Admin Dashboard
-    overviewSystemPerformance: "Tổng quan về hiệu suất hệ thống và các chỉ số quan trọng",
+    overviewSystemPerformance: "Tổng quan hiệu suất hệ thống & chỉ số quan trọng",
     totalUsers: "Tổng Người Dùng",
     totalGroups: "Tổng Nhóm",
-    groupsWithMentor: "Nhóm Có Người Hướng Dẫn",
-    openRecruitments: "Tuyển Dụng Mở",
+    groupsWithMentor: "Nhóm Có Mentor",
+    openRecruitments: "Tuyển Dụng Đang Mở",
     taskCompletion: "Hoàn Thành Nhiệm Vụ",
     activeUsers7d: "Người Dùng Hoạt Động (7 ngày)",
-    fromLastMonth: "từ tháng trước",
+    fromLastMonth: "so với tháng trước",
     dayActivity: "Hoạt Động 30 Ngày",
-    userEngagementLast30Days: "Sự tương tác của người dùng trong 30 ngày qua",
+    userEngagementLast30Days: "Mức độ tương tác của người dùng 30 ngày qua",
     majorsDistribution: "Phân Bố Chuyên Ngành",
-    studentDistributionMajors: "Phân bố sinh viên theo các chuyên ngành khác nhau",
-    
+    studentDistributionMajors: "Phân bổ sinh viên theo chuyên ngành",
+
     // Moderator Dashboard
     groupsMissingTopics: "Nhóm Thiếu Chủ Đề",
-    groupsMissingMentor: "Nhóm Thiếu Người Hướng Dẫn",
+    groupsMissingMentor: "Nhóm Thiếu Mentor",
     studentWithoutGroup: "Sinh Viên Chưa Có Nhóm",
     groupsWithoutAssignedTopics: "Nhóm chưa được giao chủ đề",
-    groupsMissingMentors: "Nhóm thiếu người hướng dẫn",
+    groupsMissingMentors: "Nhóm thiếu mentor",
     studentsWithoutGroups: "Sinh viên chưa có nhóm",
     teamBetaHasntChosenTopic: "Nhóm Beta chưa chọn chủ đề",
-    weeklyProgressReportsDueSoon: "Báo cáo tiến độ hàng tuần sắp đến hạn",
-    recentSystemAlerts: "Cảnh Báo Hệ Thống Gần Đây",
-    latestNotificationsIssues: "Thông báo và vấn đề mới nhất cần chú ý",
+    weeklyProgressReportsDueSoon: "Báo cáo tiến độ tuần sắp đến hạn",
+    recentSystemAlerts: "Cảnh Báo Hệ Thống",
+    latestNotificationsIssues: "Thông báo & vấn đề gần đây",
     view: "Xem",
     hoursAgo: "giờ trước",
     dayAgo: "ngày trước",
     daysAgo: "ngày trước",
-    
+
     // Workspace
     todo: "Cần Làm",
     review: "Xem Xét",
@@ -883,15 +930,15 @@ export const translations = {
     points: "điểm",
     comments: "bình luận",
     addComment: "Thêm bình luận...",
-    
+
     // Project Detail
     apply: "Ứng Tuyển",
     projectId: "ID",
     fields: "Lĩnh Vực",
     leader: "Trưởng Nhóm",
     teamMembers: "Thành Viên Nhóm",
-    teamMember: "Thành viên nhóm",
-    
+    teamMember: "Thành viên",
+
     // Mentor Pages
     groupId: "Nhóm #",
     timelineTasks: "Timeline & Nhiệm Vụ",
@@ -902,13 +949,13 @@ export const translations = {
     forumPersonalSubtitle: "Đăng hồ sơ để các nhóm mời bạn tham gia.",
     createRecruitPost: "Tạo bài tuyển thành viên",
     createPersonalPost: "Tạo bài đăng cá nhân",
-    createPersonalProfileTitle: "Tạo hồ sơ cá nhân",
-    publishProfile: "Đăng hồ sơ",
+    createPersonalProfileTitle: "Tạo Hồ Sơ Cá Nhân",
+    publishProfile: "Đăng Hồ Sơ",
     titleLabel: "Tiêu đề",
     descriptionLabel: "Mô tả",
     skillsLabel: "Kỹ năng",
     placeholderTitle: "VD: Tìm thành viên FE",
-    placeholderDescription: "Mô tả ngắn về nhu cầu/kinh nghiệm",
+    placeholderDescription: "Mô tả ngắn gọn kinh nghiệm / nhu cầu",
     placeholderSkills: "Node, Postgres",
     createRecruitPostTitle: "Tạo bài tuyển thành viên",
     publishPost: "Đăng bài",
@@ -930,41 +977,41 @@ export const translations = {
     openPositions: "Vị Trí Cần Tuyển",
     desiredRolesTotal: "Vai Trò Mong Muốn",
     noData: "Không có kết quả.",
-    searchByProject: "Tìm bài theo dự án, kỹ năng…",
-    searchByPeople: "Tìm người theo vai trò, kỹ năng…",
-    postPersonal: "Bài đăng cá nhân",
-    postGroup: "Bài đăng nhóm",
+    searchByProject: "Tìm theo dự án, kỹ năng…",
+    searchByPeople: "Tìm theo vai trò, kỹ năng…",
+    postPersonal: "Bài cá nhân",
+    postGroup: "Bài nhóm",
     positionsNeeded: "Vị trí cần tuyển",
     requiredSkills: "Kỹ năng yêu cầu",
     applyNow: "Ứng tuyển ngay",
-      applyToJoin: "Ứng tuyển tham gia",
-      applyingTo: "Đang ứng tuyển đến:",
-      seeking: "Tìm",
-      roleForApplying: "Vị trí bạn ứng tuyển",
-      selectRole: "Chọn vai trò",
-      whyJoin: "Tại sao bạn muốn tham gia dự án này?",
-      enterDescription: "Nhập mô tả",
+    applyToJoin: "Ứng tuyển tham gia",
+    applyingTo: "Đang ứng tuyển đến:",
+    seeking: "Tìm",
+    roleForApplying: "Vị trí bạn ứng tuyển",
+    selectRole: "Chọn vai trò",
+    whyJoin: "Lý do bạn muốn tham gia dự án?",
+    enterDescription: "Nhập mô tả",
     viewProfile: "Xem hồ sơ",
     inviteToGroup: "Mời vào nhóm",
     alwaysOpen: "Mở 24/7",
     availableNow: "Sẵn sàng",
     groupStatus: "Trạng thái",
-    groupMaxMembers: "Số thành viên tối đa",
+    groupMaxMembers: "Tối đa",
     groupCurrentMembers: "Hiện có",
     major: "Chuyên ngành",
     noDeadline: "Không giới hạn",
     applications: "Đơn ứng tuyển",
-    created: "Được tạo",
+    created: "Tạo lúc",
     status: "Trạng thái",
     updateSuccess: "Cập nhật thành công",
-    userUpdatedSuccess: "Cập nhật người dùng thành công",
-    userUpdateFailed: "Cập nhật người dùng thất bại",
+    userUpdatedSuccess: "Đã cập nhật người dùng",
+    userUpdateFailed: "Cập nhật thất bại",
     due: "Hạn",
-    applying: "Đang ứng tuyển…",
+    applying: "Đang ứng tuyển...",
     currentTopic: "Chủ đề hiện tại",
     noTopicAssigned: "Chưa gán chủ đề",
-    searchTopicPlaceholder: "Tìm kiếm theo từ khóa hoặc giảng viên",
-    noTopicsFound: "Không tìm thấy chủ đề phù hợp",
+    searchTopicPlaceholder: "Tìm theo từ khóa hoặc giảng viên",
+    noTopicsFound: "Không có chủ đề phù hợp",
     noDescription: "Không có mô tả",
     assignTopic: "Gán chủ đề",
     approveFailed: "Chấp nhận thất bại",
@@ -973,52 +1020,54 @@ export const translations = {
     leave: "Rời khỏi",
     understood: "Đã hiểu",
     confirmLeaveGroup: "Rời Nhóm",
-    confirmLeaveGroupMessage: "Bạn có chắc chắn muốn rời khỏi nhóm này?",
-    leaveActiveGroupWarning: "Nhóm này đang hoạt động. Rời nhóm sẽ loại bỏ bạn khỏi tất cả các hoạt động đang diễn ra. Bạn có chắc chắn muốn rời khỏi?",
+    confirmLeaveGroupMessage: "Bạn có chắc chắn muốn rời nhóm?",
+    leaveActiveGroupWarning: "Nhóm đang hoạt động. Bạn sẽ bị loại khỏi toàn bộ tiến trình.",
     leaveGroupSuccess: "Đã rời nhóm thành công",
-    cannotLeaveActiveGroup: "Không thể rời nhóm đang hoạt động",
-    cannotLeaveActiveGroupDesc: "Bạn không thể rời khỏi nhóm đang hoạt động. Vui lòng đợi đến khi trạng thái nhóm thay đổi hoặc liên hệ với mentor của bạn.",
+    cannotLeaveActiveGroup: "Không thể rời khi nhóm đang hoạt động",
+    cannotLeaveActiveGroupDesc: "Vui lòng liên hệ mentor hoặc đợi nhóm đổi trạng thái.",
     confirmKick: "Xóa Thành Viên",
-    confirmKickMessage: "Bạn có chắc chắn muốn xóa thành viên này khỏi nhóm?",
+    confirmKickMessage: "Bạn có chắc muốn xóa thành viên này?",
     remove: "Xóa",
-    removeSuccess: "Đã xóa thành viên thành công",
-    cannotKickFromActiveGroup: "Không thể xóa thành viên khỏi nhóm đang hoạt động",
-    cannotKickFromActiveGroupDesc: "Bạn không thể xóa thành viên khỏi nhóm đang hoạt động. Vui lòng đợi đến khi trạng thái nhóm thay đổi hoặc liên hệ với mentor của bạn.",
-    heroBuildYourFuture: "Xây dựng tương lai của bạn, từng dự án một",
-    startMatching: "Bắt đầu Kết hợp",
-    seeHowItWorks: "Xem Cách hoạt động",
+    removeSuccess: "Xóa thành công",
+    cannotKickFromActiveGroup: "Không thể xóa thành viên khi nhóm đang hoạt động",
+    cannotKickFromActiveGroupDesc: "Vui lòng đợi nhóm đổi trạng thái.",
+
+    // Hero & Features
+    heroBuildYourFuture: "Xây dựng tương lai của bạn — từng bước một",
+    startMatching: "Bắt đầu ghép nhóm",
+    seeHowItWorks: "Xem cách hoạt động",
     hero1000Students: "1000+ sinh viên",
-    hero50Mentors: "50+ người hướng dẫn",
+    hero50Mentors: "50+ mentor",
     hero300Projects: "300+ dự án",
     featureTeammates: "Đồng đội",
-    featureTeammatesDesc: "Đăng các vị trí tuyển dụng cho dự án của bạn với mô tả vai trò rõ ràng và kỹ năng yêu cầu",
-    featureMentor: "Người hướng dẫn",
-    featureMentorDesc: "Kết nối với các giảng viên và chuyên gia ngành có kinh nghiệm để hướng dẫn suốt quá trình",
+    featureTeammatesDesc: "Đăng tuyển thành viên với mô tả vai trò và kỹ năng rõ ràng",
+    featureMentor: "Mentor",
+    featureMentorDesc: "Kết nối với giảng viên/chuyên gia để được hướng dẫn",
     featureCommunication: "Giao tiếp",
-    featureCommunicationDesc: "Trò chuyện, thảo luận và chia sẻ ý tưởng dễ dàng với đồng đội và người hướng dẫn",
+    featureCommunicationDesc: "Chat, thảo luận và chia sẻ ý tưởng dễ dàng",
     featurePlanSchedule: "Kế hoạch & Lịch trình",
-    featurePlanScheduleDesc: "Tạo timeline, đặt hạn chót và nhận nhắc nhở để giao hàng đúng thời gian",
+    featurePlanScheduleDesc: "Tạo timeline và đặt deadline rõ ràng",
     featureEvaluation: "Đánh giá & Phản hồi",
-    featureEvaluationDesc: "Nhận phản hồi từ người hướng dẫn và đồng đội để liên tục cải thiện dự án",
+    featureEvaluationDesc: "Nhận phản hồi từ mentor và đồng đội để cải thiện dự án",
     howItWorks: "Cách hoạt động",
-    howItWorksSubtitle: "Một quy trình đơn giản để khởi động hành trình capstone của bạn",
+    howItWorksSubtitle: "Quy trình đơn giản để bắt đầu hành trình capstone",
     stepLogin: "Đăng nhập",
-    stepLoginDesc: "Tạo hồ sơ của bạn với kỹ năng, sở thích, khả năng sẵn sàng và kinh nghiệm học tập",
+    stepLoginDesc: "Tạo hồ sơ với kỹ năng, sở thích và kinh nghiệm học thuật",
     stepSearch: "Tìm kiếm & Kết nối",
-    stepSearchDesc: "Duyệt các dự án tuyển dụng đồng đội hoặc tìm người hướng dẫn phù hợp với lĩnh vực của bạn",
-    stepDiscuss: "Thảo luận & Tham gia",
-    stepDiscussDesc: "Nhắn tin cho chủ sở hữu, thống nhất phạm vi và vai trò, sau đó chính thức tham gia đội",
+    stepSearchDesc: "Tìm dự án đang tuyển hoặc mentor phù hợp",
+    stepDiscuss: "Trao đổi & Tham gia",
+    stepDiscussDesc: "Trò chuyện, thống nhất vai trò rồi gia nhập nhóm",
     stepBuild: "Xây dựng & Hoàn thành",
-    stepBuildDesc: "Làm việc cùng nhau dưới hướng dẫn của người hướng dẫn và hoàn thành mọi cột mốc mạnh mẽ",
-    ctaReady: "Sẵn sàng bắt đầu dự án của bạn",
-    ctaDescription: "Tham gia cộng đồng sinh viên sôi động để tìm đồng đội, người hướng dẫn và cơ hội phát triển—hôm nay",
+    stepBuildDesc: "Cộng tác và hoàn thành các cột mốc quan trọng",
+    ctaReady: "Sẵn sàng bắt đầu dự án của bạn?",
+    ctaDescription: "Tham gia cộng đồng sinh viên năng động ngay hôm nay!",
     ctaBenefitFree: "Miễn phí cho sinh viên",
-    ctaBenefitUI: "Giao diện thân thiện đơn giản",
+    ctaBenefitUI: "Giao diện thân thiện",
     ctaBenefitSupport: "Hỗ trợ 24/7",
-    ctaBenefitSecure: "Thiết kế bảo mật",
-    
+    ctaBenefitSecure: "Bảo mật cao",
+
     // Footer
-    footerTagline: "Nền tảng dành cho sinh viên để kết nối nhóm, tìm mentor và hoàn thành capstone hiệu quả.",
+    footerTagline: "Nền tảng capstone dành cho sinh viên: ghép nhóm, tìm mentor, quản lý dự án.",
     footerFeaturesTitle: "Tính năng",
     footerFeatureFindTeammates: "Tìm đồng đội",
     footerFeatureChooseMentors: "Chọn mentor",
@@ -1035,9 +1084,9 @@ export const translations = {
     footerConnectEmail: "Email",
     footerConnectGithub: "GitHub",
 
-    alreadyInvited: "Đã được mời"
-    ,
-      // Additional notification keys added during localization sweep
+    alreadyInvited: "Đã được mời",
+
+    // Notification Sweep
     inviteRequestSent: "Đã gửi yêu cầu tham gia nhóm!",
     loggedOut: "Bạn đã đăng xuất.",
     groupInviteTitle: "Lời mời tham gia nhóm",
@@ -1047,19 +1096,11 @@ export const translations = {
     declineInfo: "Đã từ chối",
     failedLoadGroups: "Không thể tải danh sách nhóm",
     failedLoadGroupDetail: "Không thể tải chi tiết nhóm",
-    groupMarkedFull: "Đã đánh dấu nhóm: Full",
+    groupMarkedFull: "Đã đánh dấu nhóm là Đầy",
     groupReopened: "Đã mở lại tuyển thành viên",
-    topicReminderSent: "Đã gửi nhắc nhở cho nhóm",
-    // Manage Users / Admin
-    failedLoadUsers: "Không thể tải danh sách người dùng",
-    failedLoadUserDetails: "Không thể tải chi tiết người dùng",
-    confirmBanTitle: "Cấm {name}?",
-    confirmBanContent: "Bạn có chắc chắn muốn cấm người dùng này? Hành động này có thể hoàn tác sau.",
-    confirmBanOk: "Xác nhận cấm",
-    confirmBanCancel: "Hủy",
-    userBannedSuccess: "{name} đã bị cấm.",
-    userBanFailed: "Không thể cấm {name}",
-        // Import / Upload messages
+    topicReminderSent: "Đã gửi nhắc nhở",
+
+    // Import / Upload
     fileImportedSuccess: "Nhập file thành công",
     fileParsedLocally: "File đã được xử lý cục bộ (lỗi API)",
     templateDownloaded: "Đã tải mẫu xuống",
@@ -1077,27 +1118,23 @@ export const translations = {
     import: "Nhập",
     users: "Người dùng",
 
-    // Create post/profile
-    createRecruitPostSuccess: "Đã tạo bài tuyển thành viên",
-    createProfilePostSuccess: "Đã tạo bài đăng hồ sơ",
-
-    // Topics / Loading
-    failedLoadTopics: "Không thể tải danh sách chủ đề",
+    // Topics
+    failedLoadTopics: "Không thể tải chủ đề",
     failedLoadTopicDetails: "Không thể tải chi tiết chủ đề",
 
-    // Moderator notifications (bổ sung)
-    pleaseSelectGroup: "Vui lòng chọn một nhóm.",
+    // Moderator Notifications
+    pleaseSelectGroup: "Vui lòng chọn nhóm.",
     sentToGroup: "Đã gửi đến ",
-    scheduledReminderInfo: "Đã lên lịch nhắc nhở vào ngày mai lúc 9:00 (giả lập)",
-    aiAnalysisComplete: "Phân tích bằng AI đã hoàn tất!",
+    scheduledReminderInfo: "Đã đặt nhắc nhở vào ngày mai lúc 9:00 (giả lập)",
+    aiAnalysisComplete: "Phân tích AI đã hoàn tất!",
 
     // Discover Page
-    noGroupFound: "Không tìm thấy nhóm nào",
+    noGroupFound: "Không tìm thấy nhóm",
     pleaseCreateOrJoinGroup: "Vui lòng tạo hoặc tham gia một nhóm trước.",
-    groupNotFull: "Nhóm Chưa Đủ Thành Viên",
-    groupMustBeFull: "Nhóm phải đủ số thành viên mới được chọn chủ đề. Hiện tại:",
+    groupNotFull: "Nhóm chưa đủ thành viên",
+    groupMustBeFull: "Nhóm phải đủ thành viên để chọn chủ đề. Hiện tại:",
     topicSelected: "Đã chọn chủ đề",
-    successfullySelected: "Đã chọn thành công",
+    successfullySelected: "Chọn thành công",
     forYourGroup: "cho nhóm của bạn.",
     failedToSelectTopic: "Chọn chủ đề thất bại",
     pleaseTryAgain: "Vui lòng thử lại.",
@@ -1119,38 +1156,38 @@ export const translations = {
     pleaseSelectDeadline: "Vui lòng chọn hạn chót",
     deadlineMustBeFuture: "Ngày hết hạn phải lớn hơn ngày hiện tại!",
     pleaseEnterFullName: "Vui lòng nhập họ tên",
-    pleaseEnterEmail: "Vui lòng nhập địa chỉ email.",
+    pleaseEnterEmail: "Vui lòng nhập email",
     invalidEmail: "Email không hợp lệ",
     displayName: "Tên hiển thị",
     pleaseEnterDisplayName: "Vui lòng nhập tên hiển thị",
     enterDisplayNamePlaceholder: "Nhập tên hiển thị",
     pleaseEnterGroupId: "Vui lòng nhập mã nhóm",
-    selectARole: "Chọn một vai trò",
+    selectARole: "Chọn vai trò",
     signedInWithGoogle: "Đăng nhập bằng Google",
     signInFailed: "Đăng nhập thất bại",
     connectionTimeout: "Hết thời gian kết nối",
     sending: "Đang gửi...",
     send: "Gửi",
-    
+
     // Workspace
     newColumn: "Cột mới",
     enterColumnName: "Nhập tên cột",
     position: "Vị trí",
-    searchTasksPlaceholder: "Tìm kiếm công việc theo tiêu đề hoặc mô tả...",
+    searchTasksPlaceholder: "Tìm công việc theo tên hoặc mô tả...",
     allStatus: "Tất cả trạng thái",
     allPriority: "Tất cả ưu tiên",
     deleteColumn: "Xóa cột",
     deleteColumnConfirm: "Xóa cột",
-    
+
     // Common UI
     copyTopic: "Sao chép chủ đề",
-    searchByTopicOrMentor: "Tìm kiếm theo chủ đề hoặc người hướng dẫn...",
-    enterNotificationMessage: "Nhập thông báo của bạn...",
-    searchByGroupOrMentor: "Tìm kiếm theo tên nhóm hoặc người hướng dẫn...",
-    searchByKeyword: "Tìm kiếm theo chủ đề hoặc từ khóa...",
+    searchByTopicOrMentor: "Tìm theo chủ đề hoặc mentor...",
+    enterNotificationMessage: "Nhập nội dung thông báo...",
+    searchByGroupOrMentor: "Tìm theo tên nhóm hoặc mentor...",
+    searchByKeyword: "Tìm theo chủ đề hoặc từ khóa...",
     filterByDepartment: "Lọc theo khoa",
     viewGroupDetails: "Xem chi tiết nhóm",
-    searchGroupsTopics: "Tìm kiếm nhóm, chủ đề...",
+    searchGroupsTopics: "Tìm nhóm, chủ đề...",
     notAssigned: "Chưa phân công",
     allMajor: "Tất cả chuyên ngành",
     computerScience: "Khoa học máy tính",
@@ -1158,10 +1195,10 @@ export const translations = {
     business: "Kinh doanh",
     engineering: "Kỹ thuật",
     notAvailable: "Không có",
-    
+
     // Notifications Page
     groupsWithoutTopics: "Nhóm chưa có chủ đề",
-    groupsWithoutMentors: "Nhóm chưa có người hướng dẫn",
+    groupsWithoutMentors: "Nhóm chưa có mentor",
     groupsMissingMembers: "Nhóm thiếu thành viên",
     composeNotification: "Soạn thông báo",
     selectAll: "Chọn tất cả",
@@ -1169,41 +1206,41 @@ export const translations = {
     quickStats: "Thống kê nhanh",
     sentToday: "Đã gửi hôm nay",
     thisWeek: "Tuần này",
-    
+
     // Mentor Dashboard
     sendAnnouncement: "Gửi thông báo",
     pendingReviews: "Đang chờ đánh giá",
     averageProgress: "Tiến độ trung bình",
     feedbackGiven: "Phản hồi đã cho",
     allDepartments: "Tất cả khoa",
-    
+
     // Mentor Group List
-    avgProgress: "Tiến độ trung bình",
+    avgProgress: "Tiến độ TB",
     needAttention: "Cần chú ý",
     highPriority: "Ưu tiên cao",
     quickOverview: "Tổng quan nhanh",
-    nextDigest: "Tóm tắt tiếp theo:",
-    taskEvents: "Sự kiện công việc",
+    nextDigest: "Bản tóm tắt tiếp theo:",
+    taskEvents: "Sự kiện nhiệm vụ",
     weeklyDigest: "Tóm tắt tuần",
-    
+
     // AI Assistant
-    suggestMatches: "Gợi ý phù hợp",
+    suggestMatches: "Gợi ý ghép nhóm",
     autoMerge: "Chế độ tự động ghép",
-    aiInsightsSummary: "Tóm tắt thông tin AI",
+    aiInsightsSummary: "Tóm tắt AI",
     suggestedTopic: "Chủ đề gợi ý",
-    suggestedMentor: "Người hướng dẫn gợi ý",
-    mergeSuggestion: "Gợi ý ghép",
+    suggestedMentor: "Mentor gợi ý",
+    mergeSuggestion: "Gợi ý ghép nhóm",
     mergeWith: "Ghép với",
-    
+
     // Import
     importTopics: "Nhập chủ đề",
-    
+
     // Profile
-    preparingProfile: "Đang chuẩn bị hồ sơ của bạn...",
-    
+    preparingProfile: "Đang chuẩn bị hồ sơ...",
+
     // Audit Logs
-    searchByEmailAction: "Tìm kiếm theo email, hành động...",
-    
+    searchByEmailAction: "Tìm theo email, hành động...",
+
     // Topic Management
     smartFilters: "Bộ lọc thông minh",
     selectMentor: "Chọn người hướng dẫn",

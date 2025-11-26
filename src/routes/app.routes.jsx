@@ -21,10 +21,11 @@ const ImportUsers = lazy(() => import("../pages/admin/ImportUsers"));
 // Common (Public)
 const HomePage = lazy(() => import("../pages/common/Home"));
 const Profile = lazy(() => import("../pages/common/Profile"));
-const DiscoverGuest = lazy(() => import("../pages/common/Discover"));
+const DiscoverGuest = lazy(() => import("../pages/common/Discover")); 
 const Forum = lazy(() => import("../pages/common/Forum"));
 const Workspace = lazy(() => import("../pages/common/Workspace"));
 const Login = lazy(() => import("../pages/common/Login"));
+const MessagesPage = lazy(() => import("../pages/MessagesPage"));
 
 const MyGroupsPage = lazy(() => import("../pages/common/MyGroups"));
 const MyGroup = lazy(() => import("../pages/common/MyGroup"));
@@ -54,6 +55,8 @@ const routes = [
       { path: "/my-group/:id", element: <MyGroup /> },
       { path: "/workspace", element: <Workspace /> },
       { path: "/profile", element: <Profile /> },
+      { path: "/messages", element: <MessagesPage /> },
+      { path: "/messages/:userId", element: <MessagesPage /> },
     ],
   },
 

@@ -5,17 +5,20 @@ import { notification } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../../../hook/useTranslation";
 
-const ProjectCard = ({ project }) => {
+// Added optional onSelectTopic callback so parent can show invite mentor modal.
+const ProjectCard = ({ project, onSelectTopic }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+
   const formattedDate = project.createdAt
     ? new Date(project.createdAt).toLocaleDateString()
     : "";
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 p-6 flex flex-row gap-6">
-      {/* Left section - Main content */}
+      
+      {/* Left section */}
       <div className="flex-1 flex flex-col gap-4">
         <div>
           <h3 className="font-semibold text-gray-900 text-lg leading-snug">
@@ -28,6 +31,7 @@ const ProjectCard = ({ project }) => {
           <span className="text-xs bg-blue-50 text-blue-700 font-medium px-2 py-1 rounded-md">
             {project.domain}
           </span>
+
           {(project.tags || []).map((tag) => (
             <span
               key={tag}
@@ -47,16 +51,19 @@ const ProjectCard = ({ project }) => {
               </span>
             </div>
           )}
+
           <div className="text-sm text-gray-500 flex items-center gap-2">
             <Users className="w-4 h-4" />
             {(project.members || []).length} {t("members")}
           </div>
         </div>
 
-        {/* Attached files / reference */}
+        {/* Attached Files + Reference Docs */}
         {((project.attachedFiles || []).length > 0 ||
           (project.referenceDocs || []).length > 0) && (
           <div className="text-sm text-gray-600 flex gap-6">
+            
+            {/* Attached Files */}
             {(project.attachedFiles || []).length > 0 && (
               <div className="flex-1">
                 <div className="text-xs text-gray-500 mb-2">Attached Files</div>
@@ -77,6 +84,7 @@ const ProjectCard = ({ project }) => {
               </div>
             )}
 
+            {/* Reference Docs */}
             {(project.referenceDocs || []).length > 0 && (
               <div className="flex-1">
                 <div className="text-xs text-gray-500 mb-2">
@@ -91,18 +99,23 @@ const ProjectCard = ({ project }) => {
                 </ul>
               </div>
             )}
+
           </div>
         )}
       </div>
 
-      {/* Right section - Action button */}
+      {/* Right section - Button */}
       <div className="flex-shrink-0 w-40 flex flex-col justify-between">
+        
+        {/* Date + AI Tag */}
         <div className="flex flex-col items-end gap-2">
           <div className="text-xs text-gray-400 flex items-center gap-1">
             <Sparkles className="w-4 h-4" /> AI
           </div>
           <div className="text-xs text-gray-500">{formattedDate}</div>
         </div>
+
+        {/* Select Topic Button */}
         <button
           onClick={async () => {
             if (project.status === "closed" || !project.topicId) return;
@@ -110,11 +123,10 @@ const ProjectCard = ({ project }) => {
             try {
               setLoading(true);
 
-              // Check if user has a group
               const myGroupsRes = await GroupService.getMyGroups();
               const myGroups = myGroupsRes?.data || [];
 
-              if (!myGroups || myGroups.length === 0) {
+              if (!myGroups.length) {
                 notification.error({
                   message: t("noGroupFound"),
                   description: t("pleaseCreateOrJoinGroup"),
@@ -123,20 +135,15 @@ const ProjectCard = ({ project }) => {
                 return;
               }
 
-              // Get the first group (or you can let user select)
               const group = myGroups[0];
               const groupId = group.id || group.groupId;
-
-              // Check if group is full
               const currentMembers = group.currentMembers || 0;
               const maxMembers = group.maxMembers || 0;
 
               if (currentMembers < maxMembers) {
                 notification.error({
                   message: t("groupNotFull"),
-                  description: `${t(
-                    "groupMustBeFull"
-                  )} ${currentMembers}/${maxMembers} ${t("members")}.`,
+                  description: `${t("groupMustBeFull")} ${currentMembers}/${maxMembers} ${t("members")}.`,
                 });
                 return;
               }
@@ -145,9 +152,7 @@ const ProjectCard = ({ project }) => {
 
               notification.success({
                 message: t("topicSelected"),
-                description: `${t("successfullySelected")} "${
-                  project.title
-                }" ${t("forYourGroup")}`,
+                description: `${t("successfullySelected")} "${project.title}" ${t("forYourGroup")}`,
               });
 
               navigate(`/my-group`);
@@ -155,8 +160,7 @@ const ProjectCard = ({ project }) => {
               console.error("Failed to select topic:", err);
               notification.error({
                 message: t("failedToSelectTopic"),
-                description:
-                  err?.response?.data?.message || t("pleaseTryAgain"),
+                description: err?.response?.data?.message || t("pleaseTryAgain"),
               });
             } finally {
               setLoading(false);
@@ -175,6 +179,7 @@ const ProjectCard = ({ project }) => {
             ? t("topicClosed")
             : t("selectTopic")}
         </button>
+
       </div>
     </div>
   );

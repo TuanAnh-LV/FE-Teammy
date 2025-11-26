@@ -1,54 +1,56 @@
 export const API = {
-    COMMON: {
-        PUBLIC: "api/client"
-    },
-    AUTH: {
-        LOGIN: "/auth/login",
-        ME: "/auth/me",
-    },
-    ADMIN: {
-        LIST_USERS: "/users/admin",
-        DETAIL_USER: (id) => `/users/admin/${id}`,
-        BAN_USER: (id) => `/users/admin/${id}`,
-        IMPORT_USERS: "/users/import",
-        VALIDATE_IMPORT: "/users/import/validate",
-        EXPORT_USERS: "/users/import/template",
-        UPDATE_USER: (id) => `/users/admin/${id}`,
-    },
-    POST: {
-        GET_PERSONAL: "/profile-posts",
-        GET_GROUP: "/recruitment-posts",
-        POST_PERSONAL: "/profile-posts",
-        POST_GROUP: "/recruitment-posts",
-    },
-    GROUPS: {
-        MEMBERSHIP: "/groups/membership", 
-    },
-     USERS: {
-        LIST: "/users",
-        DETAIL: "/users/:id",
-        MY_PROFILE: "/users/me/profile",
-        UPDATE_PROFILE: "/users/me/profile",
-    },
-    INVITATIONS: {
-        LIST: "/invitations",
-        ACCEPT: (id) => `/invitations/${id}/accept`,
-        DECLINE: (id) => `/invitations/${id}/decline`,
-    },
-    GROUP: {
-        LIST_GROUP: "/groups",
-        CREATE_GROUP: "/groups",
-        MY_GROUPS: "/groups/my",
-        GROUP_DETAIL: "/groups/:id",
-        UPDATE_GROUP: (id) => `/groups/${id}`,
-        LIST_MEMBERS: "/groups/:id/members",
-        INVITE_MEMBER: "/groups/:id/invites",
-        REMOVE_MEMBER: (groupId, memberId) => `/groups/${groupId}/members/${memberId}`,
-        JOIN_REQUESTS: (groupId) => `/groups/${groupId}/join-requests`,
-        PENDING_REQUESTS: (groupId) => `/groups/${groupId}/pending`,
-        ACCEPT_JOIN: (groupId, requestId) =>
+  COMMON: {
+    PUBLIC: "api/client",
+  },
+  AUTH: {
+    LOGIN: "/auth/login",
+    ME: "/auth/me",
+  },
+  ADMIN: {
+    LIST_USERS: "/users/admin",
+    DETAIL_USER: (id) => `/users/admin/${id}`,
+    BAN_USER: (id) => `/users/admin/${id}`,
+    IMPORT_USERS: "/users/import",
+    VALIDATE_IMPORT: "/users/import/validate",
+    EXPORT_USERS: "/users/import/template",
+    UPDATE_USER: (id) => `/users/admin/${id}`,
+  },
+  POST: {
+    GET_PERSONAL: "/profile-posts",
+    GET_GROUP: "/recruitment-posts",
+    POST_PERSONAL: "/profile-posts",
+    POST_GROUP: "/recruitment-posts",
+  },
+  GROUPS: {
+    MEMBERSHIP: "/groups/membership",
+  },
+  USERS: {
+    LIST: "/users",
+    DETAIL: "/users/:id",
+    MY_PROFILE: "/users/me/profile",
+    UPDATE_PROFILE: "/users/me/profile",
+  },
+  INVITATIONS: {
+    LIST: "/invitations",
+    ACCEPT: (id) => `/invitations/${id}/accept`,
+    DECLINE: (id) => `/invitations/${id}/decline`,
+  },
+  GROUP: {
+    LIST_GROUP: "/groups",
+    CREATE_GROUP: "/groups",
+    MY_GROUPS: "/groups/my",
+    GROUP_DETAIL: "/groups/:id",
+    UPDATE_GROUP: (id) => `/groups/${id}`,
+    LIST_MEMBERS: "/groups/:id/members",
+    INVITE_MEMBER: "/groups/:id/invites",
+    INVITE_MENTOR: (groupId) => `/groups/${groupId}/mentor-invites`,
+    REMOVE_MEMBER: (groupId, memberId) =>
+      `/groups/${groupId}/members/${memberId}`,
+    JOIN_REQUESTS: (groupId) => `/groups/${groupId}/join-requests`,
+    PENDING_REQUESTS: (groupId) => `/groups/${groupId}/pending`,
+    ACCEPT_JOIN: (groupId, requestId) =>
       `/groups/${groupId}/pending/${requestId}/accept`,
-        REJECT_JOIN: (groupId, requestId) =>
+    REJECT_JOIN: (groupId, requestId) =>
       `/groups/${groupId}/pending/${requestId}/reject`,
         LEAVE_GROUP: (id) => `/groups/${id}/members/me`,
         JOIN_POST_TO_GROUP: (id) => `recruitment-posts/${id}/applications`,
@@ -59,7 +61,6 @@ export const API = {
         EXPORT_TOPICS: "/topics/template",
         IMPORT_TOPICS: "/topics/import",
         VALIDATE_IMPORT: "/topics/import/validate",
-
     },
     MAJORS: {
         LIST: "/majors",
@@ -94,7 +95,12 @@ export const API = {
         UPLOAD_FILE: (groupId) => `/groups/${groupId}/board/files/upload`,
         DELETE_FILE: (groupId, fileId) =>
             `/groups/${groupId}/board/files/${fileId}`,
-    }
+   },
+  CHAT: {
+    CONVERSATIONS: "/chat/conversations",
+    MESSAGES: (sessionId) => `/chat/sessions/${sessionId}/messages`,
+    SEND_MESSAGE: "/chat/messages",
+  },
 }
 
     

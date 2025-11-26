@@ -10,6 +10,7 @@ import {
   UserOutlined,
   TagsOutlined,
   BulbOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
 import { getTranslation } from "../translations";
 
@@ -29,7 +30,7 @@ export const getRoleMenus = (role, language = "EN") => {
         key: "dashboard",
         label: getTranslation("dashboard", language),
         path: "/mentor/dashboard",
-        icon: <HomeOutlined />,
+        icon: <BarChartOutlined />,
       },
       {
         key: "discover",

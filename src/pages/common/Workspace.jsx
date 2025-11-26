@@ -1,4 +1,4 @@
-// src/pages/Workspace.jsx
+﻿// src/pages/Workspace.jsx
 import React, { useEffect, useState } from "react";
 import {
   DndContext,
@@ -7,7 +7,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Search, Filter, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Modal, Input, Form } from "antd";
 
 import Column from "../../components/common/kanban/Column";
@@ -36,6 +36,7 @@ const Workspace = () => {
       },
     })
   );
+  const [activeTab, setActiveTab] = useState("overview");
 
   const {
     filteredColumns,
@@ -43,12 +44,6 @@ const Workspace = () => {
     groupMembers,
     selectedTask,
     setSelectedTask,
-    search,
-    setSearch,
-    filterStatus,
-    setFilterStatus,
-    filterPriority,
-    setFilterPriority,
     handleDragOver,
     handleDragEnd,
     createColumn,
@@ -123,147 +118,292 @@ const Workspace = () => {
   const hasData = filteredColumns && Object.keys(filteredColumns).length > 0;
   const normalizeTitle = (value = "") =>
     value.toLowerCase().replace(/\s+/g, "_");
+  const flattenedTasks = Object.values(filteredColumns || {}).flat();
+  const recentActivity = flattenedTasks
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt || 0) -
+        new Date(a.updatedAt || a.createdAt || 0)
+    )
+    .slice(0, 4);
+  const mentor =
+    groupMembers?.find(
+      (member) =>
+        (member.role || "").toLowerCase().includes("mentor") ||
+        (member.position || "").toLowerCase().includes("mentor")
+    ) || null;
+  const fallbackFiles = [
+    { name: "Project brief.pdf", owner: "Team", size: "1.2 MB" },
+    { name: "Requirements.docx", owner: "Leader", size: "650 KB" },
+    { name: "Architecture.drawio", owner: "Team", size: "430 KB" },
+  ];
 
   return (
     <div className="relative">
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-between pt-20 md:pt-28 xl:pt-20 pb-12 md:pb-20">
-        {/* Title */}
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-black text-[#1a1a1a] mb-2">
-            Team Workspace
-          </h1>
-          <p className="text-sm md:text-base text-gray-400 text-muted-foreground">
-            Manage tasks, share documents and track progress.
-          </p>
-        </div>
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-between pt-28 xl:pt-20 pb-20 bg-[#f7f9fb]">
+        <div className="w-full max-w-7xl px-6">
+          {/* Tabs */}
+          <div className="inline-flex gap-0 bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+            {["overview", "workspace", "files"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-5 py-2 text-sm font-semibold capitalize transition border-r last:border-r-0 ${
+                  activeTab === tab
+                    ? "bg-blue-600 text-white shadow-sm border-blue-600"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
 
-        {/* Toolbar */}
-        <div className="mt-6 md:mt-10 w-full max-w-7xl px-4 sm:px-6">
-          <div className="">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 flex-1 w-full">
-                <div className="flex items-center border border-gray-400 rounded-xl w-full px-3 md:px-4 py-2.5 md:py-3">
-                  <Search className="w-4 h-4 md:w-5 md:h-5 text-gray-500 mr-2 md:mr-3 shrink-0" />
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder={
-                      t("searchTasksPlaceholder") ||
-                      "Search tasks by title or description..."
-                    }
-                    className="bg-transparent outline-none w-full text-gray-700 text-sm md:text-[16px]"
-                  />
+          {/* Overview */}
+          {activeTab === "overview" && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-4">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Description
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    Align the team on goals, milestones, and deliverables. Use
+                    this space to document the project scope, acceptance
+                    criteria, and communication rules so every member knows what
+                    success looks like.
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Recent Activity
+                    </h3>
+                    <span className="text-sm text-gray-400">
+                      {recentActivity.length}{" "}
+                      {recentActivity.length === 1 ? "update" : "updates"}
+                    </span>
+                  </div>
+                  {recentActivity.length > 0 ? (
+                    <div className="space-y-3">
+                      {recentActivity.map((task) => (
+                        <div
+                          key={task.id}
+                          className="flex items-center justify-between bg-gray-50 border border-gray-100 px-4 py-3 rounded-xl"
+                        >
+                          <div>
+                            <p className="font-medium text-gray-800">
+                              {task.title || "Untitled task"}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {task.status || "updated"} -{" "}
+                              {new Date(
+                                task.updatedAt || task.createdAt || Date.now()
+                              ).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
+                            {task.priority || "medium"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500">
+                      No activity yet. Start by creating a task.
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-3 h-3 md:w-4 md:h-4 text-black" />
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="bg-white border border-gray-300 rounded-lg px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm"
-                  >
-                    <option value="All">
-                      {t("allStatus") || "All status"}
-                    </option>
-                    <option value="todo">{t("toDo") || "To do"}</option>
-                    <option value="in_progress">
-                      {t("inProgress") || "In progress"}
-                    </option>
-                    <option value="review">{t("review") || "Review"}</option>
-                    <option value="blocked">{t("blocked") || "Blocked"}</option>
-                    <option value="done">{t("done") || "Done"}</option>
-                  </select>
+
+              <div className="space-y-4">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Team Members
+                    </h3>
+                    <span className="text-sm text-gray-400">
+                      {groupMembers?.length || 0}{" "}
+                      {groupMembers?.length === 1 ? "person" : "people"}
+                    </span>
+                  </div>
+                  {groupMembers?.length ? (
+                    <div className="space-y-3">
+                      {groupMembers.map((member) => (
+                        <div
+                          key={member.id || member._id || member.email}
+                          className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 flex items-center justify-center font-semibold">
+                            {(member.name || member.displayName || "U")
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-800 truncate">
+                              {member.name || member.displayName || "Unknown"}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {member.role || "Member"}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      Invite teammates to collaborate on this workspace.
+                    </p>
+                  )}
                 </div>
-                <select
-                  value={filterPriority}
-                  onChange={(e) => setFilterPriority(e.target.value)}
-                  className="bg-white border border-gray-300 rounded-lg px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm"
-                >
-                  <option value="All">
-                    {t("allPriority") || "All priority"}
-                  </option>
-                  <option value="high">{t("high") || "High"}</option>
-                  <option value="medium">{t("medium") || "Medium"}</option>
-                  <option value="low">{t("low") || "Low"}</option>
-                </select>
+
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Mentor
+                  </h3>
+                  {mentor ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-semibold">
+                        {(mentor.name || mentor.displayName || "M")
+                          .slice(0, 2)
+                          .toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-800">
+                          {mentor.name || mentor.displayName}
+                        </p>
+                        <p className="text-sm text-gray-500">Assigned mentor</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500">
+                      No mentor assigned. Add a mentor to keep guidance aligned.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Workspace (Kanban) */}
+          {activeTab === "workspace" && (
+            <>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Kanban Board
+                </h3>
                 <button
-                  className="flex items-center gap-1 md:gap-2 border border-gray-300 px-2 md:px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm hover:bg-gray-50 whitespace-nowrap"
+                  className="flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
                   onClick={() => setIsColumnModalOpen(true)}
                 >
-                  <Plus className="w-4 h-4 md:w-5 md:h-5" />
-                  <span className="hidden sm:inline">
-                    {t("newColumn") || "New Column"}
-                  </span>
-                  <span className="sm:hidden">Column</span>
+                  <Plus className="w-5 h-5" />
+                  New Column
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Kanban Board */}
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-        >
-          {hasData ? (
-            <div className="mt-6 md:mt-8 flex gap-4 md:gap-6 overflow-x-auto max-w-7xl mx-auto px-4 sm:px-6 pb-2">
-              {Object.entries(columnMeta)
-                .sort((a, b) => (a[1]?.position || 0) - (b[1]?.position || 0))
-                .map(([colId, meta]) => {
-                  const normalizedTitleValue = normalizeTitle(
-                    meta?.title || colId
-                  );
-                  const statusForColumn =
-                    normalizedTitleValue === "to_do"
-                      ? "todo"
-                      : normalizedTitleValue;
-                  const allowQuickCreate = statusForColumn === "todo";
-                  return (
-                    <Column
-                      key={colId}
-                      id={colId}
-                      meta={meta}
-                      tasks={filteredColumns[colId] || []}
-                      columnMeta={columnMeta}
-                      onOpen={setSelectedTask}
-                      onCreate={
-                        allowQuickCreate
-                          ? (quickPayload) => {
-                              createTask({
-                                columnId: colId,
-                                title: quickPayload?.title || "New Task",
-                                description: "",
-                                priority: "medium",
-                                status: statusForColumn,
-                                dueDate: null,
-                              });
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+              >
+                {hasData ? (
+                  <div className="mt-4 flex gap-6 overflow-x-auto pb-2">
+                    {Object.entries(columnMeta)
+                      .sort(
+                        (a, b) => (a[1]?.position || 0) - (b[1]?.position || 0)
+                      )
+                      .map(([colId, meta]) => {
+                        const normalizedTitleValue = normalizeTitle(
+                          meta?.title || colId
+                        );
+                        const statusForColumn =
+                          normalizedTitleValue === "to_do"
+                            ? "todo"
+                            : normalizedTitleValue;
+                        const allowQuickCreate = statusForColumn === "todo";
+                        return (
+                          <Column
+                            key={colId}
+                            id={colId}
+                            meta={meta}
+                            tasks={filteredColumns[colId] || []}
+                            columnMeta={columnMeta}
+                            onOpen={setSelectedTask}
+                            onCreate={
+                              allowQuickCreate
+                                ? (quickPayload) => {
+                                    createTask({
+                                      columnId: colId,
+                                      title: quickPayload?.title || "New Task",
+                                      description: "",
+                                      priority: "medium",
+                                      status: statusForColumn,
+                                      dueDate: null,
+                                    });
+                                  }
+                                : undefined
                             }
-                          : undefined
-                      }
-                      onDelete={() => {
-                        Modal.confirm({
-                          title: "Delete Column",
-                          content: `Delete column "${
-                            columnMeta[colId]?.title || colId
-                          }"?`,
-                          okText: "OK",
-                          cancelText: "Cancel",
-                          onOk: () => deleteColumn(colId),
-                        });
-                      }}
-                    />
-                  );
-                })}
-            </div>
-          ) : (
-            <div className="mt-10 text-gray-500">No board data available.</div>
+                            onDelete={() => {
+                              Modal.confirm({
+                                title: "Delete Column",
+                                content: `Delete column "${
+                                  columnMeta[colId]?.title || colId
+                                }"?`,
+                                okText: "OK",
+                                cancelText: "Cancel",
+                                onOk: () => deleteColumn(colId),
+                              });
+                            }}
+                          />
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <div className="mt-10 text-gray-500">
+                    No board data available.
+                  </div>
+                )}
+              </DndContext>
+            </>
           )}
-        </DndContext>
+
+          {/* Files */}
+          {activeTab === "files" && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    Team Files
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Quick access to shared documents and assets.
+                  </p>
+                </div>
+                <button className="text-blue-600 text-sm font-medium hover:underline">
+                  Upload
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {fallbackFiles.map((file) => (
+                  <div
+                    key={file.name}
+                    className="border border-gray-100 rounded-xl p-4 bg-gray-50"
+                  >
+                    <p className="font-semibold text-gray-800">{file.name}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {file.owner} - {file.size}
+                    </p>
+                    <button className="text-xs text-blue-600 mt-3 hover:underline">
+                      View
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Task Modal */}
@@ -325,3 +465,8 @@ const Workspace = () => {
 };
 
 export default Workspace;
+
+
+
+
+
