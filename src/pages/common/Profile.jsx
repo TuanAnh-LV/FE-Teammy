@@ -11,10 +11,12 @@ import {
   Phone,
   User,
   Code,
+  MessageSquare,
 } from "lucide-react";
 import { AuthService } from "../../services/auth.service";
 import { UserService } from "../../services/user.service";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import LoadingState from "../../components/common/LoadingState";
 import EditProfileModal from "../../components/common/EditProfileModal";
 
@@ -28,6 +30,7 @@ const Profile = () => {
     setIsLoading,
     token,
   } = useAuth();
+  const navigate = useNavigate();
 
   const profileFetchTokenRef = useRef(null);
   const [profileData, setProfileData] = useState(null);
@@ -208,23 +211,21 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="mt-3 flex gap-2">
-              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-800">
-                Role:{profile.role}
-              </span>
-              <span
-                className={`text-xs px-2 py-0.5 rounded-full ${
-                  profile.skillsCompleted
+              <div className="flex gap-2">
+                <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">
+                  Role: {profile.role}
+                </span>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full ${profile.skillsCompleted
                     ? "bg-green-100 text-green-700"
                     : "bg-yellow-100 text-yellow-700"
-                }`}
-              >
-                Skills form:{" "}
-                {profile.skillsCompleted ? "Completed" : "Incomplete"}
-              </span>
+                  }`}
+                >
+                  Skills form: {profile.skillsCompleted ? "Completed" : "Incomplete"}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
         <button
           onClick={() => setIsEditModalOpen(true)}
@@ -313,3 +314,6 @@ const Profile = () => {
 };
 
 export default Profile;
+
+
+

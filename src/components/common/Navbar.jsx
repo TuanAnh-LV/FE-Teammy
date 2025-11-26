@@ -218,6 +218,18 @@ const Navbar = () => {
               </span>
             </button>
 
+            {/* Messages icon */}
+            {user && (
+              <button
+                type="button"
+                onClick={() => navigate("/messages")}
+                title={getTranslation("messages", language) || "Messages"}
+                className="relative p-2 rounded-full hover:bg-gray-100 transition"
+              >
+                <MessageSquare className="w-5 h-5 text-gray-700" />
+              </button>
+            )}
+
             {/* User Avatar / Sign-in */}
             {user ? (
               <>

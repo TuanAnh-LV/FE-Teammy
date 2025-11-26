@@ -10,6 +10,7 @@ import {
   UserOutlined,
   TagsOutlined,
   BulbOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
 
 export const getRoleMenus = (role) => {
@@ -28,7 +29,7 @@ export const getRoleMenus = (role) => {
         key: "dashboard",
         label: "Dashboard",
         path: "/mentor/dashboard",
-        icon: <HomeOutlined />,
+        icon: <BarChartOutlined />,
       },
       {
         key: "discover",

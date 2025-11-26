@@ -3,11 +3,13 @@ import FilterSidebar from "../../components/common/discover/FilterSidebar";
 import ProjectCard from "../../components/common/discover/ProjectCard";
 import { useTranslation } from "../../hook/useTranslation";
 import { TopicService } from "../../services/topic.service";
-import { notification } from "antd";
+import { GroupService } from "../../services/group.service";
+import { Modal, Input, notification } from "antd";
 
 const Discover = () => {
   const { t } = useTranslation();
   const [projects, setProjects] = useState([]);
+  const [inviteState, setInviteState] = useState({ open: false, topic: null, loading: false, message: "" });
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [filters, setFilters] = useState({
     major: "all",
@@ -30,19 +32,18 @@ const Discover = () => {
           domain: t.majorName || "General",
           majorId: t.majorId,
           status: t.status || "open",
-          tags: [t.status || "open"],
+            tags: [t.status || "open"],
           mentor:
-            (t.mentors && t.mentors[0] && t.mentors[0].mentorName) ||
+            (t.mentors && t.mentors[0] && (t.mentors[0].mentorName || t.mentors[0].name)) ||
             t.createdByName ||
             "",
+          mentorsRaw: t.mentors || [],
           progress: 0,
           members: (t.mentors || []).map((m) =>
-            m.mentorName
-              ? m.mentorName
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-              : "M"
+            (m.mentorName || m.name || "M")
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
           ),
           createdAt: t.createdAt,
           attachedFiles: t.attachedFiles || [],
@@ -124,7 +125,13 @@ const Discover = () => {
           <div className="flex flex-col gap-4">
             {filteredProjects.length > 0 ? (
               filteredProjects.map((project, i) => (
-                <ProjectCard key={i} project={project} />
+                <ProjectCard
+                key={i}
+                project={project}
+                onSelectTopic={(p) =>
+                  setInviteState({ open: true, topic: p, loading: false, message: "" })
+                }
+              />
               ))
             ) : (
               <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -155,6 +162,83 @@ const Discover = () => {
           </div>
         </div>
       </div>
+      <Modal
+        open={inviteState.open}
+        title={t("inviteMentor") || "Mời mentor"}
+        onCancel={() => setInviteState({ open: false, topic: null, loading: false, message: "" })}
+        onOk={async () => {
+          const { topic } = inviteState;
+          if (!topic) return;
+          try {
+            setInviteState((s) => ({ ...s, loading: true }));
+            // Get user's groups
+            const myGroupsRes = await GroupService.getMyGroups();
+            const myGroups = myGroupsRes?.data || [];
+            if (!myGroups.length) {
+              notification.error({
+                message: t("noGroupFound"),
+                description: t("pleaseCreateOrJoinGroup"),
+              });
+              return;
+            }
+            const group = myGroups[0];
+            const groupId = group.id || group.groupId;
+
+            // Step 1: Assign topic to group
+            await GroupService.assignTopic(groupId, topic.topicId);
+
+            // Step 2: Get mentor ID from topic's mentors list (use first mentor)
+            const mentorCandidate = (topic.mentorsRaw || [])[0];
+            if (!mentorCandidate) {
+              notification.warning({
+                message: t("noMentorFound") || "Không tìm thấy mentor",
+                description: t("topicHasNoMentor") || "Topic này không có mentor gắn kèm",
+              });
+              setInviteState({ open: false, topic: null, loading: false, message: "" });
+              return;
+            }
+
+            const mentorUserId = mentorCandidate.mentorId;
+
+            // Step 3: Send invite to mentor with message
+            await GroupService.inviteMentor(groupId, {
+              mentorUserId,
+              message: inviteState.message,
+            });
+
+            notification.success({
+              message: t("topicSelected") || "Đã chọn topic",
+              description:
+                (t("successfullySelected") || "Đã chọn") +
+                ` "${topic.title}" ` +
+                (t("andSentMentorInvite") || "và đã gửi thư mời cho mentor"),
+            });
+            setInviteState({ open: false, topic: null, loading: false, message: "" });
+          } catch (err) {
+            console.error("Failed to select topic and invite mentor:", err);
+            notification.error({
+              message: t("failedToSelectTopic") || "Thất bại",
+              description: err?.response?.data?.message || t("pleaseTryAgain"),
+            });
+            setInviteState({ open: false, topic: null, loading: false, message: "" });
+          } finally {
+            setInviteState((s) => ({ ...s, loading: false }));
+          }
+        }}
+        confirmLoading={inviteState.loading}
+      >
+        <p className="text-sm mb-2">
+          {t("sendingInviteForTopic") || "Gửi lời mời mentor cho topic"}: <strong>{inviteState.topic?.title}</strong>
+        </p>
+        <Input.TextArea
+          rows={4}
+          placeholder={t("enterMessage") || "Nhập lời nhắn đến mentor"}
+          value={inviteState.message}
+          onChange={(e) =>
+            setInviteState((s) => ({ ...s, message: e.target.value }))
+          }
+        />
+      </Modal>
     </div>
   );
 };
