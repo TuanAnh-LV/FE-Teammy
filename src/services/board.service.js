@@ -115,6 +115,21 @@ export const BoardService = {
     });
   },
 
+  uploadTaskFile(groupId, taskId, formData) {
+    return BaseService.post({
+      url: API.BOARD.UPLOAD_FILE(groupId),
+      payload: formData,
+      isLoading: true,
+    });
+  },
+
+  deleteTaskFile(groupId, taskId, fileId) {
+    return BaseService.remove({
+      url: API.BOARD.DELETE_FILE(groupId, fileId),
+      isLoading: true,
+    });
+  },
+
   uploadGroupFile(groupId, payload) {
     return BaseService.post({
       url: API.BOARD.UPLOAD_FILE(groupId),

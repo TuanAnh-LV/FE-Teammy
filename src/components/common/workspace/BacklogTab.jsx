@@ -1,0 +1,589 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { Plus, MoreVertical, ArrowRight } from "lucide-react";
+import {
+  Modal,
+  Input,
+  Select,
+  DatePicker,
+  InputNumber,
+  notification,
+  Dropdown,
+} from "antd";
+import dayjs from "dayjs";
+import { BacklogService } from "../../../services/backlog.service";
+import { useTranslation } from "../../../hook/useTranslation";
+
+const defaultForm = {
+  title: "",
+  description: "",
+  priority: "medium",
+  category: "feature",
+  storyPoints: 0,
+  dueDate: null,
+  ownerUserId: "",
+  status: "todo",
+};
+
+const priorityOptions = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+];
+
+const categoryOptions = [
+  { value: "feature", label: "Feature" },
+  { value: "bug", label: "Bug" },
+  { value: "chore", label: "Chore" },
+];
+
+const statusOptions = [
+  { value: "todo", label: "To Do" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "done", label: "Done" },
+];  
+
+const normalizeKey = (value = "") =>
+  value.toString().trim().toLowerCase().replace(/\s+/g, "_");
+
+const formatDate = (value) => {
+  if (!value) return "--";
+  const d = dayjs(value);
+  return d.isValid() ? d.format("DD/MM/YYYY") : "--";
+};
+
+const getItemId = (item) =>
+  item?.id || item?.backlogId || item?.backlogItemId || item?._id || "";
+
+export default function BacklogTab({
+  groupId,
+  columnMeta = {},
+  groupMembers = [],
+  onPromoteSuccess,
+  readOnly = false,
+}) {
+  const { t } = useTranslation();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [form, setForm] = useState(defaultForm);
+  const [editingId, setEditingId] = useState(null);
+
+  const memberMap = useMemo(() => {
+    const map = new Map();
+    (groupMembers || []).forEach((m) => {
+      const key =
+        m?.id || m?.userId || m?.memberId || m?.userID || m?.accountId || m?.email;
+      if (key) map.set(String(key), m);
+    });
+    return map;
+  }, [groupMembers]);
+
+  const columnOptions = useMemo(
+    () =>
+      Object.entries(columnMeta || {}).map(([id, meta]) => ({
+        value: id,
+        label: meta?.title || id,
+      })),
+    [columnMeta]
+  );
+
+  const defaultColumnId = useMemo(() => {
+    if (!columnOptions.length) return "";
+    const found = columnOptions.find((opt) => {
+      const normalized = normalizeKey(opt.label || opt.value);
+      return normalized === "todo" || normalized === "to_do";
+    });
+    return found?.value || columnOptions[0].value;
+  }, [columnOptions]);
+
+  useEffect(() => {
+    // no-op: default column used for quick promote
+  }, [defaultColumnId]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [groupId]);
+
+  const fetchItems = async () => {
+    if (!groupId) return;
+    setLoading(true);
+    try {
+      const res = await BacklogService.getBacklog(groupId);
+      const payload = res?.data ?? res;
+      let list = [];
+      if (Array.isArray(payload)) list = payload;
+      else if (Array.isArray(payload?.data)) list = payload.data;
+      else if (Array.isArray(payload?.items)) list = payload.items;
+      else if (Array.isArray(payload?.results)) list = payload.results;
+      setItems(list);
+    } catch (err) {
+      console.error(err);
+      notification.error({
+        message: t("failedLoadBacklog") || "Failed to load backlog",
+        description:
+          err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setForm(defaultForm);
+    setEditingId(null);
+  };
+
+  const openCreate = () => {
+    if (readOnly) return;
+    resetForm();
+    setModalOpen(true);
+  };
+
+  const openEdit = (item) => {
+    if (readOnly) return;
+    setEditingId(getItemId(item));
+    setForm({
+      title: item?.title || "",
+      description: item?.description || "",
+      priority: item?.priority || "medium",
+      category: item?.category || "feature",
+      storyPoints: item?.storyPoints ?? 0,
+      dueDate: item?.dueDate ? dayjs(item.dueDate) : null,
+      ownerUserId: item?.ownerUserId || item?.ownerId || "",
+      status: normalizeKey(item?.status) || "todo",
+    });
+    setModalOpen(true);
+  };
+
+  const getOwnerName = (ownerId) => {
+    if (!ownerId) return "--";
+    const member = memberMap.get(String(ownerId));
+    return (
+      member?.name ||
+      member?.displayName ||
+      member?.fullName ||
+      member?.email ||
+      "--"
+    );
+  };
+
+  const handleSubmit = async () => {
+    if (!groupId) return;
+    const trimmedTitle = (form.title || "").trim();
+    if (!trimmedTitle) {
+      notification.error({
+        message: t("validationError") || "Missing title",
+        description: t("titleRequired") || "Please enter a backlog title.",
+      });
+      return;
+    }
+
+    const payload = {
+      title: trimmedTitle,
+      description: (form.description || "").trim(),
+      priority: form.priority || "medium",
+      category: form.category || "feature",
+      storyPoints: Number(form.storyPoints) || 0,
+      dueDate: form.dueDate ? dayjs(form.dueDate).toISOString() : null,
+      ownerUserId: form.ownerUserId || null,
+    };
+
+    if (editingId) payload.status = form.status || "todo";
+
+    try {
+      if (editingId) {
+        await BacklogService.updateBacklogItem(groupId, editingId, payload);
+        notification.success({
+          message: t("updated") || "Backlog updated",
+        });
+      } else {
+        await BacklogService.createBacklogItem(groupId, payload);
+        notification.success({
+          message: t("created") || "Backlog created",
+        });
+      }
+      setModalOpen(false);
+      resetForm();
+      fetchItems();
+    } catch (err) {
+      console.error(err);
+      notification.error({
+        message: t("actionFailed") || "Action failed",
+        description:
+          err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
+      });
+    }
+  };
+
+  const confirmArchive = (item) => {
+    if (readOnly) return;
+    const id = getItemId(item);
+    if (!id) return;
+    Modal.confirm({
+      title: t("confirmArchive") || "Archive backlog item?",
+      content: item?.title || "",
+      okText: t("archive") || "Archive",
+      cancelText: t("cancel") || "Cancel",
+      onOk: () => archiveItem(id),
+    });
+  };
+
+  const archiveItem = async (id) => {
+    if (!groupId || !id) return;
+    try {
+      await BacklogService.archiveBacklogItem(groupId, id);
+      notification.success({
+        message: t("archived") || "Item archived",
+      });
+      fetchItems();
+    } catch (err) {
+      console.error(err);
+      notification.error({
+        message: t("actionFailed") || "Action failed",
+        description:
+          err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
+      });
+    }
+  };
+
+  const handlePromote = async (item) => {
+    if (readOnly) return;
+    if (!groupId || !item) return;
+    const backlogId = getItemId(item);
+    if (!backlogId) return;
+    const payload = {
+      columnId: defaultColumnId,
+      taskStatus: "todo",
+      taskDueDate: item?.dueDate ? dayjs(item.dueDate).toISOString() : null,
+    };
+    try {
+      await BacklogService.promoteBacklogItem(groupId, backlogId, payload);
+      notification.success({
+        message: t("movedToSprintTitle") || "Moved to Sprint",
+        description:
+          t("movedToSprintDesc") || "Item has been added to the current sprint.",
+      });
+      fetchItems();
+      if (typeof onPromoteSuccess === "function") {
+        onPromoteSuccess();
+      }
+    } catch (err) {
+      console.error(err);
+      notification.error({
+        message: t("actionFailed") || "Action failed",
+        description:
+          err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
+      });
+    }
+  };
+
+  const priorityTone = (value) => {
+    const key = normalizeKey(value);
+    if (key === "high") return "bg-red-100 text-red-700";
+    if (key === "medium") return "bg-amber-100 text-amber-700";
+    return "bg-green-100 text-green-700";
+  };
+
+  const statusTone = (value) => {
+    const key = normalizeKey(value);
+    if (key === "in_progress") return "bg-blue-100 text-blue-700";
+    if (key === "done") return "bg-green-100 text-green-700";
+    return "bg-gray-100 text-gray-700";
+  };
+
+  const totalStoryPoints = useMemo(
+    () =>
+      (items || []).reduce(
+        (sum, cur) => sum + (Number(cur?.storyPoints) || 0),
+        0
+      ),
+    [items]
+  );
+
+  // Hide items that are already promoted/ready
+  const visibleItems = useMemo(
+    () =>
+      (items || []).filter(
+        (item) => normalizeKey(item?.status) !== "ready"
+      ),
+    [items]
+  );
+
+  const renderOwnerAvatar = (ownerId) => {
+    const member = memberMap.get(String(ownerId));
+    if (!member) return null;
+    const name =
+      member.name || member.displayName || member.fullName || member.email || "";
+    const initials = name
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+    return (
+      <div className="inline-flex items-center gap-2 text-xs text-gray-600">
+        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700 font-semibold">
+          {initials || "U"}
+        </span>
+        <span className="text-sm text-gray-700">{name}</span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-4 px-2 sm:px-0">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xl font-semibold text-gray-900">
+            {t("productBacklog") || "Product Backlog"}
+          </h3>
+          <p className="text-sm text-gray-500">
+            {visibleItems.length} {t("items") || "items"} • {totalStoryPoints}{" "}
+            {t("storyPoints") || "story points"}
+          </p>
+        </div>
+        {!readOnly && (
+          <button
+            onClick={openCreate}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4" />
+            {t("newItem") || "New Item"}
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-gray-500">
+          <span className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-transparent animate-spin" />
+          {t("loading") || "Loading..."}
+        </div>
+      ) : visibleItems.length ? (
+        <div className="space-y-3">
+          {visibleItems.map((item) => {
+            const ownerId = item?.ownerUserId || item?.ownerId;
+            return (
+              <div
+                key={getItemId(item)}
+                className="border border-gray-200 rounded-2xl p-4 bg-white shadow-sm"
+              >
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-2">
+                      <h4 className="text-base font-semibold text-gray-900">
+                        {item?.title || "Untitled backlog item"}
+                      </h4>
+                      <p className="text-sm text-gray-600 whitespace-pre-line">
+                        {item?.description || t("noDescription") || "No description"}
+                      </p>
+                    </div>
+                    {!readOnly && (
+                      <Dropdown
+                        trigger={["click"]}
+                        menu={{
+                          items: [
+                            {
+                              key: "edit",
+                              label: t("edit") || "Edit",
+                              onClick: () => openEdit(item),
+                            },
+                            {
+                              key: "archive",
+                              label: t("archive") || "Archive",
+                              danger: true,
+                              onClick: () => confirmArchive(item),
+                            },
+                          ],
+                        }}
+                      >
+                        <button className="p-2 rounded-full hover:bg-gray-100">
+                          <MoreVertical className="w-4 h-4 text-gray-500" />
+                        </button>
+                      </Dropdown>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${priorityTone(
+                        item?.priority
+                      )}`}
+                    >
+                      {item?.priority || "medium"}
+                    </span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                      {(item?.storyPoints ?? 0) + " SP"}
+                    </span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-indigo-50 text-indigo-700">
+                      {item?.category || "feature"}
+                    </span>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${statusTone(
+                        item?.status
+                      )}`}
+                    >
+                      {item?.status || "todo"}
+                    </span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
+                      {t("dueDate") || "Due"}: {formatDate(item?.dueDate)}
+                    </span>
+                    {item?.milestoneName && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-100">
+                        {item.milestoneName}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>{renderOwnerAvatar(ownerId)}</div>
+                    {!readOnly && (
+                      <button
+                        onClick={() => handlePromote(item)}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-gray-200 hover:border-emerald-200 hover:bg-emerald-50 text-gray-700"
+                      >
+                        <ArrowRight className="w-4 h-4" />
+                        {t("moveToSprint") || "Move to Sprint"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="mt-6 p-6 bg-gray-50 rounded-xl text-center border border-dashed border-gray-200">
+          <p className="text-gray-600">
+            {t("backlogPlaceholder") || "Backlog is empty. Create the first item."}
+          </p>
+        </div>
+      )}
+      {!readOnly && (
+        <Modal
+          title={
+            editingId
+              ? t("editBacklog") || "Edit backlog item"
+              : t("createBacklog") || "Create backlog item"
+          }
+        open={modalOpen}
+        onOk={handleSubmit}
+        onCancel={() => {
+          setModalOpen(false);
+          resetForm();
+        }}
+        okText={t("save") || "Save"}
+        cancelText={t("cancel") || "Cancel"}
+        destroyOnClose
+        width={640}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="md:col-span-2">
+            <label className="text-sm text-gray-700 mb-1 block">
+              {t("title") || "Title"}
+            </label>
+            <Input
+              value={form.title}
+              onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+              placeholder={t("enterTitle") || "Enter title"}
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-700 mb-1 block">
+              {t("priority") || "Priority"}
+            </label>
+            <Select
+              value={form.priority}
+              onChange={(value) => setForm((prev) => ({ ...prev, priority: value }))}
+              options={priorityOptions}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-700 mb-1 block">
+              {t("category") || "Category"}
+            </label>
+            <Select
+              value={form.category}
+              onChange={(value) => setForm((prev) => ({ ...prev, category: value }))}
+              options={categoryOptions}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-700 mb-1 block">
+              {t("storyPoints") || "Story Points"}
+            </label>
+            <InputNumber
+              className="w-full"
+              min={0}
+              value={form.storyPoints}
+              onChange={(value) =>
+                setForm((prev) => ({ ...prev, storyPoints: Number(value) || 0 }))
+              }
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-700 mb-1 block">
+              {t("dueDate") || "Due date"}
+            </label>
+            <DatePicker
+              className="w-full"
+              value={form.dueDate}
+              onChange={(value) => setForm((prev) => ({ ...prev, dueDate: value }))}
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-700 mb-1 block">
+              {t("owner") || "Owner"}
+            </label>
+            <Select
+              allowClear
+              value={form.ownerUserId || null}
+              placeholder={t("selectOwner") || "Select owner"}
+              onChange={(value) => setForm((prev) => ({ ...prev, ownerUserId: value }))}
+              options={(groupMembers || []).map((m) => ({
+                value:
+                  m?.id ||
+                  m?.userId ||
+                  m?.memberId ||
+                  m?.userID ||
+                  m?.accountId ||
+                  m?.email,
+                label: m?.name || m?.displayName || m?.email || "Member",
+              }))}
+              className="w-full"
+            />
+          </div>
+          {editingId && (
+            <div>
+              <label className="text-sm text-gray-700 mb-1 block">
+                {t("status") || "Status"}
+              </label>
+              <Select
+                value={form.status}
+                onChange={(value) => setForm((prev) => ({ ...prev, status: value }))}
+                options={statusOptions}
+                className="w-full"
+              />
+            </div>
+          )}
+          <div className="md:col-span-2">
+            <label className="text-sm text-gray-700 mb-1 block">
+              {t("description") || "Description"}
+            </label>
+            <Input.TextArea
+              rows={4}
+              value={form.description}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, description: e.target.value }))
+              }
+              placeholder={t("enterDescription") || "Enter description"}
+            />
+          </div>
+        </div>
+        </Modal>
+      )}
+    </div>
+  );
+}

@@ -409,6 +409,7 @@ const Workspace = () => {
       {/* Task Modal */}
       <TaskModal
         task={selectedTask}
+        groupId={resolvedGroupId}
         members={groupMembers}
         columnMeta={columnMeta}
         onFetchComments={loadTaskComments}

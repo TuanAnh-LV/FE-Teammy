@@ -3,7 +3,7 @@ import { X, UserRound } from "lucide-react";
 
 export default function NotificationDrawer({
   open,
-  onClose,
+  onClose,      
   items = [],
   onAccept,
   onReject,
@@ -95,14 +95,6 @@ export default function NotificationDrawer({
           )}
         </div>
 
-        <div className="px-4 py-3 border-t border-gray-100 text-center">
-          <button
-            onClick={onClose}
-            className="text-blue-600 font-medium hover:underline"
-          >
-            ĐÓNG
-          </button>
-        </div>
       </div>
     </div>
   );
