@@ -11,6 +11,7 @@ import {
   Space,
   notification,
 } from "antd";
+import { useTranslation } from "../../hook/useTranslation";
 import {
   BellOutlined,
   ExclamationCircleOutlined,
@@ -29,6 +30,7 @@ const MOCK = {
 };
 
 export default function ModeratorNotifications() {
+  const { t } = useTranslation();
   const [autoRemind, setAutoRemind] = useState(true);
   const [filterType, setFilterType] = useState("withoutTopic");
   const [selected, setSelected] = useState(null);
@@ -43,20 +45,29 @@ export default function ModeratorNotifications() {
   };
 
   const sendNow = () => {
-    if (!selected) return notification.warning("Please select a group.");
-    notification.success(`Sent to ${selected.name} `);
+    if (!selected)
+      return notification.warning({
+        message: t("pleaseSelectGroup") || "Please select a group.",
+      });
+    const sentMsgTemplate = t("sentToGroup") || "Sent to {name}";
+    const final = sentMsgTemplate.replace("{name}", selected.name);
+    notification.success({ message: final });
     setMsg("");
   };
 
   const schedule = () =>
-    notification.info("Scheduled reminder for tomorrow 9:00 AM (mock)");
+    notification.info({
+      message:
+        t("scheduledReminderInfo") ||
+        "Scheduled reminder for tomorrow 9:00 AM (mock)",
+    });
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
         <h1
-          className="inline-block text-4xl font-extrabold"
+          className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold"
           style={{
             backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
             WebkitBackgroundClip: "text",
@@ -79,7 +90,9 @@ export default function ModeratorNotifications() {
           <div className="flex items-center justify-between">
             <Space>
               <ExclamationCircleOutlined className="text-orange-500" />
-              <span className="font-medium">Groups Without Topics</span>
+              <span className="font-medium">
+                {t("groupsWithoutTopics") || "Groups Without Topics"}
+              </span>
             </Space>
             <Tag color="red-inverse">{counts.withoutTopic}</Tag>
           </div>
@@ -93,7 +106,9 @@ export default function ModeratorNotifications() {
           <div className="flex items-center justify-between">
             <Space>
               <TeamOutlined className="text-rose-500" />
-              <span className="font-medium">Groups Without Mentors</span>
+              <span className="font-medium">
+                {t("groupsWithoutMentors") || "Groups Without Mentors"}
+              </span>
             </Space>
             <Tag color="red-inverse">{counts.withoutMentor}</Tag>
           </div>
@@ -137,9 +152,15 @@ export default function ModeratorNotifications() {
                 }}
                 className="w-full sm:w-64"
               >
-                <Option value="withoutTopic">Groups Without Topics</Option>
-                <Option value="withoutMentor">Groups Without Mentors</Option>
-                <Option value="missingMembers">Groups Missing Members</Option>
+                <Option value="withoutTopic">
+                  {t("groupsWithoutTopics") || "Groups Without Topics"}
+                </Option>
+                <Option value="withoutMentor">
+                  {t("groupsWithoutMentors") || "Groups Without Mentors"}
+                </Option>
+                <Option value="missingMembers">
+                  {t("groupsMissingMembers") || "Groups Missing Members"}
+                </Option>
               </Select>
             </div>
 
@@ -187,7 +208,10 @@ export default function ModeratorNotifications() {
                 autoSize={{ minRows: 4, maxRows: 8 }}
                 value={msg}
                 onChange={(e) => setMsg(e.target.value)}
-                placeholder="Enter your notification message..."
+                placeholder={
+                  t("enterNotificationMessage") ||
+                  "Enter your notification message..."
+                }
               />
             </div>
 
@@ -225,16 +249,18 @@ export default function ModeratorNotifications() {
           </div>
 
           <div className="mt-6">
-            <div className="text-sm font-medium mb-2">Quick Stats</div>
+            <div className="text-sm font-medium mb-2">
+              {t("quickStats") || "Quick Stats"}
+            </div>
             <div className="text-sm text-gray-700 space-y-1">
               <div className="flex justify-between">
-                <span>Sent Today</span> <span>12</span>
+                <span>{t("sentToday") || "Sent Today"}</span> <span>12</span>
               </div>
               <div className="flex justify-between">
-                <span>This Week</span> <span>47</span>
+                <span>{t("thisWeek") || "This Week"}</span> <span>47</span>
               </div>
               <div className="flex justify-between">
-                <span>Pending</span> <span>3</span>
+                <span>{t("pending") || "Pending"}</span> <span>3</span>
               </div>
             </div>
           </div>

@@ -24,6 +24,7 @@ import {
 import GroupDetailModal from "../../components/common/forum/GroupDetailModal";
 import { notification } from "antd";
 import ApplyModal from "../../components/common/forum/ApplyModal";
+import { useNavigate } from "react-router-dom";
 /** ---------- UI SMALLS ---------- */
 function Chip({ children }) {
   return (
@@ -66,6 +67,7 @@ const clamp3 = {
 
 const Forum = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
   // membership state
@@ -100,6 +102,7 @@ const Forum = () => {
 
   // posts list
   const [postsData, setPostsData] = useState([]);
+  const [allPostsData, setAllPostsData] = useState([]); // Store all posts for stats
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailGroupId, setDetailGroupId] = useState(null);
 
@@ -140,6 +143,28 @@ const Forum = () => {
       : arr;
   };
 
+  // Fetch all posts for stats on mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [groupRes, individualRes] = await Promise.all([
+          PostService.getRecruitmentPosts(),
+          PostService.getPersonalPosts(),
+        ]);
+        const groupArr = toArraySafe(groupRes);
+        const individualArr = toArraySafe(individualRes);
+        const allPosts = [...groupArr, ...individualArr];
+        if (mounted) setAllPostsData(allPosts);
+      } catch {
+        if (mounted) setAllPostsData([]);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   useEffect(() => {
     // Khi activeTab thay đổi, gọi lại hàm fetch để tải dữ liệu mới
     let mounted = true;
@@ -160,6 +185,20 @@ const Forum = () => {
   const handleCreated = async () => {
     const rows = await fetchList(activeTab);
     setPostsData(rows);
+
+    // Also refetch all posts for stats
+    try {
+      const [groupRes, individualRes] = await Promise.all([
+        PostService.getRecruitmentPosts(),
+        PostService.getPersonalPosts(),
+      ]);
+      const groupArr = toArraySafe(groupRes);
+      const individualArr = toArraySafe(individualRes);
+      const allPosts = [...groupArr, ...individualArr];
+      setAllPostsData(allPosts);
+    } catch {
+      // ignore error
+    }
   };
 
   /** filter */
@@ -193,6 +232,23 @@ const Forum = () => {
   const start = (page - 1) * pageSize;
   const end = start + pageSize;
   const paged = filtered.slice(start, end);
+
+  // Count open posts for stats from all posts
+  const openGroupPosts = useMemo(() => {
+    return (allPostsData || []).filter(
+      (item) =>
+        item?.type === "group_hiring" &&
+        (item?.status || "").toString().toLowerCase() === "open"
+    ).length;
+  }, [allPostsData]);
+
+  const openIndividualPosts = useMemo(() => {
+    return (allPostsData || []).filter(
+      (item) =>
+        item?.type === "individual" &&
+        (item?.status || "").toString().toLowerCase() === "open"
+    ).length;
+  }, [allPostsData]);
 
   const onClickOpenApply = (post) => {
     if (!post?.id) return;
@@ -244,10 +300,15 @@ const Forum = () => {
       await GroupService.inviteMember(groupId, payload);
 
       // Display success message when the invite is successful
-      notification.success("User invited to the group successfully!");
+      notification.success({
+        message:
+          t("userInvitedToGroup") || "User invited to the group successfully!",
+      });
     } catch (error) {
       console.error("Failed to send invitation", error);
-      notification.error("Failed to invite user.");
+      notification.error({
+        message: t("failedToInviteUser") || "Failed to invite user.",
+      });
     }
   };
 
@@ -267,53 +328,86 @@ const Forum = () => {
     setDetailOpen(true);
   };
 
+  const resolveUserId = (userObj = {}) =>
+    userObj.userId ||
+    userObj.id ||
+    userObj.user?.userId ||
+    userObj.user?.id ||
+    userObj.accountId ||
+    userObj.ownerId ||
+    "";
+
+  const goProfile = (userObj = {}) => {
+    const id = typeof userObj === "string" ? userObj : resolveUserId(userObj);
+    if (!id) return;
+    navigate(`/profile/${id}`);
+  };
+
   return (
     <div className="min-h-screen bg-[#f6f8fb] pb-16 pt-10">
-      <div className="mx-auto w-full max-w-[76rem] px-6 pt-10 lg:px-0">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 pt-10 lg:px-8">
         {/* Header */}
-        <div className="border-b border-gray-200 pb-8 mb-6">
-          <div className="container mx-auto py-2">
-            <div className="space-y-3">
-              <h1 className="text-3xl font-black tracking-tight text-gray-900">
-                {t("recruitmentForum") || "Recruitment Forum"}
-              </h1>
-              <p className="text-muted-foreground max-w-2xl text-gray-400">
-                Post recruitment opportunities or showcase your profile to find
-                the perfect team match. Connect with students and groups across
-                all departments.
-              </p>
+        <div className="border-b border-gray-200 pb-6 md:pb-8 mb-4 md:mb-6">
+          <div className="space-y-3">
+            <h1 className="mt-2 text-2xl md:text-3xl font-black tracking-tight text-gray-900">
+              {t("recruitmentForum") || "Recruitment Forum"}
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm md:text-base text-gray-400 text-muted-foreground">
+              Post recruitment opportunities or showcase your profile to find
+              the perfect team match. Connect with students and groups across
+              all departments.
+            </p>
 
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="flex items-center gap-4">
-                  {userRole === "leader" ? (
-                    <button
-                      onClick={() => setIsCreatePostModalOpen(true)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-[#FF7A00] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100"
-                      title={t("createRecruitPost") || "Create group post"}
-                    >
-                      <Plus className="h-4 w-4" />
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3 w-full md:w-auto">
+                {userRole === "leader" ? (
+                  <button
+                    onClick={() => setIsCreatePostModalOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#FF7A00] px-3 md:px-4 py-2.5 text-xs md:text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 w-full md:w-auto justify-center"
+                    title={t("createRecruitPost") || "Create group post"}
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">
                       {t("createRecruitPost") || "Create recruitment post"}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setIsCreatePersonalPostModalOpen(true)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-[#FF7A00] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100"
-                    >
-                      <Plus className="h-4 w-4" />
+                    </span>
+                    <span className="sm:hidden">
+                      {t("createPost") || "Create Post"}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setIsCreatePersonalPostModalOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#FF7A00] px-3 md:px-4 py-2.5 text-xs md:text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 w-full md:w-auto justify-center"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">
                       {t("createPersonalPost") || "Create personal post"}
-                    </button>
-                  )}
-                </div>
+                    </span>
+                    <span className="sm:hidden">
+                      {t("createPost") || "Create Post"}
+                    </span>
+                  </button>
+                )}
+              </div>
 
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>2 recruitment posts</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="w-4 h-4" />
-                    <span>2 student profiles</span>
-                  </div>
+              <div className="hidden lg:flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <MessageSquare className="w-4 h-4" />
+                  <span>
+                    {openGroupPosts}{" "}
+                    {openGroupPosts === 1
+                      ? "recruitment post"
+                      : "recruitment posts"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  <span>
+                    {openIndividualPosts}{" "}
+                    {openIndividualPosts === 1
+                      ? "student profile"
+                      : "student profiles"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -321,7 +415,7 @@ const Forum = () => {
         </div>
 
         {/* Search */}
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="mb-4 md:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative w-full">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
@@ -338,11 +432,11 @@ const Forum = () => {
         </div>
 
         {/* Segmented Tabs vẫn giữ để người dùng chuyển view */}
-        <div className="mb-6">
-          <div className="inline-flex rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
+        <div className="mb-4 md:mb-6">
+          <div className="inline-flex w-full md:w-auto rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
             <button
               onClick={() => setActiveTab("groups")}
-              className={`px-4 py-2 text-sm font-semibold rounded-xl transition ${
+              className={`flex-1 md:flex-initial px-3 md:px-4 py-2 text-xs md:text-sm font-semibold rounded-xl transition ${
                 activeTab === "groups"
                   ? "bg-gray-900 text-white"
                   : "text-gray-700 hover:bg-gray-50"
@@ -352,7 +446,7 @@ const Forum = () => {
             </button>
             <button
               onClick={() => setActiveTab("individuals")}
-              className={`px-4 py-2 text-sm font-semibold rounded-xl transition ${
+              className={`flex-1 md:flex-initial px-3 md:px-4 py-2 text-xs md:text-sm font-semibold rounded-xl transition ${
                 activeTab === "individuals"
                   ? "bg-gray-900 text-white"
                   : "text-gray-700 hover:bg-gray-50"
@@ -377,18 +471,18 @@ const Forum = () => {
               return (
                 <div
                   key={p.id}
-                  className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
+                  className="rounded-2xl border border-gray-200 bg-white p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
                     <div className="space-y-2 flex-1">
                       {/* Title & Status */}
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <h3 className="text-xl font-semibold text-gray-900 cursor-pointer hover:text-primary transition-colors">
+                      <div className="flex items-start gap-2 md:gap-3 flex-wrap">
+                        <h3 className="text-lg md:text-xl font-semibold text-gray-900 cursor-pointer hover:text-primary transition-colors flex-1 min-w-0">
                           {p.title}
                         </h3>
                         {p.status && (
                           <span
-                            className={`text-xs font-semibold ml-2 px-2.5 py-0.5 rounded-lg ${
+                            className={`text-xs font-semibold px-2.5 py-0.5 rounded-lg shrink-0 ${
                               p.status === "open"
                                 ? "bg-green-100 text-green-600"
                                 : "bg-gray-100 text-gray-600"
@@ -400,20 +494,29 @@ const Forum = () => {
                       </div>
 
                       {/* Author, Group, Date */}
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-white text-lg font-semibold">
-                            {p?.group?.name[0] || "T"}{" "}
-                            {/* Thay biểu tượng chữ theo tên nhóm */}
+                      <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-500">
+                        <div
+                          className="flex items-center gap-2 cursor-pointer hover:text-gray-700"
+                          onClick={() =>
+                            goProfile(p.group?.leader || p.leader || p.owner || {})
+                          }
+                        >
+                          <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm md:text-lg font-semibold shrink-0">
+                            {(p.group?.leader?.displayName ||
+                              p.leader?.displayName ||
+                              p.group?.name ||
+                              "T")
+                              .slice(0, 1)
+                              .toUpperCase()}
                           </div>
-                          <span>
-                            {p.group?.leader?.displayName} •{" "}
-                            {p.group?.leader?.role}
+                          <span className="truncate">
+                            {p.group?.leader?.displayName || p.leader?.displayName} •{" "}
+                            {p.group?.leader?.role || p.leader?.role || t("leader") || "Leader"}
                           </span>
                         </div>
-                        <span>•</span>
-                        <span>{p.group?.name}</span>
-                        <span>•</span>
+                        <span className="hidden sm:inline">•</span>
+                        <span className="truncate">{p.group?.name}</span>
+                        <span className="hidden sm:inline">•</span>
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           <span>
@@ -423,18 +526,20 @@ const Forum = () => {
                       </div>
                     </div>
 
-                    <div className="text-right text-sm text-gray-600">
+                    <div className="flex md:flex-col gap-4 md:gap-0 md:text-right text-xs md:text-sm text-gray-600">
                       {/* Applications & Due Date */}
-                      <div className="flex items-center gap-1 mb-1">
+                      <div className="flex items-center gap-1">
                         <Eye className="w-3 h-3" />
                         <span>
                           {p.applicationsCount}{" "}
-                          {t("applications") || "Applications"}
+                          <span className="hidden sm:inline">
+                            {t("applications") || "Applications"}
+                          </span>
                         </span>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 md:mt-1">
                         <Calendar className="w-3 h-3" />
-                        <span>
+                        <span className="truncate">
                           {p.applicationDeadline
                             ? `${t("due") || "Due"}: ${new Date(
                                 p.applicationDeadline
@@ -449,7 +554,7 @@ const Forum = () => {
                     {p.description}
                   </p>
 
-                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Positions Needed */}
                     <div className="text-xs font-semibold tracking-wide text-gray-800">
                       {(t("positionsNeeded") || "Positions Needed") + ":"}
@@ -461,7 +566,7 @@ const Forum = () => {
                     </div>
 
                     {/* Major */}
-                    <div className="ml-10 text-xs font-semibold tracking-wide text-gray-800">
+                    <div className="lg:ml-10 text-xs font-semibold tracking-wide text-gray-800">
                       {(t("major") || "Major") + ":"}
                       <div className="mt-2 text-gray-500">
                         {p?.major?.majorName || "—"}
@@ -469,8 +574,8 @@ const Forum = () => {
                     </div>
                   </div>
 
-                  <div className="mt-5 flex items-center justify-between pt-4 border-t border-gray-300">
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <div className="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-gray-300">
+                    <div className="flex items-center gap-2 text-xs md:text-sm text-gray-500">
                       <Users className="h-4 w-4" />
                       {!!p.currentMembers && (
                         <span>
@@ -482,7 +587,7 @@ const Forum = () => {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => openDetail(p)}
-                        className="inline-flex items-center rounded-lg px-3.5 py-2 text-xs font-bold shadow-sm hover:border-orange-400 hover:text-orange-400 transition-all focus:outline-none focus:ring-4 focus:ring-blue-100"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-lg px-3 md:px-3.5 py-2 text-xs font-bold shadow-sm hover:border-orange-400 hover:text-orange-400 transition-all focus:outline-none focus:ring-4 focus:ring-blue-100"
                       >
                         {t("viewDetails") || "View Details"}
                       </button>
@@ -494,7 +599,7 @@ const Forum = () => {
                         <button
                           onClick={() => onClickOpenApply(p)}
                           disabled={applyLoadingId === p.id}
-                          className="inline-flex items-center rounded-lg bg-[#FF7A00] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:!opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-60"
+                          className="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-lg bg-[#FF7A00] px-3 md:px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:!opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-60"
                         >
                           {applyLoadingId === p.id
                             ? t("applying") || "Applying…"
@@ -510,8 +615,14 @@ const Forum = () => {
           {/* PERSONAL CARDS */}
           {activeTab === "individuals" &&
             paged.map((u) => {
+              const author = u.user || u.owner || u;
+              const authorId = resolveUserId(author);
               const name =
-                u?.userDisplayName || u?.user?.displayName || u?.name || "";
+                u?.userDisplayName ||
+                u?.user?.displayName ||
+                u?.name ||
+                author?.displayName ||
+                "";
               const timeAgo = u?.createdAt
                 ? timeAgoFrom(u.createdAt)
                 : u?.timeAgo || "";
@@ -521,13 +632,16 @@ const Forum = () => {
                   className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
+                    <div
+                      className="flex items-start gap-3 cursor-pointer hover:text-gray-800"
+                      onClick={() => goProfile(authorId || author)}
+                    >
                       <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
                         {initials(name)}
                       </div>
                       <div>
                         <h3 className="text-base font-semibold text-gray-900">
-                          {name}
+                          {name || t("profile") || "Profile"}
                         </h3>
                         <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
                           <span>{timeAgo}</span>
@@ -540,8 +654,8 @@ const Forum = () => {
                     {u.description}
                   </p>
 
-                  <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="mt-4">
+                  <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="mt-2">
                       <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                         {(t("skills") || "Skills") + ":"}
                       </div>
@@ -554,13 +668,20 @@ const Forum = () => {
                     <div className="flex gap-2">
                       <button
                         onClick={() => onInvite(u.id)}
-                        className="inline-flex items-center rounded-lg bg-[#FF7A00] hover:opacity-90 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-lg bg-[#FF7A00] hover:opacity-90 px-3 md:px-3.5 py-2 text-xs font-bold text-white shadow-sm transition focus:outline-none focus:ring-4 focus:ring-emerald-100"
                         disabled={u.emailSent} // Optionally disable the button if the user has already been invited
                       >
                         <UserPlus className="mr-1 h-4 w-4" />
-                        {u.emailSent
-                          ? t("alreadyInvited") || "Already Invited"
-                          : t("inviteToGroup") || "Invite to Group"}
+                        <span className="hidden sm:inline">
+                          {u.emailSent
+                            ? t("alreadyInvited") || "Already Invited"
+                            : t("inviteToGroup") || "Invite to Group"}
+                        </span>
+                        <span className="sm:hidden">
+                          {u.emailSent
+                            ? t("invited") || "Invited"
+                            : t("invite") || "Invite"}
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -569,14 +690,14 @@ const Forum = () => {
             })}
           {/* Pagination */}
           {total > 0 && (
-            <div className="mt-8 mb-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:gap-4">
+            <div className="mt-6 md:mt-8 mb-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:gap-4">
               {/* Page size */}
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600">
                 <span>Show</span>
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(Number(e.target.value))}
-                  className="rounded-md border border-gray-200 bg-white px-2 py-1 text-sm"
+                  className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs md:text-sm"
                 >
                   {[6, 9, 12, 18].map((n) => (
                     <option key={n} value={n}>
@@ -584,9 +705,9 @@ const Forum = () => {
                     </option>
                   ))}
                 </select>
-                <span>per page</span>
-                <span className="ml-3 text-gray-400">•</span>
-                <span className="ml-2">{total} results</span>
+                <span className="hidden sm:inline">per page</span>
+                <span className="text-gray-400 hidden sm:inline">•</span>
+                <span className="hidden sm:inline">{total} results</span>
               </div>
 
               {/* Pager */}
@@ -594,7 +715,7 @@ const Forum = () => {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 disabled:opacity-50"
+                  className="rounded-lg border border-gray-200 bg-white px-2 md:px-3 py-1.5 text-xs md:text-sm font-medium text-gray-700 disabled:opacity-50"
                 >
                   Prev
                 </button>
@@ -606,7 +727,7 @@ const Forum = () => {
                     if (Math.abs(p - page) === 2) return true;
                     return false;
                   })
-                  .reduce((acc, p, _, arr) => {
+                  .reduce((acc, p) => {
                     if (acc.length === 0) return [p];
                     const prev = acc[acc.length - 1];
                     if (p - prev > 1) acc.push("ellipsis");
@@ -615,14 +736,17 @@ const Forum = () => {
                   }, [])
                   .map((p, idx) =>
                     p === "ellipsis" ? (
-                      <span key={`e-${idx}`} className="px-2 text-gray-400">
+                      <span
+                        key={`e-${idx}`}
+                        className="px-1 md:px-2 text-gray-400"
+                      >
                         …
                       </span>
                     ) : (
                       <button
                         key={p}
                         onClick={() => setPage(p)}
-                        className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+                        className={`rounded-lg px-2 md:px-3 py-1.5 text-xs md:text-sm font-semibold ${
                           p === page
                             ? "bg-gray-900 text-white"
                             : "text-gray-700 hover:bg-gray-50 border border-gray-200 bg-white"
@@ -636,7 +760,7 @@ const Forum = () => {
                 <button
                   onClick={() => setPage((p) => Math.min(maxPage, p + 1))}
                   disabled={page === maxPage}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 disabled:opacity-50"
+                  className="rounded-lg border border-gray-200 bg-white px-2 md:px-3 py-1.5 text-xs md:text-sm font-medium text-gray-700 disabled:opacity-50"
                 >
                   Next
                 </button>
@@ -649,12 +773,14 @@ const Forum = () => {
           closeModal={() => setIsCreatePostModalOpen(false)}
           onCreated={handleCreated}
           defaultGroupId={membership.groupId || ""}
+          destroyOnClose
         />
         <CreatePersonalPostModal
           isOpen={isCreatePersonalPostModalOpen}
           closeModal={() => setIsCreatePersonalPostModalOpen(false)}
           onCreated={handleCreated}
           currentUserName={currentUserName}
+          destroyOnClose
         />
         <GroupDetailModal
           isOpen={detailOpen}

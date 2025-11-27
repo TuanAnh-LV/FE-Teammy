@@ -9,6 +9,7 @@ export default function SelectTopicModal({
   currentTopicId,
   onClose,
   onSelect,
+  assigning = false,
 }) {
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -56,7 +57,7 @@ export default function SelectTopicModal({
     return name.includes(searchTerm) || description.includes(searchTerm);
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (selectedTopicId) {
       const selectedTopic = topics.find((t) => {
         const topicId = t.id || t._id;
@@ -73,7 +74,11 @@ export default function SelectTopicModal({
       }
       
       console.log("Submitting topic:", selectedTopicId, selectedTopic);
-      onSelect(selectedTopicId, selectedTopic);
+      try {
+        await onSelect?.(selectedTopicId, selectedTopic);
+      } catch (error) {
+        console.error("Failed to assign topic:", error);
+      }
     }
   };
 
@@ -213,10 +218,12 @@ export default function SelectTopicModal({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!selectedTopicId}
+            disabled={!selectedTopicId || assigning}
             className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {label("confirm", "Confirm")}
+            {assigning
+              ? label("assigningTopic", "Assigning...")
+              : label("confirm", "Confirm")}
           </button>
         </div>
       </div>

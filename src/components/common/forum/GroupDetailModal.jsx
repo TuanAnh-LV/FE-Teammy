@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "antd";
 import { Users, Shield } from "lucide-react";
 import { GroupService } from "../../../services/group.service";
-import { useTranslation } from "../../../hook/useTranslation"; 
+import { useTranslation } from "../../../hook/useTranslation";
 const clamp3 = {
   display: "-webkit-box",
   WebkitLineClamp: 3,
@@ -52,9 +52,9 @@ const GroupDetailModal = ({ isOpen, onClose, groupId }) => {
     };
   }, [isOpen, groupId]);
 
-  // Title ưu tiên tên nhóm, fallback dùng key "groupInformation"
+  // Title ưu tiên tên nhóm, fallback dùng key "groupDetail"
   const title = useMemo(
-    () => group?.name || t("groupInformation") || "Group Detail",
+    () => group?.name || t("groupDetail") || "Group Detail",
     [group, t]
   );
 

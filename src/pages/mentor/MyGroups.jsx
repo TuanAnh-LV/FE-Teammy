@@ -24,18 +24,18 @@ import { useNavigate } from "react-router-dom";
 import { GroupService } from "../../services/group.service";
 import { calculateProgressFromTasks } from "../../utils/group.utils";
 import { BoardService } from "../../services/board.service";
-
+import { useTranslation } from "../../hook/useTranslation";
 const { Text } = Typography;
 
 const MyGroups = () => {
   const navigate = useNavigate();
-
+  const { t } = useTranslation();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("All Groups");
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
+  useEffect(() => { 
     fetchMyGroups();
   }, []);
 
@@ -44,7 +44,7 @@ const MyGroups = () => {
       setLoading(true);
       const response = await GroupService.getMyGroups();
       const groupsList = Array.isArray(response?.data) ? response.data : [];
-      
+
       // Fetch board for each group to calculate progress
       const groupsWithProgress = await Promise.all(
         groupsList.map(async (group) => {
@@ -64,7 +64,7 @@ const MyGroups = () => {
           }
         })
       );
-      
+
       setGroups(groupsWithProgress);
     } catch (error) {
       console.error("Failed to fetch my groups:", error);
@@ -78,32 +78,32 @@ const MyGroups = () => {
     const memberCount = group.currentMembers || group.members || 0;
     const maxMembers = group.maxMembers || 5;
     const progress = group.calculatedProgress || 0;
-    const createdDate = group.createdAt 
+    const createdDate = group.createdAt
       ? new Date(group.createdAt).toLocaleDateString()
       : "N/A";
-    
+
     // Calculate due date and days left
     let dueDate = null;
     let daysLeft = null;
-    
+
     if (group.semester?.endDate || group.endDate) {
       const endDateStr = group.semester?.endDate || group.endDate;
       const dueDateObj = new Date(endDateStr);
       dueDate = dueDateObj.toLocaleDateString();
-      
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       dueDateObj.setHours(0, 0, 0, 0);
-      
+
       const diffTime = dueDateObj - today;
       daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     }
-    
+
     // Determine status based on progress
     let status = "On track";
     if (progress < 30) status = "At risk";
     else if (progress < 60) status = "Behind";
-    
+
     return {
       id: group.id,
       name: group.name || "Unnamed Group",
@@ -120,22 +120,40 @@ const MyGroups = () => {
   };
 
   const normalizedGroups = groups.map(normalizeGroup);
-  
+
   const filteredGroups = normalizedGroups.filter((g) => {
-    const matchesSearch = g.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filter === "All Groups" || 
-                          (filter === "Active" && g.status !== "Archived") ||
-                          (filter === "Archived" && g.status === "Archived");
+    const matchesSearch = g.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    
+    // Filter logic: check both calculated status and raw status field
+    let matchesFilter = true;
+    if (filter === "All Groups") {
+      matchesFilter = true; // Show all
+    } else if (filter === "Active") {
+      // Show active groups (not archived, or status !== "Archived")
+      matchesFilter = g.status !== "Archived";
+    } else if (filter === "Archived") {
+      // Show only archived groups
+      matchesFilter = g.status === "Archived";
+    }
+    
     return matchesSearch && matchesFilter;
   });
 
   const stats = {
     totalGroups: normalizedGroups.length,
-    avgProgress: normalizedGroups.length > 0
-      ? Math.round(normalizedGroups.reduce((sum, g) => sum + g.progress, 0) / normalizedGroups.length)
-      : 0,
-    needAttention: normalizedGroups.filter(g => g.status === "Behind" || g.status === "At risk").length,
-    highPriority: normalizedGroups.filter(g => g.status === "At risk").length,
+    avgProgress:
+      normalizedGroups.length > 0
+        ? Math.round(
+            normalizedGroups.reduce((sum, g) => sum + g.progress, 0) /
+              normalizedGroups.length
+          )
+        : 0,
+    needAttention: normalizedGroups.filter(
+      (g) => g.status === "Behind" || g.status === "At risk"
+    ).length,
+    highPriority: normalizedGroups.filter((g) => g.status === "At risk").length,
   };
 
   const columns = [
@@ -145,9 +163,7 @@ const MyGroups = () => {
       render: (_, record) => (
         <div>
           <p className="font-semibold text-gray-800">{record.name}</p>
-          <p className="text-gray-500 text-xs">
-            Since {record.startDate}
-          </p>
+          <p className="text-gray-500 text-xs">Since {record.startDate}</p>
           <p className="text-gray-400 text-xs mt-1">
             {record.majorName} • {record.topic}
           </p>
@@ -178,7 +194,13 @@ const MyGroups = () => {
             strokeColor={record.status === "At risk" ? "#fa541c" : "#43D08A"}
           />
           <Tag
-            color={record.status === "At risk" ? "volcano" : record.status === "Behind" ? "orange" : "green"}
+            color={
+              record.status === "At risk"
+                ? "volcano"
+                : record.status === "Behind"
+                ? "orange"
+                : "green"
+            }
             className="mt-1 rounded-md"
           >
             {record.status}
@@ -191,13 +213,19 @@ const MyGroups = () => {
       dataIndex: "dueDate",
       render: (_, record) => (
         <div>
-          <p className="text-gray-700 font-medium">{record.dueDate || "No due date"}</p>
+          <p className="text-gray-700 font-medium">
+            {record.dueDate || "No due date"}
+          </p>
           {record.daysLeft !== null && (
-            <p className={`text-xs ${record.daysLeft < 7 ? "text-red-500" : "text-gray-400"}`}>
-              {record.daysLeft > 0 
-                ? `${record.daysLeft} days left` 
-                : record.daysLeft === 0 
-                ? "Due today" 
+            <p
+              className={`text-xs ${
+                record.daysLeft < 7 ? "text-red-500" : "text-gray-400"
+              }`}
+            >
+              {record.daysLeft > 0
+                ? `${record.daysLeft} days left`
+                : record.daysLeft === 0
+                ? "Due today"
                 : "Overdue"}
             </p>
           )}
@@ -207,7 +235,7 @@ const MyGroups = () => {
     {
       title: "Actions",
       render: (_, record) => (
-        <Tooltip title="View Details">
+        <Tooltip title={t("viewDetails") || "View Details"}>
           <Button
             icon={<EyeOutlined />}
             type="primary"
@@ -226,7 +254,7 @@ const MyGroups = () => {
     <div className="space-y-8 bg-gray-50 min-h-screen">
       <div>
         <h1
-          className="inline-block text-4xl font-extrabold"
+          className="text-2xl sm:text-3xl lg:text-4xl font-extrabold"
           style={{
             backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
             WebkitBackgroundClip: "text",
@@ -246,7 +274,7 @@ const MyGroups = () => {
         </div>
       ) : (
         <>
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="rounded-2xl shadow-md hover:shadow-lg transition-all">
               <TeamOutlined className="text-blue-500 text-xl mb-2" />
               <p className="text-sm text-gray-500">Total Groups</p>
@@ -278,7 +306,7 @@ const MyGroups = () => {
           <div className="flex flex-col md:flex-row justify-between gap-3">
             <Input
               prefix={<SearchOutlined />}
-              placeholder="Search groups..."
+              placeholder={t("searchGroups") || "Search groups..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full md:w-1/3 border-gray-200 rounded-lg hover:border-blue-400"
@@ -300,6 +328,7 @@ const MyGroups = () => {
                 showSizeChanger: true,
                 showTotal: (total) => `Total ${total} groups`,
               }}
+              scroll={{ x: "max-content" }}
               rowKey="id"
               rowClassName={(_, i) =>
                 i % 2 === 0 ? "bg-gray-50 hover:bg-blue-50" : "hover:bg-blue-50"

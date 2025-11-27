@@ -24,6 +24,7 @@ import UserAddModal from "../../components/admin/UserAddModal";
 import UserEditModal from "../../components/admin/UserEditModal";
 import { AdminService } from "../../services/admin.service";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "../../hook/useTranslation";
 
 const ManageUsers = () => {
   // users will be loaded from API
@@ -42,6 +43,7 @@ const ManageUsers = () => {
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleView = async (user) => {
     setSelectedUser(user);
@@ -69,7 +71,9 @@ const ManageUsers = () => {
       setSelectedUser(enriched);
     } catch (err) {
       console.error(err);
-      notification.error("Failed to load user details");
+      notification.error({
+        message: t("failedLoadUserDetails") || "Failed to load user details",
+      });
     } finally {
       setDetailLoading(false);
     }
@@ -92,12 +96,16 @@ const ManageUsers = () => {
 
   const handleBan = (user) => {
     Modal.confirm({
-      title: `Ban ${user.name}?`,
+      title:
+        (t("confirmBanTitle") &&
+          t("confirmBanTitle").replace("{name}", user.displayName)) ||
+        `Ban ${user.displayName}?`,
       content:
+        t("confirmBanContent") ||
         "Are you sure you want to ban this user? This action can be undone later.",
       centered: true,
-      okText: "Confirm Ban",
-      cancelText: "Cancel",
+      okText: t("confirmBanOk") || "Confirm Ban",
+      cancelText: t("confirmBanCancel") || "Cancel",
       okButtonProps: {
         className:
           "!bg-red-500 !text-white !border-none !rounded-md !px-4 !py-2 hover:!opacity-90",
@@ -112,13 +120,29 @@ const ManageUsers = () => {
           await AdminService.banUser(id);
           setUserList((prev) =>
             prev.map((u) =>
-              u.key === user.key ? { ...u, status: "Suspended" } : u
+              u.key === user.key ? { ...u, isActive: false } : u
             )
           );
-          notification.success(`${user.name} has been banned.`);
+          notification.success({
+            message:
+              (t("userBannedSuccess") &&
+                t("userBannedSuccess").replace(
+                  "{name}",
+                  user.displayName || user.name
+                )) ||
+              `${user.displayName || user.name} has been banned.`,
+          });
         } catch (err) {
           console.error(err);
-          notification.error(`Failed to ban ${user.name}`);
+          notification.error({
+            message:
+              (t("userBanFailed") &&
+                t("userBanFailed").replace(
+                  "{name}",
+                  user.displayName || user.name
+                )) ||
+              `Failed to ban ${user.displayName || user.name}`,
+          });
         }
       },
     });
@@ -143,22 +167,22 @@ const ManageUsers = () => {
               String(u.role).charAt(0).toUpperCase() +
                 String(u.role).slice(1)) ||
             "",
-          status: u.isActive
-            ? "Active"
-            : u.isActive === false
-            ? "Suspended"
-            : "Inactive",
           phone: u.phone || "",
           major: u.majorName || "",
           studentCode: u.studentCode || null,
           avatarUrl: u.avatarUrl || null,
+          displayName: u.displayName || u.name || "",
+          majorId: u.majorId || null,
+          isActive: Boolean(u.isActive),
           raw: u,
         }));
 
         if (mounted) setUserList(mapped);
       } catch (err) {
         console.error(err);
-        notification.error("Failed to load users");
+        notification.error({
+          message: t("failedLoadUsers") || "Failed to load users",
+        });
       } finally {
         if (mounted) setLoading(false);
       }
@@ -194,20 +218,14 @@ const ManageUsers = () => {
     { title: "Major", dataIndex: "major", key: "major" },
     {
       title: "Status",
-      dataIndex: "status",
+      dataIndex: "isActive",
       key: "status",
-      render: (status) => {
-        const colorMap = {
-          Active: "green",
-          Suspended: "red",
-          Inactive: "default",
-        };
+      render: (isActive) => {
+        const label = isActive ? "Active" : "Suspended";
+        const color = isActive ? "green" : "red";
         return (
-          <Tag
-            color={colorMap[status]}
-            className="px-3 py-0.5 rounded-full text-xs"
-          >
-            {status}
+          <Tag color={color} className="px-3 py-0.5 rounded-full text-xs">
+            {label}
           </Tag>
         );
       },
@@ -243,7 +261,9 @@ const ManageUsers = () => {
     const roleMatch =
       filters.role === "All Roles" || user.role === filters.role;
     const statusMatch =
-      filters.status === "All Status" || user.status === filters.status;
+      filters.status === "All Status" ||
+      (filters.status === "Active" && user.isActive) ||
+      (filters.status === "Suspended" && !user.isActive);
     const majorMatch =
       filters.major === "All Major" || user.major === filters.major;
     const searchText = filters.search.toLowerCase();
@@ -257,26 +277,26 @@ const ManageUsers = () => {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="inline-block text-4xl font-extrabold">
+          <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
             Users & Roles
           </h1>
         </div>
-        <Space>
+        <Space className="flex-wrap">
           <Button
             icon={<UploadOutlined />}
             onClick={() => navigate("/admin/import-users")}
             className="!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all !py-5"
           >
-            Import Users
+            <span className="hidden sm:inline">Import Users</span>
           </Button>
           <Button
             icon={<PlusOutlined />}
             onClick={() => setIsAddOpen(true)}
             className="!bg-[#FF7A00] !text-white !border-none !rounded-md !px-6 !py-5 hover:!opacity-90"
           >
-            Add User
+            <span className="hidden sm:inline">Add User</span>
           </Button>
         </Space>
       </div>
@@ -285,7 +305,7 @@ const ManageUsers = () => {
         {/* Filters & Table */}
         <Card
           className="shadow-sm border-gray-100"
-          bodyStyle={{ padding: "20px 24px" }}
+          styles={{ body: { padding: "20px 24px" } }}
         >
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <Input
@@ -311,20 +331,23 @@ const ManageUsers = () => {
               onChange={(v) => setFilters({ ...filters, status: v })}
               className="w-full"
             >
-              <Option value="All Status">All Status</Option>
-              <Option value="Active">Active</Option>
-              <Option value="Inactive">Inactive</Option>
-              <Option value="Suspended">Suspended</Option>
+              <Option value="All Status">
+                {t("allStatus") || "All Status"}
+              </Option>
+              <Option value="Active">{t("active") || "Active"}</Option>
+              <Option value="Suspended">{t("suspended") || "Suspended"}</Option>
             </Select>
             <Select
               value={filters.major}
               onChange={(v) => setFilters({ ...filters, major: v })}
               className="w-full"
             >
-              <Option value="All Major">All Major</Option>
-              <Option value="Engineering">Engineering</Option>
-              <Option value="Business">Business</Option>
-              <Option value="IT">IT</Option>
+              <Option value="All Major">{t("allMajor") || "All Major"}</Option>
+              <Option value="Engineering">
+                {t("engineering") || "Engineering"}
+              </Option>
+              <Option value="Business">{t("business") || "Business"}</Option>
+              <Option value="IT">{t("informationTechnology") || "IT"}</Option>
             </Select>
           </div>
 
@@ -334,6 +357,7 @@ const ManageUsers = () => {
             loading={loading}
             pagination={{ pageSize: 5 }}
             bordered
+            scroll={{ x: "max-content" }}
             className="rounded-lg mt-5"
           />
         </Card>
@@ -351,11 +375,13 @@ const ManageUsers = () => {
         onClose={() => setIsEditOpen(false)}
         user={selectedUser}
         onSave={handleSaveEdit}
+        destroyOnClose
       />
       <UserAddModal
         open={isAddOpen}
         onClose={() => setIsAddOpen(false)}
         onAdd={handleAddUser}
+        destroyOnClose
       />
     </div>
   );

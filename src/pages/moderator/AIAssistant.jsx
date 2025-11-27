@@ -15,10 +15,12 @@ import {
   UsergroupAddOutlined,
   CheckOutlined,
 } from "@ant-design/icons";
+import { useTranslation } from "../../hook/useTranslation";
 
 const { Option } = Select;
 
 export default function AIAssistantModerator() {
+  const { t } = useTranslation();
   const [mode, setMode] = useState("Identify Missing Elements");
   const [autoMerge, setAutoMerge] = useState(false);
 
@@ -60,19 +62,25 @@ export default function AIAssistantModerator() {
   ];
 
   const runAnalysis = () => {
-    notification.success("AI analysis complete!");
+    notification.success({
+      message: t("aiAnalysisComplete") || "AI analysis complete!",
+    });
   };
 
   const sendNotice = (group) => {
-    notification.info(`Notification sent to ${group}`);
+    const tmpl = t("notificationSentTo") || "Notification sent to {name}";
+    notification.info({ message: tmpl.replace("{name}", group) });
   };
 
   const autoMergeHandler = (group) => {
-    notification.success(`AI merged ${group} successfully!`);
+    const tmpl = t("aiMergedSuccess") || "AI merged {name} successfully!";
+    notification.success({ message: tmpl.replace("{name}", group) });
   };
 
   const applySuggestion = (group) => {
-    notification.success(`Applied AI suggestions for ${group}`);
+    const tmpl =
+      t("appliedAISuggestions") || "Applied AI suggestions for {name}";
+    notification.success({ message: tmpl.replace("{name}", group) });
   };
 
   return (
@@ -80,7 +88,7 @@ export default function AIAssistantModerator() {
       {/* HEADER */}
       <div>
         <h1
-          className="inline-block text-4xl font-extrabold"
+          className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold"
           style={{
             backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
             WebkitBackgroundClip: "text",
@@ -105,8 +113,8 @@ export default function AIAssistantModerator() {
               Select mode and run AI analysis to find missing elements
             </p>
           </div>
-          <Space>
-            <Select value={mode} onChange={setMode} className="w-64">
+          <Space className="flex-wrap">
+            <Select value={mode} onChange={setMode} className="w-full sm:w-64">
               <Option value="Identify Missing Elements">
                 Identify Missing Elements
               </Option>

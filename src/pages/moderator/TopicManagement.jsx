@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { useTranslation } from "../../hook/useTranslation";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -29,6 +30,7 @@ const TopicManagement = () => {
     search: "",
   });
 
+  const { t } = useTranslation();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentTopic, setCurrentTopic] = useState(null);
   const [topics, setTopics] = useState([]);
@@ -68,7 +70,9 @@ const TopicManagement = () => {
         if (mounted) setTopics(mapped);
       } catch (err) {
         console.error(err);
-        notification.error("Failed to load topics");
+        notification.error({
+          message: t("failedLoadTopics") || "Failed to load topics",
+        });
       } finally {
         if (mounted) setLoading(false);
       }
@@ -82,10 +86,8 @@ const TopicManagement = () => {
 
   const data = topics;
 
-  // Determine status: prefer explicit `status` field, fallback to 'Available'
   const getStatus = (row) => row?.status || "Available";
 
-  // Lọc theo search + status (status không cần hiển thị trong table)
   const filteredData = useMemo(() => {
     const s = filters.search.toLowerCase().trim();
 
@@ -105,7 +107,7 @@ const TopicManagement = () => {
 
   const columns = [
     {
-      title: "Topic",
+      title: t("topics") || "Topic",
       dataIndex: "topicName",
       key: "topicName",
       render: (text) => (
@@ -114,11 +116,19 @@ const TopicManagement = () => {
         </span>
       ),
     },
-    { title: "Mentor", dataIndex: "mentorName", key: "mentorName" },
-    { title: "Major", dataIndex: "majorName", key: "majorName" },
-    { title: "Created Date", dataIndex: "createdAt", key: "createdAt" },
     {
-      title: "Status",
+      title: t("mentor") || "Mentor",
+      dataIndex: "mentorName",
+      key: "mentorName",
+    },
+    { title: t("major") || "Major", dataIndex: "majorName", key: "majorName" },
+    {
+      title: t("createdDate") || "Created Date",
+      dataIndex: "createdAt",
+      key: "createdAt",
+    },
+    {
+      title: t("status") || "Status",
       dataIndex: "status",
       key: "status",
       render: (status) => (
@@ -134,21 +144,21 @@ const TopicManagement = () => {
       ),
     },
     {
-      title: "Actions",
+      title: t("actions") || "Actions",
       key: "actions",
       render: (_, record) => (
         <Space size="middle">
-          <Tooltip title="View details">
+          <Tooltip title={t("viewDetails") || "View details"}>
             <Button
               type="text"
               icon={<EyeOutlined />}
               onClick={() => {
-                setCurrentTopic(record); // Set the selected topic
-                setIsModalVisible(true); // Open modal
+                setCurrentTopic(record);
+                setIsModalVisible(true);
               }}
             />
           </Tooltip>
-          <Tooltip title="Copy topic">
+          <Tooltip title={t("copyTopic") || "Copy topic"}>
             <Button type="text" icon={<CopyOutlined />} />
           </Tooltip>
         </Space>
@@ -159,17 +169,19 @@ const TopicManagement = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="inline-block text-4xl font-extrabold">
-          Topic Management
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
+          {t("topicManagement") || "Topic Management"}
         </h1>
-        <Space>
+        <Space className="flex-wrap">
           <Button
             icon={<UploadOutlined />}
             className="!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all !py-5"
             onClick={() => navigate("/moderator/import-topics")}
           >
-            Import topics
+            <span className="hidden sm:inline">
+              {t("importTopics") || "Import Topics"}
+            </span>
           </Button>
 
           <Button
@@ -181,34 +193,43 @@ const TopicManagement = () => {
                 const blob = res?.data ?? res;
                 const disposition = res?.headers?.["content-disposition"];
                 downloadBlob(blob, "TeammyTopicsTemplate.xlsx", disposition);
-                notification.success("Template downloaded");
+                notification.success({
+                  message: t("templateDownloaded") || "Template downloaded",
+                });
               } catch (err) {
                 console.error(err);
                 // Fallback: generate a small template and download
                 const template = [
                   {
-                    title: "AI Capstone",
-                    description: "Create AI",
-                    majorName: "Software Engineering",
-                    createdByName: "Alice Nguyen",
+                    title: "AI Tutor",
+                    description: "LLM-powered tutor",
+                    semesterCode: "2025A",
+                    majorCode: "SE",
                     status: "open",
+                    mentorEmails: "mentor1@example.com",
                   },
                 ];
                 const ws = XLSX.utils.json_to_sheet(template);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Template");
                 XLSX.writeFile(wb, "TeammyTopicsTemplate.xlsx");
-                notification.warning("Template generated locally (API error)");
+                notification.warning({
+                  message:
+                    t("templateGeneratedLocally") ||
+                    "Template generated locally (API error)",
+                });
               }
             }}
           >
-            Export template
+            <span className="hidden sm:inline">
+              {t("exportTemplate") || "Export template"}
+            </span>
           </Button>
         </Space>
       </div>
 
       {/* Layout: Table */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1  gap-6">
         <Card
           className="xl:col-span-3 shadow-sm border-gray-100 rounded-lg"
           bodyStyle={{ padding: "20px 24px" }}
@@ -216,7 +237,10 @@ const TopicManagement = () => {
           <div className="flex flex-col sm:flex-row justify-between gap-3 mb-4">
             <Input
               prefix={<SearchOutlined className="text-gray-400" />}
-              placeholder="Search by topic title or mentor..."
+              placeholder={
+                t("searchByTopicOrMentor") ||
+                "Search by topic title or mentor..."
+              }
               value={filters.search}
               onChange={(e) =>
                 setFilters({ ...filters, search: e.target.value })
@@ -229,9 +253,15 @@ const TopicManagement = () => {
                 onChange={(v) => setFilters({ ...filters, status: v })}
                 className="w-40"
               >
-                <Option value="All Status">All Status</Option>
-                <Option value="Available">Available</Option>
-                <Option value="Not Available">Not Available</Option>
+                <Option value="All Status">
+                  {t("allStatus") || "All Status"}
+                </Option>
+                <Option value="Available">
+                  {t("available") || "Available"}
+                </Option>
+                <Option value="Not Available">
+                  {t("notAvailable") || "Not Available"}
+                </Option>
               </Select>
             </div>
           </div>
@@ -241,35 +271,12 @@ const TopicManagement = () => {
             columns={columns}
             dataSource={filteredData}
             loading={loading}
-            pagination={false}
+            pagination={{ pageSize: 5 }}
             bordered
+            scroll={{ x: "max-content" }}
             className="rounded-lg"
           />
         </Card>
-
-        {/* Sidebar Summary (tuỳ chọn) */}
-        <div className="flex flex-col gap-6">
-          <Card className="shadow-sm border-gray-100 rounded-lg">
-            <h3 className="font-semibold text-gray-800 mb-3">Summary</h3>
-            {/* Có thể tính lại theo filteredData nếu muốn thống kê theo filter hiện tại */}
-            <p className="text-sm text-gray-600">
-              Total Topics:{" "}
-              <span className="font-semibold text-gray-800">{data.length}</span>
-            </p>
-            <p className="text-sm text-gray-600">
-              Assigned:{" "}
-              <span className="font-semibold text-green-600">
-                {data.filter((d) => getStatus(d) === "Not Available").length}
-              </span>
-            </p>
-            <p className="text-sm text-gray-600">
-              Available:{" "}
-              <span className="font-semibold text-orange-500">
-                {data.filter((d) => getStatus(d) === "Available").length}
-              </span>
-            </p>
-          </Card>
-        </div>
       </div>
       <TopicDetailModal
         open={isModalVisible}

@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Table, Button, Checkbox, Select, Tag } from "antd";
+import { Table, Button, Checkbox, Select, Tag, notification } from "antd";
 import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   CloseCircleOutlined,
 } from "@ant-design/icons";
+import { AdminService } from "../../../services/admin.service";
+import { useTranslation } from "../../../hook/useTranslation";
 
 const { Option } = Select;
 
@@ -13,80 +15,108 @@ export default function ImportStep3Preview({
   columnMap,
   setMappedUsers,
   setCurrentStep,
+  validationResult,
+  originalFile,
 }) {
+  const { t } = useTranslation();
   const [previewData, setPreviewData] = useState([]);
   const [sendEmail, setSendEmail] = useState(true);
   const [importMode, setImportMode] = useState("create");
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
-    // Dev helper: log shapes to help debugging mapping issues
-    // Remove or guard this in production
-    console.debug(
-      "Import preview — rawData sample:",
-      rawData && rawData.slice && rawData.slice(0, 3)
-    );
-    console.debug("Import preview — columnMap:", columnMap);
+    if (!validationResult || !validationResult.rows) {
+      return;
+    }
 
-    const mapped = rawData.map((r, i) => {
-      // Helper to get value from row whether it's an object or array
-      const get = (row, key) => {
-        if (!row || key == null) return "";
-        // If key is a number or numeric string, use numeric index
-        if (typeof key === "number" || /^\d+$/.test(String(key))) {
-          const idx = Number(key);
-          return Array.isArray(row)
-            ? row[idx] ?? ""
-            : row[idx] ?? row[key] ?? "";
+    console.debug("Validation result:", validationResult);
+
+    const mapped = validationResult.rows.map((row, i) => {
+      // Lấy data từ validation result
+      const rowData = {};
+      row.columns.forEach((col) => {
+        const fieldName =
+          col.column.charAt(0).toLowerCase() + col.column.slice(1);
+        rowData[col.column] = rawData[i]?.[columnMap[fieldName]] || "";
+      });
+
+      const email = rowData.Email || "";
+      const displayName = rowData.DisplayName || "";
+      const role = rowData.Role || "student";
+      const majorName = rowData.MajorName || "-";
+      const gender = rowData.Gender || "-";
+      const studentCode = rowData.StudentCode || "-";
+
+      // Xác định status từ validation result
+      let status = row.isValid ? "Valid" : "Error";
+      const issues = [];
+
+      // Lấy error messages từ columns
+      row.columns.forEach((col) => {
+        if (!col.isValid && col.errorMessage) {
+          issues.push(`${col.column}: ${col.errorMessage}`);
         }
-        // Normal: treat row as object with header keys
-        return row[key] ?? row[String(key).trim()] ?? "";
-      };
+      });
 
-      const email = get(r, columnMap.email);
-      const displayName = get(r, columnMap.displayName);
-      const role = get(r, columnMap.role) || "student";
-      const majorName = get(r, columnMap.majorName);
-      const gender = get(r, columnMap.gender);
-      const studentCode = get(r, columnMap.studentCode);
-
-      const validEmail = email && String(email).includes("@");
-      const validName = displayName && String(displayName).trim().length > 0;
-
-      let status = "Valid";
-      let issues = [];
-
-      if (!validEmail) {
-        status = "Error";
-        issues.push("Invalid email format");
-      }
-      if (!validName) {
-        status = "Error";
-        issues.push("Display name is required");
+      // Lấy general messages
+      if (row.messages && row.messages.length > 0) {
+        issues.push(...row.messages);
       }
 
-      // Warning if missing optional fields
-      if (status === "Valid") {
-        if (!majorName) issues.push("Major name not provided");
-        if (!studentCode) issues.push("Student code not provided");
-        if (issues.length > 0) status = "Warning";
+      // Nếu có issues nhưng isValid = true, đó là warning
+      if (issues.length > 0 && row.isValid) {
+        status = "Warning";
       }
 
       return {
         key: i,
-        row: i + 1,
+        row: row.rowNumber,
         email,
         displayName,
         role: String(role).charAt(0).toUpperCase() + String(role).slice(1),
-        majorName: majorName || "-",
-        gender: gender || "-",
-        studentCode: studentCode || "-",
+        majorName,
+        gender,
+        studentCode,
         status,
         issues,
       };
     });
     setPreviewData(mapped);
     if (setMappedUsers) setMappedUsers(mapped);
-  }, [rawData, columnMap, setMappedUsers]);
+  }, [validationResult, rawData, columnMap, setMappedUsers]);
+
+  const handleImport = async () => {
+    if (!originalFile) {
+      notification.error({
+        message: t("error") || "Error",
+        description: t("noFileFound") || "No file found. Please start over.",
+      });
+      return;
+    }
+
+    try {
+      setImporting(true);
+      const res = await AdminService.importUsers(originalFile, true);
+
+      if (res?.data) {
+        notification.success({
+          message: t("importSuccess") || "Import Successful",
+          description: `${
+            res.data.createdCount || previewData.length
+          } users imported successfully`,
+        });
+        setCurrentStep(3);
+      }
+    } catch (err) {
+      console.error(err);
+      notification.error({
+        message: t("importFailed") || "Import Failed",
+        description: err?.response?.data?.message || t("pleaseTryAgain"),
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
 
   // Stats
   const validCount = previewData.filter((u) => u.status === "Valid").length;
@@ -226,11 +256,16 @@ export default function ImportStep3Preview({
         <Button
           type="default"
           size="large"
+          loading={importing}
           className="!bg-[#FF7A00] !text-white !border-none !rounded-md !px-6 !py-2 hover:!opacity-90"
-          onClick={() => setCurrentStep(3)}
-          disabled={errorCount > 0}
+          onClick={handleImport}
+          disabled={errorCount > 0 || importing}
         >
-          Import {previewData.length} Users
+          {importing
+            ? t("importing") || "Importing..."
+            : `${t("import") || "Import"} ${previewData.length} ${
+                t("users") || "Users"
+              }`}
         </Button>
       </div>
     </div>

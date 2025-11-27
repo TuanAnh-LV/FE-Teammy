@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Table, Button, Select, Tag } from "antd";
+import { Table, Button, Select, Tag, notification } from "antd";
 import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   CloseCircleOutlined,
 } from "@ant-design/icons";
+import { TopicService } from "../../../services/topic.service";
+import { useTranslation } from "../../../hook/useTranslation";
 
 const { Option } = Select;
 
@@ -13,59 +15,114 @@ export default function ImportStep3PreviewTopic({
   columnMap,
   setMappedTopics,
   setCurrentStep,
+  validationResult,
+  originalFile,
 }) {
+  const { t } = useTranslation();
   const [previewData, setPreviewData] = useState([]);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
-    const get = (row, key) => {
-      if (!row || key == null) return "";
-      if (typeof key === "number" || /^\d+$/.test(String(key))) {
-        const idx = Number(key);
-        return Array.isArray(row) ? row[idx] ?? "" : row[idx] ?? row[key] ?? "";
-      }
-      return row[key] ?? row[String(key).trim()] ?? "";
-    };
+    if (!validationResult || !validationResult.rows) {
+      return;
+    }
 
-    const mapped = (rawData || []).map((r, i) => {
-      const title = get(r, columnMap.title) || "";
-      const description = get(r, columnMap.description) || "";
-      const majorName = get(r, columnMap.majorName) || "";
-      const createdByName = get(r, columnMap.createdByName) || "";
-      const status = (get(r, columnMap.status) || "").toString();
+    console.debug("Validation result:", validationResult);
 
-      let s = "Valid";
+    const mapped = validationResult.rows.map((row, i) => {
+      // Lấy data từ validation result
+      const rowData = {};
+      row.columns.forEach((col) => {
+        const fieldName =
+          col.column.charAt(0).toLowerCase() + col.column.slice(1);
+        rowData[col.column] = rawData[i]?.[columnMap[fieldName]] || "";
+      });
+
+      const title = rowData.Title || "";
+      const description = rowData.Description || "";
+      const majorName = rowData.MajorName || "-";
+      const semesterCode = rowData.SemesterCode || "-";
+      const mentorEmails = rowData.MentorEmails || "-";
+      const status = rowData.Status || "open";
+
+      // Xác định status từ validation result
+      let statusLabel = row.isValid ? "Valid" : "Error";
       const issues = [];
-      if (!title || String(title).trim().length === 0) {
-        s = "Error";
-        issues.push("Title is required");
+
+      // Lấy error messages từ columns
+      row.columns.forEach((col) => {
+        if (!col.isValid && col.errorMessage) {
+          issues.push(`${col.column}: ${col.errorMessage}`);
+        }
+      });
+
+      // Lấy general messages
+      if (row.messages && row.messages.length > 0) {
+        issues.push(...row.messages);
       }
-      if (!createdByName) {
-        s = s === "Error" ? "Error" : "Warning";
-        issues.push("Creator name not provided");
+
+      // Nếu có issues nhưng isValid = true, đó là warning
+      if (issues.length > 0 && row.isValid) {
+        statusLabel = "Warning";
       }
 
       return {
         key: i,
-        row: i + 1,
+        row: row.rowNumber,
         title,
         description,
-        majorName: majorName || "-",
-        createdByName: createdByName || "-",
-        status: status || "open",
-        statusLabel: s,
+        majorName,
+        semesterCode,
+        mentorEmails,
+        status,
+        statusLabel,
         issues,
       };
     });
     setPreviewData(mapped);
     if (setMappedTopics) setMappedTopics(mapped);
-  }, [rawData, columnMap, setMappedTopics]);
+  }, [validationResult, rawData, columnMap, setMappedTopics]);
+
+  const handleImport = async () => {
+    if (!originalFile) {
+      notification.error({
+        message: t("error") || "Error",
+        description: t("noFileFound") || "No file found. Please start over.",
+      });
+      return;
+    }
+
+    try {
+      setImporting(true);
+      const res = await TopicService.importTopics(originalFile, true);
+
+      if (res?.data) {
+        notification.success({
+          message: t("importSuccess") || "Import Successful",
+          description: `${
+            res.data.createdCount || previewData.length
+          } topics imported successfully`,
+        });
+        setCurrentStep(3);
+      }
+    } catch (err) {
+      console.error(err);
+      notification.error({
+        message: t("importFailed") || "Import Failed",
+        description: err?.response?.data?.message || t("pleaseTryAgain"),
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const columns = useMemo(
     () => [
       { title: "Row", dataIndex: "row", width: 60 },
       { title: "Title", dataIndex: "title" },
-      { title: "Creator", dataIndex: "createdByName" },
-      { title: "Major", dataIndex: "majorName" },
+      { title: "Semester", dataIndex: "semesterCode" },
+      { title: "Major Name", dataIndex: "majorName" },
+      { title: "Mentor Emails", dataIndex: "mentorEmails" },
       {
         title: "Status",
         dataIndex: "statusLabel",
@@ -139,11 +196,16 @@ export default function ImportStep3PreviewTopic({
         <Button
           type="default"
           size="large"
+          loading={importing}
           className="!bg-[#FF7A00] !text-white !border-none !rounded-md !px-6 !py-2 hover:!opacity-90"
-          onClick={() => setCurrentStep(3)}
-          disabled={errorCount > 0}
+          onClick={handleImport}
+          disabled={errorCount > 0 || importing}
         >
-          Import {previewData.length} Topics
+          {importing
+            ? t("importing") || "Importing..."
+            : `${t("import") || "Import"} ${previewData.length} ${
+                t("topics") || "Topics"
+              }`}
         </Button>
       </div>
     </div>

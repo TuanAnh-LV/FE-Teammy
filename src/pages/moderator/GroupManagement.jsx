@@ -76,7 +76,7 @@ export default function GroupManagement() {
     };
     fetchList();
     return () => (mounted = false);
-  }, [t]);
+  }, []);
 
   const toggleFull = (record) => {
     setRows((prev) =>
@@ -100,7 +100,7 @@ export default function GroupManagement() {
 
   const columns = [
     {
-      title: "Group Name",
+      title: t("groupName") || "Group Name",
       dataIndex: "groupName",
       key: "groupName",
       render: (text) => (
@@ -110,29 +110,29 @@ export default function GroupManagement() {
       ),
     },
     {
-      title: "Topic",
+      title: t("topics") || "Topic",
       dataIndex: "topic",
       key: "topic",
       render: (text) =>
         text === "Not Assigned" ? (
-          <Tag color="orange">Not Assigned</Tag>
+          <Tag color="orange">{t("notAssigned") || "Not Assigned"}</Tag>
         ) : (
           <span>{text}</span>
         ),
     },
     {
-      title: "Mentor",
+      title: t("mentor") || "Mentor",
       dataIndex: "mentor",
       key: "mentor",
       render: (text) =>
         text === "Not Assigned" ? (
-          <Tag color="orange">Not Assigned</Tag>
+          <Tag color="orange">{t("notAssigned") || "Not Assigned"}</Tag>
         ) : (
           <span>{text}</span>
         ),
     },
     {
-      title: "Members",
+      title: t("members") || "Members",
       key: "members",
       align: "center",
       render: (_, r) => {
@@ -141,9 +141,9 @@ export default function GroupManagement() {
         return <Tag color={full ? "green" : "blue"}>{text}</Tag>;
       },
     },
-    { title: "Major", dataIndex: "major", key: "major" },
+    { title: t("major") || "Major", dataIndex: "major", key: "major" },
     {
-      title: "Status",
+      title: t("status") || "Status",
       dataIndex: "status",
       key: "status",
       render: (status) => {
@@ -163,13 +163,13 @@ export default function GroupManagement() {
       },
     },
     {
-      title: "Actions",
+      title: t("actions") || "Actions",
       key: "actions",
       render: (_, record) => {
         const noTopic = record.topic === "Not Assigned";
         return (
           <Space size="middle">
-            <Tooltip title="View details">
+            <Tooltip title={t("viewDetails") || "View details"}>
               <Button
                 type="text"
                 icon={<EyeOutlined />}
@@ -193,7 +193,11 @@ export default function GroupManagement() {
             </Tooltip>
 
             <Tooltip
-              title={record.isFull ? "Reopen recruiting" : "Mark as Full"}
+              title={
+                record.isFull
+                  ? t("reopenRecruiting") || "Reopen recruiting"
+                  : t("markAsFull") || "Mark as Full"
+              }
             >
               <Button
                 type="text"
@@ -205,7 +209,11 @@ export default function GroupManagement() {
             </Tooltip>
 
             <Tooltip
-              title={noTopic ? "Send topic reminder" : "Topic already assigned"}
+              title={
+                noTopic
+                  ? t("sendTopicReminder") || "Send topic reminder"
+                  : t("topicAlreadyAssigned") || "Topic already assigned"
+              }
             >
               <Button
                 type="text"
@@ -236,10 +244,9 @@ export default function GroupManagement() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="inline-block text-4xl font-extrabold">
-          Group Management
+        <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
+          {t("groupManagement") || "Group Management"}
         </h1>
-        {/* Moderator không tạo nhóm: bỏ nút Add Group */}
       </div>
 
       {/* Filters */}
@@ -250,7 +257,9 @@ export default function GroupManagement() {
         <div className="flex flex-col sm:flex-row gap-3 justify-between">
           <Input
             prefix={<SearchOutlined className="text-gray-400" />}
-            placeholder="Search by group name or mentor..."
+            placeholder={
+              t("searchByGroupOrMentor") || "Search by group name or mentor..."
+            }
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
             className="sm:w-1/2"
@@ -261,11 +270,15 @@ export default function GroupManagement() {
               onChange={(v) => setFilters({ ...filters, major: v })}
               className="w-40"
             >
-              <Option value="All Major">All Major</Option>
-              <Option value="Computer Science">Computer Science</Option>
-              <Option value="Engineering">Engineering</Option>
+              <Option value="All Major">{t("allMajor") || "All Major"}</Option>
+              <Option value="Computer Science">
+                {t("computerScience") || "Computer Science"}
+              </Option>
+              <Option value="Engineering">
+                {t("engineering") || "Engineering"}
+              </Option>
               <Option value="Information Technology">
-                Information Technology
+                {t("informationTechnology") || "Information Technology"}
               </Option>
             </Select>
             <Select
@@ -273,24 +286,25 @@ export default function GroupManagement() {
               onChange={(v) => setFilters({ ...filters, status: v })}
               className="w-36"
             >
-              <Option value="All Status">All Status</Option>
-              <Option value="Active">Active</Option>
-              <Option value="Pending">Pending</Option>
-              <Option value="Inactive">Inactive</Option>
+              <Option value="All Status">
+                {t("allStatus") || "All Status"}
+              </Option>
+              <Option value="Active">{t("active") || "Active"}</Option>
+              <Option value="Pending">{t("pending") || "Pending"}</Option>
+              <Option value="Inactive">{t("inactive") || "Inactive"}</Option>
             </Select>
           </div>
         </div>
+        <Table
+          columns={columns}
+          dataSource={filteredRows}
+          pagination={{ pageSize: 5 }}
+          bordered
+          loading={loading}
+          scroll={{ x: "max-content" }}
+          className="rounded-lg mt-5"
+        />
       </Card>
-
-      {/* Table */}
-      <Table
-        columns={columns}
-        dataSource={filteredRows}
-        pagination={{ pageSize: 5 }}
-        bordered
-        loading={loading}
-        className="rounded-lg mt-5"
-      />
 
       {/* Detail Modal (UI giống ảnh) */}
       <GroupDetailModal

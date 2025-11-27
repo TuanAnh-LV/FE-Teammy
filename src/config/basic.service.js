@@ -13,6 +13,20 @@ export const axiosInstance = axios.create({
   timeoutErrorMessage: "Connection timeout exceeded",
 });
 
+// ---- Interceptor request để handle FormData ----
+const requestInterceptor = (config) => {
+  const token = getAccessToken();
+  if (!config.headers) config.headers = {};
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  
+  // If payload is FormData, remove default Content-Type to let axios set it
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
+  
+  return config;
+};
+
 // ---- NEW: 1 chỗ chuẩn để lấy token ----
 function getAccessToken() {
   try {
@@ -31,12 +45,7 @@ function getAccessToken() {
 
 // ---- Interceptor request ----
 axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = getAccessToken();
-    if (!config.headers) config.headers = {};
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
+  requestInterceptor,
   (err) => Promise.reject(err)
 );
 
@@ -86,14 +95,16 @@ export const BaseService = {
   post({ url, isLoading = true, payload = {}, headers = {}, responseType }) {
     checkLoading(isLoading);
     const isFormData = payload instanceof FormData;
-    const finalHeaders = { ...headers, ...(isFormData ? { "Content-Type": "multipart/form-data" } : {}) };
+    // Don't set Content-Type for FormData - let axios handle it
+    const finalHeaders = isFormData ? { ...headers } : { ...headers };
     return axiosInstance.post(url, payload, { headers: finalHeaders, ...(responseType ? { responseType } : {}), });
   },
 
   put({ url, isLoading = true, payload = {}, headers = {}, responseType  }) {
     checkLoading(isLoading);
     const isFormData = payload instanceof FormData;
-    const finalHeaders = { ...headers, ...(isFormData ? { "Content-Type": "multipart/form-data" } : {}) };
+    // Don't set Content-Type for FormData - let axios handle it
+    const finalHeaders = isFormData ? { ...headers } : { ...headers };
     return axiosInstance.put(url, payload, { headers: finalHeaders, ...(responseType ? { responseType } : {}) });
   },
 
@@ -110,7 +121,8 @@ export const BaseService = {
   patch({ url, isLoading = true, payload = {}, headers = {}, responseType }) {
     checkLoading(isLoading);
     const isFormData = payload instanceof FormData;
-    const finalHeaders = { ...headers, ...(isFormData ? { "Content-Type": "multipart/form-data" } : {}) };
+    // Don't set Content-Type for FormData - let axios handle it
+    const finalHeaders = isFormData ? { ...headers } : { ...headers };
     return axiosInstance.patch(url, payload, { headers: finalHeaders, ...(responseType ? { responseType } : {}) });
   },
 

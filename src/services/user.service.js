@@ -34,6 +34,13 @@ export const UserService = {
     });
   },
 
+  getProfileById(userId, isLoading = true) {
+    return BaseService.get({
+      url: API.USERS.PROFILE_BY_ID(userId),
+      isLoading,
+    });
+  },
+
   updateMyProfile(payload, isLoading = true) {
     return BaseService.put({
       url: API.USERS.UPDATE_PROFILE,

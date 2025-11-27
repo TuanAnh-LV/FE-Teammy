@@ -10,13 +10,16 @@ import {
   UserOutlined,
   TagsOutlined,
   BulbOutlined,
+  BarChartOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
+import { getTranslation } from "../translations";
 
-export const getRoleMenus = (role) => {
+export const getRoleMenus = (role, language = "EN") => {
   const common = [
     {
       key: "profile",
-      label: "Profile",
+      label: getTranslation("profile", language),
       path: `/profile`,
       icon: <UserOutlined />,
     },
@@ -26,25 +29,31 @@ export const getRoleMenus = (role) => {
     mentor: [
       {
         key: "dashboard",
-        label: "Dashboard",
+        label: getTranslation("dashboard", language),
         path: "/mentor/dashboard",
-        icon: <HomeOutlined />,
+        icon: <BarChartOutlined />,
       },
       {
-        key: "discover",
-        label: "Discover",
+        key: "invitations",
+        label: getTranslation("invitationsMenu", language),
         path: "/mentor/discover",
         icon: <HomeOutlined />,
       },
       {
         key: "my-groups",
-        label: "My Groups",
+        label: getTranslation("myGroups", language),
         path: "/mentor/my-groups",
         icon: <TeamOutlined />,
       },
       {
+        key: "chat",
+        label: getTranslation("messages", language),
+        path: "/mentor/messages",
+        icon: <MessageOutlined />,
+      },
+      {
         key: "notifications",
-        label: "Notifications",
+        label: getTranslation("notifications", language),
         path: "/mentor/notifications",
         icon: <BellOutlined />,
       },
@@ -52,25 +61,25 @@ export const getRoleMenus = (role) => {
     admin: [
       {
         key: "c",
-        label: "Dashboard",
+        label: getTranslation("dashboard", language),
         path: "/admin/dashboard",
         icon: <HomeOutlined />,
       },
       {
         key: "users",
-        label: "Management Users",
+        label: getTranslation("managementUsers", language),
         path: "/admin/users",
         icon: <TeamOutlined />,
       },
       {
         key: "logs",
-        label: "Audit Logs",
+        label: getTranslation("auditLogs", language),
         path: "/admin/logs",
         icon: <HistoryOutlined />,
       },
       {
         key: "reports",
-        label: "Report",
+        label: getTranslation("report", language),
         path: "/admin/reports",
         icon: <FileTextOutlined />,
       },
@@ -78,31 +87,31 @@ export const getRoleMenus = (role) => {
     moderator: [
       {
         key: "dashboard",
-        label: "Dashboard",
+        label: getTranslation("dashboard", language),
         path: "/moderator/dashboard",
         icon: <HomeOutlined />,
       },
       {
         key: "group",
-        label: "Group Management",
+        label: getTranslation("groupManagement", language),
         path: "/moderator/group",
         icon: <TeamOutlined />,
       },
       {
         key: "topic",
-        label: "Topic Management",
+        label: getTranslation("topicManagement", language),
         path: "/moderator/topic",
         icon: <TagsOutlined />,
       },
       {
         key: "ai",
-        label: "AI Assistant",
+        label: getTranslation("aiAssistant", language),
         path: "/moderator/ai-assistant",
         icon: <BulbOutlined />,
       },
       {
         key: "notifications",
-        label: "Notifications",
+        label: getTranslation("notifications", language),
         path: "/moderator/notifications",
         icon: <BellOutlined />,
       },
@@ -110,13 +119,13 @@ export const getRoleMenus = (role) => {
     student: [
       {
         key: "project",
-        label: "My Groups",
+        label: getTranslation("myGroups", language),
         path: "/student/my-group",
         icon: <DashboardOutlined />,
       },
       {
         key: "discover",
-        label: "Discover Mentors",
+        label: getTranslation("discoverMentors", language),
         path: "/student/discover",
         icon: <SearchOutlined />,
       },

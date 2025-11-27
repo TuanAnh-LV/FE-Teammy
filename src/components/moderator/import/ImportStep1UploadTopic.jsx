@@ -1,41 +1,34 @@
 import React from "react";
+import { useTranslation } from "../../../hook/useTranslation";
 import { Upload, Button, notification } from "antd";
 import { CloudUploadOutlined, DownloadOutlined } from "@ant-design/icons";
 import * as XLSX from "xlsx";
 import { TopicService } from "../../../services/topic.service";
 import { downloadBlob } from "../../../utils/download";
 
-export default function ImportStep1UploadTopic({ setRawData, setCurrentStep }) {
+export default function ImportStep1UploadTopic({
+  setRawData,
+  setCurrentStep,
+  setOriginalFile,
+}) {
+  const { t } = useTranslation();
   const handleFile = async (file) => {
     try {
-      const res = await TopicService.importTopics(file, true);
-      if (res?.data) {
-        if (Array.isArray(res.data) && res.data.length > 0) {
-          setRawData(res.data);
-          setCurrentStep(1);
-          notification.success("File imported successfully");
-        } else if (res.data && (res.data.totalRows || res.data.createdCount)) {
-          const parsed = await parseFile(file);
-          setRawData(parsed);
-          setCurrentStep(1);
-          notification.warning(
-            "API returned summary only — using local parse for preview"
-          );
-        } else {
-          const parsed = await parseFile(file);
-          setRawData(parsed);
-          setCurrentStep(1);
-          notification.warning(
-            "File parsed locally (API returned unexpected response)"
-          );
-        }
-      }
-    } catch (err) {
-      console.error(err);
+      // Parse file locally (không gọi API import)
       const parsed = await parseFile(file);
       setRawData(parsed);
+      setOriginalFile(file); // Lưu file gốc để dùng cho import API
       setCurrentStep(1);
-      notification.warning("File parsed locally (API error)");
+      notification.success({
+        message: t("fileUploadedSuccess") || "File uploaded successfully",
+        description: `${parsed.length} rows found`,
+      });
+    } catch (err) {
+      console.error(err);
+      notification.error({
+        message: t("fileUploadFailed") || "Failed to upload file",
+        description: err.message || "Please try again",
+      });
     }
     return false;
   };
@@ -68,24 +61,31 @@ export default function ImportStep1UploadTopic({ setRawData, setCurrentStep }) {
         const blob = res.data;
         const disposition = res?.headers?.["content-disposition"];
         downloadBlob(blob, "TeammyTopicsTemplate.xlsx", disposition);
-        notification.success("Template downloaded");
+        notification.success({
+          message: t("templateDownloaded") || "Template downloaded",
+        });
       }
     } catch (err) {
       console.error(err);
       const template = [
         {
-          title: "AI Capstone",
-          description: "Build an AI assistant",
-          majorName: "Software Engineering",
-          createdByName: "Alice Nguyen",
+          title: "AI Tutor",
+          description: "LLM-powered tutor",
+          semesterCode: "2025A",
+          majorCode: "SE",
           status: "open",
+          mentorEmails: "mentor1@example.com",
         },
       ];
       const ws = XLSX.utils.json_to_sheet(template);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Template");
       XLSX.writeFile(wb, "TeammyTopicsTemplate.xlsx");
-      notification.warning("Template generated locally (API error)");
+      notification.warning({
+        message:
+          t("templateGeneratedLocally") ||
+          "Template generated locally (API error)",
+      });
     }
   };
 

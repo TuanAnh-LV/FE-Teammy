@@ -75,6 +75,14 @@ export const GroupService = {
     });
   },
 
+  inviteMentor(groupId, payload) {
+    return BaseService.post({
+      url: API.GROUP.INVITE_MENTOR(groupId),
+      payload,
+      isLoading: true,
+    });
+  },
+
   /** Member gửi yêu cầu tham gia nhóm */
   applyToGroup(groupId, payload = {}) {
     return BaseService.post({
@@ -113,3 +121,4 @@ export const GroupService = {
     });
   },
 };
+

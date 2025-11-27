@@ -15,11 +15,12 @@ import {
   EllipsisOutlined,
   InfoCircleOutlined,
 } from "@ant-design/icons";
-
+import { useTranslation } from "../../hook/useTranslation";
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const AuditLogs = () => {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState({
     search: "",
     action: "All Action",
@@ -206,16 +207,18 @@ const AuditLogs = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="inline-block text-4xl font-extrabold">System Logs</h1>
+          <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
+            System Logs
+          </h1>
         </div>
 
         <Button
           icon={<UploadOutlined />}
           className="!border-gray-300 hover:!border-orange-400  hover:!text-orange-400 transition-all !py-5"
         >
-          Export CSV
+          <span className="hidden sm:inline">Export CSV</span>
         </Button>
       </div>
 
@@ -231,7 +234,9 @@ const AuditLogs = () => {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <Input
             prefix={<SearchOutlined className="text-gray-400" />}
-            placeholder="Search by email, action..."
+            placeholder={
+              t("searchByEmailAction") || "Search by email, action..."
+            }
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
           />
@@ -273,7 +278,7 @@ const AuditLogs = () => {
           }}
           bordered
           className="rounded-lg overflow-hidden"
-          scroll={{ x: true }}
+          scroll={{ x: "max-content" }}
         />
       </Card>
     </div>

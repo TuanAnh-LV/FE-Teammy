@@ -10,6 +10,17 @@ export const AdminService = {
       isLoading,
     });
   },
+  /** VALIDATE IMPORT USERS
+   * - payload: JSON array of user data to validate
+   */
+  validateImportUsers(payload, isLoading = true) {
+    return BaseService.post({
+      url: API.ADMIN.VALIDATE_IMPORT,
+      payload: { rows: payload },
+      isLoading,
+    });
+  },
+
   /** IMPORT USERS
    * - file: File (csv/xlsx…)
    * - gửi multipart/form-data theo field "file"
@@ -44,6 +55,18 @@ export const AdminService = {
   detailUser(userId, isLoading = true) {
     return BaseService.get({
       url: API.ADMIN.DETAIL_USER(userId),
+      isLoading,
+    });
+  },
+
+  /** UPDATE USER
+   * - userId: string
+   * - payload: object containing fields to update
+   */
+  updateUser(userId, payload = {}, isLoading = true) {
+    return BaseService.put({
+      url: API.ADMIN.UPDATE_USER(userId),
+      payload,
       isLoading,
     });
   },
