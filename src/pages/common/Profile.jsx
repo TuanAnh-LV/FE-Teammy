@@ -133,7 +133,11 @@ const Profile = () => {
     joined: "Jan 2024",
     activeProjects: 1,
     completedProjects: 5,
-    skillCount: profileData?.skills ? profileData.skills.split(",").length : 0,
+    skillCount: profileData?.skills
+      ? Array.isArray(profileData.skills)
+        ? profileData.skills.length
+        : profileData.skills.split(",").length
+      : 0,
   };
 
   const initials = useMemo(() => {
@@ -211,21 +215,23 @@ const Profile = () => {
               </div>
             </div>
 
-              <div className="flex gap-2">
-                <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">
-                  Role: {profile.role}
-                </span>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full ${profile.skillsCompleted
+            <div className="flex gap-2">
+              <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">
+                Role: {profile.role}
+              </span>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  profile.skillsCompleted
                     ? "bg-green-100 text-green-700"
                     : "bg-yellow-100 text-yellow-700"
-                  }`}
-                >
-                  Skills form: {profile.skillsCompleted ? "Completed" : "Incomplete"}
-                </span>
-              </div>
+                }`}
+              >
+                Skills form:{" "}
+                {profile.skillsCompleted ? "Completed" : "Incomplete"}
+              </span>
             </div>
           </div>
+        </div>
 
         <button
           onClick={() => setIsEditModalOpen(true)}
@@ -277,7 +283,10 @@ const Profile = () => {
             Skills
           </h3>
           <div className="flex flex-wrap gap-2">
-            {profile.skills.split(",").map((skill, index) => {
+            {(Array.isArray(profile.skills)
+              ? profile.skills
+              : profile.skills.split(",")
+            ).map((skill, index) => {
               const colors = [
                 "bg-blue-100 text-blue-700 border-blue-300",
                 "bg-green-100 text-green-700 border-green-300",
@@ -294,7 +303,7 @@ const Profile = () => {
                   key={index}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border ${colorClass}`}
                 >
-                  {skill.trim()}
+                  {typeof skill === "string" ? skill.trim() : skill}
                 </span>
               );
             })}
@@ -314,6 +323,3 @@ const Profile = () => {
 };
 
 export default Profile;
-
-
-

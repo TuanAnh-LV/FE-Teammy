@@ -29,6 +29,7 @@ export const API = {
     DETAIL: "/users/:id",
     MY_PROFILE: "/users/me/profile",
     UPDATE_PROFILE: "/users/me/profile",
+    GET_USER_BY_ID: (id) => `/users/${id}/profile`,
   },
   INVITATIONS: {
     LIST: "/invitations",
@@ -64,6 +65,13 @@ export const API = {
     },
     MAJORS: {
         LIST: "/majors",
+    },
+    SKILLS: {
+        LIST: "/skills",
+        CREATE: "/skills",
+        DETAIL: (token) => `/skills/${token}`,
+        UPDATE: (token) => `/skills/${token}`,
+        DELETE: (token) => `/skills/${token}`,
     },
     BOARD: {
         DETAIL: (groupId) => `/groups/${groupId}/board`,

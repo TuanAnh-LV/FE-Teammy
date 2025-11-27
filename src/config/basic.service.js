@@ -80,7 +80,20 @@ export const BaseService = {
       if (cleanedParams[k] === "" && cleanedParams[k] !== 0) delete cleanedParams[k];
     }
     checkLoading(isLoading);
-    return axiosInstance.get(url, { params: cleanedParams, headers, ...(responseType ? { responseType } : {}), ...(onDownloadProgress ? { onDownloadProgress } : {}) });
+    return axiosInstance.get(url, { 
+      params: cleanedParams, 
+      headers, 
+      paramsSerializer: (params) => {
+        // Use URLSearchParams to properly encode spaces as %20
+        const searchParams = new URLSearchParams();
+        Object.keys(params).forEach(key => {
+          searchParams.append(key, params[key]);
+        });
+        return searchParams.toString().replace(/\+/g, '%20');
+      },
+      ...(responseType ? { responseType } : {}), 
+      ...(onDownloadProgress ? { onDownloadProgress } : {}) 
+    });
   },
 
   post({ url, isLoading = true, payload = {}, headers = {}, responseType }) {

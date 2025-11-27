@@ -14,14 +14,19 @@ const CreatePersonalPostModal = ({
   const { t } = useTranslation();
   const [form] = Form.useForm();
 
+  // Lấy skills từ userInfo giống như name
+  const savedUser = JSON.parse(localStorage.getItem("userInfo") || "{}");
+  const currentUserSkills = savedUser.skills || [];
+
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      const { title, description, skills } = values;
+      const { title, description } = values;
 
-      const skillsCsv = Array.isArray(skills)
-        ? skills.join(",")
-        : String(skills || "");
+      // Sử dụng skills từ userInfo
+      const skillsCsv = Array.isArray(currentUserSkills)
+        ? currentUserSkills.join(",")
+        : String(currentUserSkills || "");
 
       await PostService.createPersonalPost({
         title,
@@ -59,8 +64,10 @@ const CreatePersonalPostModal = ({
         initialValues={{
           title: "",
           description: "",
-          skills: "",
           name: currentUserName,
+          skills: Array.isArray(currentUserSkills)
+            ? currentUserSkills.join(", ")
+            : currentUserSkills,
         }}
       >
         {/* chỉ hiển thị tên */}
@@ -105,8 +112,9 @@ const CreatePersonalPostModal = ({
           />
         </Form.Item>
 
+        {/* Skills chỉ hiển thị, không cho nhập */}
         <Form.Item label={t("skillsLabel") || "Skills"} name="skills">
-          <Input placeholder={t("placeholderSkills") || "Node, Postgres"} />
+          <Input readOnly />
         </Form.Item>
 
         <div className="flex justify-between mt-4">
