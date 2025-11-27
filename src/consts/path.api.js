@@ -29,6 +29,7 @@ export const API = {
     DETAIL: (id) => `/users/${id}`,
     MY_PROFILE: "/users/me/profile",
     UPDATE_PROFILE: "/users/me/profile",
+    GET_USER_BY_ID: (id) => `/users/${id}/profile`,
     PROFILE_BY_ID: (userId) => `/users/${userId}/profile`,
   },
   INVITATIONS: {
@@ -66,6 +67,13 @@ export const API = {
     MAJORS: {
         LIST: "/majors",
     },
+    SKILLS: {
+        LIST: "/skills",
+        CREATE: "/skills",
+        DETAIL: (token) => `/skills/${token}`,
+        UPDATE: (token) => `/skills/${token}`,
+        DELETE: (token) => `/skills/${token}`,
+    },
     BOARD: {
         DETAIL: (groupId) => `/groups/${groupId}/board`,
         CREATE_COLUMN: (groupId) => `/groups/${groupId}/board/columns`,
@@ -89,7 +97,7 @@ export const API = {
         UPDATE_COMMENT: (groupId, commentId) =>
             `/groups/${groupId}/board/comments/${commentId}`,
         DELETE_COMMENT: (groupId, commentId) =>
-            `/groups/${groupId}/board/comments/${commentId}`,
+              `/groups/${groupId}/board/comments/${commentId}`,
         GROUP_FILES: (groupId) => `/groups/${groupId}/board/files`,
         TASK_FILES: (groupId, taskId) =>
             `/groups/${groupId}/board/tasks/${taskId}/files`,
