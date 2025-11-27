@@ -3,18 +3,32 @@ import { Users, User, MessageCircle } from "lucide-react";
 import { ChatService } from "../../services/chat.service";
 import { useTranslation } from "../../hook/useTranslation";
 
-const ConversationList = ({ selectedSessionId, onSelectConversation, targetUserId }) => {
+const ConversationList = ({
+  selectedSessionId,
+  onSelectConversation,
+  targetUserId,
+  conversations: providedConversations = null,
+  hideNewButton = false,
+}) => {
   const { t } = useTranslation();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); // all, dm, group
 
   useEffect(() => {
-    fetchConversations();
-  }, []);
+    if (providedConversations) {
+      setConversations(providedConversations);
+      setLoading(false);
+    } else {
+      fetchConversations();
+    }
+  }, [providedConversations]);
 
   const fetchConversations = async () => {
     try {
+      if (providedConversations) {
+        return;
+      }
       setLoading(true);
       const res = await ChatService.getConversations();
       const data = Array.isArray(res?.data) ? res.data : [];
@@ -28,8 +42,14 @@ const ConversationList = ({ selectedSessionId, onSelectConversation, targetUserI
   };
 
   const filteredConversations = conversations.filter((conv) => {
-    if (filter === "dm") return conv.type === "dm";
-    if (filter === "group") return conv.type === "group";
+    const rawType = conv?.type || conv?.sessionType || "";
+    const type = rawType.toLowerCase().includes("group")
+      ? "group"
+      : rawType.toLowerCase().includes("dm") || rawType.toLowerCase().includes("direct")
+      ? "dm"
+      : "dm";
+    if (filter === "dm") return type === "dm";
+    if (filter === "group") return type === "group";
     return true;
   });
 
@@ -85,14 +105,21 @@ const ConversationList = ({ selectedSessionId, onSelectConversation, targetUserI
           </div>
         ) : (
           filteredConversations.map((conv) => {
-            const isSelected = selectedSessionId === conv.sessionId;
-            const isHighlighted = highlightedConversation?.sessionId === conv.sessionId;
+            const sessionKey = conv.sessionId || conv.id || conv.groupId;
+            const rawType = conv?.type || conv?.sessionType || "";
+            const type = rawType.toLowerCase().includes("group")
+              ? "group"
+              : rawType.toLowerCase().includes("dm") || rawType.toLowerCase().includes("direct")
+              ? "dm"
+              : "dm";
+            const isSelected = selectedSessionId === sessionKey;
+            const isHighlighted = highlightedConversation?.sessionId === sessionKey;
 
             return (
               <button
-                key={conv.sessionId}
-                onClick={() => handleSelectConversation(conv)}
-                className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition ${
+                key={sessionKey}
+                onClick={() => handleSelectConversation({ ...conv, sessionId: sessionKey, type })}
+        className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition ${
                   isSelected ? "bg-blue-50 border-l-4 border-l-blue-600" : ""
                 } ${isHighlighted ? "bg-yellow-50" : ""}`}
               >
@@ -109,7 +136,7 @@ const ConversationList = ({ selectedSessionId, onSelectConversation, targetUserI
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                      {conv.type === "group" ? (
+                      {type === "group" ? (
                         <Users className="w-5 h-5 text-gray-600" />
                       ) : (
                         <User className="w-5 h-5 text-gray-600" />
@@ -121,14 +148,16 @@ const ConversationList = ({ selectedSessionId, onSelectConversation, targetUserI
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-medium text-gray-900 truncate">
-                        {conv.type === "group" ? conv.groupName : conv.otherDisplayName}
+                        {type === "group"
+                          ? conv.groupName || conv.name || conv.title
+                          : conv.otherDisplayName || conv.name || conv.title}
                       </p>
                       {/* Badge */}
                       <span className="flex-shrink-0 inline-flex items-center justify-center">
-                        {conv.type === "group" ? (
-                          <Users className="w-4 h-4 text-blue-600" title="Group" />
+                        {type === "group" ? (
+                          <Users className="w-4 h-4 text-blue-600" title={t("group") || "Group"} />
                         ) : (
-                          <MessageCircle className="w-4 h-4 text-green-600" title="Direct" />
+                          <MessageCircle className="w-4 h-4 text-green-600" title={t("direct") || "Direct"} />
                         )}
                       </span>
                     </div>

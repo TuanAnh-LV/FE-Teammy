@@ -114,12 +114,19 @@ const ProjectCard = ({ project, onSelectTopic }) => {
           </div>
           <div className="text-xs text-gray-500">{formattedDate}</div>
         </div>
-
+        
         {/* Select Topic Button */}
         <button
           onClick={async () => {
             if (project.status === "closed" || !project.topicId) return;
 
+            // Nếu có callback từ parent (hiện dùng để bật modal invite mentor) thì gọi và dừng tại đây.
+            if (typeof onSelectTopic === "function") {
+              onSelectTopic(project);
+              return;
+            }
+
+            // Fallback cũ: tự assign topic ngay.
             try {
               setLoading(true);
 

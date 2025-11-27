@@ -10,22 +10,18 @@ import EditGroupModal from "../../components/common/my-group/EditGroupModal";
 import LoadingState from "../../components/common/LoadingState";
 import { notification } from "antd";
 import { calculateProgressFromTasks } from "../../utils/group.utils";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import { Plus } from "lucide-react";
-import { Modal, Form } from "antd";
-import Column from "../../components/common/kanban/Column";
+import { Plus, FolderKanban, ListTodo, Flag, BarChart3 } from "lucide-react";
+import { Modal, Form, Input } from "antd";
 import TaskModal from "../../components/common/kanban/TaskModal";
 import useKanbanBoard from "../../hook/useKanbanBoard";
 import TabSwitcher from "../../components/common/my-group/TabSwitcher";
 import OverviewSection from "../../components/common/my-group/OverviewSection";
 import MembersPanel from "../../components/common/my-group/MembersPanel";
 import FilesPanel from "../../components/common/my-group/FilesPanel";
+import KanbanTab from "../../components/common/workspace/KanbanTab";
+import BacklogTab from "../../components/common/workspace/BacklogTab";
+import MilestonesTab from "../../components/common/workspace/MilestonesTab";
+import ReportsTab from "../../components/common/workspace/ReportsTab";
 
 export default function MyGroup() {
   const { id } = useParams();
@@ -50,14 +46,11 @@ export default function MyGroup() {
   const [editErrors, setEditErrors] = useState({});
   const loadedGroupIdRef = useRef(null);
   const [activeTab, setActiveTab] = useState("overview");
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    })
-  );
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState("kanban");
 
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const [columnForm] = Form.useForm();
+  const [groupFiles, setGroupFiles] = useState([]);
 
   // ---------------------------
   // Load Group & Board Data
@@ -205,6 +198,21 @@ export default function MyGroup() {
   }, [id, userInfo]);
 
   useEffect(() => {
+    const loadGroupFiles = async () => {
+      if (!id) return;
+      try {
+        const res = await BoardService.getGroupFiles(id);
+        const list = Array.isArray(res?.data) ? res.data : res?.items || [];
+        setGroupFiles(list);
+      } catch (err) {
+        console.error("Failed to fetch group files", err);
+        setGroupFiles([]);
+      }
+    };
+    loadGroupFiles();
+  }, [id]);
+
+  useEffect(() => {
     if (group) {
       setEditForm({
         name: group.title || "",
@@ -324,18 +332,14 @@ export default function MyGroup() {
   const descriptionText = (group?.description || "").trim();
   const mentor = group?.mentor || null;
 
-  const fileItems = tasks
-    .slice(0, 3)
-    .map((task, idx) => ({
-      name: task.title || `File ${idx + 1}`,
-      owner: task.assignee || task.owner || "Team",
-      size: task.size || "N/A",
-      date:
-        (task.updatedAt && new Date(task.updatedAt)) ||
-        (task.createdAt && new Date(task.createdAt)) ||
-        null,
-    }))
-    .filter(Boolean);
+  const fileItems = (groupFiles || []).map((f, idx) => ({
+    id: f.fileId || f.id || idx,
+    name: f.fileName || f.name || `File ${idx + 1}`,
+    owner: f.uploadedBy || f.owner || "Team",
+    size: f.size || "N/A",
+    url: f.fileUrl || f.downloadUrl || f.url || "#",
+    date: f.createdAt ? new Date(f.createdAt) : null,
+  }));
 
   const statusMeta = {
     todo: { label: "To Do", dot: "bg-gray-300" },
@@ -427,9 +431,7 @@ export default function MyGroup() {
     );
   }
 
-  // ---------------------------
-  // PAGE RENDER
-  // ---------------------------
+
   return (
     <div className="relative bg-[#f7fafc]">
       <div className="relative z-10 min-h-screen flex flex-col items-center pt-4 xl:pt-8 pb-24">
@@ -510,97 +512,103 @@ export default function MyGroup() {
                         "Drag tasks across columns, assign owners, and keep momentum."}
                     </p>
                   </div>
+                  {activeWorkspaceTab === "kanban" && (
+                    <button
+                      className="flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
+                      onClick={() => setIsColumnModalOpen(true)}
+                    >
+                      <Plus className="w-4 h-4" />
+                      {t("newColumn") || "New Column"}
+                    </button>
+                  )}
+                </div>
+
+                {/* Sub-tabs */}
+                <div className="flex gap-2 mb-6 border-b border-gray-200">
                   <button
-                    className="flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
-                    onClick={() => setIsColumnModalOpen(true)}
+                    onClick={() => setActiveWorkspaceTab("kanban")}
+                    className={`flex items-center gap-2 px-4 py-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                      activeWorkspaceTab === "kanban"
+                        ? "text-blue-600 border-b-2 border-blue-600"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
                   >
-                    <Plus className="w-4 h-4" />
-                    {t("newColumn") || "New Column"}
+                    <FolderKanban className="w-4 h-4" />
+                    {(t("kanban") || "Kanban").charAt(0).toUpperCase() + (t("kanban") || "Kanban").slice(1)}
+                  </button>
+                  <button
+                    onClick={() => setActiveWorkspaceTab("backlog")}
+                    className={`flex items-center gap-2 px-4 py-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                      activeWorkspaceTab === "backlog"
+                        ? "text-blue-600 border-b-2 border-blue-600"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    <ListTodo className="w-4 h-4" />
+                    {(t("backlog") || "Backlog").charAt(0).toUpperCase() + (t("backlog") || "Backlog").slice(1)}
+                  </button>
+                  <button
+                    onClick={() => setActiveWorkspaceTab("milestones")}
+                    className={`flex items-center gap-2 px-4 py-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                      activeWorkspaceTab === "milestones"
+                        ? "text-blue-600 border-b-2 border-blue-600"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    <Flag className="w-4 h-4" />
+                    {(t("milestones") || "Milestones").charAt(0).toUpperCase() + (t("milestones") || "Milestones").slice(1)}
+                  </button>
+                  <button
+                    onClick={() => setActiveWorkspaceTab("reports")}
+                    className={`flex items-center gap-2 px-4 py-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                      activeWorkspaceTab === "reports"
+                        ? "text-blue-600 border-b-2 border-blue-600"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    {(t("reports") || "Reports").charAt(0).toUpperCase() + (t("reports") || "Reports").slice(1)}
                   </button>
                 </div>
 
-                {kanbanLoading ? (
-                  <div className="text-sm text-gray-500">
-                    {t("loading") || "Loading..."}
-                  </div>
-                ) : kanbanError ? (
-                  <div className="text-sm text-red-500">
-                    {kanbanError || t("error") || "Something went wrong"}
-                  </div>
-                ) : (
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragOver={handleDragOver}
-                    onDragEnd={handleDragEnd}
-                  >
-                    {hasKanbanData ? (
-                      <div className="mt-4 flex gap-6 overflow-x-auto pb-2">
-                        {Object.entries(columnMeta || {})
-                          .sort(
-                            (a, b) =>
-                              (a[1]?.position || 0) -
-                              (b[1]?.position || 0)
-                          )
-                          .map(([colId, meta]) => {
-                            const normalizedTitleValue = normalizeTitle(
-                              meta?.title || colId
-                            );
-                            const statusForColumn =
-                              normalizedTitleValue === "to_do"
-                                ? "todo"
-                                : normalizedTitleValue;
-
-                            const allowQuickCreate = statusForColumn === "todo";
-
-                            return (
-                              <Column
-                                key={colId}
-                                id={colId}
-                                meta={meta}
-                                tasks={filteredColumns[colId] || []}
-                                columnMeta={columnMeta}
-                                onOpen={setSelectedTask}
-                                onCreate={
-                                  allowQuickCreate
-                                    ? (quickPayload) => {
-                                        createTask({
-                                          columnId: colId,
-                                          title:
-                                            quickPayload?.title || "New Task",
-                                          description: "",
-                                          priority: "medium",
-                                          status: statusForColumn,
-                                          dueDate: null,
-                                        });
-                                      }
-                                    : undefined
-                                }
-                                onDelete={() => {
-                                  Modal.confirm({
-                                    title:
-                                      t("deleteColumn") || "Delete Column",
-                                    content:
-                                      t("deleteColumnConfirm") ||
-                                      `Delete column "${
-                                        columnMeta[colId]?.title || colId
-                                      }"?`,
-                                    okText: t("ok") || "OK",
-                                    cancelText: t("cancel") || "Cancel",
-                                    onOk: () => deleteColumn(colId),
-                                  });
-                                }}
-                              />
-                            );
-                          })}
-                      </div>
-                    ) : (
-                      <div className="mt-4 text-gray-500">
-                        {t("noBoardData") || "No board data available."}
-                      </div>
-                    )}
-                  </DndContext>
+                {/* KANBAN SUB-TAB */}
+                {activeWorkspaceTab === "kanban" && (
+                  <KanbanTab
+                    kanbanLoading={kanbanLoading}
+                    kanbanError={kanbanError}
+                    hasKanbanData={hasKanbanData}
+                    filteredColumns={filteredColumns}
+                    columnMeta={columnMeta}
+                    setSelectedTask={setSelectedTask}
+                    createTask={createTask}
+                    deleteColumn={deleteColumn}
+                    handleDragOver={handleDragOver}
+                    handleDragEnd={handleDragEnd}
+                    isColumnModalOpen={isColumnModalOpen}
+                    setIsColumnModalOpen={setIsColumnModalOpen}
+                    handleCreateColumn={handleCreateColumn}
+                    t={t}
+                    normalizeTitle={normalizeTitle}
+                  />
                 )}
+
+                {/* BACKLOG SUB-TAB */}
+                {activeWorkspaceTab === "backlog" && (
+                  <BacklogTab
+                    groupId={id}
+                    columnMeta={columnMeta}
+                    groupMembers={groupMembers}
+                    onPromoteSuccess={() => refetchBoard({ showLoading: false })}
+                  />
+                )}
+
+                {/* MILESTONES SUB-TAB */}
+                {activeWorkspaceTab === "milestones" && (
+                  <MilestonesTab groupId={id} />
+                )}
+
+                {/* REPORTS SUB-TAB */}
+                {activeWorkspaceTab === "reports" && <ReportsTab groupId={id} />}
               </div>
             )}
 
@@ -634,6 +642,7 @@ export default function MyGroup() {
 
       <TaskModal
         task={selectedTask}
+        groupId={id}
         members={kanbanMembers}
         updateTaskFields={updateTaskFields}
         updateTaskAssignees={updateTaskAssignees}
@@ -644,6 +653,43 @@ export default function MyGroup() {
         deleteComment={deleteTaskComment}
         onClose={() => setSelectedTask(null)}
       />
+
+      {/* New Column Modal */}
+      <Modal
+        title={t("newColumn") || "New Column"}
+        open={isColumnModalOpen}
+        onOk={handleCreateColumn}
+        onCancel={() => {
+          setIsColumnModalOpen(false);
+          columnForm.resetFields();
+        }}
+        okText={t("create") || "Create"}
+        cancelText={t("cancel") || "Cancel"}
+        destroyOnClose
+      >
+        <Form form={columnForm} layout="vertical">
+          <Form.Item
+            name="columnName"
+            label={t("columnName") || "Column Name"}
+            rules={[
+              {
+                required: true,
+                message:
+                  t("pleaseEnterColumnName") || "Please enter column name",
+              },
+            ]}
+          >
+            <Input placeholder={t("enterColumnName") || "Enter column name"} />
+          </Form.Item>
+          <Form.Item
+            name="position"
+            label={t("position") || "Position"}
+            initialValue={0}
+          >
+            <Input type="number" placeholder="0" />
+          </Form.Item>
+        </Form>
+      </Modal>
 
     </div>
   );

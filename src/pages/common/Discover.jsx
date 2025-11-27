@@ -203,6 +203,7 @@ const Discover = () => {
             // Step 3: Send invite to mentor with message
             await GroupService.inviteMentor(groupId, {
               mentorUserId,
+              topicId: topic.topicId || topic.id,
               message: inviteState.message,
             });
 
@@ -216,9 +217,21 @@ const Discover = () => {
             setInviteState({ open: false, topic: null, loading: false, message: "" });
           } catch (err) {
             console.error("Failed to select topic and invite mentor:", err);
+            const statusCode = err?.response?.status;
+            const errorMessage = err?.response?.data?.message || "";
+            
+            let errorTitle = t("failedToSelectTopic") || "Thất bại";
+            let errorDesc = errorMessage || t("pleaseTryAgain");
+            
+            // Handle 409 Conflict - Group is active
+            if (statusCode === 409) {
+              errorTitle = t("groupIsActive") || "Cannot change topic when group is active";
+              errorDesc = t("groupActiveDescription") || "The group is currently active and cannot change topics. Please contact the mentor or administrator for assistance.";
+            }
+            
             notification.error({
-              message: t("failedToSelectTopic") || "Thất bại",
-              description: err?.response?.data?.message || t("pleaseTryAgain"),
+              message: errorTitle,
+              description: errorDesc,
             });
             setInviteState({ open: false, topic: null, loading: false, message: "" });
           } finally {

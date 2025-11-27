@@ -26,10 +26,11 @@ export const API = {
   },
   USERS: {
     LIST: "/users",
-    DETAIL: "/users/:id",
+    DETAIL: (id) => `/users/${id}`,
     MY_PROFILE: "/users/me/profile",
     UPDATE_PROFILE: "/users/me/profile",
     GET_USER_BY_ID: (id) => `/users/${id}/profile`,
+    PROFILE_BY_ID: (userId) => `/users/${userId}/profile`,
   },
   INVITATIONS: {
     LIST: "/invitations",
@@ -104,10 +105,36 @@ export const API = {
         DELETE_FILE: (groupId, fileId) =>
             `/groups/${groupId}/board/files/${fileId}`,
    },
+    BACKLOG: {
+      LIST: (groupId) => `/groups/${groupId}/tracking/backlog`,
+      CREATE: (groupId) => `/groups/${groupId}/tracking/backlog`,
+      UPDATE: (groupId, backlogId) =>
+        `/groups/${groupId}/tracking/backlog/${backlogId}`,
+      ARCHIVE: (groupId, backlogId) =>
+        `/groups/${groupId}/tracking/backlog/${backlogId}`,
+      PROMOTE: (groupId, backlogId) =>
+        `/groups/${groupId}/tracking/backlog/${backlogId}/promote`,
+  },
+  MILESTONES: {
+    LIST: (groupId) => `/groups/${groupId}/tracking/milestones`,
+    CREATE: (groupId) => `/groups/${groupId}/tracking/milestones`,
+    UPDATE: (groupId, milestoneId) =>
+      `/groups/${groupId}/tracking/milestones/${milestoneId}`,
+    DELETE: (groupId, milestoneId) =>
+      `/groups/${groupId}/tracking/milestones/${milestoneId}`,
+    ASSIGN_ITEMS: (groupId, milestoneId) =>
+      `/groups/${groupId}/tracking/milestones/${milestoneId}/items`,
+    REMOVE_ITEM: (groupId, milestoneId, backlogItemId) =>
+      `/groups/${groupId}/tracking/milestones/${milestoneId}/items/${backlogItemId}`,
+  },
+  REPORT: {
+    PROJECT: (groupId) => `/groups/${groupId}/tracking/reports/project`,
+  },
   CHAT: {
     CONVERSATIONS: "/chat/conversations",
     MESSAGES: (sessionId) => `/chat/sessions/${sessionId}/messages`,
     SEND_MESSAGE: "/chat/messages",
+    GROUP_MESSAGES: (groupId) => `/groups/${groupId}/chat/messages`,
   },
 }
 

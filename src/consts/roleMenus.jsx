@@ -11,6 +11,7 @@ import {
   TagsOutlined,
   BulbOutlined,
   BarChartOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
 import { getTranslation } from "../translations";
 
@@ -33,8 +34,8 @@ export const getRoleMenus = (role, language = "EN") => {
         icon: <BarChartOutlined />,
       },
       {
-        key: "discover",
-        label: getTranslation("discover", language),
+        key: "invitations",
+        label: getTranslation("invitationsMenu", language),
         path: "/mentor/discover",
         icon: <HomeOutlined />,
       },
@@ -43,6 +44,12 @@ export const getRoleMenus = (role, language = "EN") => {
         label: getTranslation("myGroups", language),
         path: "/mentor/my-groups",
         icon: <TeamOutlined />,
+      },
+      {
+        key: "chat",
+        label: getTranslation("messages", language),
+        path: "/mentor/messages",
+        icon: <MessageOutlined />,
       },
       {
         key: "notifications",

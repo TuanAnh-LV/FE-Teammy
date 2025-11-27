@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function MembersPanel({
   groupMembers,
@@ -9,6 +10,20 @@ export default function MembersPanel({
   showStats = false,
   contributionStats = [],
 }) {
+  const navigate = useNavigate();
+  const openProfile = (member = {}) => {
+    const memberId =
+      member.id ||
+      member.userId ||
+      member.userID ||
+      member.memberId ||
+      member.accountId ||
+      member.mentorId ||
+      "";
+    if (!memberId) return;
+    navigate(`/profile/${memberId}`);
+  };
+
   // When we only need the contribution cards (members tab), skip the other blocks.
   if (showStats) {
     return (
@@ -37,7 +52,10 @@ export default function MembersPanel({
                 key={member.id || member.email}
                 className="border border-gray-200 rounded-2xl bg-white shadow-sm p-5 flex flex-col gap-3"
               >
-                <div className="flex items-center gap-3">
+                <div
+                  className="flex items-center gap-3 cursor-pointer"
+                  onClick={() => openProfile(member)}
+                >
                   {member.avatarUrl ? (
                     <img
                       src={member.avatarUrl}
@@ -102,7 +120,7 @@ export default function MembersPanel({
       </div>
     );
   }
-
+  
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
@@ -122,10 +140,28 @@ export default function MembersPanel({
                 key={member.id || member.email}
                 className="flex items-center justify-between border border-gray-200 rounded-xl px-3 py-3 bg-white shadow-sm"
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className="flex items-center gap-3 min-w-0 cursor-pointer"
+                  onClick={() => openProfile(member)}
+                >
                   {member.avatarUrl ? (
                     <img
                       src={member.avatarUrl}
+                      alt={member.name || member.displayName || "avatar"}
+                      className="w-10 h-10 rounded-full object-cover border"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        const fallbackName =
+                          member.name || member.displayName || "User";
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          fallbackName
+                        )}`;
+                      }}
+                    />
+                  ) : member.user?.avatarUrl ? (
+                    <img
+                      src={member.user.avatarUrl}
                       alt={member.name || member.displayName || "avatar"}
                       className="w-10 h-10 rounded-full object-cover border"
                       referrerPolicy="no-referrer"
@@ -178,10 +214,29 @@ export default function MembersPanel({
           {t("projectMentor") || "Mentor"}
         </h3>
         {mentor ? (
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-semibold">
-              {(mentor.displayName || mentor.name || "M").slice(0, 2).toUpperCase()}
-            </div>
+          <div
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => openProfile(mentor)}
+          >
+            {mentor.avatarUrl ? (
+              <img
+                src={mentor.avatarUrl}
+                alt={mentor.displayName || mentor.name || "mentor"}
+                className="w-12 h-12 rounded-full object-cover border bg-white"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const fallbackName = mentor.displayName || mentor.name || "Mentor";
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    fallbackName
+                  )}`;
+                }}
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-semibold">
+                {(mentor.displayName || mentor.name || "M").slice(0, 2).toUpperCase()}
+              </div>
+            )}
             <div>
               <p className="font-medium text-gray-800">
                 {mentor.displayName || mentor.name}

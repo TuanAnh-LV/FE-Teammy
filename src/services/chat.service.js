@@ -11,11 +11,16 @@ export const ChatService = {
     });
   },
 
-  createOrGetDMConversation(userId) {
+  createOrGetDMConversation(targetUserId) {
+    // Validate targetUserId exists and is not empty
+    if (!targetUserId || String(targetUserId).trim() === "") {
+      return Promise.reject(new Error("targetUserId is required"));
+    }
     return BaseService.post({
       url: API.CHAT.CONVERSATIONS,
       payload: {
-        userId,
+        targetUserId,
+        userId: targetUserId, // backend expects userId; send both for compatibility
       },
       isLoading: false,
     });
@@ -29,10 +34,28 @@ export const ChatService = {
     });
   },
 
+  getGroupMessages(groupId, params = {}) {
+    return BaseService.get({
+      url: API.CHAT.GROUP_MESSAGES(groupId),
+      params,
+      isLoading: false,
+    });
+  },
 
   sendMessage(sessionId, content, type = "text") {
     return BaseService.post({
       url: API.CHAT.MESSAGES(sessionId),
+      payload: {
+        content,
+        type,
+      },
+      isLoading: false,
+    });
+  },
+
+  sendGroupMessage(groupId, content, type = "text") {
+    return BaseService.post({
+      url: API.CHAT.GROUP_MESSAGES(groupId),
       payload: {
         content,
         type,

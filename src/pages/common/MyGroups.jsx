@@ -419,22 +419,20 @@ export default function MyGroupsPage() {
                           })()}
                       </div>
                     </div>
-                    {request.type !== "invitation" && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleReject(groupId, request)}
-                          className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center rounded-full border border-red-200 px-3 md:px-4 text-xs md:text-sm font-semibold text-red-600 hover:bg-red-50"
-                        >
-                          {t("reject") || "Reject"}
-                        </button>
-                        <button
-                          onClick={() => handleApprove(groupId, request)}
-                          className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center rounded-full bg-emerald-500 px-3 md:px-4 text-xs md:text-sm font-semibold text-white hover:bg-emerald-600"
-                        >
-                          {t("approve") || "Approve"}
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleReject(groupId, request)}
+                        className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center rounded-full border border-red-200 px-3 md:px-4 text-xs md:text-sm font-semibold text-red-600 hover:bg-red-50"
+                      >
+                        {t("reject") || "Reject"}
+                      </button>
+                      <button
+                        onClick={() => handleApprove(groupId, request)}
+                        className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center rounded-full bg-emerald-500 px-3 md:px-4 text-xs md:text-sm font-semibold text-white hover:bg-emerald-600"
+                      >
+                        {t("approve") || "Approve"}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

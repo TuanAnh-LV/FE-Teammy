@@ -25,6 +25,7 @@ import {
 import GroupDetailModal from "../../components/common/forum/GroupDetailModal";
 import { notification } from "antd";
 import ApplyModal from "../../components/common/forum/ApplyModal";
+import { useNavigate } from "react-router-dom";
 /** ---------- UI SMALLS ---------- */
 function Chip({ children }) {
   return (
@@ -67,6 +68,7 @@ const clamp3 = {
 
 const Forum = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
   // membership state
@@ -327,6 +329,21 @@ const Forum = () => {
     setDetailOpen(true);
   };
 
+  const resolveUserId = (userObj = {}) =>
+    userObj.userId ||
+    userObj.id ||
+    userObj.user?.userId ||
+    userObj.user?.id ||
+    userObj.accountId ||
+    userObj.ownerId ||
+    "";
+
+  const goProfile = (userObj = {}) => {
+    const id = typeof userObj === "string" ? userObj : resolveUserId(userObj);
+    if (!id) return;
+    navigate(`/profile/${id}`);
+  };
+
   return (
     <div className="min-h-screen bg-[#f6f8fb] pb-16 pt-10">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 pt-10 lg:px-8">
@@ -479,14 +496,23 @@ const Forum = () => {
 
                       {/* Author, Group, Date */}
                       <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-500">
-                        <div className="flex items-center gap-2">
-                          <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-gray-300 flex items-center justify-center text-white text-sm md:text-lg font-semibold shrink-0">
-                            {p?.group?.name[0] || "T"}{" "}
-                            {/* Thay biểu tượng chữ theo tên nhóm */}
+                        <div
+                          className="flex items-center gap-2 cursor-pointer hover:text-gray-700"
+                          onClick={() =>
+                            goProfile(p.group?.leader || p.leader || p.owner || {})
+                          }
+                        >
+                          <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm md:text-lg font-semibold shrink-0">
+                            {(p.group?.leader?.displayName ||
+                              p.leader?.displayName ||
+                              p.group?.name ||
+                              "T")
+                              .slice(0, 1)
+                              .toUpperCase()}
                           </div>
                           <span className="truncate">
-                            {p.group?.leader?.displayName} •{" "}
-                            {p.group?.leader?.role}
+                            {p.group?.leader?.displayName || p.leader?.displayName} •{" "}
+                            {p.group?.leader?.role || p.leader?.role || t("leader") || "Leader"}
                           </span>
                         </div>
                         <span className="hidden sm:inline">•</span>
@@ -605,8 +631,14 @@ const Forum = () => {
           {/* PERSONAL CARDS */}
           {activeTab === "individuals" &&
             paged.map((u) => {
+              const author = u.user || u.owner || u;
+              const authorId = resolveUserId(author);
               const name =
-                u?.userDisplayName || u?.user?.displayName || u?.name || "";
+                u?.userDisplayName ||
+                u?.user?.displayName ||
+                u?.name ||
+                author?.displayName ||
+                "";
               const timeAgo = u?.createdAt
                 ? timeAgoFrom(u.createdAt)
                 : u?.timeAgo || "";
@@ -616,13 +648,16 @@ const Forum = () => {
                   className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
+                    <div
+                      className="flex items-start gap-3 cursor-pointer hover:text-gray-800"
+                      onClick={() => goProfile(authorId || author)}
+                    >
                       <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
                         {initials(name)}
                       </div>
                       <div>
                         <h3 className="text-base font-semibold text-gray-900">
-                          {name}
+                          {name || t("profile") || "Profile"}
                         </h3>
                         <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
                           <span>{timeAgo}</span>
