@@ -16,11 +16,13 @@ import {
 import { AuthService } from "../../services/auth.service";
 import { UserService } from "../../services/user.service";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "../../hook/useTranslation";
 import LoadingState from "../../components/common/LoadingState";
 import EditProfileModal from "../../components/common/EditProfileModal";
 
 const Profile = () => {
+  const { t } = useTranslation();
   const {
     userInfo,
     setUserInfo,
@@ -31,10 +33,12 @@ const Profile = () => {
     token,
   } = useAuth();
   const navigate = useNavigate();
+  const { userId: profileUserId } = useParams();
 
   const profileFetchTokenRef = useRef(null);
   const [profileData, setProfileData] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   // Fetch user auth info
   useEffect(() => {
@@ -81,21 +85,28 @@ const Profile = () => {
     const fetchProfileData = async () => {
       if (!token) return;
       try {
-        const response = await UserService.getMyProfile(false);
-        if (mounted && response?.data) {
-          setProfileData(response.data);
+        setProfileLoading(true);
+        setProfileData(null);
+        const response = profileUserId
+          ? await UserService.getProfileById(profileUserId, false)
+          : await UserService.getMyProfile(false);
+        if (mounted) {
+          setProfileData(response?.data || null);
         }
       } catch (error) {
         console.error("Error fetching profile data:", error);
+      } finally {
+        if (mounted) setProfileLoading(false);
       }
     };
     fetchProfileData();
     return () => {
       mounted = false;
     };
-  }, [token]);
+  }, [token, profileUserId]);
 
   const handleUpdateProfile = (updatedData) => {
+    if (profileUserId) return;
     setProfileData(updatedData);
     // Also update userInfo if needed
     if (updatedData.displayName) {
@@ -110,25 +121,36 @@ const Profile = () => {
     }
   };
 
+  const isOwnProfile = !profileUserId || profileUserId === userInfo?.userId;
+  const viewingOtherProfile = Boolean(
+    profileUserId && profileUserId !== userInfo?.userId
+  );
+  const targetUserId = profileUserId || userInfo?.userId || "";
+  const baseUser = viewingOtherProfile ? {} : userInfo || {};
+
   const profile = {
-    userId: profileData?.userId || userInfo?.userId || "",
+    userId:
+      profileData?.userId ||
+      profileData?.id ||
+      profileData?.userID ||
+      targetUserId,
     name:
       profileData?.displayName ||
-      userInfo?.name ||
-      userInfo?.displayName ||
-      "Unnamed",
-    email: profileData?.email || userInfo?.email || "",
+      baseUser?.name ||
+      baseUser?.displayName ||
+      (targetUserId ? "User" : "Unnamed"),
+    email: profileData?.email || baseUser?.email || "",
     phone: profileData?.phone || null,
     gender: profileData?.gender || null,
     studentCode: profileData?.studentCode || null,
-    role: role ?? userInfo?.role ?? "Student",
+    role: profileData?.role || role || baseUser?.role || "Student",
     photoURL:
-      profileData?.avatarUrl || userInfo?.photoURL || userInfo?.avatarUrl || "",
+      profileData?.avatarUrl || baseUser?.photoURL || baseUser?.avatarUrl || "",
     skillsCompleted:
-      profileData?.skillsCompleted ?? userInfo?.skillsCompleted ?? false,
+      profileData?.skillsCompleted ?? baseUser?.skillsCompleted ?? false,
     skills: profileData?.skills || null,
     major: profileData?.majorName || "Computer Science",
-    majorId: profileData?.majorId || null,
+    majorId: profileData?.majorId || baseUser?.majorId || null,
     university: "FPT University",
     joined: "Jan 2024",
     activeProjects: 1,
@@ -151,7 +173,7 @@ const Profile = () => {
       .toUpperCase();
   }, [profile.name]);
 
-  if (isLoading && !userInfo) {
+  if ((isLoading && !userInfo) || (profileLoading && !profileData)) {
     return (
       <LoadingState
         message="Preparing your profile..."
@@ -233,12 +255,28 @@ const Profile = () => {
           </div>
         </div>
 
+        {isOwnProfile && (
+          <button
+            onClick={() => setIsEditModalOpen(true)}
+            className="!flex !items-center !justify-center !gap-2 !bg-blue-600 !text-white !px-4 md:!px-8 !py-2 !rounded-md !hover:bg-blue-700 !transition !w-full md:!w-auto !text-sm md:!text-base nowrap"
+          >
+            <Edit className="!w-4 !h-4" />
+            {t("editProfile") || "Edit Profile"}
+          </button>
+        )}
+
+        {/* Message Button */}
         <button
-          onClick={() => setIsEditModalOpen(true)}
-          className="!flex !items-center !justify-center !gap-2 !bg-blue-600 !text-white !px-4 md:!px-5 !py-2 !rounded-md !hover:bg-blue-700 !transition !w-full md:!w-auto !text-sm md:!text-base"
+          onClick={() => {
+            if (profile.userId) {
+              navigate(`/messages/${profile.userId}`);
+            }
+          }}
+          disabled={!profile.userId}
+          className="!flex !items-center !justify-center !gap-2 !bg-green-600 !text-white !px-4 md:!px-5 !py-2 !rounded-md !hover:bg-green-700 !transition !w-full md:!w-auto !text-sm md:!text-base disabled:!opacity-50 disabled:!cursor-not-allowed"
         >
-          <Edit className="!w-4 !h-4" />
-          Edit Profile
+          <MessageSquare className="!w-4 !h-4" />
+          {t("messages") || "Messages"}
         </button>
       </div>
 
@@ -246,17 +284,19 @@ const Profile = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         <div className="bg-white shadow rounded-2xl p-4 md:p-5 flex justify-between items-center">
           <div>
-            <p className="text-gray-500 text-xs md:text-sm">Active Projects</p>
+            <p className="text-gray-500 text-xs md:text-sm">
+              {t("groupsJoined") || "Groups Joined"}
+            </p>
             <h2 className="text-2xl md:text-3xl font-bold">
               {profile.activeProjects}
             </h2>
           </div>
-          <ArrowUp className="text-green-500 w-5 h-5 md:w-6 md:h-6" />
+          <Users className="text-green-500 w-5 h-5 md:w-6 md:h-6" />
         </div>
         <div className="bg-white shadow rounded-2xl p-4 md:p-5 flex justify-between items-center">
           <div>
             <p className="text-gray-500 text-xs md:text-sm">
-              Completed Projects
+              {t("projectsCompleted") || "Projects Completed"}
             </p>
             <h2 className="text-2xl md:text-3xl font-bold">
               {profile.completedProjects}
@@ -266,7 +306,9 @@ const Profile = () => {
         </div>
         <div className="bg-white shadow rounded-2xl p-4 md:p-5 flex justify-between items-center">
           <div>
-            <p className="text-gray-500 text-xs md:text-sm">Skills</p>
+            <p className="text-gray-500 text-xs md:text-sm">
+              {t("skillsLogged") || "Skills Logged"}
+            </p>
             <h2 className="text-2xl md:text-3xl font-bold">
               {profile.skillCount}
             </h2>
@@ -280,7 +322,7 @@ const Profile = () => {
         <div className="bg-white shadow rounded-2xl p-4 md:p-6">
           <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
             <Code className="w-4 h-4 md:w-5 md:h-5" />
-            Skills
+            {t("skills") || "Skills"}
           </h3>
           <div className="flex flex-wrap gap-2">
             {(Array.isArray(profile.skills)
@@ -312,12 +354,14 @@ const Profile = () => {
       )}
 
       {/* Edit Profile Modal */}
-      <EditProfileModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        profileData={profileData}
-        onUpdate={handleUpdateProfile}
-      />
+      {isOwnProfile && (
+        <EditProfileModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          profileData={profileData}
+          onUpdate={handleUpdateProfile}
+        />
+      )}
     </div>
   );
 };

@@ -32,10 +32,10 @@ const MyGroups = () => {
   const { t } = useTranslation();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState(t("allGroups") || "All Groups");
+  const [filter, setFilter] = useState("All Groups");
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
+  useEffect(() => { 
     fetchMyGroups();
   }, []);
 
@@ -125,10 +125,19 @@ const MyGroups = () => {
     const matchesSearch = g.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-    const matchesFilter =
-      filter === "All Groups" ||
-      (filter === "Active" && g.status !== "Archived") ||
-      (filter === "Archived" && g.status === "Archived");
+    
+    // Filter logic: check both calculated status and raw status field
+    let matchesFilter = true;
+    if (filter === "All Groups") {
+      matchesFilter = true; // Show all
+    } else if (filter === "Active") {
+      // Show active groups (not archived, or status !== "Archived")
+      matchesFilter = g.status !== "Archived";
+    } else if (filter === "Archived") {
+      // Show only archived groups
+      matchesFilter = g.status === "Archived";
+    }
+    
     return matchesSearch && matchesFilter;
   });
 

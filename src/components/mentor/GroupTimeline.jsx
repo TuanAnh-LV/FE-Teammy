@@ -289,6 +289,7 @@ export default function GroupTimeline({ groupId, groupDetail }) {
       {/* Task Detail Modal */}
       <TaskModal
         task={selectedTask}
+        groupId={groupId}
         members={groupMembers}
         onClose={() => setSelectedTask(null)}
         onFetchComments={loadTaskComments}

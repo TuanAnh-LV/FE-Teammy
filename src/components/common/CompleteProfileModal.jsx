@@ -152,6 +152,24 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
     return colors[role] || "default";
   };
 
+  const getRoleButtonClass = (role, isActive) => {
+    const baseClass =
+      "px-3 py-1 rounded-full text-sm font-medium transition capitalize";
+    const inactiveClass = "bg-gray-200 text-gray-700 hover:bg-gray-300";
+
+    if (!isActive) return `${baseClass} ${inactiveClass}`;
+
+    const activeClasses = {
+      frontend: "bg-blue-600 text-white",
+      backend: "bg-green-600 text-white",
+      mobile: "bg-purple-600 text-white",
+      devops: "bg-orange-600 text-white",
+      qa: "bg-red-600 text-white",
+    };
+
+    return `${baseClass} ${activeClasses[role] || "bg-gray-800 text-white"}`;
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
@@ -443,11 +461,10 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
                           key={role}
                           type="button"
                           onClick={() => setSkillFilter(role)}
-                          className={`px-3 py-1 rounded-full text-sm font-medium transition capitalize ${
+                          className={getRoleButtonClass(
+                            role,
                             skillFilter === role
-                              ? `bg-${getRoleColor(role)}-600 text-white`
-                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          }`}
+                          )}
                         >
                           {role} ({count})
                         </button>

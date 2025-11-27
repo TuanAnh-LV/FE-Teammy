@@ -1,7 +1,10 @@
 // src/components/kanban/TaskModal.jsx
 import React, { useEffect, useRef, useState } from "react";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Upload, X, FileIcon } from "lucide-react";
 import { priorityStyles, statusStyles, initials } from "../../../utils/kanbanHelpers";
+import { useNavigate } from "react-router-dom";
+import { BoardService } from "../../../services/board.service";
+import { notification } from "antd";
 
 const getAssigneeId = (assignee) => {
   if (!assignee) return "";
@@ -40,6 +43,7 @@ const TaskModal = ({
   task,
   members = [],
   columnMeta = {},
+  groupId = null,
   onClose,
   onFetchComments = null,
   onAddComment = () => {},
@@ -47,8 +51,10 @@ const TaskModal = ({
   onDeleteComment = () => {},
   onUpdateTask = () => {},
   onUpdateAssignees = () => {},
-  onDeleteTask = () => {},
+    onDeleteTask = () => {},
+  readOnly = false,
 }) => {
+  const navigate = useNavigate();
   const [text, setText] = useState("");
   const [detailForm, setDetailForm] = useState({
     assignees: [],
@@ -61,6 +67,10 @@ const TaskModal = ({
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingContent, setEditingContent] = useState("");
   const [assigneeMenuOpen, setAssigneeMenuOpen] = useState(false);
+  const [files, setFiles] = useState([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+  const fileInputRef = useRef(null);
   const assigneeMenuRef = useRef(null);
   const fetchCommentsRef = useRef(onFetchComments);
 
@@ -79,6 +89,7 @@ const TaskModal = ({
         priority: task.priority || "",
         description: task.description || "",
       });
+      setFiles(task.files || []);
       setText("");
       setEditingCommentId(null);
       setEditingContent("");
@@ -88,6 +99,13 @@ const TaskModal = ({
   useEffect(() => {
     fetchCommentsRef.current = onFetchComments;
   }, [onFetchComments]);
+
+  useEffect(() => {
+    // Fetch files when task or groupId changes
+    if (groupId && task?.id) {
+      fetchTaskFiles();
+    }
+  }, [task?.id, groupId]);
 
   useEffect(() => {
     if (!task?.id || typeof fetchCommentsRef.current !== "function") return;
@@ -128,6 +146,7 @@ const TaskModal = ({
   const comments = task.comments || [];
   const handleFieldBlur = (field) => {
     if (!task) return;
+    if (readOnly) return;
     onUpdateTask(task.id, { [field]: detailForm[field] || "" });
   };
   const activeAssignee = detailForm.assignees?.[0] || null;
@@ -165,6 +184,132 @@ const TaskModal = ({
     if (editingCommentId === commentId) {
       cancelEditComment();
     }
+  };
+  
+  const fetchTaskFiles = async () => {
+    if (!groupId || !task?.id) return;
+    try {
+      setLoadingFiles(true);
+      const res = await BoardService.getTaskFiles(groupId, task.id);
+      const filesList = Array.isArray(res?.data) ? res.data : [];
+      setFiles(filesList);
+    } catch (error) {
+      console.error("Failed to fetch task files:", error);
+      setFiles([]);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+  const openProfile = (userId) => {
+    if (!userId) return;
+    navigate(`/profile/${userId}`);
+  };
+  
+  const handleFileSelect = async (e) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length === 0 || !groupId || !task?.id) return;
+    
+    try {
+      setUploadingFile(true);
+      
+      // Upload each file to server
+      const uploadPromises = selectedFiles.map(file => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('taskId', task.id);
+        
+        return BoardService.uploadTaskFile(groupId, task.id, formData)
+          .then(res => {
+            const uploadedFile = res?.data || {};
+            return {
+              id: uploadedFile.id || `${Date.now()}-${Math.random()}`,
+              name: uploadedFile.name || file.name,
+              size: uploadedFile.size || file.size,
+              type: uploadedFile.type || file.type,
+              url: uploadedFile.url || uploadedFile.fileUrl || URL.createObjectURL(file),
+              taskId: task.id,
+              isNew: false,
+            };
+          });
+      });
+      
+      const uploadedFiles = await Promise.all(uploadPromises);
+      
+      notification.success({
+        message: "Files uploaded successfully",
+        duration: 2,
+      });
+      
+      // Refetch files from server to ensure we have the latest data
+      await fetchTaskFiles();
+    } catch (error) {
+      console.error("Failed to upload files:", error);
+      notification.error({
+        message: "Failed to upload files",
+        description: error?.response?.data?.message || "Please try again",
+        duration: 2,
+      });
+    } finally {
+      setUploadingFile(false);
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+  
+  const handleDeleteFile = async (fileId) => {
+    if (!window.confirm("Delete this file?")) return;
+    
+    try {
+      const fileToDelete = files.find(f => f.id === fileId);
+      
+      // If it's an uploaded file (has taskId), delete from server
+      if (fileToDelete && fileToDelete.taskId && groupId && task?.id) {
+        await BoardService.deleteTaskFile(groupId, task.id, fileId);
+        notification.success({
+          message: "File deleted successfully",
+          duration: 2,
+        });
+      }
+      
+      // Remove from state
+      setFiles(prev => prev.filter(f => f.id !== fileId));
+    } catch (error) {
+      console.error("Failed to delete file:", error);
+      notification.error({
+        message: "Failed to delete file",
+        description: error?.response?.data?.message || "Please try again",
+        duration: 2,
+      });
+      // Still remove from UI even if server delete fails
+      setFiles(prev => prev.filter(f => f.id !== fileId));
+    }
+  };
+  
+  const getFileIcon = (fileName) => {
+    if (!fileName) return <FileIcon className="w-4 h-4 text-gray-500" />;
+    const ext = String(fileName).split('.').pop()?.toLowerCase() || '';
+    const iconProps = "w-4 h-4";
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+      return <img src="/icons/image.svg" alt="img" className={iconProps} />;
+    } else if (['pdf'].includes(ext)) {
+      return <FileIcon className={iconProps + " text-red-500"} />;
+    } else if (['doc', 'docx'].includes(ext)) {
+      return <FileIcon className={iconProps + " text-blue-500"} />;
+    } else if (['xls', 'xlsx'].includes(ext)) {
+      return <FileIcon className={iconProps + " text-green-500"} />;
+    }
+    return <FileIcon className={iconProps + " text-gray-500"} />;
+  };
+  
+  const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
   const formatTimestamp = (value) => {
     if (!value) return "";
@@ -232,7 +377,7 @@ const TaskModal = ({
               <h3 className="text-xl font-bold text-gray-900">{task.title}</h3>
             </div>
             <div className="flex items-center gap-2">
-              {onDeleteTask && (
+              {!readOnly && onDeleteTask && (
                 <button
                   className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
                   onClick={() => {
@@ -268,7 +413,76 @@ const TaskModal = ({
                   onBlur={() => handleFieldBlur("description")}
                   className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-gray-200"
                   rows={4}
+                  readOnly={readOnly}
+                  disabled={readOnly}
                 />
+              </div>
+
+              {/* Files Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-gray-800">Files</h4>
+                  {!readOnly && (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFile}
+                      className="inline-flex items-center gap-1 text-xs px-2 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Upload className="w-4 h-4" />
+                      {uploadingFile ? "Uploading..." : "Upload"}
+                    </button>
+                  )}
+                </div>
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  disabled={readOnly}
+                />
+
+                {loadingFiles ? (
+                  <p className="text-xs text-gray-500">Loading files...</p>
+                ) : files.length === 0 ? (
+                  <p className="text-xs text-gray-500">No files attached</p>
+                ) : (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {files.map((file) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition"
+                      >
+                        <div className="flex-shrink-0">
+                          {getFileIcon(file.name)}
+                        </div>
+                        <a
+                          href={file.url || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 min-w-0"
+                        >
+                          <p className="text-xs font-medium text-blue-600 hover:underline truncate">
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {formatFileSize(file.size)}
+                          </p>
+                        </a>
+                        {!readOnly && (
+                          <button
+                            onClick={() => handleDeleteFile(file.id)}
+                            className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition"
+                            title="Delete file"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-3 flex-wrap">
@@ -286,12 +500,16 @@ const TaskModal = ({
                     return (
                       <div
                         key={id}
-                        className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full border border-gray-200 bg-white"
+                        className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full border border-gray-200 bg-white cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openProfile(getAssigneeId(assignee));
+                        }}
                       >
                         {renderMemberAvatar(assignee, "w-6 h-6 text-[10px]")}
                         <span className="text-sm text-gray-800">{label}</span>
                       </div>
-                    );
+                      );
                   })}
                 </div>
               </div>
@@ -312,10 +530,34 @@ const TaskModal = ({
                         className="bg-gray-50 border border-gray-200 rounded-lg p-3"
                       >
                         <div className="flex gap-3">
-                          <div className="flex-shrink-0">{renderCommentAvatar(comment)}</div>
+                          <div
+                            className="flex-shrink-0 cursor-pointer"
+                            onClick={() =>
+                              openProfile(
+                                comment.userId ||
+                                  comment.authorId ||
+                                  comment.createdById ||
+                                  ""
+                              )
+                            }
+                          >
+                            {renderCommentAvatar(comment)}
+                          </div>
                           <div className="flex-1">
                             <div className="flex items-center justify-between text-xs text-gray-500">
-                              <span>{comment.createdBy || "Unknown"}</span>
+                              <span
+                                className="cursor-pointer"
+                                onClick={() =>
+                                  openProfile(
+                                    comment.userId ||
+                                      comment.authorId ||
+                                      comment.createdById ||
+                                      ""
+                                  )
+                                }
+                              >
+                                {comment.createdBy || "Unknown"}
+                              </span>
                               <div className="flex items-center gap-2">
                                 {comment.createdAt && (
                                   <span>{formatTimestamp(comment.createdAt)}</span>
@@ -477,11 +719,13 @@ const TaskModal = ({
                         }}
                         onBlur={(e) => {
                           const dateValue = e.target.value;
+                          if (readOnly) return;
                           if (dateValue && dateValue !== String(task.dueDate || "").slice(0, 10)) {
                             onUpdateTask(task.id, { dueDate: dateValue });
                           }
                         }}
                         className="w-full px-3 py-2 text-sm outline-none pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-200"
+                        disabled={readOnly}
                       />
                     </div>
                   </div>
@@ -494,11 +738,14 @@ const TaskModal = ({
                       onChange={(e) =>
                         setDetailForm((prev) => {
                           const value = e.target.value;
-                          onUpdateTask(task.id, { status: value });
+                          if (!readOnly) {
+                            onUpdateTask(task.id, { status: value });
+                          }
                           return { ...prev, status: value };
                         })
                       }
                       className="w-full  px-3 py-2 text-sm  bg-white"
+                      disabled={readOnly}
                     >
                       {Object.entries(columnMeta).map(([columnId, meta]) => (
                         <option key={columnId} value={columnId}>
@@ -516,11 +763,14 @@ const TaskModal = ({
                       onChange={(e) =>
                         setDetailForm((prev) => {
                           const value = e.target.value;
-                          onUpdateTask(task.id, { priority: value });
+                          if (!readOnly) {
+                            onUpdateTask(task.id, { priority: value });
+                          }
                           return { ...prev, priority: value };
                         })
                       }
                       className="w-full px-3 py-2 text-sm bg-white"
+                      disabled={readOnly}
                     >
                       <option value="high">High</option>
                       <option value="medium">Medium</option>
