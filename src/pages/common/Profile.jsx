@@ -122,12 +122,18 @@ const Profile = () => {
   };
 
   const isOwnProfile = !profileUserId || profileUserId === userInfo?.userId;
-  const viewingOtherProfile = Boolean(profileUserId && profileUserId !== userInfo?.userId);
+  const viewingOtherProfile = Boolean(
+    profileUserId && profileUserId !== userInfo?.userId
+  );
   const targetUserId = profileUserId || userInfo?.userId || "";
   const baseUser = viewingOtherProfile ? {} : userInfo || {};
 
   const profile = {
-    userId: profileData?.userId || profileData?.id || profileData?.userID || targetUserId,
+    userId:
+      profileData?.userId ||
+      profileData?.id ||
+      profileData?.userID ||
+      targetUserId,
     name:
       profileData?.displayName ||
       baseUser?.name ||
@@ -139,10 +145,7 @@ const Profile = () => {
     studentCode: profileData?.studentCode || null,
     role: profileData?.role || role || baseUser?.role || "Student",
     photoURL:
-      profileData?.avatarUrl ||
-      baseUser?.photoURL ||
-      baseUser?.avatarUrl ||
-      "",
+      profileData?.avatarUrl || baseUser?.photoURL || baseUser?.avatarUrl || "",
     skillsCompleted:
       profileData?.skillsCompleted ?? baseUser?.skillsCompleted ?? false,
     skills: profileData?.skills || null,
@@ -152,7 +155,11 @@ const Profile = () => {
     joined: "Jan 2024",
     activeProjects: 1,
     completedProjects: 5,
-    skillCount: profileData?.skills ? profileData.skills.split(",").length : 0,
+    skillCount: profileData?.skills
+      ? Array.isArray(profileData.skills)
+        ? profileData.skills.length
+        : profileData.skills.split(",").length
+      : 0,
   };
 
   const initials = useMemo(() => {
@@ -230,21 +237,23 @@ const Profile = () => {
               </div>
             </div>
 
-              <div className="flex gap-2">
-                <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">
-                  Role: {profile.role}
-                </span>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full ${profile.skillsCompleted
+            <div className="flex gap-2">
+              <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">
+                Role: {profile.role}
+              </span>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${
+                  profile.skillsCompleted
                     ? "bg-green-100 text-green-700"
                     : "bg-yellow-100 text-yellow-700"
-                  }`}
-                >
-                  {t("skillsForm") || "Skills form"}: {profile.skillsCompleted ? (t("skillsFormCompleted") || "Completed") : (t("skillsFormIncomplete") || "Incomplete")}
-                </span>
-              </div>
+                }`}
+              >
+                Skills form:{" "}
+                {profile.skillsCompleted ? "Completed" : "Incomplete"}
+              </span>
             </div>
           </div>
+        </div>
 
         {isOwnProfile && (
           <button
@@ -275,7 +284,9 @@ const Profile = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         <div className="bg-white shadow rounded-2xl p-4 md:p-5 flex justify-between items-center">
           <div>
-            <p className="text-gray-500 text-xs md:text-sm">{t("groupsJoined") || "Groups Joined"}</p>
+            <p className="text-gray-500 text-xs md:text-sm">
+              {t("groupsJoined") || "Groups Joined"}
+            </p>
             <h2 className="text-2xl md:text-3xl font-bold">
               {profile.activeProjects}
             </h2>
@@ -295,7 +306,9 @@ const Profile = () => {
         </div>
         <div className="bg-white shadow rounded-2xl p-4 md:p-5 flex justify-between items-center">
           <div>
-            <p className="text-gray-500 text-xs md:text-sm">{t("skillsLogged") || "Skills Logged"}</p>
+            <p className="text-gray-500 text-xs md:text-sm">
+              {t("skillsLogged") || "Skills Logged"}
+            </p>
             <h2 className="text-2xl md:text-3xl font-bold">
               {profile.skillCount}
             </h2>
@@ -312,7 +325,10 @@ const Profile = () => {
             {t("skills") || "Skills"}
           </h3>
           <div className="flex flex-wrap gap-2">
-            {profile.skills.split(",").map((skill, index) => {
+            {(Array.isArray(profile.skills)
+              ? profile.skills
+              : profile.skills.split(",")
+            ).map((skill, index) => {
               const colors = [
                 "bg-blue-100 text-blue-700 border-blue-300",
                 "bg-green-100 text-green-700 border-green-300",
@@ -329,7 +345,7 @@ const Profile = () => {
                   key={index}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border ${colorClass}`}
                 >
-                  {skill.trim()}
+                  {typeof skill === "string" ? skill.trim() : skill}
                 </span>
               );
             })}
@@ -351,6 +367,3 @@ const Profile = () => {
 };
 
 export default Profile;
-
-
-
