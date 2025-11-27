@@ -20,6 +20,7 @@ import {
   timeAgoFrom,
   toArrayPositions,
   initials,
+  toArraySkills,
 } from "../../utils/helpers";
 import GroupDetailModal from "../../components/common/forum/GroupDetailModal";
 import { notification } from "antd";
@@ -554,24 +555,39 @@ const Forum = () => {
                     {p.description}
                   </p>
 
-                  <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {/* Positions Needed */}
-                    <div className="text-xs font-semibold tracking-wide text-gray-800">
-                      {(t("positionsNeeded") || "Positions Needed") + ":"}
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {toArrayPositions(p).map((s) => (
-                          <Chip key={s}>{s}</Chip>
-                        ))}
+                  <div className="mt-4 space-y-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {/* Positions Needed */}
+                      <div className="text-xs font-semibold tracking-wide text-gray-800">
+                        {(t("positionsNeeded") || "Positions Needed") + ":"}
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {toArrayPositions(p).map((s) => (
+                            <Chip key={s}>{s}</Chip>
+                          ))}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Major */}
-                    <div className="lg:ml-10 text-xs font-semibold tracking-wide text-gray-800">
-                      {(t("major") || "Major") + ":"}
-                      <div className="mt-2 text-gray-500">
-                        {p?.major?.majorName || "—"}
+                      {/* Major */}
+                      <div className="lg:ml-10 text-xs font-semibold tracking-wide text-gray-800">
+                        {(t("major") || "Major") + ":"}
+                        <div className="mt-2 text-gray-500">
+                          {p?.major?.majorName || "—"}
+                        </div>
                       </div>
                     </div>
+                  </div>
+                  <div className="mt-4 space-y-4">
+                    {/* Skills */}
+                    {toArraySkills(p).length > 0 && (
+                      <div className="text-xs font-semibold tracking-wide text-gray-800">
+                        {(t("skills") || "Skills") + ":"}
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {toArraySkills(p).map((s) => (
+                            <Chip key={s}>{s}</Chip>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-gray-300">
@@ -655,12 +671,12 @@ const Forum = () => {
                   </p>
 
                   <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="mt-2">
+                    <div className="mt-2 flex-1">
                       <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                         {(t("skills") || "Skills") + ":"}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {toArrayPositions(u).map((s) => (
+                        {toArraySkills(u).map((s) => (
                           <Chip key={s}>{s}</Chip>
                         ))}
                       </div>

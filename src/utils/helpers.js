@@ -1,4 +1,4 @@
-// src/utils/helpers.js
+  // src/utils/helpers.js
 
 /** Mồi cho nhiều shape response khác nhau của axios */
 export function toArraySafe(res) {
@@ -33,6 +33,33 @@ export function timeAgoFrom(iso) {
 export function toArrayPositions(obj) {
   const raw = obj?.position_needed ?? obj?.positionNeeded ?? "";
   return String(raw)
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+export function toArraySkills(obj) {
+  // Lấy skills từ obj hoặc obj.user
+  const raw = obj?.skills ?? obj?.skill ?? obj?.user?.skills ?? "";
+  
+  // Nếu đã là array, return luôn
+  if (Array.isArray(raw)) return raw.filter(Boolean);
+  
+  // Nếu là string
+  const str = String(raw).trim();
+  if (!str) return [];
+  
+  // Thử parse JSON array (case: "[\"css\", \"bootstrap\"]")
+  if (str.startsWith("[") && str.endsWith("]")) {
+    try {
+      const parsed = JSON.parse(str);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    } catch {
+      // Nếu parse lỗi, fallback sang split CSV
+    }
+  }
+  
+  // Fallback: split bằng dấu phẩy (CSV)
+  return str
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);

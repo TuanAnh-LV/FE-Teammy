@@ -48,4 +48,11 @@ export const UserService = {
       isLoading,
     });
   },
+
+  getUserById(userId, isLoading = true) {
+    return BaseService.get({
+      url: API.USERS.GET_USER_BY_ID(userId),
+      isLoading,
+    });
+  },
 };
