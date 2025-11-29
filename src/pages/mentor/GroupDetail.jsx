@@ -226,7 +226,7 @@ export default function GroupDetail() {
 
       <TaskModal
         task={selectedTask}
-        groupId={groupId}
+        groupId={id}
         members={groupMembers}
         columnMeta={columnMeta}
         onClose={() => setSelectedTask(null)}
