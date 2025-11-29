@@ -1,20 +1,54 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Send, Users, MessageCircle, ArrowLeft } from "lucide-react";
+import { Send, Users, MessageCircle, ArrowLeft, Circle } from "lucide-react";
 import { notification } from "antd";
+import { useDispatch, useSelector } from "react-redux";
 import { ChatService } from "../../services/chat.service";
 import { signalRService } from "../../services/signalr.service";
 import { useTranslation } from "../../hook/useTranslation";
+import MemberListDrawer from "./MemberListDrawer";
+import {
+  setMessages,
+  addMessage,
+  setTypingUser,
+  removeTypingUser,
+  updateSessionPresenceUser,
+  removeSessionPresenceUser,
+  updateGroupPresenceUser,
+  removeGroupPresenceUser,
+} from "../../app/chatSlice";
 
 const MAX_MESSAGES = 50;
 const TYPING_TIMEOUT_MS = 3000;
 
 const ChatWindow = ({ session, onBackClick, currentUser }) => {
   const { t } = useTranslation();
-  const [messages, setMessages] = useState([]);
+  const dispatch = useDispatch();
+
+  // Get data from Redux
+  const messages = useSelector(
+    (state) => state.chat.messages[session?.sessionId || session?.id] || [],
+    (a, b) => a === b
+  );
+  const typingUsers = useSelector(
+    (state) => state.chat.typingUsers[session?.sessionId || session?.id] || {},
+    (a, b) => a === b
+  );
+  const sessionPresence = useSelector(
+    (state) =>
+      state.chat.sessionPresence[session?.sessionId || session?.id] || {},
+    (a, b) => a === b
+  );
+  const groupPresence = useSelector(
+    (state) =>
+      state.chat.groupPresence[
+        session?.groupId || session?.sessionId || session?.id
+      ] || {},
+    (a, b) => a === b
+  );
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
-  const [typingUsers, setTypingUsers] = useState({});
   const messagesContainerRef = useRef(null);
   const typingTimeoutsRef = useRef({});
 
@@ -24,7 +58,7 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
   const effectiveSessionId = session?.sessionId || session?.id || session?.groupId;
   const effectiveGroupId = session?.groupId || session?.sessionId || session?.id;
 
-  // auto scroll
+  // Auto scroll to latest message
   useEffect(() => {
     if (!messagesContainerRef.current) return;
     messagesContainerRef.current.scrollTo({
@@ -33,63 +67,79 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
     });
   }, [messages]);
 
-  // load + join realtime
+  // Load messages + join realtime
   useEffect(() => {
     if (!session) return;
-    fetchMessages();
-    joinRealtime();
-    return () => {
-      if (session?.sessionId || session?.id) {
-        signalRService.leaveSession(session.sessionId || session.id);
+
+    const initChat = async () => {
+      try {
+        setLoading(true);
+        
+        // Try to load messages, but don't fail if it doesn't work
+        try {
+          const res = isGroupSession
+            ? await ChatService.getGroupMessages(effectiveGroupId)
+            : await ChatService.getMessages(effectiveSessionId);
+          const data = Array.isArray(res?.data) ? res.data : [];
+          const limited =
+            data.length > MAX_MESSAGES ? data.slice(-MAX_MESSAGES) : data;
+          dispatch(setMessages({ sessionId: effectiveSessionId, messages: limited }));
+        } catch (loadErr) {
+          console.warn("Failed to load messages:", loadErr.message);
+          dispatch(setMessages({ sessionId: effectiveSessionId, messages: [] }));
+        }
+
+        // Initialize SignalR connection
+        await signalRService.start();
+        await signalRService.joinSession(effectiveSessionId);
+
+        if (isGroupSession && effectiveGroupId) {
+          await signalRService.joinGroup(effectiveGroupId);
+        }
+      } catch (err) {
+        console.error("Failed to initialize chat:", err);
+        notification.error({
+          message: t("failedLoadMessages") || "Failed to initialize chat",
+        });
+      } finally {
+        setLoading(false);
       }
     };
-  }, [session?.sessionId, session?.groupId, session?.id]);
 
-  const fetchMessages = async () => {
-    try {
-      setLoading(true);
-      const res = isGroupSession
-        ? await ChatService.getGroupMessages(effectiveGroupId)
-        : await ChatService.getMessages(effectiveSessionId);
-      const data = Array.isArray(res?.data) ? res.data : [];
-      const limited = data.length > MAX_MESSAGES ? data.slice(-MAX_MESSAGES) : data;
-      setMessages(limited);
-    } catch (err) {
-      console.error("Failed to fetch messages:", err);
-      notification.error({
-        message: t("failedLoadMessages") || "Failed to load messages",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    initChat();
 
-  const joinRealtime = async () => {
-    if (!effectiveSessionId) return;
-    try {
-      await signalRService.start();
-      await signalRService.joinSession(effectiveSessionId);
-    } catch (err) {
-      console.error("Join session realtime failed", err);
-    }
-  };
+    return () => {
+      if (effectiveSessionId) {
+        signalRService.leaveSession(effectiveSessionId);
+      }
+      if (isGroupSession && effectiveGroupId) {
+        signalRService.leaveGroup(effectiveGroupId);
+      }
+    };
+  }, [
+    session?.sessionId,
+    session?.id,
+    session?.groupId,
+    isGroupSession,
+    effectiveSessionId,
+    effectiveGroupId,
+    dispatch,
+  ]);
 
+  // Handle send message
   const handleSendMessage = async () => {
     if (!input.trim()) return;
     const messageContent = input.trim();
     setInput("");
+
     try {
       setSending(true);
       const res = isGroupSession
         ? await ChatService.sendGroupMessage(effectiveGroupId, messageContent, "text")
         : await ChatService.sendMessage(effectiveSessionId, messageContent, "text");
-      const newMessage = res?.data;
-      if (newMessage) {
-        setMessages((prev) => {
-          const next = [...prev, newMessage];
-          return next.length > MAX_MESSAGES ? next.slice(-MAX_MESSAGES) : next;
-        });
-      }
+
+      // Don't manually add message - backend will broadcast via SignalR ReceiveMessage event
+      // This prevents duplicate messages
     } catch (err) {
       console.error("Failed to send message:", err);
       notification.error({
@@ -98,6 +148,12 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
       setInput(messageContent);
     } finally {
       setSending(false);
+      // Stop typing indicator
+      if (isGroupSession) {
+        await signalRService.typing(effectiveGroupId, false);
+      } else {
+        await signalRService.typingSession(effectiveSessionId, false);
+      }
     }
   };
 
@@ -108,61 +164,150 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
     }
   };
 
+  // Handle typing with debounce
   const handleTypingChange = (e) => {
-    setInput(e.target.value);
+    const newValue = e.target.value;
+    setInput(newValue);
+
     if (!effectiveSessionId) return;
-    signalRService.typingSession(effectiveSessionId, true);
-    if (typingTimeoutsRef.current.self) clearTimeout(typingTimeoutsRef.current.self);
+
+    // Send typing indicator
+    const isTyping = newValue.trim().length > 0;
+    if (isGroupSession) {
+      signalRService.typing(effectiveGroupId, isTyping);
+    } else {
+      signalRService.typingSession(effectiveSessionId, isTyping);
+    }
+
+    // Clear old timeout
+    if (typingTimeoutsRef.current.self) {
+      clearTimeout(typingTimeoutsRef.current.self);
+    }
+
+    // Set new timeout to stop typing after delay
     typingTimeoutsRef.current.self = setTimeout(() => {
-      signalRService.typingSession(effectiveSessionId, false);
+      if (isGroupSession) {
+        signalRService.typing(effectiveGroupId, false);
+      } else {
+        signalRService.typingSession(effectiveSessionId, false);
+      }
     }, TYPING_TIMEOUT_MS);
   };
 
+  // Listen for message events
   useEffect(() => {
-    const unsubMessage = signalRService.on("ReceiveSessionMessage", (msg) => {
-      if (!msg || msg.sessionId !== effectiveSessionId) return;
-      setMessages((prev) => {
-        const next = [...prev, msg];
-        return next.length > MAX_MESSAGES ? next.slice(-MAX_MESSAGES) : next;
-      });
+    const unsubMessage = signalRService.on("ReceiveMessage", (msg) => {
+      if (!msg) return;
+      
+      const normalizedMsg = {
+        messageId: msg.messageId || msg.id,
+        sessionId: msg.sessionId || msg.SessionId,
+        groupId: msg.groupId || msg.GroupId,
+        content: msg.content || msg.Content,
+        type: msg.type || msg.Type || "text",
+        senderId: msg.senderId || msg.SenderId,
+        senderDisplayName: msg.senderDisplayName || msg.SenderDisplayName,
+        createdAt: msg.createdAt || msg.CreatedAt,
+      };
+      
+      let msgSessionId = normalizedMsg.sessionId;
+      if (!msgSessionId) {
+        msgSessionId = effectiveSessionId;
+        normalizedMsg.sessionId = effectiveSessionId;
+      }
+      
+      if (msgSessionId !== effectiveSessionId) {
+        return;
+      }
+      
+      dispatch(addMessage({ sessionId: effectiveSessionId, message: normalizedMsg }));
     });
+
     return () => unsubMessage();
-  }, [effectiveSessionId]);
+  }, [effectiveSessionId, dispatch]);
 
+  // Listen for typing events
   useEffect(() => {
-    const cleanupTyping = () => {
-      Object.values(typingTimeoutsRef.current).forEach(clearTimeout);
-      typingTimeoutsRef.current = {};
-    };
-
     const handleTypingEvent = (payload) => {
       if (!payload || payload.sessionId !== effectiveSessionId) return;
       const userId = payload.userId || payload.senderId;
       if (!userId || userId === currentUser?.userId) return;
+
       const displayName = payload.displayName || payload.senderDisplayName || "Someone";
-      setTypingUsers((prev) => ({ ...prev, [userId]: displayName }));
-      if (typingTimeoutsRef.current[userId]) {
-        clearTimeout(typingTimeoutsRef.current[userId]);
+
+      if (payload.isTyping) {
+        dispatch(setTypingUser({ sessionId: effectiveSessionId, userId, displayName }));
+      } else {
+        dispatch(removeTypingUser({ sessionId: effectiveSessionId, userId }));
       }
-      typingTimeoutsRef.current[userId] = setTimeout(() => {
-        setTypingUsers((prev) => {
-          const next = { ...prev };
-          delete next[userId];
-          return next;
-        });
-        delete typingTimeoutsRef.current[userId];
-      }, TYPING_TIMEOUT_MS);
     };
 
-    const unsubTyping1 = signalRService.on("ReceiveTyping", handleTypingEvent);
-    const unsubTyping2 = signalRService.on("TypingSession", handleTypingEvent);
+    const unsubReceiveTyping = signalRService.on("ReceiveTyping", handleTypingEvent);
+    const unsubTypingSession = signalRService.on("TypingSession", handleTypingEvent);
 
     return () => {
-      unsubTyping1();
-      unsubTyping2();
-      cleanupTyping();
+      unsubReceiveTyping();
+      unsubTypingSession();
     };
-  }, [effectiveSessionId, currentUser?.userId]);
+  }, [effectiveSessionId, currentUser?.userId, dispatch]);
+
+  // Listen for session presence changes
+  useEffect(() => {
+    const handleSessionPresence = (payload) => {
+      if (!payload || payload.sessionId !== effectiveSessionId) return;
+      const userId = payload.userId || payload.UserId;
+      if (!userId) return;
+
+      const displayName = payload.displayName || payload.DisplayName || "User";
+      const status = payload.status === "left" ? "offline" : "online";
+
+      if (status === "offline") {
+        dispatch(removeSessionPresenceUser({ sessionId: effectiveSessionId, userId }));
+      } else {
+        dispatch(
+          updateSessionPresenceUser({
+            sessionId: effectiveSessionId,
+            userId,
+            displayName,
+            status,
+          })
+        );
+      }
+    };
+
+    const unsub = signalRService.on("SessionPresenceChanged", handleSessionPresence);
+    return () => unsub();
+  }, [effectiveSessionId, dispatch]);
+
+  // Listen for group presence changes
+  useEffect(() => {
+    if (!isGroupSession) return;
+
+    const handleGroupPresence = (payload) => {
+      if (!payload || !effectiveGroupId) return;
+      const userId = payload.userId || payload.UserId;
+      if (!userId) return;
+
+      const displayName = payload.displayName || payload.DisplayName || "User";
+      const status = payload.status === "left" ? "offline" : "online";
+
+      if (status === "offline") {
+        dispatch(removeGroupPresenceUser({ groupId: effectiveGroupId, userId }));
+      } else {
+        dispatch(
+          updateGroupPresenceUser({
+            groupId: effectiveGroupId,
+            userId,
+            displayName,
+            status,
+          })
+        );
+      }
+    };
+
+    const unsub = signalRService.on("PresenceChanged", handleGroupPresence);
+    return () => unsub();
+  }, [isGroupSession, effectiveGroupId, dispatch]);
 
   if (!session) {
     return (
@@ -181,15 +326,26 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
     (session.type || session.sessionType || "").toLowerCase().includes("group")
       ? session.groupName || session.title || "Group chat"
       : session.otherDisplayName || session.title || "Chat";
+
+  let dmUserStatus = null;
+  if (!isGroupSession && session?.otherUserId) {
+    const otherUserPresence = sessionPresence[session.otherUserId];
+    dmUserStatus = otherUserPresence?.status || null;
+  }
+
   const headerSubtitle =
     (session.type || session.sessionType || "").toLowerCase().includes("group")
       ? t("group") || "Group"
       : t("direct") || "Direct";
 
+  // Get presence list for header
+  const presenceList = isGroupSession ? groupPresence : sessionPresence;
+  const onlineCount = Object.keys(presenceList).length;
+
   return (
     <div className="flex flex-col bg-white h-full">
       <div className="border-b border-gray-200 p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-1">
           {onBackClick && (
             <button
               onClick={onBackClick}
@@ -201,9 +357,22 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-gray-900">{headerTitle}</h3>
-              <span className="inline-flex items-center">
+              <span className="inline-flex items-center gap-1">
                 {isGroupSession ? (
-                  <Users className="w-4 h-4 text-blue-600" />
+                  <>
+                    <Users className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs text-gray-500">({onlineCount})</span>
+                  </>
+                ) : dmUserStatus === "online" ? (
+                  <>
+                    <Circle className="w-2 h-2 fill-green-500 text-green-500" />
+                    <span className="text-xs text-green-600">online</span>
+                  </>
+                ) : dmUserStatus === "offline" ? (
+                  <>
+                    <Circle className="w-2 h-2 fill-gray-400 text-gray-400" />
+                    <span className="text-xs text-gray-500">offline</span>
+                  </>
                 ) : (
                   <MessageCircle className="w-4 h-4 text-green-600" />
                 )}
@@ -212,6 +381,12 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
             <p className="text-xs text-gray-500">{headerSubtitle}</p>
           </div>
         </div>
+
+        <MemberListDrawer
+          presence={groupPresence}
+          currentUserId={currentUser?.userId}
+          isGroupSession={isGroupSession}
+        />
       </div>
 
       <div className="flex-1 bg-gray-50 min-h-0">
@@ -233,7 +408,10 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
               {messages.map((msg) => {
                 const isOwn = msg.senderId === currentUser?.userId;
                 return (
-                  <div key={msg.messageId || msg.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
+                  <div
+                    key={msg.messageId || msg.id}
+                    className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                  >
                     <div
                       className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg break-words ${
                         isOwn
@@ -247,7 +425,11 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
                         </p>
                       )}
                       <p className="text-sm break-words">{msg.content}</p>
-                      <p className={`text-xs mt-1 ${isOwn ? "text-blue-100" : "text-gray-500"}`}>
+                      <p
+                        className={`text-xs mt-1 ${
+                          isOwn ? "text-blue-100" : "text-gray-500"
+                        }`}
+                      >
                         {msg.createdAt
                           ? new Date(msg.createdAt).toLocaleTimeString("en-US", {
                               hour: "2-digit",
@@ -264,7 +446,7 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
         </div>
       </div>
 
-      <div className="border-t border-gray-200 p-4 bg-white">
+      <div className="border-t border-gray-200 p-4 bg-white space-y-2">
         <div className="flex gap-3">
           <input
             type="text"
@@ -284,9 +466,16 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
             <span className="hidden sm:inline">{t("send") || "Send"}</span>
           </button>
         </div>
+
         {Object.keys(typingUsers).length > 0 && (
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-gray-500 animate-pulse">
             {Object.values(typingUsers).join(", ")} {t("typing") || "is typing..."}
+          </p>
+        )}
+
+        {isGroupSession && onlineCount > 0 && (
+          <p className="text-xs text-green-600">
+            {onlineCount} {onlineCount === 1 ? "member" : "members"} online
           </p>
         )}
       </div>
