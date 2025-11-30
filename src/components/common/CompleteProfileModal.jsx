@@ -7,7 +7,7 @@ import { SkillService } from "../../services/skill.service";
 import { useAuth } from "../../context/AuthContext";
 
 const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
-  const { logout } = useAuth();
+  const { logout, role } = useAuth();
   const [formData, setFormData] = useState({
     displayName: "",
     phone: "",
@@ -173,6 +173,12 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
   const validateForm = () => {
     const newErrors = {};
 
+    // Check if user is admin, moderator, or mentor
+    const roleNormalized = role?.toLowerCase();
+    const isStaffRole = ["admin", "moderator", "mentor"].includes(
+      roleNormalized
+    );
+
     // Only validate fields that are shown (i.e., empty in profileData)
     if (!profileData?.displayName && !formData.displayName?.trim()) {
       newErrors.displayName = "Display name is required";
@@ -186,12 +192,13 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
       newErrors.gender = "Gender is required";
     }
 
-    if (!profileData?.majorId && !formData.majorId) {
+    // Major is optional for staff roles (admin, moderator, mentor)
+    if (!isStaffRole && !profileData?.majorId && !formData.majorId) {
       newErrors.majorId = "Major is required";
     }
 
-    // Skills is always required to mark profile as complete
-    if (!formData.skills || formData.skills.length === 0) {
+    // Skills is only required for students (not for admin, moderator, mentor)
+    if (!isStaffRole && (!formData.skills || formData.skills.length === 0)) {
       newErrors.skills = "Skills are required to complete your profile";
     }
 
@@ -370,7 +377,14 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
                 htmlFor="majorId"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Major <span className="text-red-500">*</span>
+                Major{" "}
+                {["admin", "moderator", "mentor"].includes(
+                  role?.toLowerCase()
+                ) ? (
+                  <span className="text-gray-400">(Optional)</span>
+                ) : (
+                  <span className="text-red-500">*</span>
+                )}
               </label>
               <select
                 id="majorId"
@@ -397,7 +411,14 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
           {/* Skills */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Skills <span className="text-red-500">*</span>
+              Skills{" "}
+              {["admin", "moderator", "mentor"].includes(
+                role?.toLowerCase()
+              ) ? (
+                <span className="text-gray-400">(Optional)</span>
+              ) : (
+                <span className="text-red-500">*</span>
+              )}
             </label>
 
             {!formData.majorId ? (
@@ -514,6 +535,8 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
             <p className="text-sm text-gray-500 mt-1">
               {formData.majorId
                 ? "Click on skills to add them to your profile"
+                : ["admin", "moderator", "mentor"].includes(role?.toLowerCase())
+                ? "This field is optional for your role"
                 : "This field is required to complete your profile"}
             </p>
           </div>
@@ -525,8 +548,11 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
               <div className="text-sm text-yellow-800">
                 <p className="font-medium mb-1">Important Notice:</p>
                 <p>
-                  You must complete all required fields including your skills to
-                  access all features of the platform. This is a one-time setup.
+                  {["admin", "moderator", "mentor"].includes(
+                    role?.toLowerCase()
+                  )
+                    ? "You must complete all required fields to access all features of the platform. This is a one-time setup."
+                    : "You must complete all required fields including your skills to access all features of the platform. This is a one-time setup."}
                 </p>
               </div>
             </div>

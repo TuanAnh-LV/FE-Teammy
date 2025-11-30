@@ -127,7 +127,14 @@ export default function ImportStep2Mapping({
         ))}
       </Row>
 
-      <div className="flex justify-end mt-8">
+      <div className="flex justify-between mt-8">
+        <Button
+          onClick={() => setCurrentStep(0)}
+          className="border-gray-300 hover:border-orange-400"
+          size="large"
+        >
+          {t("back") || "Back"}
+        </Button>
         <Button
           type="primary"
           size="large"
