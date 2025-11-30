@@ -8,6 +8,8 @@ import {
   Eye,
   Calendar,
   MessageSquare,
+  Sparkles,
+  Star,
 } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
 import CreatePostModal from "../../components/common/forum/CreatePostModal";
@@ -15,6 +17,7 @@ import CreatePersonalPostModal from "../../components/common/forum/CreatePersona
 import { PostService } from "../../services/post.service";
 import { AuthService } from "../../services/auth.service";
 import { GroupService } from "../../services/group.service";
+import { AiService } from "../../services/ai.service";
 import {
   toArraySafe,
   timeAgoFrom,
@@ -104,6 +107,7 @@ const Forum = () => {
   // posts list
   const [postsData, setPostsData] = useState([]);
   const [allPostsData, setAllPostsData] = useState([]); // Store all posts for stats
+  const [aiSuggestedPosts, setAiSuggestedPosts] = useState([]); // AI suggested posts
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailGroupId, setDetailGroupId] = useState(null);
 
@@ -112,7 +116,7 @@ const Forum = () => {
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyPost, setApplyPost] = useState(null);
 
-  /** 1) L???y membership khi mount (ho???c sau login b???n c?cng cA3 th??? set ??Y global store) */
+  /** 1) Lấy membership khi mount */
   useEffect(() => {
     if (membershipFetchedRef.current) return;
     membershipFetchedRef.current = true;
@@ -125,26 +129,13 @@ const Forum = () => {
           status: res?.data?.status || null,
         };
         setMembership(m);
-        // Luôn giữ tab ở "groups" (Post Group)
-        // setActiveTab(m.hasGroup ? "groups" : "individuals");
-      } catch {}
+      } catch {
+        // Ignore membership fetch error
+      }
     })();
   }, []);
 
-  /** helper fetch theo tab */
-  const fetchList = async (tab) => {
-    const wantType = tab === "groups" ? "group_hiring" : "individual";
-    const res =
-      tab === "groups"
-        ? await PostService.getRecruitmentPosts()
-        : await PostService.getPersonalPosts();
-    const arr = toArraySafe(res);
-    return arr.length && arr[0]?.type
-      ? arr.filter((x) => x?.type === wantType)
-      : arr;
-  };
-
-  // Fetch all posts for stats on mount
+  /** 2) Fetch tất cả posts MỘT LẦN khi mount - dùng cho cả display và stats */
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -153,12 +144,21 @@ const Forum = () => {
           PostService.getRecruitmentPosts(),
           PostService.getPersonalPosts(),
         ]);
-        const groupArr = toArraySafe(groupRes);
-        const individualArr = toArraySafe(individualRes);
-        const allPosts = [...groupArr, ...individualArr];
-        if (mounted) setAllPostsData(allPosts);
+        const groupArr = toArraySafe(groupRes).filter(
+          (x) => x?.type === "group_hiring"
+        );
+        const individualArr = toArraySafe(individualRes).filter(
+          (x) => x?.type === "individual"
+        );
+
+        if (mounted) {
+          // Lưu tất cả posts
+          setAllPostsData([...groupArr, ...individualArr]);
+        }
       } catch {
-        if (mounted) setAllPostsData([]);
+        if (mounted) {
+          setAllPostsData([]);
+        }
       }
     })();
     return () => {
@@ -166,39 +166,85 @@ const Forum = () => {
     };
   }, []);
 
+  /** 3) Khi activeTab thay đổi, CHỈ filter data từ allPostsData thay vì gọi API lại */
   useEffect(() => {
-    // Khi activeTab thay đổi, gọi lại hàm fetch để tải dữ liệu mới
+    const groupArr = allPostsData.filter((x) => x?.type === "group_hiring");
+    const individualArr = allPostsData.filter((x) => x?.type === "individual");
+    setPostsData(activeTab === "groups" ? groupArr : individualArr);
+  }, [activeTab, allPostsData]);
+
+  /** 4) Gọi AI suggestions khi chuyển sang tab individuals */
+  useEffect(() => {
+    if (activeTab !== "individuals" || !membership.groupId) {
+      setAiSuggestedPosts([]);
+      return;
+    }
+
     let mounted = true;
     (async () => {
       try {
-        const rows = await fetchList(activeTab);
-        if (mounted) setPostsData(rows);
-      } catch {
-        if (mounted) setPostsData([]);
+        const aiResponse = await AiService.getProfilePostSuggestions({
+          groupId: membership.groupId,
+          limit: 10,
+        });
+
+        console.log("AI Response:", aiResponse);
+
+        if (aiResponse?.data && mounted) {
+          // Handle different response structures
+          let suggestions = [];
+
+          if (Array.isArray(aiResponse.data)) {
+            suggestions = aiResponse.data;
+          } else if (Array.isArray(aiResponse.data.data)) {
+            suggestions = aiResponse.data.data;
+          } else if (typeof aiResponse.data === "object") {
+            suggestions = [aiResponse.data];
+          }
+
+          console.log("Processed suggestions:", suggestions);
+          setAiSuggestedPosts(suggestions);
+
+          if (suggestions.length > 0) {
+            notification.info({
+              message:
+                t("aiSuggestionsAvailable") || "AI Suggestions Available",
+              description: `Found ${suggestions.length} recommended profiles for your group`,
+              placement: "topRight",
+              duration: 3,
+            });
+          }
+        }
+      } catch (aiError) {
+        console.error("AI suggestions error:", aiError);
       }
     })();
+
     return () => {
       mounted = false;
     };
-  }, [activeTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, membership.groupId]);
 
-  /** refetch sau khi t?o post */
+  /** refetch sau khi tạo post - GỌI LẠI API để có data mới nhất */
   const handleCreated = async () => {
-    const rows = await fetchList(activeTab);
-    setPostsData(rows);
-
-    // Also refetch all posts for stats
     try {
       const [groupRes, individualRes] = await Promise.all([
         PostService.getRecruitmentPosts(),
         PostService.getPersonalPosts(),
       ]);
-      const groupArr = toArraySafe(groupRes);
-      const individualArr = toArraySafe(individualRes);
-      const allPosts = [...groupArr, ...individualArr];
-      setAllPostsData(allPosts);
-    } catch {
-      // ignore error
+      const groupArr = toArraySafe(groupRes).filter(
+        (x) => x?.type === "group_hiring"
+      );
+      const individualArr = toArraySafe(individualRes).filter(
+        (x) => x?.type === "individual"
+      );
+
+      // Cập nhật lại tất cả data
+      setAllPostsData([...groupArr, ...individualArr]);
+      setPostsData(activeTab === "groups" ? groupArr : individualArr);
+    } catch (error) {
+      console.error("Failed to refresh posts:", error);
     }
   };
 
@@ -460,6 +506,150 @@ const Forum = () => {
 
         {/* LISTS */}
         <div className="space-y-4">
+          {/* AI Suggested Posts Section - Only show for individuals tab with groupId */}
+          {activeTab === "individuals" &&
+            membership.groupId &&
+            aiSuggestedPosts.length > 0 && (
+              <div className="relative overflow-hidden rounded-2xl border-2 border-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-[2px] shadow-xl">
+                <div className="rounded-2xl bg-white p-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl">
+                        <Sparkles className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                          {t("aiRecommendedProfiles") ||
+                            "AI Recommended Profiles"}
+                          <span className="px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold rounded-full">
+                            {aiSuggestedPosts.length}
+                          </span>
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {t("aiSuggestionsDesc") ||
+                            "Top candidates matched for your group"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {aiSuggestedPosts.slice(0, 6).map((suggestion, idx) => {
+                      const userId =
+                        suggestion.ownerUserId ||
+                        suggestion.userId ||
+                        suggestion.id;
+                      const userName =
+                        suggestion.ownerDisplayName ||
+                        suggestion.userDisplayName ||
+                        "User";
+                      const matchScore = suggestion.score || 0;
+
+                      return (
+                        <div
+                          key={idx}
+                          className="group relative rounded-xl border-2 border-gray-200 bg-white p-5 hover:border-blue-400 hover:shadow-xl transition-all duration-300"
+                        >
+                          {/* Match Score Badge */}
+                          <div className="absolute -top-2 -right-2 flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg">
+                            <Star className="w-3 h-3 fill-white" />
+                            {matchScore}% Match
+                          </div>
+
+                          {/* User Info */}
+                          <div className="flex items-start gap-3 mb-4">
+                            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 flex items-center justify-center text-white text-base font-bold shrink-0 shadow-md">
+                              {initials(userName)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-gray-900 text-base truncate">
+                                {userName}
+                              </h4>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {suggestion.title ||
+                                  "Looking for opportunities"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Description */}
+                          {suggestion.description && (
+                            <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                              {suggestion.description}
+                            </p>
+                          )}
+
+                          {/* Skills */}
+                          {suggestion.skillsText && (
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {suggestion.skillsText
+                                .split(",")
+                                .slice(0, 4)
+                                .map((skill, i) => (
+                                  <span
+                                    key={i}
+                                    className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-lg border border-blue-200"
+                                  >
+                                    {skill.trim()}
+                                  </span>
+                                ))}
+                            </div>
+                          )}
+
+                          {/* Actions */}
+                          <div className="flex gap-2 pt-3 border-t border-gray-100">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (userId) {
+                                  navigate(`/profile/${userId}`);
+                                }
+                              }}
+                              className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                            >
+                              <Eye className="w-4 h-4" />
+                              View
+                            </button>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (userId) {
+                                  try {
+                                    await GroupService.inviteMember(
+                                      membership.groupId,
+                                      {
+                                        userId,
+                                      }
+                                    );
+                                    notification.success({
+                                      message:
+                                        t("userInvitedToGroup") ||
+                                        "Invitation sent!",
+                                    });
+                                  } catch (error) {
+                                    console.error("Invite error:", error);
+                                    notification.error({
+                                      message:
+                                        t("failedToInviteUser") ||
+                                        "Failed to invite",
+                                    });
+                                  }
+                                }
+                              }}
+                              className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition shadow-md"
+                            >
+                              <UserPlus className="w-4 h-4" />
+                              Invite
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
           {filtered.length === 0 && (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">
               {t("noData") || "No results found."}
@@ -499,20 +689,29 @@ const Forum = () => {
                         <div
                           className="flex items-center gap-2 cursor-pointer hover:text-gray-700"
                           onClick={() =>
-                            goProfile(p.group?.leader || p.leader || p.owner || {})
+                            goProfile(
+                              p.group?.leader || p.leader || p.owner || {}
+                            )
                           }
                         >
                           <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm md:text-lg font-semibold shrink-0">
-                            {(p.group?.leader?.displayName ||
+                            {(
+                              p.group?.leader?.displayName ||
                               p.leader?.displayName ||
                               p.group?.name ||
-                              "T")
+                              "T"
+                            )
                               .slice(0, 1)
                               .toUpperCase()}
                           </div>
                           <span className="truncate">
-                            {p.group?.leader?.displayName || p.leader?.displayName} •{" "}
-                            {p.group?.leader?.role || p.leader?.role || t("leader") || "Leader"}
+                            {p.group?.leader?.displayName ||
+                              p.leader?.displayName}{" "}
+                            •{" "}
+                            {p.group?.leader?.role ||
+                              p.leader?.role ||
+                              t("leader") ||
+                              "Leader"}
                           </span>
                         </div>
                         <span className="hidden sm:inline">•</span>

@@ -92,6 +92,7 @@ export default function TopicDetailModal({
   const major = detailData.majorName || detailData.major || "-";
   const created = detailData.createdAt || detailData.date || null;
   const description = detailData.description || detailData.desc || "-";
+  const source = detailData.source || "-";
 
   // Determine assigned state: prefer explicit group, else status field
   const assigned =
@@ -184,6 +185,19 @@ export default function TopicDetailModal({
               Resources
             </div>
             <div className="flex flex-wrap gap-3">
+              {source && source !== "-" && (
+                <Button
+                  type="primary"
+                  icon={<LinkOutlined />}
+                  href={source}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="!bg-green-600 hover:!bg-green-700"
+                >
+                  Open Source
+                </Button>
+              )}
+
               {detailData.downloadLink ? (
                 <Button
                   type="primary"

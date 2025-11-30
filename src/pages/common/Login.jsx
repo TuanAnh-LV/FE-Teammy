@@ -17,7 +17,7 @@ const campuses = [
 const Login = () => {
   const { loginGoogle, token, userInfo, role } = useAuth();
   const navigate = useNavigate();
-  const t = useTranslation();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [campus, setCampus] = useState("");
 
@@ -58,7 +58,7 @@ const Login = () => {
 
       const userData = await loginGoogle(idToken);
 
-      notification.success({ message: t('signedInWithGoogle') });
+      notification.success({ message: t("signedInWithGoogle") });
 
       // Normalize role (handle ROLE_ prefix or array shape)
       let userRole = userData?.role;
@@ -84,8 +84,8 @@ const Login = () => {
     } catch (error) {
       console.error(error);
       notification.error({
-        message: t('signInFailed'),
-        description: error?.message || t('pleaseTryAgain'),
+        message: t("signInFailed"),
+        description: error?.message || t("pleaseTryAgain"),
       });
     } finally {
       setLoading(false);
