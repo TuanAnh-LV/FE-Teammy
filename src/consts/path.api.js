@@ -59,7 +59,10 @@ export const API = {
     },
     TOPICS: {
         LIST: "/topics",
+        CREATE: "/topics",
         DETAIL_TOPIC: (id) => `/topics/${id}`,
+        UPDATE: (id) => `/topics/${id}`,
+        DELETE: (id) => `/topics/${id}`,
         EXPORT_TOPICS: "/topics/template",
         IMPORT_TOPICS: "/topics/import",
         VALIDATE_IMPORT: "/topics/import/validate",
@@ -135,6 +138,23 @@ export const API = {
     MESSAGES: (sessionId) => `/chat/sessions/${sessionId}/messages`,
     SEND_MESSAGE: "/chat/messages",
     GROUP_MESSAGES: (groupId) => `/groups/${groupId}/chat/messages`,
+  },
+  AI: {
+    RECRUITMENT_POST_SUGGESTIONS: "/ai/recruitment-post-suggestions",
+    TOPIC_SUGGESTIONS: "/ai/topic-suggestions",
+    PROFILE_POST_SUGGESTIONS: "/ai/profile-post-suggestions",
+    AUTO_ASSIGN_TEAMS: "/ai/auto-assign/teams",
+    AUTO_ASSIGN_TOPIC: "/ai/auto-assign/topic",
+  },
+  SEMESTERS: {
+    LIST: "/semesters",
+    CREATE: "/semesters",
+    DETAIL: (id) => `/semesters/${id}`,
+    UPDATE: (id) => `/semesters/${id}`,
+    ACTIVE: "/semesters/active",
+    POLICY: (id) => `/semesters/${id}/policy`,
+    UPDATE_POLICY: (id) => `/semesters/${id}/policy`,
+    ACTIVATE: (id) => `/semesters/${id}/activate`,
   },
 }
 

@@ -19,7 +19,7 @@ import { InvitationService } from "../../services/invitation.service";
 
 const Navbar = () => {
   const location = useLocation();
-  const { logout, userInfo, token } = useAuth();
+  const { logout, userInfo, token, role } = useAuth();
   const navigate = useNavigate();
   const [user, setUser] = useState(userInfo);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -277,9 +277,23 @@ const Navbar = () => {
                       </p>
                     </div>
                     <div className="!py-2">
+                      {/* Dashboard link for admin, moderator, mentor */}
+                      {["admin", "moderator", "mentor"].includes(
+                        role?.toLowerCase()
+                      ) && (
+                        <Link
+                          to={`/${role?.toLowerCase()}/dashboard`}
+                          className="!block !px-4 !py-2 !text-sm !text-gray-700 hover:!bg-gray-100"
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          {getTranslation("dashboard", language)}
+                        </Link>
+                      )}
+
                       <Link
                         to="/profile"
                         className="!block !px-4 !py-2 !text-sm !text-gray-700 hover:!bg-gray-100"
+                        onClick={() => setMenuOpen(false)}
                       >
                         {getTranslation("profile", language)}
                       </Link>

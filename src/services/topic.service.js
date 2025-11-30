@@ -10,6 +10,36 @@ export const TopicService = {
     });
   },
 
+  createTopic(payload, isLoading = true) {
+    return BaseService.post({
+      url: API.TOPICS.CREATE,
+      payload,
+      isLoading,
+    });
+  },
+
+  getTopicDetail(topicId) {
+    return BaseService.get({
+      url: API.TOPICS.DETAIL_TOPIC(topicId),
+      isLoading: true,
+    });
+  },
+
+  updateTopic(topicId, payload, isLoading = true) {
+    return BaseService.put({
+      url: API.TOPICS.UPDATE(topicId),
+      payload,
+      isLoading,
+    });
+  },
+
+  deleteTopic(topicId, isLoading = true) {
+    return BaseService.remove({
+      url: API.TOPICS.DELETE(topicId),
+      isLoading,
+    });
+  },
+
   validateImportTopics(payload, isLoading = true) {
     return BaseService.post({
       url: API.TOPICS.VALIDATE_IMPORT,
@@ -17,13 +47,6 @@ export const TopicService = {
       isLoading,
     });
   },
-  getTopicDetail(topicId) {
-    return BaseService.get({
-      url: API.TOPICS.DETAIL_TOPIC(topicId),
-      isLoading: true,
-    });
-  }
-  ,
   /** EXPORT TOPICS TEMPLATE
    * - responseType: blob
    */

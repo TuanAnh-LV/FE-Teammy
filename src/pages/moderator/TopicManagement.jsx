@@ -10,18 +10,22 @@ import {
   Space,
   Tooltip,
   notification,
+  Modal,
 } from "antd";
 import {
   SearchOutlined,
   EyeOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  PlusOutlined,
   CopyOutlined,
   UploadOutlined,
   DownloadOutlined,
 } from "@ant-design/icons";
 import TopicDetailModal from "../../components/moderator/TopicDetailModal";
+import TopicAddModal from "../../components/moderator/TopicAddModal";
+import TopicEditModal from "../../components/moderator/TopicEditModal";
 import { TopicService } from "../../services/topic.service";
-import { downloadBlob } from "../../utils/download";
-import * as XLSX from "xlsx";
 const { Option } = Select;
 
 const TopicManagement = () => {
@@ -32,56 +36,55 @@ const TopicManagement = () => {
 
   const { t } = useTranslation();
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentTopic, setCurrentTopic] = useState(null);
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const fetchTopicsList = async () => {
+    setLoading(true);
+    try {
+      const res = await TopicService.getTopics();
+      const payload = res?.data ?? res;
+      const list = Array.isArray(payload) ? payload : payload?.data ?? [];
+
+      const mapped = (list || []).map((t, idx) => ({
+        key: t.topicId || idx,
+        topicName: t.title || "",
+        description: t.description || "",
+        mentorName:
+          (t.mentors && t.mentors.length > 0
+            ? t.mentors.map((m) => m.mentorName).join(", ")
+            : "") ||
+          t.createdByName ||
+          "",
+        majorName: t.majorName || "",
+        createdAt: t.createdAt ? t.createdAt.slice(0, 10) : "",
+        status:
+          t.status === "open"
+            ? "Available"
+            : t.status === "closed"
+            ? "Not Available"
+            : t.status || "Available",
+        raw: t,
+      }));
+
+      setTopics(mapped);
+    } catch (err) {
+      console.error(err);
+      notification.error({
+        message: t("failedLoadTopics") || "Failed to load topics",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    let mounted = true;
-    const fetchTopics = async () => {
-      setLoading(true);
-      try {
-        const res = await TopicService.getTopics();
-        const payload = res?.data ?? res;
-        const list = Array.isArray(payload) ? payload : payload?.data ?? [];
-
-        const mapped = (list || []).map((t, idx) => ({
-          key: t.topicId || idx,
-          topicName: t.title || "",
-          description: t.description || "",
-          mentorName:
-            (t.mentors && t.mentors.length > 0
-              ? t.mentors.map((m) => m.mentorName).join(", ")
-              : "") ||
-            t.createdByName ||
-            "",
-          majorName: t.majorName || "",
-          createdAt: t.createdAt ? t.createdAt.slice(0, 10) : "",
-          status:
-            t.status === "open"
-              ? "Available"
-              : t.status === "closed"
-              ? "Not Available"
-              : t.status || "Available",
-          raw: t,
-        }));
-
-        if (mounted) setTopics(mapped);
-      } catch (err) {
-        console.error(err);
-        notification.error({
-          message: t("failedLoadTopics") || "Failed to load topics",
-        });
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    fetchTopics();
-    return () => {
-      mounted = false;
-    };
+    fetchTopicsList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const data = topics;
@@ -104,6 +107,50 @@ const TopicManagement = () => {
       return searchMatch && statusMatch;
     });
   }, [data, filters]);
+
+  const handleCreate = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const handleEdit = (record) => {
+    setCurrentTopic(record.raw);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDelete = (record) => {
+    Modal.confirm({
+      title: t("confirmDelete") || "Delete Topic",
+      content: `${
+        t("confirmDeleteTopic") || "Are you sure you want to delete"
+      } "${record.topicName}"?`,
+      centered: true,
+      okText: t("delete") || "Delete",
+      cancelText: t("cancel") || "Cancel",
+      okButtonProps: {
+        className:
+          "!bg-red-500 !text-white !border-none !rounded-md !px-4 !py-2 hover:!opacity-90",
+      },
+      cancelButtonProps: {
+        className:
+          "!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all !py-2",
+      },
+      onOk: async () => {
+        try {
+          await TopicService.deleteTopic(record.key);
+          notification.success({
+            message: t("topicDeleted") || "Topic deleted successfully",
+          });
+          // Refresh list
+          setTopics((prev) => prev.filter((t) => t.key !== record.key));
+        } catch (err) {
+          console.error(err);
+          notification.error({
+            message: t("failedDeleteTopic") || "Failed to delete topic",
+          });
+        }
+      },
+    });
+  };
 
   const columns = [
     {
@@ -158,8 +205,20 @@ const TopicManagement = () => {
               }}
             />
           </Tooltip>
-          <Tooltip title={t("copyTopic") || "Copy topic"}>
-            <Button type="text" icon={<CopyOutlined />} />
+          <Tooltip title={t("edit") || "Edit"}>
+            <Button
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+            />
+          </Tooltip>
+          <Tooltip title={t("delete") || "Delete"}>
+            <Button
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(record)}
+            />
           </Tooltip>
         </Space>
       ),
@@ -175,54 +234,21 @@ const TopicManagement = () => {
         </h1>
         <Space className="flex-wrap">
           <Button
+            icon={<PlusOutlined />}
+            onClick={handleCreate}
+            className="!bg-[#FF7A00] !text-white !border-none !rounded-md !px-6 !py-5 hover:!opacity-90"
+          >
+            <span className="hidden sm:inline">
+              {t("createTopic") || "Create Topic"}
+            </span>
+          </Button>
+          <Button
             icon={<UploadOutlined />}
             className="!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all !py-5"
             onClick={() => navigate("/moderator/import-topics")}
           >
             <span className="hidden sm:inline">
               {t("importTopics") || "Import Topics"}
-            </span>
-          </Button>
-
-          <Button
-            icon={<DownloadOutlined />}
-            className="!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all !py-5"
-            onClick={async () => {
-              try {
-                const res = await TopicService.exportTopics();
-                const blob = res?.data ?? res;
-                const disposition = res?.headers?.["content-disposition"];
-                downloadBlob(blob, "TeammyTopicsTemplate.xlsx", disposition);
-                notification.success({
-                  message: t("templateDownloaded") || "Template downloaded",
-                });
-              } catch (err) {
-                console.error(err);
-                // Fallback: generate a small template and download
-                const template = [
-                  {
-                    title: "AI Tutor",
-                    description: "LLM-powered tutor",
-                    semesterCode: "2025A",
-                    majorCode: "SE",
-                    status: "open",
-                    mentorEmails: "mentor1@example.com",
-                  },
-                ];
-                const ws = XLSX.utils.json_to_sheet(template);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Template");
-                XLSX.writeFile(wb, "TeammyTopicsTemplate.xlsx");
-                notification.warning({
-                  message:
-                    t("templateGeneratedLocally") ||
-                    "Template generated locally (API error)",
-                });
-              }
-            }}
-          >
-            <span className="hidden sm:inline">
-              {t("exportTemplate") || "Export template"}
             </span>
           </Button>
         </Space>
@@ -278,6 +304,21 @@ const TopicManagement = () => {
           />
         </Card>
       </div>
+
+      {/* Modals */}
+      <TopicAddModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={fetchTopicsList}
+      />
+
+      <TopicEditModal
+        open={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        topic={currentTopic}
+        onSuccess={fetchTopicsList}
+      />
+
       <TopicDetailModal
         open={isModalVisible}
         onClose={() => setIsModalVisible(false)}

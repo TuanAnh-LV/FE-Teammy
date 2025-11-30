@@ -12,6 +12,7 @@ import {
   BulbOutlined,
   BarChartOutlined,
   MessageOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import { getTranslation } from "../translations";
 
@@ -70,6 +71,12 @@ export const getRoleMenus = (role, language = "EN") => {
         label: getTranslation("managementUsers", language),
         path: "/admin/users",
         icon: <TeamOutlined />,
+      },
+      {
+        key: "semesters",
+        label: getTranslation("semesterManagement", language),
+        path: "/admin/semesters",
+        icon: <CalendarOutlined />,
       },
       {
         key: "logs",

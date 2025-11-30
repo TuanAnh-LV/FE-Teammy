@@ -24,31 +24,43 @@ class SignalRService {
     this.connection = null;
     this.started = false;
     this.listeners = {
-      ReceiveSessionMessage: new Set(),
+      ReceiveMessage: new Set(), // Backend sends this
+      ReceiveSessionMessage: new Set(), // For backward compatibility
       SessionPresenceChanged: new Set(),
-      ReceiveTyping: new Set(),
-      TypingSession: new Set(),
       PresenceChanged: new Set(),
+      TypingSession: new Set(),
     };
     this.currentSessionId = null;
+    this.joinedGroups = new Set();
   }
 
   async start() {
     if (this.started) return this.connection;
 
+    const hubUrl = buildHubUrl();
+    console.log("🔗 Connecting to SignalR hub:", hubUrl);
+
     this.connection = new signalR.HubConnectionBuilder()
-      .withUrl(buildHubUrl(), {
+      .withUrl(hubUrl, {
         accessTokenFactory: () => getAccessToken() || "",
-        transport: signalR.HttpTransportType.WebSockets,
+        transport: signalR.HttpTransportType.LongPolling,
+        skipNegotiation: false,
       })
-      .withAutomaticReconnect()
-      .configureLogging(signalR.LogLevel.None)
+      .withAutomaticReconnect([0, 0, 3000, 5000, 10000, 30000])
+      .configureLogging(signalR.LogLevel.Information)
       .build();
 
     this.registerCoreHandlers();
 
-    await this.connection.start();
-    this.started = true;
+    try {
+      await this.connection.start();
+      const transportName = this.connection.transport?.name || "unknown";
+      console.log("✅ SignalR connected! Transport:", transportName);
+      this.started = true;
+    } catch (err) {
+      console.error("❌ SignalR connection failed:", err.message);
+      throw err;
+    }
     return this.connection;
   }
 
@@ -89,6 +101,19 @@ class SignalRService {
   async joinSession(sessionId) {
     if (!sessionId) return;
     await this.start();
+    
+    // Wait for connection to be in Connected state
+    let retries = 0;
+    while (this.connection.state !== signalR.HubConnectionState.Connected && retries < 10) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      retries++;
+    }
+    
+    if (this.connection.state !== signalR.HubConnectionState.Connected) {
+      console.error("Connection not ready after retries");
+      return;
+    }
+    
     if (this.currentSessionId && this.currentSessionId !== sessionId) {
       await this.leaveSession(this.currentSessionId);
     }
@@ -101,7 +126,9 @@ class SignalRService {
   async leaveSession(sessionId) {
     if (!sessionId || !this.connection) return;
     try {
-      await this.connection.invoke("LeaveSession", sessionId);
+      if (this.connection.state === signalR.HubConnectionState.Connected) {
+        await this.connection.invoke("LeaveSession", sessionId);
+      }
     } catch (err) {
       console.error("LeaveSession failed", err);
     } finally {
@@ -115,6 +142,61 @@ class SignalRService {
       await this.connection.invoke("TypingSession", sessionId, isTyping);
     } catch (err) {
       console.warn("TypingSession failed", err);
+    }
+  }
+
+  async joinGroup(groupId) {
+    if (!groupId) return;
+    await this.start();
+    
+    // Wait for connection to be in Connected state
+    let retries = 0;
+    while (this.connection.state !== signalR.HubConnectionState.Connected && retries < 10) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      retries++;
+    }
+    
+    if (this.connection.state !== signalR.HubConnectionState.Connected) {
+      console.error("Connection not ready after retries");
+      return;
+    }
+    
+    this.joinedGroups.add(groupId);
+    return this.connection.invoke("JoinGroup", groupId).catch((err) => {
+      console.error("JoinGroup failed", err);
+      this.joinedGroups.delete(groupId);
+    });
+  }
+
+  async leaveGroup(groupId) {
+    if (!groupId || !this.connection) return;
+    try {
+      if (this.connection.state === signalR.HubConnectionState.Connected) {
+        await this.connection.invoke("LeaveGroup", groupId);
+      }
+    } catch (err) {
+      console.error("LeaveGroup failed", err);
+    } finally {
+      this.joinedGroups.delete(groupId);
+    }
+  }
+
+  async typing(groupId, isTyping = false) {
+    if (!groupId || !this.connection) return;
+    try {
+      await this.connection.invoke("Typing", groupId, isTyping);
+    } catch (err) {
+      console.warn("Typing failed", err);
+    }
+  }
+
+  /**
+   * Unsubscribe from all group presences and leave all joined groups
+   */
+  async leaveAllGroups() {
+    const groupsToLeave = Array.from(this.joinedGroups);
+    for (const groupId of groupsToLeave) {
+      await this.leaveGroup(groupId);
     }
   }
 }

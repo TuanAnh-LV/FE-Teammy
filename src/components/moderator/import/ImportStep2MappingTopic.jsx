@@ -26,6 +26,7 @@ export default function ImportStep2MappingTopic({
       if (c.includes("major")) auto.majorName = col;
       if (c.includes("semester")) auto.semesterCode = col;
       if (c.includes("status")) auto.status = col;
+      if (c.includes("source")) auto.source = col;
       if (c.includes("mentor") && c.includes("email")) auto.mentorEmails = col;
     });
     setMapping(auto);
@@ -43,6 +44,7 @@ export default function ImportStep2MappingTopic({
         majorName: row[mapping.majorName] || "",
         semesterCode: row[mapping.semesterCode] || "",
         status: row[mapping.status] || "open",
+        source: row[mapping.source] || "",
         mentorEmails: row[mapping.mentorEmails]
           ? [row[mapping.mentorEmails]]
           : [],
@@ -90,6 +92,7 @@ export default function ImportStep2MappingTopic({
           "majorName",
           "semesterCode",
           "status",
+          "source",
           "mentorEmails",
         ].map((field) => (
           <Col span={12} key={field}>
@@ -101,6 +104,8 @@ export default function ImportStep2MappingTopic({
                   ? "Semester Code"
                   : field === "mentorEmails"
                   ? "Mentor Emails"
+                  : field === "source"
+                  ? "Source"
                   : field}
               </span>
               <Select
@@ -129,7 +134,14 @@ export default function ImportStep2MappingTopic({
         ))}
       </Row>
 
-      <div className="flex justify-end mt-8">
+      <div className="flex justify-between mt-8">
+        <Button
+          onClick={() => setCurrentStep(0)}
+          className="border-gray-300 hover:border-orange-400"
+          size="large"
+        >
+          {t("back") || "Back"}
+        </Button>
         <Button
           type="primary"
           size="large"
