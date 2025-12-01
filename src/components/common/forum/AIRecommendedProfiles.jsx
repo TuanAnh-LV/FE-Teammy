@@ -1,0 +1,188 @@
+import { Sparkles, Star, UserPlus } from "lucide-react";
+import { notification } from "antd";
+import { Chip } from "./Chip";
+import { GroupService } from "../../../services/group.service";
+import { initials, timeAgoFrom } from "../../../utils/helpers";
+import { useTranslation } from "../../../hook/useTranslation";
+
+const clamp3 = {
+  display: "-webkit-box",
+  WebkitLineClamp: 3,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+};
+
+export function AIRecommendedProfiles({ aiSuggestedPosts, membership }) {
+  const { t } = useTranslation();
+
+  if (
+    !membership.groupId ||
+    !Array.isArray(aiSuggestedPosts) ||
+    aiSuggestedPosts.length === 0 ||
+    !aiSuggestedPosts.some(
+      (s) => s && typeof s === "object" && (s.userId || s.ownerUserId || s.id)
+    )
+  ) {
+    return null;
+  }
+
+  return (
+    <div className="mb-6 md:mb-8 space-y-4">
+      <div className="flex items-center gap-2">
+        <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
+        <h3 className="text-lg md:text-xl font-bold text-gray-900">
+          {t("aiRecommendedProfiles") || "AI Recommended Profiles"}
+        </h3>
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white">
+          {aiSuggestedPosts.length}
+        </span>
+      </div>
+      <p className="text-sm text-gray-600">
+        {t("aiSuggestionsDesc") || "Top candidates matched for your group"}
+      </p>
+
+      {aiSuggestedPosts.map((suggestion, idx) => {
+        const detail = suggestion.detail || {};
+        const user = detail.user || suggestion.user || {};
+
+        const userId =
+          suggestion.ownerUserId ||
+          suggestion.userId ||
+          user.userId ||
+          suggestion.id;
+        const userName =
+          suggestion.ownerDisplayName ||
+          user.displayName ||
+          detail.userDisplayName ||
+          "User";
+        const matchScore = suggestion.score || 0;
+        const avatarUrl = user.avatarUrl || suggestion.avatarUrl || null;
+        const description = suggestion.description || detail.description || "";
+        const createdAt =
+          suggestion.createdAt || detail.createdAt || new Date();
+        const timeAgo = createdAt ? timeAgoFrom(createdAt) : "";
+
+        // Skills
+        const skillsText = suggestion.skillsText || detail.skillsText || "";
+        const skillsArray = skillsText
+          ? skillsText.split(",").map((s) => s.trim())
+          : [];
+
+        // Major
+        const majorName =
+          user.majorName || detail.majorName || suggestion.majorName || "";
+
+        return (
+          <div
+            key={idx}
+            className="relative rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-50/50 via-indigo-50/30 to-white p-4 md:p-5 shadow-sm hover:shadow-lg hover:border-blue-300 transition-all"
+          >
+            {/* Match Score Badge */}
+            <div className="absolute -top-2 -right-2 flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg z-10">
+              <Star className="w-3 h-3 fill-white" />
+              {matchScore}% Match
+            </div>
+
+            <div className="flex items-start gap-3">
+              {/* Avatar */}
+              <div className="relative h-10 w-10 shrink-0">
+                {avatarUrl && (
+                  <img
+                    src={avatarUrl}
+                    alt={userName}
+                    className="h-10 w-10 rounded-full object-cover shadow-sm"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      e.target.nextElementSibling.style.display = "flex";
+                    }}
+                  />
+                )}
+                <div
+                  className="h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white"
+                  style={{ display: avatarUrl ? "none" : "flex" }}
+                >
+                  {initials(userName)}
+                </div>
+              </div>
+
+              {/* Name & Time */}
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-gray-900">
+                  {userName}
+                </h3>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
+                  <span>{timeAgo}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <p className="mt-3 text-sm text-gray-700" style={clamp3}>
+              {description}
+            </p>
+
+            {/* Skills & Major */}
+            <div className="mt-5 flex flex-col gap-3">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Skills */}
+                {skillsArray.length > 0 && (
+                  <div className="text-xs font-semibold tracking-wide text-gray-500">
+                    {(t("skills") || "Skills") + ":"}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {skillsArray.map((s, i) => (
+                        <Chip key={i}>{s}</Chip>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Major */}
+                {majorName && (
+                  <div className="lg:ml-10 text-xs font-semibold tracking-wide text-gray-800">
+                    {(t("major") || "Major") + ":"}
+                    <div className="mt-2 text-gray-500">{majorName}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="mt-5 pt-4 border-t border-gray-300">
+              <div className="flex justify-end">
+                <button
+                  onClick={async () => {
+                    if (userId) {
+                      try {
+                        await GroupService.inviteMember(membership.groupId, {
+                          userId,
+                        });
+                        notification.success({
+                          message:
+                            t("userInvitedToGroup") ||
+                            "User invited to the group successfully!",
+                        });
+                      } catch (error) {
+                        console.error("Failed to send invitation", error);
+                        notification.error({
+                          message:
+                            t("failedToInviteUser") || "Failed to invite user.",
+                        });
+                      }
+                    }
+                  }}
+                  className="inline-flex items-center justify-center rounded-lg bg-[#FF7A00] hover:opacity-90 px-3 md:px-3.5 py-2 text-xs font-bold text-white shadow-sm transition focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                >
+                  <UserPlus className="mr-1 h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {t("inviteToGroup") || "Invite to Group"}
+                  </span>
+                  <span className="sm:hidden">{t("invite") || "Invite"}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

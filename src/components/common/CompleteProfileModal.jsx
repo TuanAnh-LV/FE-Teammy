@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { AlertCircle, LogOut, Plus, X } from "lucide-react";
-import { notification, Tag, Badge } from "antd";
+import { AlertCircle, LogOut, Plus } from "lucide-react";
+import { notification, Tag } from "antd";
 import { UserService } from "../../services/user.service";
 import { MajorService } from "../../services/major.service";
 import { SkillService } from "../../services/skill.service";
 import { useAuth } from "../../context/AuthContext";
 import { useTranslation } from "../../hook/useTranslation";
-
-const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
+const CompleteProfileModal = ({ isOpen, profileData, onComplete, onClose }) => {
   const { logout, role } = useAuth();
   const { t } = useTranslation();
+
+  const roleNormalized = role?.toLowerCase();
+  const isStaffRole = ["admin", "moderator", "mentor"].includes(roleNormalized);
+  const isStudent = !isStaffRole;
+
   const [formData, setFormData] = useState({
     displayName: "",
     phone: "",
@@ -71,8 +75,6 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
           return;
         }
 
-        console.log("Selected Major Name:", selectedMajor.majorName);
-
         const response = await SkillService.list({
           major: selectedMajor.majorName,
         });
@@ -89,6 +91,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
     fetchSkills();
   }, [formData.majorId, majors]);
 
+  // eslint-disable-next-line no-unused-vars
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -171,29 +174,9 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    const roleNormalized = role?.toLowerCase();
-    const isStaffRole = ["admin", "moderator", "mentor"].includes(
-      roleNormalized
-    );
-
-    if (!profileData?.displayName && !formData.displayName?.trim()) {
-      newErrors.displayName = t("displayNameRequired") || "Display name is required";
-    }
-
-    if (!profileData?.phone && !formData.phone?.trim()) {
-      newErrors.phone = t("phoneRequired") || "Phone number is required";
-    }
-
-    if (!profileData?.gender && !formData.gender) {
-      newErrors.gender = t("genderRequired") || "Gender is required";
-    }
-
-    if (!isStaffRole && !profileData?.majorId && !formData.majorId) {
-      newErrors.majorId = t("majorRequired") || "Major is required";
-    }
-
-    if (!isStaffRole && (!formData.skills || formData.skills.length === 0)) {
-      newErrors.skills = t("skillsRequired") || "Skills are required to complete your profile";
+    // Skills: bắt buộc với student
+    if (isStudent && (!formData.skills || formData.skills.length === 0)) {
+      newErrors.skills = t("skillsRequired");
     }
 
     setErrors(newErrors);
@@ -205,8 +188,8 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
 
     if (!validateForm()) {
       notification.error({
-        message: t("validationError") || "Validation Error",
-        description: t("fillRequiredFields") || "Please fill in all required fields",
+        message: t("profileCompleteValidationError"),
+        description: isStudent ? t("skillsRequired") : t("allFieldsRequired"),
         placement: "topRight",
       });
       return;
@@ -223,8 +206,10 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
       const response = await UserService.updateMyProfile(payload);
       if (response?.data) {
         notification.success({
-          message: t("success") || "Success",
-          description: t("profileCompletedSuccess") || "Profile completed successfully!",
+          message: t("profileCompleted"),
+          description: isStudent
+            ? t("skillsSavedSuggestions")
+            : t("profileUpdatedSuccess"),
           placement: "topRight",
         });
         onComplete(response.data);
@@ -232,8 +217,8 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
     } catch (error) {
       console.error("Error updating profile:", error);
       notification.error({
-        message: t("error") || "Error",
-        description: t("updateProfileFailed") || "Failed to update profile. Please try again.",
+        message: t("error"),
+        description: t("failedLoadGroups"),
         placement: "topRight",
       });
     } finally {
@@ -242,25 +227,42 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
   };
 
   const handleLogout = () => {
-    logout();
-    notification.info({
-      message: t("loggedOut") || "Logged Out",
-      description: t("loggedOutSuccess") || "You have been logged out successfully.",
-      placement: "topRight",
-    });
+    // Close modal first before logout
+    if (onClose) {
+      onClose();
+    }
+
+    // Then logout
+    setTimeout(() => {
+      logout();
+      notification.info({
+        message: "Logged Out",
+        description: "You have been logged out successfully.",
+        placement: "topRight",
+      });
+    }, 100);
+  };
+
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      if (onClose) onClose();
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+    <div
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+      onClick={handleBackdropClick}
+    >
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-fadeIn">
         {/* Header with Warning */}
         <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6 text-white">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
               <AlertCircle className="w-8 h-8" />
-              <h2 className="text-2xl font-bold">{t("completeYourProfile") || "Complete Your Profile"}</h2>
+              <h2 className="text-2xl font-bold">{t("completeYourProfile")}</h2>
             </div>
             <button
               type="button"
@@ -269,165 +271,70 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
               title={t("logout") || "Logout"}
             >
               <LogOut className="w-4 h-4" />
-              <span className="text-sm">{t("logout") || "Logout"}</span>
+              <span className="text-sm">{t("logout")}</span>
             </button>
           </div>
           <p className="text-white/90">
-            {t("completeProfileDescription") || "Please complete all required information to access all features of the platform"}
+            {isStudent ? t("selectYourSkills") : t("completeBasicInfo")}
           </p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Display Name - Only show if empty */}
-          {!profileData?.displayName && (
-            <div>
-              <label
-                htmlFor="displayName"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                {t("displayName") || "Display Name"} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="displayName"
-                name="displayName"
-                value={formData.displayName}
-                onChange={handleChange}
-                className={`w-full px-4 py-2 border ${
-                  errors.displayName ? "border-red-500" : "border-gray-300"
-                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition`}
-                placeholder={t("enterDisplayName") || "Enter your display name"}
-              />
-              {errors.displayName && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.displayName}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Phone - Only show if empty */}
-          {!profileData?.phone && (
-            <div>
-              <label
-                htmlFor="phone"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                {t("phoneNumber") || "Phone Number"} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className={`w-full px-4 py-2 border ${
-                  errors.phone ? "border-red-500" : "border-gray-300"
-                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition`}
-                placeholder={t("enterPhoneNumber") || "Enter your phone number"}
-              />
-              {errors.phone && (
-                <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
-              )}
-            </div>
-          )}
-
-          {/* Gender - Only show if empty */}
-          {!profileData?.gender && (
-            <div>
-              <label
-                htmlFor="gender"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                {t("gender") || "Gender"} <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="gender"
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                className={`w-full px-4 py-2 border ${
-                  errors.gender ? "border-red-500" : "border-gray-300"
-                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition`}
-              >
-                <option value="">{t("selectGender") || "Select gender"}</option>
-                <option value="Male">{t("male") || "Male"}</option>
-                <option value="Female">{t("female") || "Female"}</option>
-                <option value="Other">{t("other") || "Other"}</option>
-              </select>
-              {errors.gender && (
-                <p className="text-red-500 text-sm mt-1">{errors.gender}</p>
-              )}
-            </div>
-          )}
-
-          {/* Major - Only show if empty */}
-          {!profileData?.majorId && (
-            <div>
-              <label
-                htmlFor="majorId"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                {t("major") || "Major"}{" "}
-                {["admin", "moderator", "mentor"].includes(
-                  role?.toLowerCase()
-                ) ? (
-                  <span className="text-gray-400">({t("optional") || "Optional"})</span>
-                ) : (
-                  <span className="text-red-500">*</span>
-                )}
-              </label>
-              <select
-                id="majorId"
-                name="majorId"
-                value={formData.majorId}
-                onChange={handleChange}
-                className={`w-full px-4 py-2 border ${
-                  errors.majorId ? "border-red-500" : "border-gray-300"
-                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition`}
-              >
-                <option value="">{t("selectMajor") || "Select major"}</option>
-                {majors.map((major) => (
-                  <option key={major.majorId} value={major.majorId}>
-                    {major.majorName}
-                  </option>
-                ))}
-              </select>
-              {errors.majorId && (
-                <p className="text-red-500 text-sm mt-1">{errors.majorId}</p>
-              )}
-            </div>
-          )}
+          {/* Major */}
+          <div>
+            <label
+              htmlFor="majorId"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              {t("major")}{" "}
+              <span className="text-gray-400 text-xs">
+                {t("majorProvidedBySchool")}
+              </span>
+            </label>
+            <input
+              type="text"
+              value={
+                majors.find((m) => m.majorId === formData.majorId)?.majorName ||
+                majors.find((m) => m.majorId === formData.majorId)?.name ||
+                formData.majorId ||
+                t("notSpecified") ||
+                "Not specified"
+              }
+              disabled
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed outline-none"
+            />
+            {errors.majorId && (
+              <p className="text-red-500 text-sm mt-1">{errors.majorId}</p>
+            )}
+          </div>
 
           {/* Skills */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t("skills") || "Skills"}{" "}
-              {["admin", "moderator", "mentor"].includes(
-                role?.toLowerCase()
-              ) ? (
-                <span className="text-gray-400">({t("optional") || "Optional"})</span>
-              ) : (
+              {t("skills")}{" "}
+              {isStudent ? (
                 <span className="text-red-500">*</span>
+              ) : (
+                <span className="text-gray-400">({t("optional")})</span>
               )}
             </label>
 
             {!formData.majorId ? (
               <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
-                {t("selectMajorFirst") || "Please select a major first to choose skills"}
+                {t("pleaseFillAllFields")}
               </div>
             ) : (
               <div className="space-y-4">
                 {/* Selected Skills */}
                 <div className="min-h-[100px] p-4 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
                   <p className="text-sm font-medium text-gray-700 mb-2">
-                    {t("yourSelectedSkills") || "Your Selected Skills"} ({selectedSkills.length})
+                    {t("yourSelectedSkills")} ({selectedSkills.length})
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {selectedSkills.length === 0 ? (
                       <p className="text-gray-400 text-sm">
-                        {t("clickSkillsToAdd") || "Click skills below to add them here"}
+                        {t("clickSkillsBelowToAdd")}
                       </p>
                     ) : (
                       selectedSkills.map((skillToken) => {
@@ -489,7 +396,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
                 {/* Available Skills */}
                 <div className="max-h-[250px] overflow-y-auto p-4 border border-gray-300 rounded-lg bg-white">
                   <p className="text-sm font-medium text-gray-700 mb-2">
-                    {t("availableSkillsClickToAdd") || "Available Skills (Click to add)"}
+                    {t("availableSkills")}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {filteredSkills.map((skill) => {
@@ -526,25 +433,25 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
             )}
             <p className="text-sm text-gray-500 mt-1">
               {formData.majorId
-                ? t("clickSkillsToAddProfile") || "Click on skills to add them to your profile"
-                : ["admin", "moderator", "mentor"].includes(role?.toLowerCase())
-                ? t("fieldOptionalForRole") || "This field is optional for your role"
-                : t("fieldRequiredCompleteProfile") || "This field is required to complete your profile"}
+                ? isStudent
+                  ? t("skillsHelperStudent")
+                  : t("skillsHelperStaff")
+                : isStaffRole
+                ? t("skillsHelperOptional")
+                : t("skillsHelperNoMajor")}
             </p>
           </div>
 
           {/* Warning Message */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex gap-3">
-              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-yellow-800">
-                <p className="font-medium mb-1">{t("importantNotice") || "Important Notice"}:</p>
+              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <p className="font-medium mb-1">
+                  {isStudent ? t("whySkills") : t("quickSetup")}
+                </p>
                 <p>
-                  {["admin", "moderator", "mentor"].includes(
-                    role?.toLowerCase()
-                  )
-                    ? t("completeRequiredFieldsNotice") || "You must complete all required fields to access all features of the platform. This is a one-time setup."
-                    : t("completeRequiredFieldsSkillsNotice") || "You must complete all required fields including your skills to access all features of the platform. This is a one-time setup."}
+                  {isStudent ? t("weUseYourSkills") : t("youCanUpdateAnytime")}
                 </p>
               </div>
             </div>
@@ -557,7 +464,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
               disabled={isSubmitting}
               className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium text-lg shadow-lg"
             >
-              {isSubmitting ? (t("completingProfile") || "Completing Profile...") : (t("completeProfile") || "Complete Profile")}
+              {isSubmitting ? t("completingProfile") : t("completeYourProfile")}
             </button>
           </div>
         </form>
