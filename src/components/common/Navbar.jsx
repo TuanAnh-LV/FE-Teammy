@@ -13,11 +13,13 @@ import {
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { getTranslation } from "../../translations";
+import { useTranslation } from "../../hook/useTranslation";
 import { notification } from "antd";
 import NotificationDrawer from "./NotificationDrawer";
 import { InvitationService } from "../../services/invitation.service";
 
 const Navbar = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const { logout, userInfo, token, role } = useAuth();
   const navigate = useNavigate();
@@ -41,10 +43,10 @@ const Navbar = () => {
       if (!iso) return "";
       const d = new Date(iso);
       const diff = Math.max(0, (Date.now() - d.getTime()) / 1000);
-      if (diff < 60) return `${Math.floor(diff)} giây trước`;
-      if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
-      if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
-      return `${Math.floor(diff / 86400)} ngày trước`;
+      if (diff < 60) return `${Math.floor(diff)} ${t("secondsAgo") || "seconds ago"}`;
+      if (diff < 3600) return `${Math.floor(diff / 60)} ${t("minutesAgo") || "minutes ago"}`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)} ${t("hoursAgo") || "hours ago"}`;
+      return `${Math.floor(diff / 86400)} ${t("daysAgo") || "days ago"}`;
     };
 
     const fetchInvites = async () => {
@@ -111,14 +113,6 @@ const Navbar = () => {
     }
   };
 
-  // const handleWorkspaceNav = () => {
-  //   const lastId =
-  //     (typeof localStorage !== "undefined" &&
-  //       localStorage.getItem("last_group_id")) ||
-  //     "";
-  //   navigate(lastId ? `/workspace?groupId=${lastId}` : "/workspace");
-  // };
-
   return (
     <>
       <nav className="!w-full !h-16 !fixed !top-0 !z-50 !bg-white/80 !backdrop-blur-md !border-b !border-gray-200">
@@ -179,7 +173,7 @@ const Navbar = () => {
               <input
                 type="search"
                 name="navbar-search"
-                placeholder="Search skills, majors, projects..."
+                placeholder={t("searchPlaceholder") || "Search skills, majors, projects..."}
                 className="!w-full !rounded-full !border !border-blue-200 !py-2.5 !pl-11 !pr-4 !text-sm !text-gray-700 placeholder:!text-gray-400 focus:!outline-none focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-100"
               />
             </label>
@@ -207,9 +201,7 @@ const Navbar = () => {
             {/* Language toggle - Desktop only */}
             <button
               onClick={toggleLanguage}
-              title={`Switch to ${
-                language === "EN" ? "Vietnamese" : "English"
-              }`}
+              title={language === "EN" ? (t("switchToVietnamese") || "Switch to Vietnamese") : (t("switchToEnglish") || "Switch to English")}
               className="!hidden md:!flex !items-center !gap-1 !px-2 !py-1 !rounded-full hover:!bg-gray-100 !transition-colors !duration-200"
             >
               <Globe className="!w-5 !h-5 !text-gray-700" />
@@ -394,7 +386,7 @@ const Navbar = () => {
                   <Search className="!absolute !left-4 !top-1/2 !-translate-y-1/2 !w-4 !h-4 !text-gray-400" />
                   <input
                     type="search"
-                    placeholder="Search..."
+                    placeholder={t("search") || "Search..."}
                     className="!w-full !rounded-lg !border !border-gray-200 !py-2.5 !pl-11 !pr-4 !text-sm !text-gray-700 placeholder:!text-gray-400 focus:!outline-none focus:!border-blue-400 focus:!ring-2 focus:!ring-blue-100"
                   />
                 </label>
@@ -411,8 +403,8 @@ const Navbar = () => {
                 <Globe className="!w-4 !h-4" />
                 <span className="!text-sm !font-semibold">
                   {language === "EN"
-                    ? "Switch to Vietnamese"
-                    : "Chuyển sang English"}
+                    ? (t("switchToVietnamese") || "Switch to Vietnamese")
+                    : (t("switchToEnglish") || "Switch to English")}
                 </span>
               </button>
             </div>

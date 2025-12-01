@@ -14,12 +14,61 @@ export default function MembersPanel({
   t,
   showStats = false,
   contributionStats = [],
+  board = null,
 }) {
   const [assignRoleOpen, setAssignRoleOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [assignSubmitting, setAssignSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  // Calculate member contributions based on task assignments
+  const calculateMemberContributions = () => {
+    if (!board?.columns || !groupMembers?.length) return groupMembers || [];
+
+    // Flatten tasks from all columns
+    let allTasks = [];
+    if (Array.isArray(board.columns)) {
+      allTasks = board.columns.flatMap(col => col.tasks || []);
+    } else if (typeof board.columns === 'object') {
+      allTasks = Object.values(board.columns).flatMap(col => 
+        Array.isArray(col.tasks) ? col.tasks : Object.values(col.tasks || {})
+      );
+    }
+
+    const totalTasks = allTasks.length || 1;
+    const memberTaskCount = {};
+
+    // Count tasks per member
+    allTasks.forEach(task => {
+      const assignees = task.assignees || [];
+      assignees.forEach(assignee => {
+        const assigneeId = typeof assignee === 'string' 
+          ? assignee 
+          : assignee?.userId || assignee?.id;
+        
+        if (assigneeId) {
+          memberTaskCount[assigneeId] = (memberTaskCount[assigneeId] || 0) + 1;
+        }
+      });
+    });
+
+    // Map to members with contribution percentage
+    return groupMembers.map(member => {
+      const memberId = member.id || member.userId || member.email;
+      const taskCount = memberTaskCount[memberId] || 0;
+      const contribution = Math.round((taskCount / totalTasks) * 100);
+
+      return {
+        ...member,
+        taskCount,
+        contribution
+      };
+    });
+  };
+
+  // Use calculated contributions if board data is available
+  const memberStats = board ? calculateMemberContributions() : contributionStats;
   const openProfile = (member = {}) => {
     const memberId =
       member.id ||
@@ -92,8 +141,8 @@ export default function MembersPanel({
   if (showStats) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {contributionStats.length ? (
-          contributionStats.map((member, idx) => {
+        {memberStats.length ? (
+          memberStats.map((member, idx) => {
             const initials = (member.name || member.displayName || "U")
               .split(" ")
               .filter(Boolean)
@@ -101,16 +150,8 @@ export default function MembersPanel({
               .join("")
               .slice(0, 2)
               .toUpperCase();
-            const fallbackTasks = [12, 8, 6];
-            const fallbackContribution = [45, 32, 28];
-            const contribution =
-              Number.isFinite(member.contribution) && member.contribution >= 0
-                ? member.contribution
-                : fallbackContribution[idx % fallbackContribution.length];
-            const tasksCompleted =
-              Number.isFinite(member.taskCount) && member.taskCount >= 0
-                ? member.taskCount
-                : fallbackTasks[idx % fallbackTasks.length];
+            const contribution = member.contribution || 0;
+            const tasksCompleted = member.taskCount || 0;
             return (
               <div
                 key={member.id || member.email}

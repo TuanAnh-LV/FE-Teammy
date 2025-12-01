@@ -7,11 +7,11 @@ export default function MentorCard({ name,email, label }) {
       <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2">
         {label || "Mentor"}
       </h3>
-      <div className="rounded-xl border border-gray-100 p-4 flex items-center gap-4">
+      <div className="rounded-xl p-4 flex items-center gap-4">
         <img
           src={name.avatarUrl}
           alt="mentor"
-          className="w-12 h-12 rounded-full object-cover border border-white shadow"
+          className="w-12 h-12 rounded-full object-cover shadow"
         />
         <div>
           <p className="text-sm font-semibold text-gray-800">{name}  </p>

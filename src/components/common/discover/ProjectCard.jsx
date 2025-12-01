@@ -66,7 +66,7 @@ const ProjectCard = ({ project, onSelectTopic }) => {
             {/* Attached Files */}
             {(project.attachedFiles || []).length > 0 && (
               <div className="flex-1">
-                <div className="text-xs text-gray-500 mb-2">Attached Files</div>
+                <div className="text-xs text-gray-500 mb-2">{t("attachedFiles") || "Attached Files"}</div>
                 <ul className="space-y-2">
                   {(project.attachedFiles || []).slice(0, 2).map((f, idx) => (
                     <li
@@ -88,7 +88,7 @@ const ProjectCard = ({ project, onSelectTopic }) => {
             {(project.referenceDocs || []).length > 0 && (
               <div className="flex-1">
                 <div className="text-xs text-gray-500 mb-2">
-                  Reference Documents
+                  {t("referenceDocuments") || "Reference Documents"}
                 </div>
                 <ul className="space-y-1">
                   {(project.referenceDocs || []).slice(0, 3).map((d, idx) => (
@@ -110,7 +110,7 @@ const ProjectCard = ({ project, onSelectTopic }) => {
         {/* Date + AI Tag */}
         <div className="flex flex-col items-end gap-2">
           <div className="text-xs text-gray-400 flex items-center gap-1">
-            <Sparkles className="w-4 h-4" /> AI
+            <Sparkles className="w-4 h-4" /> {t("ai") || "AI"}
           </div>
           <div className="text-xs text-gray-500">{formattedDate}</div>
         </div>

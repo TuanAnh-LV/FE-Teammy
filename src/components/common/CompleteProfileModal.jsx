@@ -5,9 +5,11 @@ import { UserService } from "../../services/user.service";
 import { MajorService } from "../../services/major.service";
 import { SkillService } from "../../services/skill.service";
 import { useAuth } from "../../context/AuthContext";
+import { useTranslation } from "../../hook/useTranslation";
 
 const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
   const { logout, role } = useAuth();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     displayName: "",
     phone: "",
@@ -52,7 +54,6 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
     }
   }, [isOpen]);
 
-  // Fetch skills when major changes
   useEffect(() => {
     const fetchSkills = async () => {
       if (!formData.majorId) {
@@ -61,7 +62,6 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
       }
 
       try {
-        // Find the major name from majorId
         const selectedMajor = majors.find(
           (major) => major.majorId === formData.majorId
         );
@@ -96,7 +96,6 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
       [name]: value,
     }));
 
-    // Clear skills when major changes
     if (name === "majorId") {
       setFormData((prev) => ({
         ...prev,
@@ -106,7 +105,6 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
       setSelectedSkills([]);
     }
 
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -173,33 +171,29 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Check if user is admin, moderator, or mentor
     const roleNormalized = role?.toLowerCase();
     const isStaffRole = ["admin", "moderator", "mentor"].includes(
       roleNormalized
     );
 
-    // Only validate fields that are shown (i.e., empty in profileData)
     if (!profileData?.displayName && !formData.displayName?.trim()) {
-      newErrors.displayName = "Display name is required";
+      newErrors.displayName = t("displayNameRequired") || "Display name is required";
     }
 
     if (!profileData?.phone && !formData.phone?.trim()) {
-      newErrors.phone = "Phone number is required";
+      newErrors.phone = t("phoneRequired") || "Phone number is required";
     }
 
     if (!profileData?.gender && !formData.gender) {
-      newErrors.gender = "Gender is required";
+      newErrors.gender = t("genderRequired") || "Gender is required";
     }
 
-    // Major is optional for staff roles (admin, moderator, mentor)
     if (!isStaffRole && !profileData?.majorId && !formData.majorId) {
-      newErrors.majorId = "Major is required";
+      newErrors.majorId = t("majorRequired") || "Major is required";
     }
 
-    // Skills is only required for students (not for admin, moderator, mentor)
     if (!isStaffRole && (!formData.skills || formData.skills.length === 0)) {
-      newErrors.skills = "Skills are required to complete your profile";
+      newErrors.skills = t("skillsRequired") || "Skills are required to complete your profile";
     }
 
     setErrors(newErrors);
@@ -211,8 +205,8 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
 
     if (!validateForm()) {
       notification.error({
-        message: "Validation Error",
-        description: "Please fill in all required fields",
+        message: t("validationError") || "Validation Error",
+        description: t("fillRequiredFields") || "Please fill in all required fields",
         placement: "topRight",
       });
       return;
@@ -221,7 +215,6 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
     setIsSubmitting(true);
 
     try {
-      // Add skillsCompleted: true to mark profile as complete
       const payload = {
         ...formData,
         skillsCompleted: true,
@@ -230,8 +223,8 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
       const response = await UserService.updateMyProfile(payload);
       if (response?.data) {
         notification.success({
-          message: "Success",
-          description: "Profile completed successfully!",
+          message: t("success") || "Success",
+          description: t("profileCompletedSuccess") || "Profile completed successfully!",
           placement: "topRight",
         });
         onComplete(response.data);
@@ -239,8 +232,8 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
     } catch (error) {
       console.error("Error updating profile:", error);
       notification.error({
-        message: "Error",
-        description: "Failed to update profile. Please try again.",
+        message: t("error") || "Error",
+        description: t("updateProfileFailed") || "Failed to update profile. Please try again.",
         placement: "topRight",
       });
     } finally {
@@ -251,8 +244,8 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
   const handleLogout = () => {
     logout();
     notification.info({
-      message: "Logged Out",
-      description: "You have been logged out successfully.",
+      message: t("loggedOut") || "Logged Out",
+      description: t("loggedOutSuccess") || "You have been logged out successfully.",
       placement: "topRight",
     });
   };
@@ -267,21 +260,20 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
               <AlertCircle className="w-8 h-8" />
-              <h2 className="text-2xl font-bold">Complete Your Profile</h2>
+              <h2 className="text-2xl font-bold">{t("completeYourProfile") || "Complete Your Profile"}</h2>
             </div>
             <button
               type="button"
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition text-white font-medium"
-              title="Logout"
+              title={t("logout") || "Logout"}
             >
               <LogOut className="w-4 h-4" />
-              <span className="text-sm">Logout</span>
+              <span className="text-sm">{t("logout") || "Logout"}</span>
             </button>
           </div>
           <p className="text-white/90">
-            Please complete all required information to access all features of
-            the platform
+            {t("completeProfileDescription") || "Please complete all required information to access all features of the platform"}
           </p>
         </div>
 
@@ -294,7 +286,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
                 htmlFor="displayName"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Display Name <span className="text-red-500">*</span>
+                {t("displayName") || "Display Name"} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -305,7 +297,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
                 className={`w-full px-4 py-2 border ${
                   errors.displayName ? "border-red-500" : "border-gray-300"
                 } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition`}
-                placeholder="Enter your display name"
+                placeholder={t("enterDisplayName") || "Enter your display name"}
               />
               {errors.displayName && (
                 <p className="text-red-500 text-sm mt-1">
@@ -322,7 +314,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
                 htmlFor="phone"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Phone Number <span className="text-red-500">*</span>
+                {t("phoneNumber") || "Phone Number"} <span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"
@@ -333,7 +325,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
                 className={`w-full px-4 py-2 border ${
                   errors.phone ? "border-red-500" : "border-gray-300"
                 } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition`}
-                placeholder="Enter your phone number"
+                placeholder={t("enterPhoneNumber") || "Enter your phone number"}
               />
               {errors.phone && (
                 <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
@@ -348,7 +340,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
                 htmlFor="gender"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Gender <span className="text-red-500">*</span>
+                {t("gender") || "Gender"} <span className="text-red-500">*</span>
               </label>
               <select
                 id="gender"
@@ -359,10 +351,10 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
                   errors.gender ? "border-red-500" : "border-gray-300"
                 } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition`}
               >
-                <option value="">Select gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
+                <option value="">{t("selectGender") || "Select gender"}</option>
+                <option value="Male">{t("male") || "Male"}</option>
+                <option value="Female">{t("female") || "Female"}</option>
+                <option value="Other">{t("other") || "Other"}</option>
               </select>
               {errors.gender && (
                 <p className="text-red-500 text-sm mt-1">{errors.gender}</p>
@@ -377,11 +369,11 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
                 htmlFor="majorId"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Major{" "}
+                {t("major") || "Major"}{" "}
                 {["admin", "moderator", "mentor"].includes(
                   role?.toLowerCase()
                 ) ? (
-                  <span className="text-gray-400">(Optional)</span>
+                  <span className="text-gray-400">({t("optional") || "Optional"})</span>
                 ) : (
                   <span className="text-red-500">*</span>
                 )}
@@ -395,7 +387,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
                   errors.majorId ? "border-red-500" : "border-gray-300"
                 } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition`}
               >
-                <option value="">Select major</option>
+                <option value="">{t("selectMajor") || "Select major"}</option>
                 {majors.map((major) => (
                   <option key={major.majorId} value={major.majorId}>
                     {major.majorName}
@@ -411,11 +403,11 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
           {/* Skills */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Skills{" "}
+              {t("skills") || "Skills"}{" "}
               {["admin", "moderator", "mentor"].includes(
                 role?.toLowerCase()
               ) ? (
-                <span className="text-gray-400">(Optional)</span>
+                <span className="text-gray-400">({t("optional") || "Optional"})</span>
               ) : (
                 <span className="text-red-500">*</span>
               )}
@@ -423,19 +415,19 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
 
             {!formData.majorId ? (
               <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
-                Please select a major first to choose skills
+                {t("selectMajorFirst") || "Please select a major first to choose skills"}
               </div>
             ) : (
               <div className="space-y-4">
                 {/* Selected Skills */}
                 <div className="min-h-[100px] p-4 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
                   <p className="text-sm font-medium text-gray-700 mb-2">
-                    Your Selected Skills ({selectedSkills.length})
+                    {t("yourSelectedSkills") || "Your Selected Skills"} ({selectedSkills.length})
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {selectedSkills.length === 0 ? (
                       <p className="text-gray-400 text-sm">
-                        Click skills below to add them here
+                        {t("clickSkillsToAdd") || "Click skills below to add them here"}
                       </p>
                     ) : (
                       selectedSkills.map((skillToken) => {
@@ -469,7 +461,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                   >
-                    All ({availableSkills.length})
+                    {t("all") || "All"} ({availableSkills.length})
                   </button>
                   {["frontend", "backend", "mobile", "devops", "qa"].map(
                     (role) => {
@@ -497,7 +489,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
                 {/* Available Skills */}
                 <div className="max-h-[250px] overflow-y-auto p-4 border border-gray-300 rounded-lg bg-white">
                   <p className="text-sm font-medium text-gray-700 mb-2">
-                    Available Skills (Click to add)
+                    {t("availableSkillsClickToAdd") || "Available Skills (Click to add)"}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {filteredSkills.map((skill) => {
@@ -534,10 +526,10 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
             )}
             <p className="text-sm text-gray-500 mt-1">
               {formData.majorId
-                ? "Click on skills to add them to your profile"
+                ? t("clickSkillsToAddProfile") || "Click on skills to add them to your profile"
                 : ["admin", "moderator", "mentor"].includes(role?.toLowerCase())
-                ? "This field is optional for your role"
-                : "This field is required to complete your profile"}
+                ? t("fieldOptionalForRole") || "This field is optional for your role"
+                : t("fieldRequiredCompleteProfile") || "This field is required to complete your profile"}
             </p>
           </div>
 
@@ -546,13 +538,13 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
             <div className="flex gap-3">
               <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-yellow-800">
-                <p className="font-medium mb-1">Important Notice:</p>
+                <p className="font-medium mb-1">{t("importantNotice") || "Important Notice"}:</p>
                 <p>
                   {["admin", "moderator", "mentor"].includes(
                     role?.toLowerCase()
                   )
-                    ? "You must complete all required fields to access all features of the platform. This is a one-time setup."
-                    : "You must complete all required fields including your skills to access all features of the platform. This is a one-time setup."}
+                    ? t("completeRequiredFieldsNotice") || "You must complete all required fields to access all features of the platform. This is a one-time setup."
+                    : t("completeRequiredFieldsSkillsNotice") || "You must complete all required fields including your skills to access all features of the platform. This is a one-time setup."}
                 </p>
               </div>
             </div>
@@ -565,7 +557,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete }) => {
               disabled={isSubmitting}
               className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium text-lg shadow-lg"
             >
-              {isSubmitting ? "Completing Profile..." : "Complete Profile"}
+              {isSubmitting ? (t("completingProfile") || "Completing Profile...") : (t("completeProfile") || "Complete Profile")}
             </button>
           </div>
         </form>

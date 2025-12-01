@@ -1,10 +1,10 @@
-// src/components/kanban/TaskModal.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { MessageSquare, Upload, X, FileIcon } from "lucide-react";
 import { priorityStyles, statusStyles, initials } from "../../../utils/kanbanHelpers";
 import { useNavigate } from "react-router-dom";
 import { BoardService } from "../../../services/board.service";
 import { notification } from "antd";
+import { useTranslation } from "../../../hook/useTranslation";
 
 const getAssigneeId = (assignee) => {
   if (!assignee) return "";
@@ -42,6 +42,7 @@ const formatColumnName = (name) => {
 const TaskModal = ({
   task,
   members = [],
+  groupDetail = null,
   columnMeta = {},
   groupId = null,
   onClose,
@@ -55,6 +56,7 @@ const TaskModal = ({
   readOnly = false,
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [text, setText] = useState("");
   const [detailForm, setDetailForm] = useState({
     assignees: [],
@@ -101,7 +103,6 @@ const TaskModal = ({
   }, [onFetchComments]);
 
   useEffect(() => {
-    // Fetch files when task or groupId changes
     if (groupId && task?.id) {
       fetchTaskFiles();
     }
@@ -139,6 +140,36 @@ const TaskModal = ({
     };
   }, []);
 
+  const allMembers = React.useMemo(() => {
+    const peopleList = [...members];
+    
+    if (groupDetail) {
+      if (groupDetail.mentor) {
+        peopleList.push({
+          id: groupDetail.mentor.userId,
+          userId: groupDetail.mentor.userId,
+          displayName: groupDetail.mentor.displayName,
+          email: groupDetail.mentor.email,
+          avatarUrl: groupDetail.mentor.avatarUrl,
+          role: 'mentor'
+        });
+      }
+      
+      if (groupDetail.leader) {
+        peopleList.push({
+          id: groupDetail.leader.userId,
+          userId: groupDetail.leader.userId,
+          displayName: groupDetail.leader.displayName,
+          email: groupDetail.leader.email,
+          avatarUrl: groupDetail.leader.avatarUrl,
+          role: groupDetail.leader.role || 'leader'
+        });
+      }
+    }
+    
+    return peopleList;
+  }, [members, groupDetail]);
+
   if (!task) return null;
 
   const priorityClass = priorityStyles[task.priority] || "bg-gray-100 text-gray-700";
@@ -151,7 +182,7 @@ const TaskModal = ({
   };
   const activeAssignee = detailForm.assignees?.[0] || null;
   const activeAssigneeId = getAssigneeId(activeAssignee);
-  const activeAssigneeLabel = getAssigneeLabel(activeAssignee) || "Unassigned";
+  const activeAssigneeLabel = getAssigneeLabel(activeAssignee) || t("unassigned") || "Unassigned";
   const availableMembers = Array.isArray(members) ? members : [];
   const activeMember =
     availableMembers.find((member) => getAssigneeId(member) === activeAssigneeId) ||
@@ -179,7 +210,7 @@ const TaskModal = ({
   };
   const handleDeleteComment = (commentId) => {
     if (!commentId) return;
-    if (!window.confirm("Delete this comment?")) return;
+    if (!window.confirm(t("confirmDeleteComment") || "Delete this comment?")) return;
     onDeleteComment(task.id, commentId);
     if (editingCommentId === commentId) {
       cancelEditComment();
@@ -196,7 +227,7 @@ const TaskModal = ({
       // Map API response to file object
       const mappedFiles = filesList.map(file => ({
         id: file.fileId || file.id,
-        name: file.fileName || file.name || 'Unknown',
+        name: file.fileName || file.name || t("unknown") || "Unknown",
         size: file.fileSize || file.size || 0,
         type: file.fileType || file.type,
         url: file.fileURI || file.url || file.fileUrl,
@@ -247,7 +278,7 @@ const TaskModal = ({
       const uploadedFiles = await Promise.all(uploadPromises);
       
       notification.success({
-        message: "Files uploaded successfully",
+        message: t("filesUploadedSuccess") || "Files uploaded successfully",
         duration: 2,
       });
       
@@ -256,13 +287,12 @@ const TaskModal = ({
     } catch (error) {
       console.error("Failed to upload files:", error);
       notification.error({
-        message: "Failed to upload files",
-        description: error?.response?.data?.message || "Please try again",
+        message: t("failedUploadFiles") || "Failed to upload files",
+        description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
         duration: 2,
       });
     } finally {
       setUploadingFile(false);
-      // Reset input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -270,30 +300,27 @@ const TaskModal = ({
   };
   
   const handleDeleteFile = async (fileId) => {
-    if (!window.confirm("Delete this file?")) return;
+    if (!window.confirm(t("confirmDeleteFile") || "Delete this file?")) return;
     
     try {
       const fileToDelete = files.find(f => f.id === fileId);
       
-      // If it's an uploaded file (has taskId), delete from server
       if (fileToDelete && fileToDelete.taskId && groupId && task?.id) {
         await BoardService.deleteTaskFile(groupId, task.id, fileId);
         notification.success({
-          message: "File deleted successfully",
+          message: t("fileDeletedSuccess") || "File deleted successfully",
           duration: 2,
         });
       }
       
-      // Remove from state
       setFiles(prev => prev.filter(f => f.id !== fileId));
     } catch (error) {
       console.error("Failed to delete file:", error);
       notification.error({
-        message: "Failed to delete file",
-        description: error?.response?.data?.message || "Please try again",
+        message: t("failedDeleteFile") || "Failed to delete file",
+        description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
         duration: 2,
       });
-      // Still remove from UI even if server delete fails
       setFiles(prev => prev.filter(f => f.id !== fileId));
     }
   };
@@ -353,19 +380,30 @@ const TaskModal = ({
     );
   };
   const renderCommentAvatar = (comment) => {
-    const label = comment.createdBy || comment.userId || "User";
-    if (comment.authorAvatar) {
+    const userId = comment.userId || comment.authorId || comment.createdById || "";
+    
+    // Find member by userId from allMembers list (includes mentor, leader, members)
+    const member = allMembers?.find(m => 
+      m.id === userId || 
+      m.userId === userId || 
+      m.accountId === userId
+    );
+    
+    const avatarUrl = member?.avatarUrl || member?.avatar || member?.photoURL || comment.authorAvatar;
+    const displayName = member?.displayName || member?.name || comment.createdBy || t("user") || "User";
+    
+    if (avatarUrl) {
       return (
         <img
-          src={comment.authorAvatar}
-          alt={label}
+          src={avatarUrl}
+          alt={displayName}
           className="w-10 h-10 rounded-full object-cover"
         />
       );
     }
     return (
       <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-xs font-semibold">
-        {initials(label || "U") || "U"}
+        {initials(displayName || "U") || "U"}
       </div>
     );
   };
@@ -392,30 +430,29 @@ const TaskModal = ({
                 <button
                   className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
                   onClick={() => {
-                    if (window.confirm("Delete this task?")) {
+                    if (window.confirm(t("confirmDeleteTask") || "Delete this task?")) {
                       onDeleteTask(task.id);
                       onClose();
                     }
                   }}
                 >
-                  Delete
+                  {t("delete") || "Delete"}
                 </button>
               )}
               <button
                 className="px-3 py-1.5 rounded-lg border text-gray-600 hover:bg-gray-50"
                 onClick={onClose}
               >
-                Close
+                {t("close") || "Close"}
               </button>
             </div>
           </div>
 
           <div className="mt-6 flex flex-col lg:flex-row gap-6 max-h-[75vh]">
-            {/* Left pane */}
             <div className="flex-1 space-y-6 overflow-y-auto pr-2">
               <div className="border-b" />
               <div className="space-y-5">
-                <h4 className="text-sm font-semibold text-gray-800">Description</h4>
+                <h4 className="text-sm font-semibold text-gray-800">{t("description") || "Description"}</h4>
                 <textarea
                   value={detailForm.description}
                   onChange={(e) =>
@@ -429,10 +466,9 @@ const TaskModal = ({
                 />
               </div>
 
-              {/* Files Section */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-gray-800">Files</h4>
+                  <h4 className="text-sm font-semibold text-gray-800">{t("files") || "Files"}</h4>
                   {!readOnly && (
                     <button
                       onClick={() => fileInputRef.current?.click()}
@@ -440,7 +476,7 @@ const TaskModal = ({
                       className="inline-flex items-center gap-1 text-xs px-2 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Upload className="w-4 h-4" />
-                      {uploadingFile ? "Uploading..." : "Upload"}
+                      {uploadingFile ? t("uploading") || "Uploading..." : t("upload") || "Upload"}
                     </button>
                   )}
                 </div>
@@ -455,9 +491,9 @@ const TaskModal = ({
                 />
 
                 {loadingFiles ? (
-                  <p className="text-xs text-gray-500">Loading files...</p>
+                  <p className="text-xs text-gray-500">{t("loadingFiles") || "Loading files..."}</p>
                 ) : files.length === 0 ? (
-                  <p className="text-xs text-gray-500">No files attached</p>
+                  <p className="text-xs text-gray-500">{t("noFilesAttached") || "No files attached"}</p>
                 ) : (
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {files.map((file) => (
@@ -485,7 +521,7 @@ const TaskModal = ({
                           <button
                             onClick={() => handleDeleteFile(file.id)}
                             className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition"
-                            title="Delete file"
+                            title={t("deleteFile") || "Delete file"}
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -498,15 +534,15 @@ const TaskModal = ({
 
               <div className="flex items-center gap-3 flex-wrap">
                 <h4 className="text-sm font-semibold text-gray-800 whitespace-nowrap">
-                  Assignees
+                  {t("assignees") || "Assignees"}
                 </h4>
 
                 <div className="flex flex-wrap gap-2">
                   {(task.assignees || []).length === 0 && (
-                    <span className="text-sm text-gray-500">No assignees yet</span>
+                    <span className="text-sm text-gray-500">{t("noAssigneesYet") || "No assignees yet"}</span>
                   )}
                   {(task.assignees || []).map((assignee, index) => {
-                    const label = getAssigneeLabel(assignee) || "Unassigned";
+                    const label = getAssigneeLabel(assignee) || t("unassigned") || "Unassigned";
                     const id = getAssigneeId(assignee) || `${label}-${index}`;
                     return (
                       <div
@@ -529,11 +565,11 @@ const TaskModal = ({
               <div className="space-y-2">
                 <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                   <MessageSquare className="w-5 h-5 text-gray-700" />
-                  Activity
+                  {t("comments") || "Comments"}
                 </h4>
                 <div className="space-y-5">
                   {commentLoading ? (
-                    <div className="text-xs text-gray-500">Loading comments...</div>
+                    <div className="text-xs text-gray-500">{t("loadingComments") || "Loading comments..."}</div>
                   ) : comments.length > 0 ? (
                     comments.map((comment) => (
                       <div
@@ -557,7 +593,7 @@ const TaskModal = ({
                           <div className="flex-1">
                             <div className="flex items-center justify-between text-xs text-gray-500">
                               <span
-                                className="cursor-pointer"
+                                className="cursor-pointer font-semibold text-gray-700"
                                 onClick={() =>
                                   openProfile(
                                     comment.userId ||
@@ -567,7 +603,15 @@ const TaskModal = ({
                                   )
                                 }
                               >
-                                {comment.createdBy || "Unknown"}
+                                {(() => {
+                                  const userId = comment.userId || comment.authorId || comment.createdById || "";
+                                  const member = allMembers?.find(m => 
+                                    m.id === userId || 
+                                    m.userId === userId || 
+                                    m.accountId === userId
+                                  );
+                                  return member?.displayName || member?.name || comment.createdBy || t("unknown") || "Unknown";
+                                })()}
                               </span>
                               <div className="flex items-center gap-2">
                                 {comment.createdAt && (
@@ -578,14 +622,14 @@ const TaskModal = ({
                                   className="text-blue-600 hover:underline"
                                   onClick={() => startEditComment(comment)}
                                 >
-                                  Edit
+                                  {t("edit") || "Edit"}
                                 </button>
                                 <button
                                   type="button"
                                   className="text-red-500 hover:underline"
                                   onClick={() => handleDeleteComment(comment.id)}
                                 >
-                                  Delete
+                                  {t("delete") || "Delete"}
                                 </button>
                               </div>
                             </div>
@@ -603,7 +647,7 @@ const TaskModal = ({
                                     className="px-3 py-1 rounded-lg border text-gray-600 hover:bg-gray-100"
                                     onClick={cancelEditComment}
                                   >
-                                    Cancel
+                                    {t("cancel") || "Cancel"}
                                   </button>
                                   <button
                                     type="button"
@@ -611,7 +655,7 @@ const TaskModal = ({
                                     onClick={saveEditComment}
                                     disabled={!editingContent.trim()}
                                   >
-                                    Save
+                                    {t("save") || "Save"}
                                   </button>
                                 </div>
                               </div>
@@ -625,7 +669,7 @@ const TaskModal = ({
                       </div>
                     ))
                   ) : (
-                    <div className="text-xs text-gray-500">No comments yet</div>
+                    <div className="text-xs text-gray-500">{t("noCommentsYet") || "No comments yet"}</div>
                   )}
                 </div>
 
@@ -633,7 +677,7 @@ const TaskModal = ({
                   <input
                     value={text}
                     onChange={(e) => setText(e.target.value)}
-                    placeholder="Write a comment..."
+                    placeholder={t("writeComment") || "Write a comment..."}
                     className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-gray-300"
                   />
                   <button
@@ -641,21 +685,19 @@ const TaskModal = ({
                     onClick={handleAddComment}
                     disabled={!text.trim()}
                   >
-                    Add
+                    {t("post") || "Post"}
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Right pane: details editable */}
             <div className="w-full lg:w-[380px] flex-shrink-0 space-y-4 lg:self-start">
               <div className="border rounded-lg p-4">
-                <h4 className="text-sm font-medium text-gray-800 mb-4">Details</h4>
+                <h4 className="text-sm font-medium text-gray-800 mb-4">{t("details") || "Details"}</h4>
                 <div className="space-y-5">
-                  {/* Assignee */}
                   <div className="flex items-start gap-5 relative" ref={assigneeMenuRef}>
                     <label className="text-sm text-[#292A2E] font-semibold w-24 mt-2">
-                      Assignee
+                      {t("assignee") || "Assignee"}
                     </label>
                     <div className="flex-1">
                       <button
@@ -668,7 +710,7 @@ const TaskModal = ({
                             activeMember || { name: activeAssigneeLabel || "U" }
                           )}
                           <span className="text-gray-900">
-                            {activeAssigneeLabel || "Unassigned"}
+                            {activeAssigneeLabel || t("unassigned") || "Unassigned"}
                           </span>
                         </div>
                         <span className="text-gray-500 text-xs">▼</span>
@@ -687,7 +729,7 @@ const TaskModal = ({
                             <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-xs font-semibold">
                               U
                             </div>
-                            <span>Unassigned</span>
+                            <span>{t("unassign") || "Unassign"}</span>
                           </button>
                           {availableMembers.map((member) => {
                             const optionId = getAssigneeId(member);
@@ -717,9 +759,8 @@ const TaskModal = ({
                     </div>
                   </div>
 
-                  {/* Due Date */}
                   <div className="flex items-center gap-5">
-                    <label className="text-sm font-medium text-[#292A2E] w-24">Due date</label>
+                    <label className="text-sm font-medium text-[#292A2E] w-24">{t("dueDate") || "Due date"}</label>
                     <div className="relative flex items-center gap-2 flex-1">
                       <input
                         type="date"
@@ -741,9 +782,8 @@ const TaskModal = ({
                     </div>
                   </div>
 
-                  {/* Status */}
                   <div className="flex items-center gap-10">
-                    <label className="text-sm font-medium text-[#292A2E] w-24">Status</label>
+                    <label className="text-sm font-medium text-[#292A2E] w-24">{t("status") || "Status"}</label>
                     <select
                       value={detailForm.status}
                       onChange={(e) =>
@@ -766,9 +806,8 @@ const TaskModal = ({
                     </select>
                   </div>
 
-                  {/* Priority */}
                   <div className="flex items-center gap-10    ">
-                    <label className="text-sm font-medium text-[#292A2E] w-24">Priority</label>
+                    <label className="text-sm font-medium text-[#292A2E] w-24">{t("priority") || "Priority"}</label>
                     <select
                       value={detailForm.priority}
                       onChange={(e) =>
@@ -783,9 +822,9 @@ const TaskModal = ({
                       className="w-full px-3 py-2 text-sm bg-white"
                       disabled={readOnly}
                     >
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
-                      <option value="low">Low</option>
+                      <option value="high">{t("high") || "High"}</option>
+                      <option value="medium">{t("medium") || "Medium"}</option>
+                      <option value="low">{t("low") || "Low"}</option>
                     </select>
                   </div>
                 </div>

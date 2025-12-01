@@ -57,7 +57,7 @@ export default function KanbanTab({
       onDragEnd={handleDragEnd}
     >
       {hasKanbanData ? (
-        <div className="mt-4 flex gap-6 overflow-x-auto pb-2 px-1 sm:px-0">
+        <div className="mt-4 flex justify-center gap-6 overflow-x-auto pb-2 px-1 sm:px-0">
           {Object.entries(columnMeta || {})
             .sort((a, b) => (a[1]?.position || 0) - (b[1]?.position || 0))
             .map(([colId, meta]) => {
