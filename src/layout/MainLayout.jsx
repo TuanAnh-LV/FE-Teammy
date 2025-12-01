@@ -5,7 +5,7 @@ import Footer from "../components/common/Footer";
 
 const MainLayout = ({ children }) => {
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative bg-[#f9fafb]">
       <Navbar />
       <main className="flex-1">
         {children || <Outlet />}

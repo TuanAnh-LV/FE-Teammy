@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   Plus,
   MoreVertical,
@@ -24,7 +24,6 @@ import {
 import dayjs from "dayjs";
 import { MilestoneService } from "../../../services/milestone.service";
 import { BacklogService } from "../../../services/backlog.service";
-import { BoardService } from "../../../services/board.service";
 import { useTranslation } from "../../../hook/useTranslation";
 
 const statusColors = {
@@ -57,9 +56,7 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
   });
   const [backlogOptions, setBacklogOptions] = useState([]);
   const [assignBacklogIds, setAssignBacklogIds] = useState([]);
-  const [backlogItems, setBacklogItems] = useState([]);
-  const [boardTaskMap, setBoardTaskMap] = useState({});
-  const [boardTaskTitles, setBoardTaskTitles] = useState([]);
+  const fetchedRef = useRef(null);
 
   const fetchMilestones = async () => {
     if (!groupId) return;
@@ -101,45 +98,16 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
           label: item.title || "Backlog item",
         }));
       setBacklogOptions(options);
-      setBacklogItems(items);
     } catch (err) {
       console.error(err);
     }
   };
 
   useEffect(() => {
+    if (!groupId || fetchedRef.current === groupId) return;
+    fetchedRef.current = groupId;
     fetchMilestones();
     fetchBacklogOptions();
-    const fetchBoardTasks = async () => {
-      if (!groupId) return;
-      try {
-        const res = await BoardService.getBoard(groupId);
-        const data = res?.data || {};
-        const columns = data.columns || [];
-        const map = {};
-        const titleList = [];
-        columns.forEach((col) => {
-          (col.tasks || []).forEach((task) => {
-            if (!task?.id && !task?.taskId) return;
-            const id = task.id || task.taskId;
-            map[id] = { status: task.status || col.columnName || "", isDone: !!col.isDone };
-            const key = (task.title || "").trim().toLowerCase();
-            if (key) {
-              titleList.push({
-                key,
-                status: task.status || col.columnName || "",
-                isDone: !!col.isDone,
-              });
-            }
-          });
-        });
-        setBoardTaskMap(map);
-        setBoardTaskTitles(titleList);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchBoardTasks();
   }, [groupId]);
 
   const resetForm = () => {
@@ -298,43 +266,10 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
   };
 
   const listToShow = useMemo(() => list || [], [list]);
-  const itemsByMilestone = useMemo(() => {
-    const map = new Map();
-    (backlogItems || []).forEach((item) => {
-      const mId = item.milestoneId || item.milestoneID || item.milestone_id;
-      if (!mId) return;
-      if (!map.has(mId)) map.set(mId, []);
-      map.get(mId).push(item);
-    });
-    return map;
-  }, [backlogItems]);
 
   const isTaskDone = (item) => {
-    let linked = boardTaskMap[item.linkedTaskId] || boardTaskMap[item.taskId];
-
-    // Fallback: try match by title if no linked task id
-    if (!linked) {
-      const titleKey = (item.title || "").trim().toLowerCase();
-      const matches = boardTaskTitles.filter((t) => t.key === titleKey);
-      if (matches.length === 1) {
-        linked = matches[0];
-      }
-    }
-
-    const st = (linked?.status || item.status || "").toLowerCase();
-    if (linked?.isDone) return true;
+    const st = (item.status || "").toLowerCase();
     return st === "done" || st === "completed";
-  };
-
-  const getProgress = (milestoneId) => {
-    const items = itemsByMilestone.get(milestoneId) || [];
-    if (!items.length) return { percent: 0, done: 0, total: 0 };
-    const doneCount = items.filter(isTaskDone).length;
-    return {
-      percent: Math.round((doneCount / items.length) * 100),
-      done: doneCount,
-      total: items.length,
-    };
   };
 
   const statusBadge = (status) => {
@@ -379,8 +314,12 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
         <div className="space-y-4">
           {listToShow.map((item) => {
             const mId = item.milestoneId || item.id;
-            const progress = getProgress(mId);
-            const assignedItems = itemsByMilestone.get(mId) || [];
+            const assignedItems = item.items || [];
+            const progress = {
+              percent: item.completionPercent || 0,
+              done: item.completedItems || 0,
+              total: item.totalItems || 0,
+            };
             return (
               <div key={mId} className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
                 <div className="flex items-start justify-between gap-3">
