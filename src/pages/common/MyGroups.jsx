@@ -10,12 +10,14 @@ import {
   Activity,
 } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
+import { useAuth } from "../../context/AuthContext";
 import CreateGroupModal from "../../components/common/my-groups/CreateGroupModal";
 import { useMyGroupsPage } from "../../hook/useMyGroupsPage";
 
 export default function MyGroupsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { userInfo } = useAuth();
 
   const formatRoleLabel = (role) => {
     if (!role) return "";
@@ -80,7 +82,9 @@ export default function MyGroupsPage() {
     handleReject,
     majors,
     majorsLoading,
-  } = useMyGroupsPage(t, navigate);
+    skills,
+    skillsLoading,
+  } = useMyGroupsPage(t, navigate, userInfo);
 
   const tabs = [
     {
@@ -285,10 +289,47 @@ export default function MyGroupsPage() {
                   </p>
                 )}
               </div>
-              <p className="text-sm font-semibold text-[#627084]">
-                {group.members}/{group.maxMembers}
+              <p className="text-sm font-medium text-[#627084]">
+                {group.members}/{group.maxMembers} members
               </p>
             </div>
+
+            {/* Skills Section */}
+            {group.skills && group.skills.length > 0 && (
+              <div className="mt-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {group.skills.map((skill, idx) => {
+                    const getRoleColor = (skillName) => {
+                      const lowerSkill = skillName.toLowerCase();
+                      if (['react', 'angular', 'vue', 'javascript', 'html', 'css'].includes(lowerSkill)) {
+                        return 'bg-blue-100 text-blue-700 border-blue-300';
+                      } else if (['nodejs', 'java', 'python', 'csharp', 'dotnet'].includes(lowerSkill)) {
+                        return 'bg-green-100 text-green-700 border-green-300';
+                      } else if (['flutter', 'swift', 'kotlin', 'android', 'ios'].includes(lowerSkill)) {
+                        return 'bg-purple-100 text-purple-700 border-purple-300';
+                      } else if (['docker', 'kubernetes', 'aws', 'azure'].includes(lowerSkill)) {
+                        return 'bg-orange-100 text-orange-700 border-orange-300';
+                      }
+                      return 'bg-gray-100 text-gray-700 border-gray-300';
+                    };
+                    
+                    const capitalizeFirst = (str) => {
+                      if (!str) return str;
+                      return str.charAt(0).toUpperCase() + str.slice(1);
+                    };
+                    
+                    return (
+                      <span
+                        key={idx}
+                        className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full border ${getRoleColor(skill)}`}
+                      >
+                        {capitalizeFirst(skill)}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div className="mt-4 md:mt-6 flex flex-col sm:flex-row flex-wrap gap-2 md:gap-3">
               <button
                 onClick={() => handleViewGroup(group.id)}
@@ -556,6 +597,8 @@ export default function MyGroupsPage() {
         errors={errors}
         majors={majors}
         majorsLoading={majorsLoading}
+        skills={skills}
+        skillsLoading={skillsLoading}
         onClose={requestCloseModal}
         onSubmit={handleCreateGroup}
         onChange={handleFormChange}

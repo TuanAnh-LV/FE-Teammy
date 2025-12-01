@@ -192,7 +192,18 @@ const TaskModal = ({
       setLoadingFiles(true);
       const res = await BoardService.getTaskFiles(groupId, task.id);
       const filesList = Array.isArray(res?.data) ? res.data : [];
-      setFiles(filesList);
+      
+      // Map API response to file object
+      const mappedFiles = filesList.map(file => ({
+        id: file.fileId || file.id,
+        name: file.fileName || file.name || 'Unknown',
+        size: file.fileSize || file.size || 0,
+        type: file.fileType || file.type,
+        url: file.fileURI || file.url || file.fileUrl,
+        taskId: file.taskId || task.id,
+      }));
+      
+      setFiles(mappedFiles);
     } catch (error) {
       console.error("Failed to fetch task files:", error);
       setFiles([]);
@@ -222,11 +233,11 @@ const TaskModal = ({
           .then(res => {
             const uploadedFile = res?.data || {};
             return {
-              id: uploadedFile.id || `${Date.now()}-${Math.random()}`,
-              name: uploadedFile.name || file.name,
-              size: uploadedFile.size || file.size,
-              type: uploadedFile.type || file.type,
-              url: uploadedFile.url || uploadedFile.fileUrl || URL.createObjectURL(file),
+              id: uploadedFile.fileId || uploadedFile.id,
+              name: uploadedFile.fileName || uploadedFile.name || file.name,
+              size: uploadedFile.fileSize || uploadedFile.size || file.size,
+              type: uploadedFile.fileType || uploadedFile.type || file.type,
+              url: uploadedFile.fileURI || uploadedFile.url || uploadedFile.fileUrl,
               taskId: task.id,
               isNew: false,
             };

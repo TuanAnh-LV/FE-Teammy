@@ -53,7 +53,41 @@ const TaskCard = ({ task, onOpen, columnMeta = {} }) => {
   };
 
   const priorityClass = priorityStyles[task.priority] || "bg-gray-100 text-gray-700";
-  const statusClass = statusStyles[task.status] || "bg-gray-100 text-gray-700";
+  
+  // Dynamic status color based on columnMeta and position
+  const getStatusClass = () => {
+    const column = columnMeta[task.columnId];
+    
+    // Done column - green
+    if (column?.isDone) {
+      return "bg-emerald-100 text-emerald-700";
+    }
+    
+    // Get all columns sorted by position
+    const allColumns = Object.values(columnMeta).sort((a, b) => (a.position || 0) - (b.position || 0));
+    const currentPosition = column?.position || 0;
+    const totalColumns = allColumns.length;
+    
+    // First column (typically "To Do") - gray
+    if (currentPosition === 1 || currentPosition === allColumns[0]?.position) {
+      return "bg-gray-100 text-gray-700";
+    }
+    
+    // Middle columns - blue shades based on position
+    // Second column -> lighter blue, closer to done -> darker blue
+    const nonDoneColumns = allColumns.filter(col => !col.isDone);
+    const positionInNonDone = nonDoneColumns.findIndex(col => col.columnId === task.columnId);
+    
+    if (positionInNonDone === 0) {
+      return "bg-gray-100 text-gray-700"; // First non-done column
+    } else if (positionInNonDone === 1) {
+      return "bg-blue-100 text-blue-700"; // Second non-done column
+    } else {
+      return "bg-indigo-100 text-indigo-700"; // Other columns
+    }
+  };
+  const statusClass = getStatusClass();
+  
   const dueLabel = task.dueDate
     ? new Date(task.dueDate).toLocaleDateString()
     : "--";
