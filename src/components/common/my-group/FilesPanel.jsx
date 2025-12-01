@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
-import { FileText, Plus, Upload, X } from "lucide-react";
-import { Modal, Input, notification } from "antd";
+import { FileText, Plus, Upload, X, MoreVertical, Download, Trash2 } from "lucide-react";
+import { Modal, Input, notification, Dropdown } from "antd";
 import { BoardService } from "../../../services/board.service";
 
 export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
@@ -8,6 +8,9 @@ export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
   const [description, setDescription] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [deletingFileId, setDeletingFileId] = useState(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleOpenUploadModal = () => {
@@ -74,6 +77,70 @@ export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
     }
   };
 
+  const handleOpenDeleteConfirm = (file) => {
+    setFileToDelete(file);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteFile = async () => {
+    if (!fileToDelete) return;
+    
+    try {
+      setDeletingFileId(fileToDelete.id);
+      setDeleteConfirmOpen(false);
+      await BoardService.deleteGroupFile(groupId, fileToDelete.id);
+      
+      notification.success({
+        message: t("success") || "Success",
+        description: t("fileDeletedSuccess") || "File deleted successfully",
+      });
+
+      // Callback to refresh file list
+      if (onUploadSuccess) {
+        onUploadSuccess();
+      }
+    } catch (error) {
+      console.error("Failed to delete file:", error);
+      notification.error({
+        message: t("deleteFailed") || "Delete failed",
+        description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
+      });
+    } finally {
+      setDeletingFileId(null);
+      setFileToDelete(null);
+    }
+  };
+
+  const getFileMenuItems = (file) => [
+    {
+      key: 'download',
+      label: (
+        <a 
+          href={file.url} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          download={file.name}
+          className="flex items-center gap-2 text-gray-700 capitalize"
+        >
+          <Download className="w-4 h-4" />
+          {t("download") || "Download"}
+        </a>
+      ),
+    },
+    {
+      key: 'delete',
+      label: (
+        <div 
+          className="flex items-center gap-2 text-red-600 cursor-pointer"
+          onClick={() => handleOpenDeleteConfirm(file)}
+        >
+          <Trash2 className="w-4 h-4" />
+          {t("delete") || "Delete"}
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between mb-6">
@@ -121,15 +188,20 @@ export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
                 </p>
               </div>
             </div>
-            <a 
-              href={file.url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              download
-              className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-white transition"
+            <Dropdown
+              menu={{ items: getFileMenuItems(file) }}
+              trigger={['click']}
+              placement="bottomRight"
+              disabled={deletingFileId === file.id}
             >
-              ↗ {t("download") || "Download"}
-            </a>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-600 hover:bg-gray-200 transition"
+                disabled={deletingFileId === file.id}
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+            </Dropdown>
           </div>
         ))
       ) : (
@@ -204,6 +276,36 @@ export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
             />
           </div>
         </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 text-red-600">
+            <Trash2 className="w-5 h-5" />
+            <span>{t("deleteFileConfirm") || "Delete file"}</span>
+          </div>
+        }
+        open={deleteConfirmOpen}
+        onOk={handleDeleteFile}
+        onCancel={() => {
+          setDeleteConfirmOpen(false);
+          setFileToDelete(null);
+        }}
+        okText={t("delete") || "Delete"}
+        cancelText={t("cancel") || "Cancel"}
+        okButtonProps={{ danger: true }}
+        confirmLoading={deletingFileId === fileToDelete?.id}
+        centered
+      >
+        <p className="text-gray-700">
+          {t("deleteFileConfirmMessage") || "Are you sure you want to delete this file?"}
+        </p>
+        {fileToDelete && (
+          <p className="mt-2 font-semibold text-gray-900">
+            {fileToDelete.description || fileToDelete.name}
+          </p>
+        )}
       </Modal>
     </div>
   );

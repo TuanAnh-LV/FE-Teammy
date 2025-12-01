@@ -8,7 +8,7 @@ import {
 } from "@ant-design/icons";
 import { GroupService } from "../../services/group.service";
 import { BoardService } from "../../services/board.service";
-import { calculateProgressFromTasks } from "../../utils/group.utils";
+import { ReportService } from "../../services/report.service";
 
 export default function GroupOverview({ groupId, groupDetail }) {
   const [loading, setLoading] = useState(false);
@@ -26,17 +26,16 @@ export default function GroupOverview({ groupId, groupDetail }) {
     try {
       setLoading(true);
       
-      // Fetch board data
-      const boardResponse = await BoardService.getBoard(groupId);
+      // Fetch progress from tracking reports API
+      const [reportResponse, boardResponse] = await Promise.all([
+        ReportService.getProjectReport(groupId),
+        BoardService.getBoard(groupId)
+      ]);
+
+      const completionPercent = reportResponse?.data?.project?.completionPercent ?? 0;
       const board = boardResponse?.data || null;
-
-      console.log("Board data:", board);
-
-      // Calculate progress from tasks
-      const calculatedProgress = board ? calculateProgressFromTasks(board) : 0;
-      console.log("Calculated progress:", calculatedProgress);
       
-      setProgress(calculatedProgress);
+      setProgress(completionPercent);
       setBoardData(board);
 
       // Get all members from groupDetail (leader + members)
@@ -77,14 +76,22 @@ export default function GroupOverview({ groupId, groupDetail }) {
     const memberTaskCount = {};
     let totalTasks = 0;
 
-    Object.values(board.columns).forEach(column => {
-      if (column.tasks) {
-        Object.values(column.tasks).forEach(task => {
-          totalTasks++;
-          if (task.assignees && Array.isArray(task.assignees)) {
-            task.assignees.forEach(assigneeId => {
-              memberTaskCount[assigneeId] = (memberTaskCount[assigneeId] || 0) + 1;
-            });
+    // Flatten all tasks from all columns
+    const allTasks = Object.values(board.columns).flatMap(column => 
+      Array.isArray(column.tasks) ? column.tasks : Object.values(column.tasks || {})
+    );
+
+    allTasks.forEach(task => {
+      if (!task) return;
+      totalTasks++;
+      
+      // Check assignees array
+      if (task.assignees && Array.isArray(task.assignees)) {
+        task.assignees.forEach(assignee => {
+          // assignee might be an ID string or an object with userId
+          const assigneeId = typeof assignee === 'string' ? assignee : assignee?.userId || assignee?.id;
+          if (assigneeId) {
+            memberTaskCount[assigneeId] = (memberTaskCount[assigneeId] || 0) + 1;
           }
         });
       }
@@ -146,7 +153,7 @@ export default function GroupOverview({ groupId, groupDetail }) {
             <Tag
               key={t}
               color="blue"
-              className="rounded-md text-xs font-medium px-3 py-1 border border-blue-100 bg-blue-50 text-blue-600"
+              className="!rounded-md !text-xs !font-medium !px-3 !py-1 !border !border-blue-100 !bg-blue-50 !text-blue-600"
             >
               {t}
             </Tag>
@@ -183,10 +190,11 @@ export default function GroupOverview({ groupId, groupDetail }) {
               size="small"
               status={group.status === "At risk" ? "exception" : "active"}
               strokeColor={group.status === "At risk" ? "#fa541c" : "#43D08A"}
+              className="!mb-1"
             />
             <Tag
               color={group.status === "At risk" ? "volcano" : group.status === "Behind" ? "orange" : "green"}
-              className="mt-1 rounded-md"
+              className="!mt-1 !rounded-md"
             >
               {group.status}
             </Tag>
@@ -219,34 +227,88 @@ export default function GroupOverview({ groupId, groupDetail }) {
           </div>
         </div>
       </div>
-      <Card className="rounded-2xl border border-gray-100 shadow-sm">
-        <h3 className="text-gray-800 font-semibold mb-3">
-          Contribution Summary
-        </h3>
-        <List
-          dataSource={members}
-          renderItem={(m) => (
-            <List.Item>
-              <Avatar icon={<UserOutlined />} src={m.avatar} />
-              <div className="ml-3 flex-1">
-                <p className="font-medium text-gray-700">{m.fullName || m.name}</p>
-                <Progress
-                  percent={m.contribution}
-                  strokeColor={m.status === "Active" ? "#3182ED" : "#D1D5DB"}
-                  size="small"
-                  className="w-40"
-                />
-              </div>
-              <Tag
-                color={m.status === "Active" ? "blue" : "default"}
-                className="rounded-md"
-              >
-                {m.status}
-              </Tag>
-            </List.Item>
+      {/* Bottom section - 2 columns */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Contribution Summary */}
+        <Card className="!rounded-2xl !border !border-gray-100 !shadow-sm">
+          <h3 className="text-gray-800 font-semibold mb-3">
+            Contribution Summary
+          </h3>
+          <List
+            dataSource={members}
+            renderItem={(m) => (
+              <List.Item>
+                <Avatar icon={<UserOutlined />} src={m.avatar} />
+                <div className="ml-3 flex-1">
+                  <p className="font-medium text-gray-700">{m.fullName || m.name}</p>
+                  <Progress
+                    percent={m.contribution}
+                    strokeColor={m.status === "Active" ? "#3182ED" : "#D1D5DB"}
+                    size="small"
+                    className="!w-40"
+                  />
+                </div>
+              </List.Item>
+            )}
+          />
+        </Card>
+
+        {/* Recent Activity */}
+        <Card className="!rounded-2xl !border !border-gray-100 !shadow-sm">
+          <h3 className="text-gray-800 font-semibold mb-3">
+            Recent Activity
+          </h3>
+          {boardData && boardData.columns ? (
+            <List
+              dataSource={
+                Object.values(boardData.columns)
+                  .flatMap(col => col.tasks || [])
+                  .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
+                  .slice(0, 4)
+              }
+              renderItem={(task) => {
+                const assigneeName = task.assignees?.[0]?.displayName || task.assignee?.displayName || "Unassigned";
+                const taskDate = task.updatedAt || task.createdAt;
+                const relativeTime = taskDate ? getRelativeTime(taskDate) : "";
+                
+                return (
+                  <List.Item>
+                    <div className="flex items-start gap-2 w-full">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 flex-shrink-0"></span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-800 font-medium line-clamp-1">
+                          {task.title || "Untitled Task"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {assigneeName} • {relativeTime}
+                        </p>
+                      </div>
+                    </div>
+                  </List.Item>
+                );
+              }}
+            />
+          ) : (
+            <p className="text-sm text-gray-500 italic">Chưa có hoạt động gần đây</p>
           )}
-        />
-      </Card>
+        </Card>
+      </div>
     </div>
   );
+}
+
+function getRelativeTime(dateString) {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "vừa xong";
+  if (diffMins < 60) return `${diffMins} phút trước`;
+  if (diffHours < 24) return `${diffHours} giờ trước`;
+  if (diffDays < 7) return `${diffDays} ngày trước`;
+  return date.toLocaleDateString("vi-VN");
 }
