@@ -49,16 +49,33 @@ const routes = [
     element: <MainLayout />,
     children: [
       { path: "/", element: <HomePage /> },
-      { path: "/discover", element: <DiscoverGuest /> },
-      { path: "/forum", element: <Forum /> },
       { path: "/login", element: <Login /> },
-      { path: "/my-group", element: <MyGroupsPage /> },
-      { path: "/my-group/:id", element: <MyGroup /> },
-      { path: "/workspace", element: <Workspace /> },
       { path: "/profile", element: <Profile /> },
       { path: "/profile/:userId", element: <Profile /> },
-      { path: "/messages", element: <MessagesPage /> },
-      { path: "/messages/:userId", element: <MessagesPage /> },
+    ],
+  },
+
+  // Protected - Requires profile completion for students
+  {
+    element: (
+      <ProtectedRoute
+        allowedRoles={["student", "admin", "moderator", "mentor"]}
+        requiresProfile={true}
+      />
+    ),
+    children: [
+      {
+        element: <MainLayout />,
+        children: [
+          { path: "/discover", element: <DiscoverGuest /> },
+          { path: "/forum", element: <Forum /> },
+          { path: "/my-group", element: <MyGroupsPage /> },
+          { path: "/my-group/:id", element: <MyGroup /> },
+          { path: "/workspace", element: <Workspace /> },
+          { path: "/messages", element: <MessagesPage /> },
+          { path: "/messages/:userId", element: <MessagesPage /> },
+        ],
+      },
     ],
   },
 

@@ -33,6 +33,8 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
   const [skillFilter, setSkillFilter] = useState("all");
 
   useEffect(() => {
+    if (!isOpen) return; // Only run when modal is open
+
     let mounted = true;
     const loadGroupName = async () => {
       try {
@@ -54,10 +56,12 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
     return () => {
       mounted = false;
     };
-  }, [defaultGroupId]);
+  }, [defaultGroupId, isOpen]);
 
   // Fetch skills when majorName is available
   useEffect(() => {
+    if (!isOpen) return; // Only run when modal is open
+
     const fetchSkills = async () => {
       if (!majorName) {
         setAvailableSkills([]);
@@ -76,7 +80,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
     };
 
     fetchSkills();
-  }, [majorName]);
+  }, [majorName, isOpen]);
 
   const handleAddSkill = (skillToken) => {
     if (!selectedSkills.includes(skillToken)) {
