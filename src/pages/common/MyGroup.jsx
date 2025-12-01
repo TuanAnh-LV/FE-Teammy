@@ -5,12 +5,12 @@ import { useAuth } from "../../context/AuthContext";
 import { GroupService } from "../../services/group.service";
 import { BoardService } from "../../services/board.service";
 import { SkillService } from "../../services/skill.service";
+import { ReportService } from "../../services/report.service";
 import InfoCard from "../../components/common/my-group/InfoCard";
 import AddMemberModal from "../../components/common/my-group/AddMemberModal";
 import EditGroupModal from "../../components/common/my-group/EditGroupModal";
 import LoadingState from "../../components/common/LoadingState";
 import { notification } from "antd";
-import { calculateProgressFromTasks } from "../../utils/group.utils";
 import { Plus, FolderKanban, ListTodo, Flag, BarChart3 } from "lucide-react";
 import { Modal, Form, Input } from "antd";
 import TaskModal from "../../components/common/kanban/TaskModal";
@@ -57,6 +57,20 @@ export default function MyGroup() {
   const [groupFiles, setGroupFiles] = useState([]);
 
   // ---------------------------
+  // Fetch Completion Percent from API
+  // ---------------------------
+  const fetchCompletionPercent = async () => {
+    if (!id) return;
+    try {
+      const res = await ReportService.getProjectReport(id);
+      const completionPercent = res?.data?.project?.completionPercent ?? 0;
+      setGroup(prev => prev ? { ...prev, progress: completionPercent } : prev);
+    } catch (err) {
+      console.error("Failed to fetch completion percent:", err);
+    }
+  };
+
+  // ---------------------------
   // Load Group Data (without board)
   // ---------------------------
   useEffect(() => {
@@ -69,9 +83,10 @@ export default function MyGroup() {
       try {
         setLoading(true);
 
-        const [detailRes, membersRes] = await Promise.allSettled([
+        const [detailRes, membersRes, reportRes] = await Promise.allSettled([
           GroupService.getGroupDetail(id),
           GroupService.getListMembers(id),
+          ReportService.getProjectReport(id),
         ]);
 
         // Group detail
@@ -153,6 +168,12 @@ export default function MyGroup() {
             (member.role || "").toLowerCase() === "leader"
         );
 
+        // Get completion percent from API
+        const completionPercent = 
+          reportRes.status === "fulfilled" 
+            ? (reportRes.value?.data?.project?.completionPercent ?? 0)
+            : 0;
+
         setGroup({
           id: d.id || id,
           title: d.name || "",
@@ -166,7 +187,7 @@ export default function MyGroup() {
           start: rawStartDate ? rawStartDate.slice(0, 10) : "",
           end: rawEndDate ? rawEndDate.slice(0, 10) : "",
           semester: semesterLabel,
-          progress: 0, // Will be calculated when board loads
+          progress: completionPercent,
           mentor: d.mentor,
           status: d.status || "",
           statusText: d.status || "",
@@ -491,7 +512,7 @@ export default function MyGroup() {
     }
   };
 
-  // Kanban Logic
+  // Kanban Logic - Always load board data to show recent activity
   const {
     filteredColumns,
     columnMeta,
@@ -513,21 +534,23 @@ export default function MyGroup() {
     addTaskComment,
     updateTaskComment,
     deleteTaskComment,
-  } = useKanbanBoard(activeTab === "workspace" ? id : null);
+  } = useKanbanBoard(id);
 
   // Update board state when kanban data loads
   useEffect(() => {
-    if (activeTab === "workspace" && filteredColumns) {
+    if (filteredColumns) {
       const boardData = {
-        columns: Object.values(filteredColumns)
+        columns: Object.entries(filteredColumns).map(([columnId, tasks]) => ({
+          id: columnId,
+          tasks: tasks || []
+        }))
       };
       setBoard(boardData);
       
-      // Update progress
-      const calculatedProgress = calculateProgressFromTasks(boardData);
-      setGroup(prev => prev ? { ...prev, progress: calculatedProgress } : prev);
+      // Fetch progress from API instead of calculating
+      fetchCompletionPercent();
     }
-  }, [activeTab, filteredColumns]);
+  }, [filteredColumns]);
 
   const tasks =
     board?.columns?.flatMap((col) => col.tasks || [])?.filter(Boolean) || [];
@@ -729,6 +752,7 @@ export default function MyGroup() {
                     t={t}
                     showStats
                     contributionStats={contributionStats}
+                    board={board}
                   />
                 </div>
               </div>
@@ -888,6 +912,7 @@ export default function MyGroup() {
         task={selectedTask}
         groupId={id}
         members={kanbanMembers}
+        groupDetail={group}
         onUpdateTask={updateTaskFields}
         onUpdateAssignees={updateTaskAssignees}
         onDeleteTask={deleteTask}

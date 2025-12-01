@@ -156,7 +156,7 @@ const Login = () => {
         </div>
 
         <div className="text-center text-xs text-gray-400 space-y-1">
-          <p>By continuing, you agree to Teammy&apos;s terms of use.</p>
+          <p>By continuing, you agree to Teammy's terms of use.</p>
         </div>
       </div>
     </div>

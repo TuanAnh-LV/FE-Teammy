@@ -6,8 +6,9 @@ import { TopicService } from "../services/topic.service";
 import { MajorService } from "../services/major.service";
 import { BoardService } from "../services/board.service";
 import { SkillService } from "../services/skill.service";
+import { ReportService } from "../services/report.service";
 
-import { normalizeGroup, mapPendingRequest, calculateProgressFromTasks } from "../utils/group.utils";
+import { normalizeGroup, mapPendingRequest } from "../utils/group.utils";
 import { use } from "react";
 
 export const useMyGroupsPage = (t, navigate, userInfo) => {
@@ -362,20 +363,19 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       const arr = Array.isArray(res?.data) ? res.data : [];
       const normalized = arr.map((g, idx) => normalizeGroup(g, idx));
       
-      // Load board data for each group to calculate progress from tasks
+      // Load completion percent from tracking reports API for each group
       const groupsWithProgress = await Promise.all(
         normalized.map(async (group) => {
           try {
-            const boardRes = await BoardService.getBoard(group.id);
-            const boardData = boardRes?.data || null;
-            const calculatedProgress = calculateProgressFromTasks(boardData);
+            const reportRes = await ReportService.getProjectReport(group.id);
+            const completionPercent = reportRes?.data?.project?.completionPercent ?? 0;
             return {
               ...group,
-              progress: calculatedProgress,
+              progress: completionPercent,
             };
           } catch (error) {
-            console.error(`Failed to load board for group ${group.id}:`, error);
-            return group; // Return group with original progress if board fetch fails
+            console.error(`Failed to load report for group ${group.id}:`, error);
+            return group; // Return group with original progress if report fetch fails
           }
         })
       );

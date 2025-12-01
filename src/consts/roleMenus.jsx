@@ -52,12 +52,12 @@ export const getRoleMenus = (role, language = "EN") => {
         path: "/mentor/messages",
         icon: <MessageOutlined />,
       },
-      {
-        key: "notifications",
-        label: getTranslation("notifications", language),
-        path: "/mentor/notifications",
-        icon: <BellOutlined />,
-      },
+      // {
+      //   key: "notifications",
+      //   label: getTranslation("notifications", language),
+      //   path: "/mentor/notifications",
+      //   icon: <BellOutlined />,
+      // },
     ],
     admin: [
       {
