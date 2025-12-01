@@ -173,7 +173,7 @@ export default function GroupDetail() {
   ];
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen space-y-6 animate-fadeIn">
+    <div className="bg-[#f8fafc] min-h-screen space-y-6 animate-fadeIn p-8">
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
@@ -198,20 +198,13 @@ export default function GroupDetail() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-4xl font-extrabold mb-1">
+          <h1 className="text-4xl font-extrabold text-blue-600">
             {groupName} – Progress Monitoring
           </h1>
           <p className="text-gray-500 text-sm">
             {groupDescription}
           </p>
         </div>
-        <Button
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/mentor/my-groups")}
-          className="rounded-lg shadow-sm"
-        >
-          Back
-        </Button>
       </div>
 
       {/* Tabs */}
@@ -220,7 +213,7 @@ export default function GroupDetail() {
         onChange={setActiveTab}
         items={items}
         type="line"
-        className="bg-white rounded-2xl shadow-sm p-6 mt-4 !mb-0 custom-tabs"
+        className="!bg-white !rounded-2xl !shadow-sm !p-6 !mt-4 !mb-0 custom-tabs"
         tabBarStyle={{ marginBottom: 24, paddingInline: 16 }}
       />
 
@@ -228,6 +221,7 @@ export default function GroupDetail() {
         task={selectedTask}
         groupId={id}
         members={groupMembers}
+        groupDetail={groupDetail}
         columnMeta={columnMeta}
         onClose={() => setSelectedTask(null)}
         onUpdateTask={readOnlyWorkspace ? () => {} : updateTaskFields}

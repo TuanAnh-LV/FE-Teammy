@@ -58,7 +58,6 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete, onClose }) => {
     }
   }, [isOpen]);
 
-  // Fetch skills when major changes
   useEffect(() => {
     const fetchSkills = async () => {
       if (!formData.majorId) {
@@ -67,7 +66,6 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete, onClose }) => {
       }
 
       try {
-        // Find the major name from majorId
         const selectedMajor = majors.find(
           (major) => major.majorId === formData.majorId
         );
@@ -101,7 +99,6 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete, onClose }) => {
       [name]: value,
     }));
 
-    // Clear skills when major changes
     if (name === "majorId") {
       setFormData((prev) => ({
         ...prev,
@@ -111,7 +108,6 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete, onClose }) => {
       setSelectedSkills([]);
     }
 
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -202,7 +198,6 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete, onClose }) => {
     setIsSubmitting(true);
 
     try {
-      // Add skillsCompleted: true to mark profile as complete
       const payload = {
         ...formData,
         skillsCompleted: true,
@@ -273,7 +268,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete, onClose }) => {
               type="button"
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition text-white font-medium"
-              title="Logout"
+              title={t("logout") || "Logout"}
             >
               <LogOut className="w-4 h-4" />
               <span className="text-sm">{t("logout")}</span>
@@ -373,7 +368,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete, onClose }) => {
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                   >
-                    All ({availableSkills.length})
+                    {t("all") || "All"} ({availableSkills.length})
                   </button>
                   {["frontend", "backend", "mobile", "devops", "qa"].map(
                     (role) => {

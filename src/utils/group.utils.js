@@ -107,6 +107,13 @@ export const normalizeGroup = (group, idx = 0) => {
       : Math.min(100, Math.max(0, progress)),
     memberPreview: normalizedMembers,
     mentor: group.mentor?.displayName || group.mentorName || "",
+    skills: group.skills 
+      ? (Array.isArray(group.skills) 
+          ? group.skills 
+          : (typeof group.skills === 'string' 
+              ? group.skills.split(',').map(s => s.trim()).filter(Boolean)
+              : []))
+      : [],
   };
 };
 

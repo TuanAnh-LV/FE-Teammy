@@ -4,12 +4,13 @@ import { useTranslation } from "../../hook/useTranslation";
 import { useAuth } from "../../context/AuthContext";
 import { GroupService } from "../../services/group.service";
 import { BoardService } from "../../services/board.service";
+import { SkillService } from "../../services/skill.service";
+import { ReportService } from "../../services/report.service";
 import InfoCard from "../../components/common/my-group/InfoCard";
 import AddMemberModal from "../../components/common/my-group/AddMemberModal";
 import EditGroupModal from "../../components/common/my-group/EditGroupModal";
 import LoadingState from "../../components/common/LoadingState";
 import { notification } from "antd";
-import { calculateProgressFromTasks } from "../../utils/group.utils";
 import { Plus, FolderKanban, ListTodo, Flag, BarChart3 } from "lucide-react";
 import { Modal, Form, Input } from "antd";
 import TaskModal from "../../components/common/kanban/TaskModal";
@@ -42,8 +43,11 @@ export default function MyGroup() {
     maxMembers: 5,
     majorId: "",
     topicId: "",
+    skills: [],
   });
   const [editErrors, setEditErrors] = useState({});
+  const [availableSkills, setAvailableSkills] = useState([]);
+  const [skillsLoading, setSkillsLoading] = useState(false);
   const loadedGroupIdRef = useRef(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState("kanban");
@@ -53,7 +57,21 @@ export default function MyGroup() {
   const [groupFiles, setGroupFiles] = useState([]);
 
   // ---------------------------
-  // Load Group & Board Data
+  // Fetch Completion Percent from API
+  // ---------------------------
+  const fetchCompletionPercent = async () => {
+    if (!id) return;
+    try {
+      const res = await ReportService.getProjectReport(id);
+      const completionPercent = res?.data?.project?.completionPercent ?? 0;
+      setGroup(prev => prev ? { ...prev, progress: completionPercent } : prev);
+    } catch (err) {
+      console.error("Failed to fetch completion percent:", err);
+    }
+  };
+
+  // ---------------------------
+  // Load Group Data (without board)
   // ---------------------------
   useEffect(() => {
     if (!id) return;
@@ -65,10 +83,10 @@ export default function MyGroup() {
       try {
         setLoading(true);
 
-        const [detailRes, membersRes, boardRes] = await Promise.allSettled([
+        const [detailRes, membersRes, reportRes] = await Promise.allSettled([
           GroupService.getGroupDetail(id),
           GroupService.getListMembers(id),
-          BoardService.getBoard(id),
+          ReportService.getProjectReport(id),
         ]);
 
         // Group detail
@@ -150,10 +168,11 @@ export default function MyGroup() {
             (member.role || "").toLowerCase() === "leader"
         );
 
-        const boardData =
-          boardRes.status === "fulfilled" ? boardRes.value?.data : null;
-
-        const calculatedProgress = calculateProgressFromTasks(boardData);
+        // Get completion percent from API
+        const completionPercent = 
+          reportRes.status === "fulfilled" 
+            ? (reportRes.value?.data?.project?.completionPercent ?? 0)
+            : 0;
 
         setGroup({
           id: d.id || id,
@@ -168,7 +187,7 @@ export default function MyGroup() {
           start: rawStartDate ? rawStartDate.slice(0, 10) : "",
           end: rawEndDate ? rawEndDate.slice(0, 10) : "",
           semester: semesterLabel,
-          progress: calculatedProgress,
+          progress: completionPercent,
           mentor: d.mentor,
           status: d.status || "",
           statusText: d.status || "",
@@ -182,11 +201,15 @@ export default function MyGroup() {
           topicId: d.topicId || d.topic?.id || "",
           topicName:
             d.topicName || d.topic?.title || d.topic?.name || "",
+          skills: Array.isArray(d.skills) 
+            ? d.skills 
+            : (typeof d.skills === "string" && d.skills)
+              ? d.skills.split(",").map(s => s.trim()).filter(Boolean)
+              : [],
           canEdit: detailRole === "leader" || leaderFromMembers,
         });
 
         setGroupMembers(normalizedMembers);
-        setBoard(boardData);
       } catch (err) {
         console.error(err);
       } finally {
@@ -197,20 +220,24 @@ export default function MyGroup() {
     loadData();
   }, [id, userInfo]);
 
+  const loadGroupFiles = async () => {
+    if (!id) return;
+    try {
+      const res = await BoardService.getGroupFiles(id);
+      const list = Array.isArray(res?.data) ? res.data : res?.items || [];
+      setGroupFiles(list);
+    } catch (err) {
+      console.error("Failed to fetch group files", err);
+      setGroupFiles([]);
+    }
+  };
+
+  // Load files only when Files tab is active
   useEffect(() => {
-    const loadGroupFiles = async () => {
-      if (!id) return;
-      try {
-        const res = await BoardService.getGroupFiles(id);
-        const list = Array.isArray(res?.data) ? res.data : res?.items || [];
-        setGroupFiles(list);
-      } catch (err) {
-        console.error("Failed to fetch group files", err);
-        setGroupFiles([]);
-      }
-    };
-    loadGroupFiles();
-  }, [id]);
+    if (activeTab === "files") {
+      loadGroupFiles();
+    }
+  }, [id, activeTab]);
 
   useEffect(() => {
     if (group) {
@@ -243,6 +270,52 @@ export default function MyGroup() {
     return Object.keys(errors).length === 0;
   };
 
+  // Fetch skills when edit modal opens
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        setSkillsLoading(true);
+        const majorName = userInfo?.majorName || group?.field;
+        
+        const params = { pageSize: 100 };
+        if (majorName) {
+          params.major = majorName;
+        }
+        
+        const response = await SkillService.list(params);
+        const skillsList = Array.isArray(response?.data) ? response.data : [];
+        setAvailableSkills(skillsList);
+      } catch (error) {
+        console.error("Failed to fetch skills:", error);
+        setAvailableSkills([]);
+      } finally {
+        setSkillsLoading(false);
+      }
+    };
+
+    if (editOpen && group) {
+      // Parse existing skills
+      let groupSkills = [];
+      if (Array.isArray(group.skills)) {
+        groupSkills = group.skills;
+      } else if (typeof group.skills === "string" && group.skills) {
+        groupSkills = group.skills.split(",").map(s => s.trim()).filter(Boolean);
+      }
+      
+      // Update form with current group data including skills
+      setEditForm({
+        name: group.title || "",
+        description: group.description || "",
+        maxMembers: group.maxMembers || groupMembers.length || 5,
+        majorId: group.majorId || "",
+        topicId: group.topicId || "",
+        skills: groupSkills,
+      });
+      
+      fetchSkills();
+    }
+  }, [editOpen, group, groupMembers.length, userInfo?.majorName]);
+
   const handleEditChange = (field, value) => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -262,6 +335,11 @@ export default function MyGroup() {
 
       if (editForm.majorId.trim()) payload.majorId = editForm.majorId.trim();
       if (editForm.topicId.trim()) payload.topicId = editForm.topicId.trim();
+      
+      // Add skills as array
+      if (editForm.skills && editForm.skills.length > 0) {
+        payload.skills = editForm.skills;
+      }
 
       await GroupService.updateGroup(group.id, payload);
 
@@ -293,7 +371,148 @@ export default function MyGroup() {
     }
   };
 
-  // Kanban Logic
+  const handleKickMember = async (memberId, memberName) => {
+    if (!group?.id || !memberId) return;
+
+    const confirmed = window.confirm(
+      t("confirmKickMember") || `Are you sure you want to remove ${memberName} from the group?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await GroupService.kickMember(group.id, memberId);
+
+      notification.success({
+        message: t("success") || "Success",
+        description: t("memberRemovedSuccessfully") || "Member removed successfully.",
+      });
+
+      // Refresh group members
+      const membersRes = await GroupService.getListMembers(group.id);
+      const members = Array.isArray(membersRes?.data) ? membersRes.data : [];
+      
+      const normalizedMembers = members.map((m) => {
+        const email = m.email || "";
+        const normalizedEmail = email.toLowerCase();
+        const currentEmail = (userInfo?.email || "").toLowerCase();
+
+        const avatarFromApi =
+          m.avatarUrl ||
+          m.avatarURL ||
+          m.avatar_url ||
+          m.avatar ||
+          m.imageUrl ||
+          m.imageURL ||
+          m.image_url ||
+          m.photoURL ||
+          m.photoUrl ||
+          m.photo_url ||
+          m.profileImage ||
+          m.user?.avatarUrl ||
+          m.user?.avatar ||
+          m.user?.photoURL ||
+          m.user?.photoUrl ||
+          m.user?.imageUrl ||
+          m.user?.profileImage ||
+          "";
+
+        const memberId =
+          m.id || m.memberId || m.userId || m.userID || m.accountId || "";
+
+        return {
+          id: memberId,
+          name: m.displayName || m.name || "",
+          email,
+          role: m.role || m.status || "",
+          joinedAt: m.joinedAt,
+          avatarUrl:
+            avatarFromApi ||
+            (currentEmail && normalizedEmail === currentEmail
+              ? userInfo?.photoURL || ""
+              : ""),
+        };
+      });
+
+      setGroupMembers(normalizedMembers);
+    } catch (err) {
+      console.error("Error kicking member:", err);
+      notification.error({
+        message: t("error") || "Error",
+        description: t("failedToRemoveMember") || "Failed to remove member.",
+      });
+    }
+  };
+
+  const handleAssignRole = async (memberId, roleName) => {
+    if (!group?.id || !memberId || !roleName) return;
+
+    try {
+      await GroupService.assignMemberRole(group.id, memberId, roleName);
+
+      notification.success({
+        message: t("success") || "Success",
+        description: t("roleAssignedSuccessfully") || "Role assigned successfully.",
+      });
+
+      // Refresh group members to show updated role
+      const membersRes = await GroupService.getListMembers(group.id);
+      const members = Array.isArray(membersRes?.data) ? membersRes.data : [];
+      
+      const normalizedMembers = members.map((m) => {
+        const email = m.email || "";
+        const normalizedEmail = email.toLowerCase();
+        const currentEmail = (userInfo?.email || "").toLowerCase();
+
+        const avatarFromApi =
+          m.avatarUrl ||
+          m.avatarURL ||
+          m.avatar_url ||
+          m.avatar ||
+          m.imageUrl ||
+          m.imageURL ||
+          m.image_url ||
+          m.photoURL ||
+          m.photoUrl ||
+          m.photo_url ||
+          m.profileImage ||
+          m.user?.avatarUrl ||
+          m.user?.avatar ||
+          m.user?.photoURL ||
+          m.user?.photoUrl ||
+          m.user?.imageUrl ||
+          m.user?.profileImage ||
+          "";
+
+        const memberId =
+          m.id || m.memberId || m.userId || m.userID || m.accountId || "";
+
+        return {
+          id: memberId,
+          name: m.displayName || m.name || "",
+          email,
+          role: m.role || m.status || "",
+          joinedAt: m.joinedAt,
+          avatarUrl:
+            avatarFromApi ||
+            (currentEmail && normalizedEmail === currentEmail
+              ? userInfo?.photoURL || ""
+              : ""),
+        };
+      });
+
+      setGroupMembers(normalizedMembers);
+    } catch (err) {
+      console.error("Error assigning role:", err);
+      notification.error({
+        message: t("error") || "Error",
+        description: t("failedToAssignRole") || "Failed to assign role.",
+      });
+      throw err;
+    }
+  };
+
+  // Kanban Logic - Always load board data to show recent activity
   const {
     filteredColumns,
     columnMeta,
@@ -317,6 +536,22 @@ export default function MyGroup() {
     deleteTaskComment,
   } = useKanbanBoard(id);
 
+  // Update board state when kanban data loads
+  useEffect(() => {
+    if (filteredColumns) {
+      const boardData = {
+        columns: Object.entries(filteredColumns).map(([columnId, tasks]) => ({
+          id: columnId,
+          tasks: tasks || []
+        }))
+      };
+      setBoard(boardData);
+      
+      // Fetch progress from API instead of calculating
+      fetchCompletionPercent();
+    }
+  }, [filteredColumns]);
+
   const tasks =
     board?.columns?.flatMap((col) => col.tasks || [])?.filter(Boolean) || [];
 
@@ -332,11 +567,27 @@ export default function MyGroup() {
   const descriptionText = (group?.description || "").trim();
   const mentor = group?.mentor || null;
 
+  const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return "N/A";
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${kb.toFixed(2)} KB`;
+    const mb = kb / 1024;
+    return `${mb.toFixed(2)} MB`;
+  };
+
+  const getFileExtension = (fileType) => {
+    if (!fileType) return "";
+    const parts = fileType.split("/");
+    return parts.length > 1 ? parts[1].toUpperCase() : "";
+  };
+
   const fileItems = (groupFiles || []).map((f, idx) => ({
     id: f.fileId || f.id || idx,
     name: f.fileName || f.name || `File ${idx + 1}`,
+    description: f.description || f.fileName || f.name || `File ${idx + 1}`,
     owner: f.uploadedBy || f.owner || "Team",
-    size: f.size || "N/A",
+    size: formatFileSize(f.fileSize || f.size),
+    fileType: getFileExtension(f.fileType || f.type),
     url: f.fileUrl || f.downloadUrl || f.url || "#",
     date: f.createdAt ? new Date(f.createdAt) : null,
   }));
@@ -469,6 +720,7 @@ export default function MyGroup() {
                   statusMeta={statusMeta}
                   findAssignees={findAssignees}
                   renderAssignee={renderAssignee}
+                  groupSkills={group?.skills || []}
                   t={t}
                 />
                 <MembersPanel
@@ -476,6 +728,9 @@ export default function MyGroup() {
                   mentor={mentor}
                   group={group}
                   onInvite={() => setShowModal(true)}
+                  onAssignRole={handleAssignRole}
+                  onKickMember={handleKickMember}
+                  currentUserEmail={userInfo?.email}
                   t={t}
                   showStats={false}
                 />
@@ -491,9 +746,13 @@ export default function MyGroup() {
                     mentor={mentor}
                     group={group}
                     onInvite={() => setShowModal(true)}
+                    onAssignRole={handleAssignRole}
+                    onKickMember={handleKickMember}
+                    currentUserEmail={userInfo?.email}
                     t={t}
                     showStats
                     contributionStats={contributionStats}
+                    board={board}
                   />
                 </div>
               </div>
@@ -614,7 +873,12 @@ export default function MyGroup() {
 
             {/* FILES */}
             {activeTab === "files" && (
-              <FilesPanel fileItems={fileItems} t={t} />
+              <FilesPanel 
+                fileItems={fileItems} 
+                t={t} 
+                groupId={id}
+                onUploadSuccess={loadGroupFiles}
+              />
             )}
           </div>
         </div>
@@ -633,24 +897,29 @@ export default function MyGroup() {
       <EditGroupModal
         open={editOpen}
         submitting={editSubmitting}
-        formData={editForm}
+        form={editForm}
         errors={editErrors}
+        memberCount={groupMembers.length}
+        skills={availableSkills}
+        skillsLoading={skillsLoading}
         onChange={handleEditChange}
         onSubmit={handleSubmitEdit}
         onClose={() => setEditOpen(false)}
+        t={t}
       />
 
       <TaskModal
         task={selectedTask}
         groupId={id}
         members={kanbanMembers}
-        updateTaskFields={updateTaskFields}
-        updateTaskAssignees={updateTaskAssignees}
-        deleteTask={deleteTask}
-        loadComments={loadTaskComments}
-        addComment={addTaskComment}
-        updateComment={updateTaskComment}
-        deleteComment={deleteTaskComment}
+        groupDetail={group}
+        onUpdateTask={updateTaskFields}
+        onUpdateAssignees={updateTaskAssignees}
+        onDeleteTask={deleteTask}
+        onFetchComments={loadTaskComments}
+        onAddComment={addTaskComment}
+        onUpdateComment={updateTaskComment}
+        onDeleteComment={deleteTaskComment}
         onClose={() => setSelectedTask(null)}
       />
 

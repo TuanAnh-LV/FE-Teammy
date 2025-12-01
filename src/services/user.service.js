@@ -49,6 +49,14 @@ export const UserService = {
     });
   },
 
+  updateProfile(payload, isLoading = true) {
+    return BaseService.put({
+      url: API.USERS.UPDATE_PROFILE,
+      payload,
+      isLoading,
+    });
+  },
+
   getUserById(userId, isLoading = true) {
     return BaseService.get({
       url: API.USERS.GET_USER_BY_ID(userId),

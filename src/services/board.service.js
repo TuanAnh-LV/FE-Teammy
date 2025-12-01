@@ -71,10 +71,10 @@ export const BoardService = {
     });
   },
 
-  getTaskComments(groupId, taskId) {
+  getTaskComments(groupId, taskId, isLoading = true) {
     return BaseService.get({
       url: API.BOARD.LIST_COMMENTS(groupId, taskId),
-      isLoading: true,
+      isLoading,
     });
   },
 

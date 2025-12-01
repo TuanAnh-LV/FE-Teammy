@@ -163,7 +163,7 @@ const MessagesPage = () => {
           isMentorRoute ? "p-4" : ""
         }`}
       >
-        <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="flex-1 bg-white overflow-hidden">
           {selectedSession ? (
             <ChatWindow
               session={selectedSession}

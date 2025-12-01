@@ -3,8 +3,10 @@ import { X } from "lucide-react";
 import { UserService } from "../../services/user.service";
 import { MajorService } from "../../services/major.service";
 import { toast } from "react-toastify";
+import { useTranslation } from "../../hook/useTranslation";
 
 const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     displayName: "",
     phone: "",
@@ -61,13 +63,13 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
     try {
       const response = await UserService.updateMyProfile(formData);
       if (response?.data) {
-        toast.success("Profile updated successfully!");
+        toast.success(t("profileUpdatedSuccess") || "Profile updated successfully!");
         onUpdate(response.data);
         onClose();
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error("Failed to update profile. Please try again.");
+      toast.error(t("updateProfileFailed") || "Failed to update profile. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -80,7 +82,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-fadeIn">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white z-10">
-          <h2 className="text-2xl font-bold text-gray-800">Edit Profile</h2>
+          <h2 className="text-2xl font-bold text-gray-800">{t("editProfile") || "Edit Profile"}</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition"
@@ -98,7 +100,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
               htmlFor="displayName"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Display Name <span className="text-red-500">*</span>
+              {t("displayName") || "Display Name"} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -108,7 +110,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
               onChange={handleChange}
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              placeholder="Enter your display name"
+              placeholder={t("enterDisplayName") || "Enter your display name"}
             />
           </div>
 
@@ -118,7 +120,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
               htmlFor="phone"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Phone Number
+              {t("phoneNumber") || "Phone Number"}
             </label>
             <input
               type="tel"
@@ -127,7 +129,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
               value={formData.phone}
               onChange={handleChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              placeholder="Enter your phone number"
+              placeholder={t("enterPhoneNumber") || "Enter your phone number"}
             />
           </div>
 
@@ -137,7 +139,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
               htmlFor="gender"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Gender
+              {t("gender") || "Gender"}
             </label>
             <select
               id="gender"
@@ -146,10 +148,10 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
               onChange={handleChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
             >
-              <option value="">Select gender</option>
-              <option value="Nam">Nam</option>
-              <option value="Nữ">Nữ</option>
-              <option value="Khác">Khác</option>
+              <option value="">{t("selectGender") || "Select gender"}</option>
+              <option value="Nam">{t("male") || "Male"}</option>
+              <option value="Nữ">{t("female") || "Female"}</option>
+              <option value="Khác">{t("other") || "Other"}</option>
             </select>
           </div>
 
@@ -159,7 +161,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
               htmlFor="majorId"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Major
+              {t("major") || "Major"}
             </label>
             <select
               id="majorId"
@@ -168,7 +170,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
               onChange={handleChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
             >
-              <option value="">Select major</option>
+              <option value="">{t("selectMajor") || "Select major"}</option>
               {majors.map((major) => (
                 <option key={major.majorId} value={major.majorId}>
                   {major.majorName}
@@ -183,7 +185,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
               htmlFor="skills"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Skills
+              {t("skills") || "Skills"}
             </label>
             <textarea
               id="skills"
@@ -192,7 +194,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
               onChange={handleChange}
               rows={4}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none"
-              placeholder="Enter your skills (e.g., React, Node.js, Python)"
+              placeholder={t("enterSkills") || "Enter your skills"}
             />
           </div>
 
@@ -210,7 +212,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
               htmlFor="skillsCompleted"
               className="ml-2 text-sm font-medium text-gray-700"
             >
-              Mark skills section as completed
+              {t("markSkillsCompleted") || "Mark skills section as completed"}
             </label>
           </div>
 
@@ -222,14 +224,14 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
               disabled={isSubmitting}
               className="flex-1 px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
             >
-              Cancel
+              {t("cancel") || "Cancel"}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
               className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? "Saving..." : "Save Changes"}
+              {isSubmitting ? (t("saving") || "Saving...") : (t("saveChanges") || "Save Changes")}
             </button>
           </div>
         </form>

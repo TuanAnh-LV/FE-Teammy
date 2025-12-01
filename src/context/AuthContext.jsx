@@ -22,6 +22,7 @@ const normalizeUserInfo = (raw) => {
     phone: raw.phone || "",
     gender: raw.gender || "",
     majorId: raw.majorId || "",
+    majorName: raw.majorName || "",
     skills: raw.skills || "",
     photoURL:
       raw.avatarUrl || raw.avatarURL || raw.photoURL || raw.photoUrl || "",

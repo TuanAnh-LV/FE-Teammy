@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { MajorService } from "../../../services/major.service";
 import { notification } from "antd";
+import { useTranslation } from "../../../hook/useTranslation";
 
 const FilterSidebar = ({ onFilterChange }) => {
+  const { t } = useTranslation();
   const [majors, setMajors] = useState([]);
   const [selectedMajor, setSelectedMajor] = useState("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
@@ -19,8 +21,8 @@ const FilterSidebar = ({ onFilterChange }) => {
       } catch (err) {
         console.error("Failed to fetch majors:", err);
         notification.error({
-          message: "Failed to load majors",
-          description: "Could not load major categories",
+          message: t("failedLoadMajors") || "Failed to load majors",
+          description: t("couldNotLoadMajors") || "Could not load major categories",
         });
       }
     };
@@ -47,12 +49,12 @@ const FilterSidebar = ({ onFilterChange }) => {
   return (
     <div className="!bg-white !rounded-2xl !shadow-md !border !border-gray-100 !p-7 !w-full !max-w-[340px] !mx-auto">
       {/* Title */}
-      <h3 className="!text-lg !font-bold !text-gray-900 !mb-5">Filters</h3>
+      <h3 className="!text-lg !font-bold !text-gray-900 !mb-5">{t("filters") || "Filters"}</h3>
 
       {/* AI Recommended */}
       <div className="!flex !items-center !justify-between !mb-5">
         <span className="!text-sm !text-gray-700 !font-medium">
-          AI Recommended
+          {t("aiRecommended") || "AI Recommended"}
         </span>
         <label className="!relative !inline-flex !items-center !cursor-pointer">
           <input
@@ -70,7 +72,7 @@ const FilterSidebar = ({ onFilterChange }) => {
 
       {/* Major */}
       <div className="!mb-6">
-        <h4 className="!font-semibold !text-sm !text-gray-800 !mb-3">Major</h4>
+        <h4 className="!font-semibold !text-sm !text-gray-800 !mb-3">{t("major") || "Major"}</h4>
         <div className="!space-y-2">
           <label className="!flex !items-center !space-x-2 !text-gray-700 !text-sm">
             <input
@@ -81,7 +83,7 @@ const FilterSidebar = ({ onFilterChange }) => {
               onChange={(e) => setSelectedMajor(e.target.value)}
               className="!text-blue-600 focus:!ring-blue-500"
             />
-            <span>All Majors</span>
+            <span>{t("allMajors") || "All Majors"}</span>
           </label>
           {majors.map((major) => (
             <label
@@ -107,7 +109,7 @@ const FilterSidebar = ({ onFilterChange }) => {
       {/* Difficulty */}
       <div className="!mb-6">
         <h4 className="!font-semibold !text-sm !text-gray-800 !mb-3">
-          Difficulty
+          {t("difficulty") || "Difficulty"}
         </h4>
         <div className="!space-y-2">
           {["all", "beginner", "intermediate", "advanced"].map((opt) => (
@@ -125,8 +127,8 @@ const FilterSidebar = ({ onFilterChange }) => {
               />
               <span>
                 {opt === "all"
-                  ? "All Levels"
-                  : opt.charAt(0).toUpperCase() + opt.slice(1)}
+                  ? t("allLevels") || "All Levels"
+                  : t(opt) || opt.charAt(0).toUpperCase() + opt.slice(1)}
               </span>
             </label>
           ))}
@@ -138,14 +140,14 @@ const FilterSidebar = ({ onFilterChange }) => {
       {/* Team Size */}
       <div>
         <h4 className="!font-semibold !text-sm !text-gray-800 !mb-3">
-          Team Size
+          {t("teamSize") || "Team Size"}
         </h4>
         <div className="!space-y-2">
           {[
-            { value: "all", label: "Any Size" },
-            { value: "2-4", label: "2-4 members" },
-            { value: "5-8", label: "5-8 members" },
-            { value: "9+", label: "9+ members" },
+            { value: "all", label: t("anySize") || "Any Size" },
+            { value: "2-4", label: t("size2to4") || "2-4 members" },
+            { value: "5-8", label: t("size5to8") || "5-8 members" },
+            { value: "9+", label: t("size9plus") || "9+ members" },
           ].map((opt) => (
             <label
               key={opt.value}
