@@ -16,8 +16,8 @@ const asRoleList = (role) => {
   return [normalizeRole(role)];
 };
 
-const ProtectedRoute = ({ allowedRoles = [] }) => {
-  const { role } = useAuth(); // Retrieve user role from auth context
+const ProtectedRoute = ({ allowedRoles = [], requiresProfile = false }) => {
+  const { role, userInfo } = useAuth();
 
   const userRoles = asRoleList(role);
 
@@ -28,6 +28,18 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
 
   const ok = userRoles.some((r) => allowed.includes(r));
   if (!ok) return <Navigate to="/unauthorize" replace />;
+
+  // Check profile completion if required
+  const roleNormalized = role?.toLowerCase();
+  const isStaffRole = ["admin", "moderator", "mentor"].includes(roleNormalized);
+  const needsProfileComplete =
+    requiresProfile && !isStaffRole && !userInfo?.skillsCompleted;
+
+  // If student needs to complete profile, redirect to home
+  // (Home component will show the modal)
+  if (needsProfileComplete) {
+    return <Navigate to="/" replace />;
+  }
 
   return <Outlet />;
 };

@@ -41,6 +41,7 @@ const Home = () => {
         isOpen={showCompleteProfile}
         profileData={userInfo}
         onComplete={handleProfileComplete}
+        onClose={() => setShowCompleteProfile(false)}
       />
     </div>
   );
