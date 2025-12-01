@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { BarChart3, TrendingUp, CheckCircle2, Clock, AlertTriangle, Target } from "lucide-react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import { BarChart3, TrendingUp, CheckCircle2, Clock, AlertTriangle, Target, Calendar, Circle } from "lucide-react";
+import { Progress } from "antd";
 import dayjs from "dayjs";
 import { ReportService } from "../../../services/report.service";
 import { useTranslation } from "../../../hook/useTranslation";
@@ -9,6 +10,7 @@ export default function ReportsTab({ groupId }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const fetchedRef = useRef(null);
 
   const fetchReport = async () => {
     if (!groupId) return;
@@ -26,6 +28,8 @@ export default function ReportsTab({ groupId }) {
   };
 
   useEffect(() => {
+    if (!groupId || fetchedRef.current === groupId) return;
+    fetchedRef.current = groupId;
     fetchReport();
   }, [groupId]);
 
@@ -34,6 +38,46 @@ export default function ReportsTab({ groupId }) {
   const columns = data?.tasks?.columns || [];
   const milestones = data?.tasks?.milestones || [];
   const team = data?.team || {};
+
+  // Extract all backlog items from milestones
+  const allBacklogItems = useMemo(() => {
+    const items = [];
+    milestones.forEach((m) => {
+      (m.items || []).forEach((item) => {
+        items.push({
+          ...item,
+          milestoneName: m.name,
+          milestoneId: m.milestoneId,
+        });
+      });
+    });
+    return items;
+  }, [milestones]);
+
+  const completedItems = useMemo(
+    () => allBacklogItems.filter((item) => (item.status || "").toLowerCase() === "completed"),
+    [allBacklogItems]
+  );
+
+  const overdueItems = useMemo(() => {
+    const now = dayjs();
+    return allBacklogItems.filter((item) => {
+      if ((item.status || "").toLowerCase() === "completed") return false;
+      if (!item.dueDate) return false;
+      return dayjs(item.dueDate).isBefore(now, "day") || dayjs(item.dueDate).isSame(now, "day");
+    });
+  }, [allBacklogItems]);
+
+  const dueSoonItems = useMemo(() => {
+    const now = dayjs();
+    const next7Days = now.add(7, "day");
+    return allBacklogItems.filter((item) => {
+      if ((item.status || "").toLowerCase() === "completed") return false;
+      if (!item.dueDate) return false;
+      const due = dayjs(item.dueDate);
+      return due.isAfter(now, "day") && (due.isBefore(next7Days, "day") || due.isSame(next7Days, "day"));
+    });
+  }, [allBacklogItems]);
 
   const metricCards = useMemo(
     () => [
@@ -45,17 +89,17 @@ export default function ReportsTab({ groupId }) {
       {
         icon: <CheckCircle2 className="w-5 h-5 text-emerald-600" />,
         label: t("tasksCompleted") || "Tasks Completed",
-        value: backlog.completed ?? 0,
+        value: project.completedItems ?? 0,
       },
       {
         icon: <TrendingUp className="w-5 h-5 text-orange-500" />,
         label: t("dueSoon") || "Due soon",
-        value: backlog.dueSoon ?? 0,
+        value: project.dueSoonItems ?? 0,
       },
       {
         icon: <AlertTriangle className="w-5 h-5 text-red-500" />,
         label: t("overdue") || "Overdue",
-        value: backlog.overdue ?? 0,
+        value: project.overdueItems ?? 0,
       },
       {
         icon: <Clock className="w-5 h-5 text-gray-600" />,
@@ -63,7 +107,7 @@ export default function ReportsTab({ groupId }) {
         value: backlog.remaining ?? 0,
       },
     ],
-    [project.completionPercent, backlog, t]
+    [project, backlog.remaining, t]
   );
 
   if (loading) {
@@ -208,10 +252,155 @@ export default function ReportsTab({ groupId }) {
             )}
           </div>
         </div>
+
+        <div className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm">
+          <h4 className="font-semibold text-gray-900 mb-3">
+            {t("projectOverview") || "Project Overview"}
+          </h4>
+          <div className="space-y-3 text-sm">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-gray-600">{t("overallProgress") || "Overall Progress"}</span>
+                <span className="font-semibold text-gray-900">{project.completionPercent ?? 0}%</span>
+              </div>
+              <Progress percent={project.completionPercent ?? 0} showInfo={false} />
+            </div>
+            <InfoRow label={t("totalItems") || "Total items"} value={project.totalItems} />
+            <InfoRow label={t("completedItems") || "Completed items"} value={project.completedItems} />
+            <InfoRow label={t("activeItems") || "Active items"} value={project.activeItems} />
+            <InfoRow label={t("blockedItems") || "Blocked items"} value={project.blockedItems} />
+            <InfoRow label={t("overdueItems") || "Overdue items"} value={project.overdueItems} />
+            <InfoRow label={t("dueSoonItems") || "Due soon items"} value={project.dueSoonItems} />
+          </div>
+        </div>
+      </div>
+
+      {/* Task Details Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Completed Tasks */}
+        <div className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            <h4 className="font-semibold text-gray-900">
+              {t("completedTasks") || "Completed Tasks"}
+            </h4>
+            <span className="ml-auto text-sm font-semibold text-emerald-600">
+              {completedItems.length}
+            </span>
+          </div>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {completedItems.length > 0 ? (
+              completedItems.map((item) => (
+                <TaskItem
+                  key={item.backlogItemId}
+                  item={item}
+                  statusColor="text-emerald-600"
+                  icon={<CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                />
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-4">
+                {t("noCompletedTasks") || "No completed tasks"}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Overdue Tasks */}
+        <div className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+            <h4 className="font-semibold text-gray-900">
+              {t("overdueTasks") || "Overdue Tasks"}
+            </h4>
+            <span className="ml-auto text-sm font-semibold text-red-600">
+              {overdueItems.length}
+            </span>
+          </div>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {overdueItems.length > 0 ? (
+              overdueItems.map((item) => (
+                <TaskItem
+                  key={item.backlogItemId}
+                  item={item}
+                  statusColor="text-red-600"
+                  icon={<AlertTriangle className="w-4 h-4 text-red-500" />}
+                  showDueDate
+                />
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-4">
+                {t("noOverdueTasks") || "No overdue tasks"}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Due Soon Tasks */}
+        <div className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="w-5 h-5 text-orange-600" />
+            <h4 className="font-semibold text-gray-900">
+              {t("dueSoonTasks") || "Due Soon Tasks"}
+            </h4>
+            <span className="ml-auto text-sm font-semibold text-orange-600">
+              {dueSoonItems.length}
+            </span>
+          </div>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {dueSoonItems.length > 0 ? (
+              dueSoonItems.map((item) => (
+                <TaskItem
+                  key={item.backlogItemId}
+                  item={item}
+                  statusColor="text-orange-600"
+                  icon={<Clock className="w-4 h-4 text-orange-500" />}
+                  showDueDate
+                />
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-4">
+                {t("noDueSoonTasks") || "No due soon tasks"}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
+const TaskItem = ({ item, statusColor, icon, showDueDate = false }) => (
+  <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+    <div className="flex items-start gap-2">
+      {icon}
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium text-gray-900 truncate">
+          {item.title || "Untitled task"}
+        </div>
+        {item.milestoneName && (
+          <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+            <Target className="w-3 h-3" />
+            <span className="truncate">{item.milestoneName}</span>
+          </div>
+        )}
+        {showDueDate && item.dueDate && (
+          <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+            <Calendar className="w-3 h-3" />
+            <span>{formatDate(item.dueDate)}</span>
+          </div>
+        )}
+        {item.columnName && (
+          <div className="mt-1 text-xs text-gray-500">
+            <span className="px-2 py-0.5 bg-white rounded border border-gray-200">
+              {item.columnName}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
 
 const InfoRow = ({ label, value }) => (
   <div className="flex items-center justify-between">

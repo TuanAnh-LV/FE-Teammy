@@ -120,5 +120,21 @@ export const GroupService = {
       isLoading: true,
     });
   },
+
+  assignMemberRole(groupId, memberId, roleName) {
+    return BaseService.post({
+      url: API.GROUP.ASSIGN_ROLE(groupId, memberId),
+      payload: { roleName },
+      isLoading: true,
+    });
+  },
+
+  updateMemberRole(groupId, memberId, roleName) {
+    return BaseService.put({
+      url: API.GROUP.ASSIGN_ROLE(groupId, memberId),
+      payload: { roleName },
+      isLoading: true,
+    });
+  },
 };
 

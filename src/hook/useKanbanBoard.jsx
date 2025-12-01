@@ -275,23 +275,41 @@ export function useKanbanBoard(groupId) {
   };
 
   useEffect(() => {
-    commentsLoadedRef.current = false;
+    if (!groupId) {
+      // Reset state when groupId is null
+      setColumns({});
+      setColumnMeta({});
+      setGroupMembers([]);
+      setSelectedTask(null);
+      commentsLoadedRef.current = null;
+      return;
+    }
+    
+    // Only load if groupId changed
+    if (commentsLoadedRef.current === groupId) return;
+    
+    commentsLoadedRef.current = groupId;
     fetchBoard();
     fetchGroupMembers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId]);
 
-  // Auto-load comments for all tasks when board data is available (only once)
+  // Load comments only once after both columns and members are ready
   useEffect(() => {
     const hasColumns = columns && typeof columns === "object" && Object.keys(columns).length > 0;
     const hasMembers = groupMembers && groupMembers.length > 0;
+    const isCurrentGroup = commentsLoadedRef.current === groupId;
     
-    if (hasColumns && hasMembers && !commentsLoadedRef.current) {
-      commentsLoadedRef.current = true;
-      loadAllTasksComments(columns);
+    if (hasColumns && hasMembers && isCurrentGroup && groupId) {
+      // Use a flag to track if comments were already loaded for this data
+      const columnsKey = JSON.stringify(Object.keys(columns).sort());
+      if (commentsLoadedRef.columnsKey !== columnsKey) {
+        commentsLoadedRef.columnsKey = columnsKey;
+        loadAllTasksComments();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [columns, groupMembers]);
+  }, [columns, groupMembers, groupId]);
 
   useEffect(() => {
     if (!groupMembers || groupMembers.length === 0) return;
@@ -644,33 +662,33 @@ export function useKanbanBoard(groupId) {
     }
   };
 
-  const loadAllTasksComments = async (columnsData) => {
+  const loadAllTasksComments = async () => {
     if (!groupId) return;
-    const data = columnsData || columns;
-    if (!data || typeof data !== "object") return;
     
     const taskIds = [];
-    Object.values(data).forEach((tasks) => {
+    
+    // Get task IDs from current columns state
+    Object.values(columns).forEach((tasks) => {
       if (Array.isArray(tasks)) {
         tasks.forEach((task) => {
-          if (task?.id) {
+          if (task?.id && !task?.id?.startsWith('temp-')) {
             taskIds.push(task.id);
           }
         });
       }
     });
     
-    // Load comments for all tasks in parallel
+    // Load comments for all tasks in parallel (only once)
     if (taskIds.length > 0) {
-      const promises = taskIds.map((taskId) =>
-        loadTaskComments(taskId).catch((err) => {
-          console.error(`Failed to load comments for task ${taskId}:`, err);
-          return [];
-        })
-      );
-      
       try {
-        await Promise.all(promises);
+        await Promise.all(
+          taskIds.map((taskId) =>
+            loadTaskComments(taskId).catch((err) => {
+              console.error(`Failed to load comments for task ${taskId}:`, err);
+              return [];
+            })
+          )
+        );
       } catch (err) {
         console.error("Error loading all task comments:", err);
       }

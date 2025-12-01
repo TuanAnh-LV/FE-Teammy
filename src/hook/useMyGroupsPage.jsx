@@ -5,11 +5,12 @@ import { GroupService } from "../services/group.service";
 import { TopicService } from "../services/topic.service";
 import { MajorService } from "../services/major.service";
 import { BoardService } from "../services/board.service";
+import { SkillService } from "../services/skill.service";
 
 import { normalizeGroup, mapPendingRequest, calculateProgressFromTasks } from "../utils/group.utils";
 import { use } from "react";
 
-export const useMyGroupsPage = (t, navigate) => {
+export const useMyGroupsPage = (t, navigate, userInfo) => {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("groups");
@@ -26,6 +27,7 @@ export const useMyGroupsPage = (t, navigate) => {
     maxMembers: 5,
     majorId: "",
     topicId: "",
+    skills: [],
   });
   const [errors, setErrors] = useState({});
   const [topicModalGroup, setTopicModalGroup] = useState(null);
@@ -36,6 +38,8 @@ export const useMyGroupsPage = (t, navigate) => {
   const [topicSearch, setTopicSearch] = useState("");
   const [majors, setMajors] = useState([]);
   const [majorsLoading, setMajorsLoading] = useState(false);
+  const [skills, setSkills] = useState([]);
+  const [skillsLoading, setSkillsLoading] = useState(false);
   const [board, setBoard] = useState(null);
   const [loadingBoard, setLoadingBoard] = useState(false);
   const hasFetchedGroupsRef = useRef(false);
@@ -91,6 +95,7 @@ export const useMyGroupsPage = (t, navigate) => {
       maxMembers: 5,
       majorId: "",
       topicId: "",
+      skills: [],
     });
     setErrors({});
     setSubmitting(false);
@@ -119,6 +124,9 @@ export const useMyGroupsPage = (t, navigate) => {
         description: form.description.trim(),
         maxMembers: Number(form.maxMembers) || 1,
       };
+      if (form.skills && form.skills.length > 0) {
+        payload.skills = form.skills;
+      }
       const res = await GroupService.createGroup(payload);
       if (res?.data) {
         notification.success({ message: t("success") || "Group created!" });
@@ -416,7 +424,42 @@ export const useMyGroupsPage = (t, navigate) => {
     if (majorsFetchLock.current) return;
     majorsFetchLock.current = true;
     fetchMajors();
+    fetchSkills();
   }, [open]);
+
+  const fetchSkills = async () => {
+    try {
+      setSkillsLoading(true);
+      const userMajor = userInfo?.majorName || "Software Engineering";
+      const params = {
+        major: userMajor,
+        pageSize: 100
+      };
+      const response = await SkillService.list(params, false);
+      console.log("Skills API full response:", response);
+      console.log("response.data:", response?.data);
+      console.log("response.data type:", typeof response?.data);
+      
+      // Try different possible structures
+      let data = [];
+      if (Array.isArray(response?.data)) {
+        data = response.data;
+      } else if (response?.data?.data && Array.isArray(response.data.data)) {
+        data = response.data.data;
+      } else if (response?.data?.items && Array.isArray(response.data.items)) {
+        data = response.data.items;
+      }
+      
+      console.log("Final parsed skills:", data);
+      console.log("First skill sample:", data[0]);
+      setSkills(data);
+    } catch (error) {
+      console.error("Error fetching skills:", error);
+      setSkills([]);
+    } finally {
+      setSkillsLoading(false);
+    }
+  };
 
   const activeApplications = Object.entries(pendingByGroup).filter(
     ([, list]) => Array.isArray(list) && list.length > 0
@@ -446,6 +489,8 @@ export const useMyGroupsPage = (t, navigate) => {
     topicSearch,
     majors,
     majorsLoading,
+    skills,
+    skillsLoading,
     board,
     loadingBoard,
 

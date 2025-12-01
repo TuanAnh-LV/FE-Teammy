@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Plus, MoreVertical, ArrowRight } from "lucide-react";
 import {
   Modal,
@@ -67,6 +67,7 @@ export default function BacklogTab({
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(defaultForm);
   const [editingId, setEditingId] = useState(null);
+  const fetchedRef = useRef(null);
 
   const memberMap = useMemo(() => {
     const map = new Map();
@@ -97,10 +98,8 @@ export default function BacklogTab({
   }, [columnOptions]);
 
   useEffect(() => {
-    // no-op: default column used for quick promote
-  }, [defaultColumnId]);
-
-  useEffect(() => {
+    if (!groupId || fetchedRef.current === groupId) return;
+    fetchedRef.current = groupId;
     fetchItems();
   }, [groupId]);
 
@@ -284,10 +283,32 @@ export default function BacklogTab({
     return "bg-green-100 text-green-700";
   };
 
-  const statusTone = (value) => {
-    const key = normalizeKey(value);
-    if (key === "in_progress") return "bg-blue-100 text-blue-700";
-    if (key === "done") return "bg-green-100 text-green-700";
+  const statusTone = (item) => {
+    // Use columnMeta to determine if status is done
+    const columnId = item?.columnId;
+    const column = columnId ? columnMeta[columnId] : null;
+    
+    // Done column - green
+    if (column?.isDone) {
+      return "bg-emerald-100 text-emerald-700";
+    }
+    
+    // If item is linked to a task (in sprint), determine color by position
+    if (item?.linkedTaskId && column) {
+      const allColumns = Object.values(columnMeta).sort((a, b) => (a.position || 0) - (b.position || 0));
+      const nonDoneColumns = allColumns.filter(col => !col.isDone);
+      const positionInNonDone = nonDoneColumns.findIndex(col => col.columnId === columnId);
+      
+      if (positionInNonDone === 0) {
+        return "bg-gray-100 text-gray-700"; // First column (To Do)
+      } else if (positionInNonDone === 1) {
+        return "bg-blue-100 text-blue-700"; // Second column (In Progress)
+      } else {
+        return "bg-indigo-100 text-indigo-700"; // Other columns
+      }
+    }
+    
+    // Not in sprint yet - default gray
     return "bg-gray-100 text-gray-700";
   };
 
@@ -300,14 +321,8 @@ export default function BacklogTab({
     [items]
   );
 
-  // Hide items that are already promoted/ready
-  const visibleItems = useMemo(
-    () =>
-      (items || []).filter(
-        (item) => normalizeKey(item?.status) !== "ready"
-      ),
-    [items]
-  );
+  // Show all items including promoted ones
+  const visibleItems = useMemo(() => items || [], [items]);
 
   const renderOwnerAvatar = (ownerId) => {
     const member = memberMap.get(String(ownerId));
@@ -419,11 +434,9 @@ export default function BacklogTab({
                       {item?.category || "feature"}
                     </span>
                     <span
-                      className={`text-xs px-2 py-1 rounded-full ${statusTone(
-                        item?.status
-                      )}`}
+                      className={`text-xs px-2 py-1 rounded-full ${statusTone(item)}`}
                     >
-                      {item?.status || "todo"}
+                      {(item?.status || "todo").toUpperCase().replace(/_/g, " ")}
                     </span>
                     <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
                       {t("dueDate") || "Due"}: {formatDate(item?.dueDate)}
@@ -438,13 +451,20 @@ export default function BacklogTab({
                   <div className="flex items-center justify-between">
                     <div>{renderOwnerAvatar(ownerId)}</div>
                     {!readOnly && (
-                      <button
-                        onClick={() => handlePromote(item)}
-                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-gray-200 hover:border-emerald-200 hover:bg-emerald-50 text-gray-700"
-                      >
-                        <ArrowRight className="w-4 h-4" />
-                        {t("moveToSprint") || "Move to Sprint"}
-                      </button>
+                      item?.linkedTaskId ? (
+                        <span className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <ArrowRight className="w-4 h-4" />
+                          {t("alreadyInSprint") || "Already in Sprint"}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handlePromote(item)}
+                          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border border-gray-200 hover:border-emerald-200 hover:bg-emerald-50 text-gray-700"
+                        >
+                          <ArrowRight className="w-4 h-4" />
+                          {t("moveToSprint") || "Move to Sprint"}
+                        </button>
+                      )
                     )}
                   </div>
                 </div>

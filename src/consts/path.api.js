@@ -48,6 +48,8 @@ export const API = {
     INVITE_MENTOR: (groupId) => `/groups/${groupId}/mentor-invites`,
     REMOVE_MEMBER: (groupId, memberId) =>
       `/groups/${groupId}/members/${memberId}`,
+    ASSIGN_ROLE: (groupId, memberId) =>
+      `/groups/${groupId}/members/${memberId}/roles`,
     JOIN_REQUESTS: (groupId) => `/groups/${groupId}/join-requests`,
     PENDING_REQUESTS: (groupId) => `/groups/${groupId}/pending`,
     ACCEPT_JOIN: (groupId, requestId) =>
