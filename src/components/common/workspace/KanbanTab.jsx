@@ -57,8 +57,9 @@ export default function KanbanTab({
       onDragEnd={handleDragEnd}
     >
       {hasKanbanData ? (
-        <div className="mt-4 flex justify-center gap-6 overflow-x-auto pb-2 px-1 sm:px-0">
-          {Object.entries(columnMeta || {})
+        <div className="mt-4 max-w-full overflow-x-auto pb-2 px-1 sm:px-0 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
+          <div className="flex gap-6 min-w-min">
+            {Object.entries(columnMeta || {})
             .sort((a, b) => (a[1]?.position || 0) - (b[1]?.position || 0))
             .map(([colId, meta]) => {
               const normalizedTitleValue = normalizeTitle(
@@ -109,6 +110,7 @@ export default function KanbanTab({
                 />
               );
             })}
+          </div>
         </div>
       ) : (
         <div className="mt-4 text-gray-500">

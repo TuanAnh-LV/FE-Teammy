@@ -198,7 +198,7 @@ export default function MentorDashboard() {
               <Users className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Tổng số nhóm</p>
+              <p className="text-sm text-gray-500">{t("totalGroupsLabel")}</p>
               <h2 className="text-2xl font-semibold">{stats.totalGroups}</h2>
             </div>
           </div>
@@ -222,7 +222,7 @@ export default function MentorDashboard() {
               <TrendingUp className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Tiến độ trung bình</p>
+              <p className="text-sm text-gray-500">{t("averageProgress")}</p>
               <h2 className="text-2xl font-semibold">{stats.avgProgress}%</h2>
             </div>
           </div>
@@ -250,7 +250,7 @@ export default function MentorDashboard() {
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-blue-500" />
                 <span className="font-semibold text-gray-800 text-lg">
-                  Các nhóm đang hướng dẫn
+                  {t("groupsBeingMentored")}
                 </span>
               </div>
             }
@@ -273,7 +273,7 @@ export default function MentorDashboard() {
             ) : mentoringGroups.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <Users className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                <p>Chưa có nhóm nào đang hướng dẫn</p>
+                <p>{t("noGroupsBeingMentored")}</p>
               </div>
             ) : (
               mentoringGroups.map((group) => {
