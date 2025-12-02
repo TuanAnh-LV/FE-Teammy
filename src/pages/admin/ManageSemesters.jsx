@@ -56,7 +56,7 @@ const ManageSemesters = () => {
       const data = response?.data || [];
       setSemesters(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Failed to fetch semesters:", error);
+
       notification.error({
         message: t("error") || "Error",
         description: t("failedToFetchSemesters") || "Failed to fetch semesters",
@@ -123,7 +123,7 @@ const ManageSemesters = () => {
           });
           fetchSemesters();
         } catch (error) {
-          console.error("Failed to activate semester:", error);
+
           notification.error({
             message: t("failedToActivate") || "Failed to activate semester",
           });
@@ -150,7 +150,7 @@ const ManageSemesters = () => {
       });
       setIsPolicyModalOpen(true);
     } catch (error) {
-      console.error("Failed to fetch policy:", error);
+
       notification.error({
         message: t("error") || "Error",
         description: t("failedToFetchPolicy") || "Failed to fetch policy",
@@ -188,7 +188,7 @@ const ManageSemesters = () => {
       fetchSemesters();
       form.resetFields();
     } catch (error) {
-      console.error("Failed to save semester:", error);
+
       notification.error({
         message: t("error") || "Error",
         description: t("failedToSaveSemester") || "Failed to save semester",
@@ -219,7 +219,7 @@ const ManageSemesters = () => {
       setIsPolicyModalOpen(false);
       policyForm.resetFields();
     } catch (error) {
-      console.error("Failed to update policy:", error);
+
       notification.error({
         message: t("error") || "Error",
         description: t("failedToUpdatePolicy") || "Failed to update policy",
@@ -563,3 +563,4 @@ const ManageSemesters = () => {
 };
 
 export default ManageSemesters;
+

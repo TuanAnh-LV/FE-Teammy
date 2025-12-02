@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "../../hook/useTranslation";
 import { useAuth } from "../../context/AuthContext";
@@ -66,7 +66,7 @@ export default function MyGroup() {
       const completionPercent = res?.data?.project?.completionPercent ?? 0;
       setGroup(prev => prev ? { ...prev, progress: completionPercent } : prev);
     } catch (err) {
-      console.error("Failed to fetch completion percent:", err);
+
     }
   };
 
@@ -212,7 +212,7 @@ export default function MyGroup() {
 
         setGroupMembers(normalizedMembers);
       } catch (err) {
-        console.error(err);
+
       } finally {
         setLoading(false);
       }
@@ -228,7 +228,7 @@ export default function MyGroup() {
       const list = Array.isArray(res?.data) ? res.data : res?.items || [];
       setGroupFiles(list);
     } catch (err) {
-      console.error("Failed to fetch group files", err);
+
       setGroupFiles([]);
     }
   };
@@ -287,7 +287,7 @@ export default function MyGroup() {
         const skillsList = Array.isArray(response?.data) ? response.data : [];
         setAvailableSkills(skillsList);
       } catch (error) {
-        console.error("Failed to fetch skills:", error);
+
         setAvailableSkills([]);
       } finally {
         setSkillsLoading(false);
@@ -363,7 +363,7 @@ export default function MyGroup() {
 
       setEditOpen(false);
     } catch (err) {
-      console.error(err);
+
       notification.error({
         message: t("error") || "Failed to update group.",
       });
@@ -437,7 +437,7 @@ export default function MyGroup() {
 
       setGroupMembers(normalizedMembers);
     } catch (err) {
-      console.error("Error kicking member:", err);
+
       notification.error({
         message: t("error") || "Error",
         description: t("failedToRemoveMember") || "Failed to remove member.",
@@ -504,7 +504,7 @@ export default function MyGroup() {
 
       setGroupMembers(normalizedMembers);
     } catch (err) {
-      console.error("Error assigning role:", err);
+
       notification.error({
         message: t("error") || "Error",
         description: t("failedToAssignRole") || "Failed to assign role.",
@@ -964,3 +964,4 @@ export default function MyGroup() {
     </div>
   );
 }
+

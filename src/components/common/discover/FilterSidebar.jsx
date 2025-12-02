@@ -19,7 +19,7 @@ const FilterSidebar = ({ onFilterChange }) => {
         const list = Array.isArray(payload) ? payload : payload?.data ?? [];
         setMajors(list || []);
       } catch (err) {
-        console.error("Failed to fetch majors:", err);
+
         notification.error({
           message: t("failedLoadMajors") || "Failed to load majors",
           description: t("couldNotLoadMajors") || "Could not load major categories",
@@ -171,3 +171,4 @@ const FilterSidebar = ({ onFilterChange }) => {
 };
 
 export default FilterSidebar;
+

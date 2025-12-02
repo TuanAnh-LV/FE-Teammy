@@ -20,7 +20,7 @@ export default function ReportsTab({ groupId }) {
       const res = await ReportService.getProjectReport(groupId);
       setData(res?.data ?? res);
     } catch (err) {
-      console.error(err);
+
       setError(t("failedLoadReport") || "Failed to load report");
     } finally {
       setLoading(false);
@@ -414,3 +414,4 @@ const formatDate = (value) => {
   const d = dayjs(value);
   return d.isValid() ? d.format("DD/MM/YYYY") : "--";
 };
+

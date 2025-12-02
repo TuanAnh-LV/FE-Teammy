@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
       const parsed = JSON.parse(storedUserInfo);
       return normalizeUserInfo(parsed);
     } catch (error) {
-      console.error("Failed to parse userInfo from localStorage:", error);
+
       return null;
     }
   });
@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem("userInfo");
       }
     } catch (error) {
-      console.error("Failed to update userInfo in localStorage:", error);
+
     }
   }, [userInfo]);
 
@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }) => {
 
       return user;
     } catch (error) {
-      console.error("Failed to login with Google:", error);
+
       throw error instanceof HttpException
         ? error
         : new HttpException(
@@ -126,7 +126,7 @@ export const AuthProvider = ({ children }) => {
 
       return normalized;
     } catch (error) {
-      console.error("Failed to get user info:", error);
+
       throw error instanceof HttpException
         ? error
         : new HttpException(
@@ -182,3 +182,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

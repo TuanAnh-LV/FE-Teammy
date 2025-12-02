@@ -64,7 +64,7 @@ export default function ImportStep2MappingTopic({
         });
       }
     } catch (err) {
-      console.error(err);
+
       notification.error({
         message: t("validationFailed") || "Validation Failed",
         description: err?.response?.data?.message || t("pleaseTryAgain"),
@@ -158,3 +158,4 @@ export default function ImportStep2MappingTopic({
     </div>
   );
 }
+

@@ -25,7 +25,7 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
           setMajors(majorsRes?.data || []);
           setSemesters(semestersRes?.data || []);
         } catch (err) {
-          console.error("Failed to load metadata:", err);
+
         }
       };
       fetchMetadata();
@@ -52,7 +52,7 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
       onSuccess();
       onClose();
     } catch (err) {
-      console.error(err);
+
       if (err.errorFields) {
         // Form validation error
         return;
@@ -165,3 +165,4 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
 };
 
 export default TopicAddModal;
+

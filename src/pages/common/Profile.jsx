@@ -63,7 +63,7 @@ const Profile = () => {
         localStorage.setItem("userInfo", JSON.stringify(mapped));
         localStorage.setItem("role", mapped.role);
       } catch (e) {
-        console.error("Không lấy được thông tin tài khoản:", e);
+
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -88,7 +88,7 @@ const Profile = () => {
           setProfileData(response?.data || null);
         }
       } catch (error) {
-        console.error("Error fetching profile data:", error);
+
       } finally {
         if (mounted) setProfileLoading(false);
       }
@@ -236,3 +236,4 @@ const Profile = () => {
 };
 
 export default Profile;
+

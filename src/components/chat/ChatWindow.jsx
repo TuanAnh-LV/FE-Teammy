@@ -85,7 +85,7 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
             data.length > MAX_MESSAGES ? data.slice(-MAX_MESSAGES) : data;
           dispatch(setMessages({ sessionId: effectiveSessionId, messages: limited }));
         } catch (loadErr) {
-          console.warn("Failed to load messages:", loadErr.message);
+
           dispatch(setMessages({ sessionId: effectiveSessionId, messages: [] }));
         }
 
@@ -97,7 +97,7 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
           await signalRService.joinGroup(effectiveGroupId);
         }
       } catch (err) {
-        console.error("Failed to initialize chat:", err);
+
         notification.error({
           message: t("failedLoadMessages") || "Failed to initialize chat",
         });
@@ -141,7 +141,7 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
       // Don't manually add message - backend will broadcast via SignalR ReceiveMessage event
       // This prevents duplicate messages
     } catch (err) {
-      console.error("Failed to send message:", err);
+
       notification.error({
         message: t("failedSendMessage") || "Failed to send message",
       });
@@ -484,3 +484,4 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
 };
 
 export default ChatWindow;
+

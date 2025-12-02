@@ -38,7 +38,6 @@ class SignalRService {
     if (this.started) return this.connection;
 
     const hubUrl = buildHubUrl();
-    console.log("🔗 Connecting to SignalR hub:", hubUrl);
 
     this.connection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, {
@@ -55,10 +54,10 @@ class SignalRService {
     try {
       await this.connection.start();
       const transportName = this.connection.transport?.name || "unknown";
-      console.log("✅ SignalR connected! Transport:", transportName);
+
       this.started = true;
     } catch (err) {
-      console.error("❌ SignalR connection failed:", err.message);
+
       throw err;
     }
     return this.connection;
@@ -69,7 +68,7 @@ class SignalRService {
     try {
       await this.connection.stop();
     } catch (err) {
-      console.error("Failed to stop SignalR connection", err);
+
     } finally {
       this.started = false;
       this.connection = null;
@@ -85,7 +84,7 @@ class SignalRService {
           try {
             cb(payload);
           } catch (err) {
-            console.error(`SignalR handler error for ${event}`, err);
+
           }
         });
       });
@@ -110,7 +109,7 @@ class SignalRService {
     }
     
     if (this.connection.state !== signalR.HubConnectionState.Connected) {
-      console.error("Connection not ready after retries");
+
       return;
     }
     
@@ -119,7 +118,7 @@ class SignalRService {
     }
     this.currentSessionId = sessionId;
     return this.connection.invoke("JoinSession", sessionId).catch((err) => {
-      console.error("JoinSession failed", err);
+
     });
   }
 
@@ -130,7 +129,7 @@ class SignalRService {
         await this.connection.invoke("LeaveSession", sessionId);
       }
     } catch (err) {
-      console.error("LeaveSession failed", err);
+
     } finally {
       if (this.currentSessionId === sessionId) this.currentSessionId = null;
     }
@@ -141,7 +140,7 @@ class SignalRService {
     try {
       await this.connection.invoke("TypingSession", sessionId, isTyping);
     } catch (err) {
-      console.warn("TypingSession failed", err);
+
     }
   }
 
@@ -157,13 +156,13 @@ class SignalRService {
     }
     
     if (this.connection.state !== signalR.HubConnectionState.Connected) {
-      console.error("Connection not ready after retries");
+
       return;
     }
     
     this.joinedGroups.add(groupId);
     return this.connection.invoke("JoinGroup", groupId).catch((err) => {
-      console.error("JoinGroup failed", err);
+
       this.joinedGroups.delete(groupId);
     });
   }
@@ -175,7 +174,7 @@ class SignalRService {
         await this.connection.invoke("LeaveGroup", groupId);
       }
     } catch (err) {
-      console.error("LeaveGroup failed", err);
+
     } finally {
       this.joinedGroups.delete(groupId);
     }
@@ -186,7 +185,7 @@ class SignalRService {
     try {
       await this.connection.invoke("Typing", groupId, isTyping);
     } catch (err) {
-      console.warn("Typing failed", err);
+
     }
   }
 
@@ -202,3 +201,4 @@ class SignalRService {
 }
 
 export const signalRService = new SignalRService();
+

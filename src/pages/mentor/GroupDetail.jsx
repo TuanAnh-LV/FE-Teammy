@@ -63,7 +63,7 @@ export default function GroupDetail() {
       const response = await GroupService.getGroupDetail(id);
       setGroupDetail(response?.data || null);
     } catch (error) {
-      console.error("Failed to fetch group detail:", error);
+
       setGroupDetail(null);
     } finally {
       setLoading(false);
@@ -240,3 +240,4 @@ export default function GroupDetail() {
     </div>
   );
 }
+

@@ -71,7 +71,7 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
         : payload?.items || [];
       setList(items);
     } catch (err) {
-      console.error(err);
+
       notification.error({
         message: t("error") || "Error",
         description: t("failedLoadMilestones") || "Failed to load milestones",
@@ -99,7 +99,7 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
         }));
       setBacklogOptions(options);
     } catch (err) {
-      console.error(err);
+
     }
   };
 
@@ -171,7 +171,7 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
       resetForm();
       fetchMilestones();
     } catch (err) {
-      console.error(err);
+
       notification.error({
         message: t("actionFailed") || "Action failed",
         description: err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
@@ -194,7 +194,7 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
           notification.success({ message: t("deleted") || "Deleted" });
           fetchMilestones();
         } catch (err) {
-          console.error(err);
+
           notification.error({
             message: t("actionFailed") || "Action failed",
             description: err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
@@ -226,7 +226,7 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
       setAssignBacklogIds([]);
       fetchMilestones();
     } catch (err) {
-      console.error(err);
+
       notification.error({
         message: t("actionFailed") || "Action failed",
         description: err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
@@ -249,7 +249,7 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
           fetchMilestones();
           fetchBacklogOptions();
         } catch (err) {
-          console.error(err);
+
           notification.error({
             message: t("actionFailed") || "Action failed",
             description: err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
@@ -552,3 +552,4 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
     </div>
   );
 }
+

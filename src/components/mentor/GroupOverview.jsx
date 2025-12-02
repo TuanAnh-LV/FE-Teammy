@@ -63,7 +63,7 @@ export default function GroupOverview({ groupId, groupDetail }) {
       const membersWithContribution = calculateMemberContributions(allMembers, board);
       setMembers(membersWithContribution);
     } catch (error) {
-      console.error("Failed to fetch data:", error);
+
       setMembers([]);
       setProgress(0);
     } finally {
@@ -314,3 +314,4 @@ function getRelativeTime(dateString, t) {
   if (diffDays < 7) return `${diffDays} ${t("daysAgo") || "ngày trước"}`;
   return date.toLocaleDateString("vi-VN");
 }
+

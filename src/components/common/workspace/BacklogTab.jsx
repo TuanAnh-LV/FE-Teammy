@@ -116,7 +116,7 @@ export default function BacklogTab({
       else if (Array.isArray(payload?.results)) list = payload.results;
       setItems(list);
     } catch (err) {
-      console.error(err);
+
       notification.error({
         message: t("failedLoadBacklog") || "Failed to load backlog",
         description:
@@ -205,7 +205,7 @@ export default function BacklogTab({
       resetForm();
       fetchItems();
     } catch (err) {
-      console.error(err);
+
       notification.error({
         message: t("actionFailed") || "Action failed",
         description:
@@ -236,7 +236,7 @@ export default function BacklogTab({
       });
       fetchItems();
     } catch (err) {
-      console.error(err);
+
       notification.error({
         message: t("actionFailed") || "Action failed",
         description:
@@ -267,7 +267,7 @@ export default function BacklogTab({
         onPromoteSuccess();
       }
     } catch (err) {
-      console.error(err);
+
       notification.error({
         message: t("actionFailed") || "Action failed",
         description:
@@ -607,3 +607,4 @@ export default function BacklogTab({
     </div>
   );
 }
+

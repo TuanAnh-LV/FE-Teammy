@@ -109,7 +109,7 @@ export default function MembersPanel({
         setAssignRoleOpen(false);
         setSelectedMember(null);
       } catch (error) {
-        console.error('Failed to assign role:', error);
+
       } finally {
         setAssignSubmitting(false);
       }
@@ -445,3 +445,4 @@ export default function MembersPanel({
     </>
   );
 }
+

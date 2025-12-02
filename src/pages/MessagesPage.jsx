@@ -47,7 +47,7 @@ const MessagesPage = () => {
   const createDMConversation = async (userId) => {
     // Validate userId before making the request
     if (!userId || String(userId).trim() === "") {
-      console.error("Invalid userId provided");
+
       return;
     }
     try {
@@ -59,7 +59,7 @@ const MessagesPage = () => {
         fetchConversations();
       }
     } catch (err) {
-      console.error("Failed to create DM conversation:", err);
+
       setTargetUserId(userId);
     }
   };
@@ -70,7 +70,7 @@ const MessagesPage = () => {
       const data = Array.isArray(res?.data) ? res.data : [];
       setConversations(data);
     } catch (err) {
-      console.error("Failed to fetch conversations:", err);
+
     }
   };
 
@@ -86,7 +86,7 @@ const MessagesPage = () => {
       }));
       setGroupConversations(mapped);
     } catch (err) {
-      console.error("Failed to fetch group chats:", err);
+
       setGroupConversations([]);
     }
   };
@@ -186,3 +186,4 @@ const MessagesPage = () => {
 };
 
 export default MessagesPage;
+
