@@ -192,7 +192,7 @@ const Discover = () => {
   const acceptedCount = invitations.filter(inv => inv.status === "accepted").length;
 
   return (
-    <div className="space-y-6 bg-gray-50 min-h-screen px-4 sm:px-6 lg:px-8 py-6">
+    <div className="space-y-6 bg-gray-50 min-h-screen">
       {contextHolder}
       
       {/* Header Section */}

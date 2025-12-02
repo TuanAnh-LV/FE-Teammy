@@ -173,7 +173,7 @@ export default function GroupDetail() {
   ];
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen space-y-6 animate-fadeIn p-8">
+    <div className="bg-[#f8fafc] min-h-screen space-y-6 animate-fadeIn">
       {/* Breadcrumb */}
       <Breadcrumb
         items={[

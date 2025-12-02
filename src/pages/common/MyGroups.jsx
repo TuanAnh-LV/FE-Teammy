@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Crown,
@@ -18,6 +18,7 @@ export default function MyGroupsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { userInfo } = useAuth();
+  const [applicationSubTab, setApplicationSubTab] = useState("applications");
 
   const formatRoleLabel = (role) => {
     if (!role) return "";
@@ -72,6 +73,8 @@ export default function MyGroupsPage() {
     activeApplications,
     pendingTotal,
     groupsById,
+    invitations,
+    invitationsLoading,
     setOpen,
     handleFormChange,
     handleCreateGroup,
@@ -352,7 +355,7 @@ export default function MyGroupsPage() {
   };
 
   const renderApplicationsTab = () => {
-    if (pendingLoading) {
+    if (pendingLoading || invitationsLoading) {
       return (
         <div className="space-y-4">
           {Array.from({ length: 2 }).map((_, idx) => (
@@ -369,117 +372,200 @@ export default function MyGroupsPage() {
       );
     }
 
-    if (activeApplications.length === 0) {
-      return (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
-          <p className="text-base font-semibold text-gray-800">
-            {t("pendingRequests") || "No pending applications"}
-          </p>
-          <p className="mt-1 text-sm text-gray-500">
-            {t("noPendingRequests") ||
-              "You have reviewed all applications for now."}
-          </p>
-        </div>
-      );
-    }
+    // Filter tabs for applications/invitations
+    const applicationSubTabs = [
+      {
+        key: "applications",
+        label: t("applications") || "Applications",
+      },
+      {
+        key: "invitations",
+        label: t("invitations") || "Invitations",
+      },
+    ];
 
     return (
-      <div className="space-y-4 md:space-y-6">
-        {activeApplications.map(([groupId, requests]) => {
-          const group = groupsById.get(groupId);
-          return (
-            <div
-              key={groupId}
-              className="rounded-2xl md:rounded-3xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm"
+      <div>
+        {/* Filter tabs */}
+        <div className="mb-6 flex gap-2">
+          {applicationSubTabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setApplicationSubTab(tab.key)}
+              className={`px-3 md:px-4 py-2 text-xs md:text-sm font-medium rounded-lg transition ${
+                applicationSubTab === tab.key
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
             >
-              <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase text-blue-500">
-                    {group?.field || t("group") || "Group"}
-                  </p>
-                  <h3 className="text-base md:text-lg font-bold text-gray-900">
-                    {group?.title || t("group") || "Group"}
-                  </h3>
-                  <p className="text-xs md:text-sm text-gray-500">
-                    {requests.length}{" "}
-                    {requests.length > 1
-                      ? t("applications") || "applications"
-                      : t("application") || "application"}
-                  </p>
-                </div>
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                  <Crown className="!h-3.5 !w-3.5 text-amber-500" />
-                  {t("leader") || "Leader"}
-                </span>
-              </div>
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-              <div className="mt-4 md:mt-5 space-y-3 md:space-y-4">
-                {requests.map((request) => (
+        {applicationSubTab === "applications" ? (
+          <>
+            {activeApplications.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
+                <p className="text-base font-semibold text-gray-800">
+                  {t("pendingRequests") || "No pending applications"}
+                </p>
+                <p className="mt-1 text-sm text-gray-500">
+                  {t("noPendingRequests") || "You have reviewed all applications for now."}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4 md:space-y-6">
+                {activeApplications.map(([groupId, requests]) => {
+                  const group = groupsById.get(groupId);
+                  return (
+                    <div
+                      key={groupId}
+                      className="rounded-2xl md:rounded-3xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm"
+                    >
+                      <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase text-blue-500">
+                            {group?.field || t("group") || "Group"}
+                          </p>
+                          <h3 className="text-base md:text-lg font-bold text-gray-900">
+                            {group?.title || t("group") || "Group"}
+                          </h3>
+                          <p className="text-xs md:text-sm text-gray-500">
+                            {requests.length}{" "}
+                            {requests.length > 1
+                              ? t("applications") || "applications"
+                              : t("application") || "application"}
+                          </p>
+                        </div>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                          <Crown className="!h-3.5 !w-3.5 text-amber-500" />
+                          {t("leader") || "Leader"}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 md:mt-5 space-y-3 md:space-y-4">
+                        {requests.map((request) => (
+                          <div
+                            key={request.id}
+                            className="flex flex-col gap-3 md:gap-4 rounded-2xl border border-gray-100 bg-gray-50/60 p-3 md:p-4 md:flex-row md:items-center md:justify-between"
+                          >
+                            <div className="flex items-center gap-4">
+                              <img
+                                src={
+                                  request.avatarUrl ||
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                    request.name || request.email || "User"
+                                  )}&background=0D8ABC&color=fff`
+                                }
+                                alt={request.name}
+                                className="h-12 w-12 rounded-full object-cover"
+                              />
+                              <div>
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {request.name}
+                                </p>
+                                <p className="text-xs text-gray-500">{request.email}</p>
+                                {request.message &&
+                                  (() => {
+                                    const parts = request.message.split("-");
+                                    if (parts.length >= 2) {
+                                      const badge = parts[0].trim();
+                                      const message = parts.slice(1).join("-").trim();
+                                      return (
+                                        <div className="mt-2 flex items-center gap-2">
+                                          <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200">
+                                            {badge}
+                                          </span>
+                                          <p className="text-xs text-gray-600">
+                                            {message}
+                                          </p>
+                                        </div>
+                                      );
+                                    }
+                                    return (
+                                      <p className="mt-1 text-xs text-gray-500">
+                                        {request.message}
+                                      </p>
+                                    );
+                                  })()}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleReject(groupId, request)}
+                                className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center rounded-full border border-red-200 px-3 md:px-4 text-xs md:text-sm font-semibold text-red-600 hover:bg-red-50"
+                              >
+                                {t("reject") || "Reject"}
+                              </button>
+                              <button
+                                onClick={() => handleApprove(groupId, request)}
+                                className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center rounded-full bg-emerald-500 px-3 md:px-4 text-xs md:text-sm font-semibold text-white hover:bg-emerald-600"
+                              >
+                                {t("approve") || "Approve"}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {invitations.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
+                <p className="text-base font-semibold text-gray-800">
+                  {t("noInvitations") || "No invitations"}
+                </p>
+                <p className="mt-1 text-sm text-gray-500">
+                  {t("noInvitationsMessage") || "You have no pending invitations."}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4 md:space-y-6">
+                {invitations.map((invitation) => (
                   <div
-                    key={request.id}
-                    className="flex flex-col gap-3 md:gap-4 rounded-2xl border border-gray-100 bg-gray-50/60 p-3 md:p-4 md:flex-row md:items-center md:justify-between"
+                    key={invitation.id}
+                    className="flex flex-col gap-3 md:gap-4 rounded-2xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm"
                   >
                     <div className="flex items-center gap-4">
                       <img
                         src={
-                          request.avatarUrl ||
+                          invitation.avatarUrl ||
                           `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            request.name || request.email || "User"
+                            invitation.displayName || invitation.email || "User"
                           )}&background=0D8ABC&color=fff`
                         }
-                        alt={request.name}
+                        alt={invitation.displayName}
                         className="h-12 w-12 rounded-full object-cover"
                       />
-                      <div>
+                      <div className="flex-1">
                         <p className="text-sm font-semibold text-gray-900">
-                          {request.name}
+                          {invitation.displayName}
                         </p>
-                        <p className="text-xs text-gray-500">{request.email}</p>
-                        {request.message &&
-                          (() => {
-                            const parts = request.message.split("-");
-                            if (parts.length >= 2) {
-                              const badge = parts[0].trim();
-                              const message = parts.slice(1).join("-").trim();
-                              return (
-                                <div className="mt-2 flex items-center gap-2">
-                                  <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200">
-                                    {badge}
-                                  </span>
-                                  <p className="text-xs text-gray-600">
-                                    {message}
-                                  </p>
-                                </div>
-                              );
-                            }
-                            return (
-                              <p className="mt-1 text-xs text-gray-500">
-                                {request.message}
-                              </p>
-                            );
-                          })()}
+                        <p className="text-xs text-gray-500">{invitation.email}</p>
+                        {invitation.topicTitle && (
+                          <p className="mt-1 text-xs text-gray-600">
+                            {t("invitedFor") || "Invited for"}: {invitation.topicTitle}
+                          </p>
+                        )}
+                        {invitation.message && (
+                          <p className="mt-1 text-xs text-gray-600">
+                            {invitation.message}
+                          </p>
+                        )}
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleReject(groupId, request)}
-                        className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center rounded-full border border-red-200 px-3 md:px-4 text-xs md:text-sm font-semibold text-red-600 hover:bg-red-50"
-                      >
-                        {t("reject") || "Reject"}
-                      </button>
-                      <button
-                        onClick={() => handleApprove(groupId, request)}
-                        className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center rounded-full bg-emerald-500 px-3 md:px-4 text-xs md:text-sm font-semibold text-white hover:bg-emerald-600"
-                      >
-                        {t("approve") || "Approve"}
-                      </button>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          );
-        })}
+            )}
+          </>
+        )}
       </div>
     );
   };

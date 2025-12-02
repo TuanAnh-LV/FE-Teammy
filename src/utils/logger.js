@@ -1,8 +1,3 @@
-/**
- * Logger utility - outputs only in development mode
- * Automatically suppresses all logs in production
- */
-
 const isDev = import.meta.env.MODE === 'development';
 
 const logger = {
