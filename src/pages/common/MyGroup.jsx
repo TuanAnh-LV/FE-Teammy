@@ -157,6 +157,7 @@ export default function MyGroup() {
               (currentEmail && normalizedEmail === currentEmail
                 ? userInfo?.photoURL || ""
                 : ""),
+            assignedRoles: m.assignedRoles || [],
           };
         });
 

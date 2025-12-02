@@ -142,13 +142,13 @@ export default function MyGroups() {
           {/* TOTAL */}
           <div className="rounded-xl border border-gray-300 bg-white shadow-sm p-6">
             <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-            <p className="text-sm text-gray-500 mt-2">Tổng số nhóm</p>
+            <p className="text-sm text-gray-500 mt-2">{t("totalGroupsLabel")}</p>
           </div>
 
           {/* ON TRACK */}
           <div className="rounded-xl border border-gray-300 bg-white shadow-sm p-6">
             <p className="text-2xl font-bold text-green-600">{stats.ontrack}</p>
-            <p className="text-sm text-gray-500 mt-2">Đúng tiến độ</p>
+            <p className="text-sm text-gray-500 mt-2">{t("onTrack")}</p>
           </div>
 
           {/* NEED ATTENTION */}
@@ -160,7 +160,7 @@ export default function MyGroups() {
           {/* AVG PROGRESS */}
           <div className="rounded-xl border border-gray-300 bg-white shadow-sm p-6">
             <p className="text-2xl font-bold text-blue-600">{stats.avg}%</p>
-            <p className="text-sm text-gray-500 mt-2">Tiến độ TB</p>
+            <p className="text-sm text-gray-500 mt-2">{t("averageProgress")}</p>
           </div>
         </div>
 
@@ -250,7 +250,7 @@ export default function MyGroups() {
                   <p className="text-gray-600 text-sm leading-relaxed">{g.topicDescription}</p>
 
                   <div>
-                    <p className="text-xs text-gray-500 mb-2">Tiến độ</p>
+                    <p className="text-xs text-gray-500 mb-2">{t("progress")}</p>
                     <Progress 
                       percent={g.progress} 
                       strokeColor="#3b82f6"

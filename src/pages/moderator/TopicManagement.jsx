@@ -62,12 +62,7 @@ const TopicManagement = () => {
           "",
         majorName: t.majorName || "",
         createdAt: t.createdAt ? t.createdAt.slice(0, 10) : "",
-        status:
-          t.status === "open"
-            ? "Available"
-            : t.status === "closed"
-            ? "Not Available"
-            : t.status || "Available",
+        status: t.status === "open" ? "available" : t.status === "closed" ? "notAvailable" : "available",
         raw: t,
       }));
 
@@ -89,7 +84,7 @@ const TopicManagement = () => {
 
   const data = topics;
 
-  const getStatus = (row) => row?.status || "Available";
+  const getStatus = (row) => row?.status || "available";
 
   const filteredData = useMemo(() => {
     const s = filters.search.toLowerCase().trim();
@@ -181,12 +176,12 @@ const TopicManagement = () => {
       render: (status) => (
         <span
           className={`px-2 py-1 rounded-full text-xs font-medium ${
-            status === "Available"
+            status === "available"
               ? "text-green-600 bg-green-50"
               : "text-orange-600 bg-orange-50"
           }`}
         >
-          {status}
+          {status === "available" ? t("available") || "Available" : t("notAvailable") || "Not Available"}
         </span>
       ),
     },
@@ -282,10 +277,10 @@ const TopicManagement = () => {
                 <Option value="All Status">
                   {t("allStatus") || "All Status"}
                 </Option>
-                <Option value="Available">
+                <Option value="available">
                   {t("available") || "Available"}
                 </Option>
-                <Option value="Not Available">
+                <Option value="notAvailable">
                   {t("notAvailable") || "Not Available"}
                 </Option>
               </Select>

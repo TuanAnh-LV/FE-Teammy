@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { Card, Select, DatePicker, Button, Table } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
+import { useTranslation } from "../../hook/useTranslation";
 
 const { Option } = Select;
 
 const Reports = () => {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState({
     major: "Engineering",
     term: "Spring 2025",
@@ -35,7 +37,7 @@ const Reports = () => {
 
   const columns = [
     {
-      title: "Metric",
+      title: t("metric"),
       dataIndex: "metric",
       key: "metric",
       render: (text) => (
@@ -43,7 +45,7 @@ const Reports = () => {
       ),
     },
     {
-      title: "Count",
+      title: t("count"),
       dataIndex: "count",
       key: "count",
       render: (num) => (
@@ -51,7 +53,7 @@ const Reports = () => {
       ),
     },
     {
-      title: "Description",
+      title: t("description"),
       dataIndex: "description",
       key: "description",
       render: (text) => <span className="text-gray-600">{text}</span>,
@@ -64,7 +66,7 @@ const Reports = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
-            Report & Export
+            {t("reportAndExport")}
           </h1>
         </div>
 
@@ -72,7 +74,7 @@ const Reports = () => {
           icon={<UploadOutlined />}
           className="!border-gray-300 hover:!border-orange-400  hover:!text-orange-400 transition-all !py-5"
         >
-          <span className="hidden sm:inline">Export CSV</span>
+          <span className="hidden sm:inline">{t("exportCSV")}</span>
         </Button>
       </div>
 
@@ -82,14 +84,14 @@ const Reports = () => {
           className="shadow-sm border-gray-100 rounded-lg"
           bodyStyle={{ padding: "20px 24px" }}
         >
-          <h3 className="font-semibold text-gray-800 mb-3">Report Filters</h3>
+          <h3 className="font-semibold text-gray-800 mb-3">{t("reportFilters")}</h3>
           <p className="text-gray-500 text-sm mb-4">
-            Customize the scope and timeframe for your reports
+            {t("customizeScopeAndTimeframe")}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Major</p>
+              <p className="text-sm text-gray-500 mb-1">{t("major")}</p>
               <Select
                 value={filters.major}
                 onChange={(v) => setFilters({ ...filters, major: v })}
@@ -103,7 +105,7 @@ const Reports = () => {
             </div>
 
             <div>
-              <p className="text-sm text-gray-500 mb-1">Term</p>
+              <p className="text-sm text-gray-500 mb-1">{t("term")}</p>
               <Select
                 value={filters.term}
                 onChange={(v) => setFilters({ ...filters, term: v })}
@@ -116,7 +118,7 @@ const Reports = () => {
             </div>
 
             <div>
-              <p className="text-sm text-gray-500 mb-1">Date Range</p>
+              <p className="text-sm text-gray-500 mb-1">{t("dateRange")}</p>
               <Select
                 value={filters.dateRange}
                 onChange={(v) => setFilters({ ...filters, dateRange: v })}
@@ -129,7 +131,7 @@ const Reports = () => {
             </div>
 
             <div>
-              <p className="text-sm text-gray-500 mb-1">Custom Date</p>
+              <p className="text-sm text-gray-500 mb-1">{t("customDate")}</p>
               <DatePicker
                 placeholder="mm/dd/yyyy"
                 onChange={(date) =>
@@ -146,9 +148,9 @@ const Reports = () => {
           className="shadow-sm border-gray-100 rounded-lg mt-2"
           bodyStyle={{ padding: "20px 24px" }}
         >
-          <h3 className="font-semibold text-gray-800 mb-3">Report Summary</h3>
+          <h3 className="font-semibold text-gray-800 mb-3">{t("reportSummary")}</h3>
           <p className="text-gray-500 text-sm mb-4">
-            Filter:{" "}
+            {t("filter")}: {" "}
             <span className="font-medium text-gray-700">{filters.major}</span>
           </p>
 
@@ -164,7 +166,7 @@ const Reports = () => {
 
           {/* Additional Insights */}
           <div className="text-sm text-gray-600">
-            <p className="font-semibold mb-1">Additional Insights</p>
+            <p className="font-semibold mb-1">{t("additionalInsights")}</p>
             <ul className="list-disc list-inside space-y-1 text-gray-500">
               <li>Average group size: 6 members</li>
               <li>Groups per topic: 4</li>
