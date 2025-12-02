@@ -18,6 +18,8 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
 
   const [pendingByGroup, setPendingByGroup] = useState({});
   const [pendingLoading, setPendingLoading] = useState(false);
+  const [invitations, setInvitations] = useState([]);
+  const [invitationsLoading, setInvitationsLoading] = useState(false);
 
   // Modal state
   const [open, setOpen] = useState(false);
@@ -330,19 +332,14 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
 
   const loadPendingApplications = async (dataset) => {
     const leaderGroups = dataset.filter((g) => g.isLeader);
-    if (leaderGroups.length === 0) {
-      setPendingByGroup({});
-      return;
-    }
     setPendingLoading(true);
+    setInvitationsLoading(true);
     try {
       const entries = await Promise.all(
         leaderGroups.map(async (group) => {
           try {
             const res = await GroupService.getJoinRequests(group.id);
-            const list = Array.isArray(res?.data)
-              ? res.data.map(mapPendingRequest)
-              : [];
+            const list = Array.isArray(res?.data) ? res.data : [];
             return [group.id, list];
           } catch (error) {
 
@@ -350,9 +347,33 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
           }
         })
       );
-      setPendingByGroup(Object.fromEntries(entries));
+      
+      // Separate applications and invitations
+      const applicationsByGroup = {};
+      let allInvitations = [];
+      
+      entries.forEach(([groupId, list]) => {
+        const applications = list.filter(item => item.type === "application" || !item.type);
+        const invitations = list.filter(item => item.type === "invitation");
+        
+        // Group applications by groupId
+        if (applications.length > 0) {
+          applicationsByGroup[groupId] = applications.map(mapPendingRequest);
+        }
+        
+        // Collect all invitations (don't map, keep original structure)
+        allInvitations = allInvitations.concat(invitations);
+      });
+      
+      setPendingByGroup(applicationsByGroup);
+      setInvitations(allInvitations);
+    } catch (error) {
+
+      setPendingByGroup({});
+      setInvitations([]);
     } finally {
       setPendingLoading(false);
+      setInvitationsLoading(false);
     }
   };
 
@@ -386,6 +407,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
 
       setGroups([]);
       setPendingByGroup({});
+      setInvitations([]);
     } finally {
       setLoading(false);
     }
@@ -479,6 +501,8 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     pendingTotal,
     groupsById,
     activeApplications,
+    invitations,
+    invitationsLoading,
     topicModalGroup,
     topics,
     topicsLoading,

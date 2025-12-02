@@ -1,15 +1,6 @@
 import React, { useState, useEffect } from "react";
-import {
-  Card,
-  Progress,
-  Tag,
-  Button,
-  Spin,
-} from "antd";
-import {
-  MessageOutlined,
-  ClockCircleOutlined,
-} from "@ant-design/icons";
+import { Card, Progress, Tag, Button, Spin } from "antd";
+import { MessageOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import { Search, BookOpen, Target, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { GroupService } from "../../services/group.service";
@@ -57,31 +48,34 @@ export default function MyGroups() {
     const semesterEnd = g.semester?.endDate
       ? new Date(g.semester.endDate).toLocaleDateString("vi-VN")
       : "N/A";
-    
-    const allMembers = [
-      g.leader,
-      ...(g.members || [])
-    ].filter(Boolean);
-    
+
+    const allMembers = [g.leader, ...(g.members || [])].filter(Boolean);
+
     const getInitials = (name) => {
       if (!name) return "?";
-      return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+      return name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
     };
 
     return {
       id: g.id,
       name: g.name || "Nhóm không tên",
       topic: g.topic?.title || "Chưa có topic",
-      topicDescription: g.topic?.description || g.description || "Chưa có mô tả.",
+      topicDescription:
+        g.topic?.description || g.description || "Chưa có mô tả.",
       description: g.description || "Chưa có mô tả.",
       members: g.currentMembers || 0,
       maxMembers: g.maxMembers || 5,
       progress: g.calculatedProgress || 0,
       status: g.calculatedProgress >= 60 ? "Đúng tiến độ" : "Cần theo dõi",
-      memberAvatars: allMembers.slice(0, 4).map(m => ({
+      memberAvatars: allMembers.slice(0, 4).map((m) => ({
         name: m.displayName || "User",
         avatarUrl: m.avatarUrl,
-        initials: getInitials(m.displayName)
+        initials: getInitials(m.displayName),
       })),
       deadline: semesterEnd,
       semester: g.semester,
@@ -112,16 +106,9 @@ export default function MyGroups() {
   });
 
   return (
-    <div className="bg-[#f9fafb] min-h-screen pb-20">
-
-      {/* ---------------------------------- */}
-      {/* HEADER + SEARCH + STATS + FILTERS */}
-      {/* ---------------------------------- */}
-      <div className="max-w-8xl mx-auto px-8 pt-7">
-
-        <h1 className="text-4xl font-extrabold text-blue-600">
-          My Groups
-        </h1>
+    <div className="min-h-screen pb-20">
+      <div className="max-w-8xl mx-auto">
+        <h1 className="text-4xl font-extrabold text-blue-600">My Groups</h1>
         <p className="text-gray-600 mt-1">
           Quản lý và theo dõi các nhóm dự án bạn đang hướng dẫn
         </p>
@@ -142,7 +129,9 @@ export default function MyGroups() {
           {/* TOTAL */}
           <div className="rounded-xl border border-gray-300 bg-white shadow-sm p-6">
             <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-            <p className="text-sm text-gray-500 mt-2">{t("totalGroupsLabel")}</p>
+            <p className="text-sm text-gray-500 mt-2">
+              {t("totalGroupsLabel")}
+            </p>
           </div>
 
           {/* ON TRACK */}
@@ -166,7 +155,6 @@ export default function MyGroups() {
 
         {/* FILTERS */}
         <div className="inline-flex gap-2 mt-10 p-1 bg-[#f3f5f6] rounded-sm">
-
           <button
             onClick={() => setFilter("all")}
             className={`
@@ -208,16 +196,13 @@ export default function MyGroups() {
           >
             Cần theo dõi ({stats.need})
           </button>
-
         </div>
-
       </div>
 
       {/* ---------------------------------- */}
       {/* GROUP LIST */}
       {/* ---------------------------------- */}
       <div className="w-full px-8 mt-8 space-y-8">
-
         {loading ? (
           <div className="flex justify-center py-20">
             <Spin size="large" />
@@ -229,7 +214,6 @@ export default function MyGroups() {
               className="!rounded-2xl !shadow-sm !border !border-gray-200 hover:!shadow-md !transition-shadow"
             >
               <div className="flex flex-col md:flex-row justify-between gap-6">
-
                 {/* LEFT BLOCK */}
                 <div className="flex-1 space-y-4">
                   <div className="flex items-start justify-between">
@@ -247,12 +231,16 @@ export default function MyGroups() {
                     </Tag>
                   </div>
 
-                  <p className="text-gray-600 text-sm leading-relaxed">{g.topicDescription}</p>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {g.topicDescription}
+                  </p>
 
                   <div>
-                    <p className="text-xs text-gray-500 mb-2">{t("progress")}</p>
-                    <Progress 
-                      percent={g.progress} 
+                    <p className="text-xs text-gray-500 mb-2">
+                      {t("progress")}
+                    </p>
+                    <Progress
+                      percent={g.progress}
                       strokeColor="#3b82f6"
                       trailColor="#e5e7eb"
                       className="!mb-1"
@@ -298,7 +286,9 @@ export default function MyGroups() {
                     {g.semester && (
                       <div className="flex items-center gap-2 text-gray-600">
                         <Calendar className="w-4 h-4 text-gray-400" />
-                        <span>Học kỳ: {g.semester.season} {g.semester.year}</span>
+                        <span>
+                          Học kỳ: {g.semester.season} {g.semester.year}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -335,7 +325,6 @@ export default function MyGroups() {
                     />
                   </div>
                 </div>
-
               </div>
             </Card>
           ))
