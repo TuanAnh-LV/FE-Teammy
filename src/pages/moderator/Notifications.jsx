@@ -122,7 +122,7 @@ export default function ModeratorNotifications() {
           <div className="flex items-center justify-between">
             <Space>
               <BellOutlined className="text-indigo-500" />
-              <span className="font-medium">Groups Missing Members</span>
+              <span className="font-medium">{t("groupsMissingMembers")}</span>
             </Space>
             <Tag color="red-inverse">{counts.missingMembers}</Tag>
           </div>
@@ -136,7 +136,7 @@ export default function ModeratorNotifications() {
         <Card
           className="xl:col-span-2 shadow-sm border-gray-100 rounded-lg"
           bodyStyle={{ padding: 20 }}
-          title={<span className="font-semibold">Compose Notification</span>}
+          title={<span className="font-semibold">{t("composeNotification")}</span>}
         >
           {/* Filters */}
           <div className="flex flex-col gap-3">
@@ -171,8 +171,8 @@ export default function ModeratorNotifications() {
                   Select Groups to Notify ({selected ? 1 : 0} selected)
                 </span>
                 <Space>
-                  <Button size="small">Select All</Button>
-                  <Button size="small">Clear</Button>
+                  <Button size="small">{t("selectAll")}</Button>
+                  <Button size="small">{t("clear")}</Button>
                 </Space>
               </div>
 
@@ -236,11 +236,11 @@ export default function ModeratorNotifications() {
         <Card
           className="shadow-sm border-gray-100 rounded-lg"
           bodyStyle={{ padding: 20 }}
-          title={<span className="font-semibold">Settings</span>}
+          title={<span className="font-semibold">{t("settings")}</span>}
         >
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-medium">Auto Reminders</div>
+              <div className="font-medium">{t("autoReminders")}</div>
               <div className="text-xs text-gray-500">
                 Send weekly reminders automatically
               </div>

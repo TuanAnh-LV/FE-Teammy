@@ -8,43 +8,45 @@ import {
   AlertOutlined,
   ArrowRightOutlined,
 } from "@ant-design/icons";
+import { useTranslation } from "../../hook/useTranslation";
 
 const ModeratorDashboard = () => {
+  const { t } = useTranslation();
   const stats = [
-    { title: "Total Groups", value: 48 },
-    { title: "Groups Missing Topics", value: 10 },
-    { title: "Groups Missing Mentor", value: 5 },
-    { title: "Student Without Group", value: 20 },
+    { title: t("totalGroups"), value: 48 },
+    { title: t("groupsMissingTopics"), value: 10 },
+    { title: t("groupsMissingMentor"), value: 5 },
+    { title: t("studentWithoutGroup"), value: 20 },
   ];
 
   const alerts = [
     {
       icon: <BulbOutlined className="text-yellow-500 text-lg" />,
-      title: "Groups without assigned topics",
+      title: t("groupsWithoutAssignedTopics"),
       count: 8,
       time: "2 hours ago",
     },
     {
       icon: <UserOutlined className="text-pink-500 text-lg" />,
-      title: "Groups missing mentors",
+      title: t("groupsMissingMentors"),
       count: 5,
       time: "5 hours ago",
     },
     {
       icon: <TeamOutlined className="text-purple-500 text-lg" />,
-      title: "Students without groups",
+      title: t("studentsWithoutGroups"),
       count: 12,
       time: "1 day ago",
     },
     {
       icon: <ExclamationCircleOutlined className="text-blue-500 text-lg" />,
-      title: "Team Beta hasn’t chosen a topic",
+      title: t("teamBetaHasntChosenTopic"),
       count: 1,
       time: "1 day ago",
     },
     {
       icon: <AlertOutlined className="text-blue-500 text-lg" />,
-      title: "Weekly progress reports due soon",
+      title: t("weeklyProgressReportsDueSoon"),
       count: 1,
       time: "2 days ago",
     },

@@ -9,8 +9,10 @@ import {
 import { GroupService } from "../../services/group.service";
 import { BoardService } from "../../services/board.service";
 import { ReportService } from "../../services/report.service";
+import { useTranslation } from "../../hook/useTranslation";
 
 export default function GroupOverview({ groupId, groupDetail }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [members, setMembers] = useState([]);
   const [progress, setProgress] = useState(0);
@@ -269,7 +271,7 @@ export default function GroupOverview({ groupId, groupDetail }) {
               renderItem={(task) => {
                 const assigneeName = task.assignees?.[0]?.displayName || task.assignee?.displayName || "Unassigned";
                 const taskDate = task.updatedAt || task.createdAt;
-                const relativeTime = taskDate ? getRelativeTime(taskDate) : "";
+                const relativeTime = taskDate ? getRelativeTime(taskDate, t) : "";
                 
                 return (
                   <List.Item>
@@ -297,7 +299,7 @@ export default function GroupOverview({ groupId, groupDetail }) {
   );
 }
 
-function getRelativeTime(dateString) {
+function getRelativeTime(dateString, t) {
   if (!dateString) return "";
   const date = new Date(dateString);
   const now = new Date();
@@ -306,9 +308,9 @@ function getRelativeTime(dateString) {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return "vừa xong";
-  if (diffMins < 60) return `${diffMins} phút trước`;
-  if (diffHours < 24) return `${diffHours} giờ trước`;
-  if (diffDays < 7) return `${diffDays} ngày trước`;
+  if (diffMins < 1) return t("justNow") || "vừa xong";
+  if (diffMins < 60) return `${diffMins} ${t("minutesAgo") || "phút trước"}`;
+  if (diffHours < 24) return `${diffHours} ${t("hoursAgo") || "giờ trước"}`;
+  if (diffDays < 7) return `${diffDays} ${t("daysAgo") || "ngày trước"}`;
   return date.toLocaleDateString("vi-VN");
 }
