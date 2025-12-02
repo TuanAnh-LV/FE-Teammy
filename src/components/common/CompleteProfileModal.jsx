@@ -50,7 +50,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete, onClose }) => {
           setMajors(response.data);
         }
       } catch (error) {
-        console.error("Error fetching majors:", error);
+
       }
     };
     if (isOpen) {
@@ -83,7 +83,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete, onClose }) => {
           setAvailableSkills(response.data);
         }
       } catch (error) {
-        console.error("Error fetching skills:", error);
+
         setAvailableSkills([]);
       }
     };
@@ -215,7 +215,7 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete, onClose }) => {
         onComplete(response.data);
       }
     } catch (error) {
-      console.error("Error updating profile:", error);
+
       notification.error({
         message: t("error"),
         description: t("failedLoadGroups"),
@@ -474,3 +474,4 @@ const CompleteProfileModal = ({ isOpen, profileData, onComplete, onClose }) => {
 };
 
 export default CompleteProfileModal;
+

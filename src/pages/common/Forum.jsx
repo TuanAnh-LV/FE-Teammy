@@ -187,7 +187,7 @@ const Forum = () => {
           if (mounted) setAiSuggestedPosts([]);
         }
       } catch (aiError) {
-        console.error("AI suggestions error:", aiError);
+
         if (mounted) setAiSuggestedPosts([]);
       }
     })();
@@ -262,7 +262,7 @@ const Forum = () => {
           if (mounted) setAiSuggestedGroupPosts([]);
         }
       } catch (aiError) {
-        console.error("AI group suggestions error:", aiError);
+
         if (mounted) setAiSuggestedGroupPosts([]);
       }
     })();
@@ -291,7 +291,7 @@ const Forum = () => {
       setAllPostsData([...groupArr, ...individualArr]);
       setPostsData(activeTab === "groups" ? groupArr : individualArr);
     } catch (error) {
-      console.error("Failed to refresh posts:", error);
+
     }
   };
 
@@ -372,7 +372,7 @@ const Forum = () => {
       );
       notification.success(t("inviteRequestSent") || "Invite request sent!");
     } catch (e) {
-      console.error(e);
+
     } finally {
       setApplyLoadingId(null);
       setApplyOpen(false);
@@ -398,7 +398,7 @@ const Forum = () => {
           t("userInvitedToGroup") || "User invited to the group successfully!",
       });
     } catch (error) {
-      console.error("Failed to send invitation", error);
+
       notification.error({
         message: t("failedToInviteUser") || "Failed to invite user.",
       });
@@ -414,7 +414,7 @@ const Forum = () => {
       null;
 
     if (!gid) {
-      console.warn("No groupId found in post:", post);
+
       return;
     }
     setDetailGroupId(gid);
@@ -658,3 +658,4 @@ const Forum = () => {
 };
 
 export default Forum;
+

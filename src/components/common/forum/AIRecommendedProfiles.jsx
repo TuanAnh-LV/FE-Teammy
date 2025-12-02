@@ -162,7 +162,7 @@ export function AIRecommendedProfiles({ aiSuggestedPosts, membership }) {
                             "User invited to the group successfully!",
                         });
                       } catch (error) {
-                        console.error("Failed to send invitation", error);
+
                         notification.error({
                           message:
                             t("failedToInviteUser") || "Failed to invite user.",
@@ -186,3 +186,4 @@ export function AIRecommendedProfiles({ aiSuggestedPosts, membership }) {
     </div>
   );
 }
+

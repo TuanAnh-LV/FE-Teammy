@@ -68,7 +68,7 @@ const Navbar = () => {
         }));
         setNotifications(items);
       } catch (e) {
-        console.warn("Fetch invitations failed", e);
+
         setNotifications([]);
       }
     };
@@ -423,7 +423,7 @@ const Navbar = () => {
               message: getTranslation("acceptSuccess", language) || "Accepted",
             });
           } catch (e) {
-            console.error(e);
+
             notificationApi.error({
               message:
                 getTranslation("approveFailed", language) || "Accept failed",
@@ -438,7 +438,7 @@ const Navbar = () => {
               message: getTranslation("declineInfo", language) || "Declined",
             });
           } catch (e) {
-            console.error(e);
+
             notificationApi.error({
               message:
                 getTranslation("rejectFailed", language) || "Decline failed",
@@ -451,3 +451,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

@@ -66,7 +66,6 @@ const Login = () => {
       userRole = String(userRole || "")
         .toLowerCase()
         .replace(/^role[_-]?/i, "");
-      console.log("User role:", userRole);
 
       switch (userRole) {
         case "admin":
@@ -82,7 +81,7 @@ const Login = () => {
           navigate("/");
       }
     } catch (error) {
-      console.error(error);
+
       notification.error({
         message: t("signInFailed"),
         description: error?.message || t("pleaseTryAgain"),
@@ -164,3 +163,4 @@ const Login = () => {
 };
 
 export default Login;
+

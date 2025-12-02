@@ -44,7 +44,7 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
         }))
       );
     } catch (err) {
-      console.error("Search failed:", err);
+
       setResults([]);
     } finally {
       setLoading(false);
@@ -82,7 +82,7 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
       });
       onClose();
     } catch (err) {
-      console.error("Invite failed:", err);
+
       notification.error({
         message: t("inviteFailed") || "Failed to send invitation",
       });
@@ -176,3 +176,4 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
     </div>
   );
 }
+

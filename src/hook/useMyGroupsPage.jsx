@@ -135,7 +135,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         await fetchMyGroups();
       }
     } catch (error) {
-      console.error(error);
+
       notification.error({
         message: t("error") || "Failed to create group.",
       });
@@ -176,7 +176,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
           });
           await fetchMyGroups();
         } catch (error) {
-          console.error(error);
+
           notification.error({
             message: t("error") || "Failed to leave group.",
           });
@@ -203,7 +203,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         message: t("approve") || "Approved",
       });
     } catch (error) {
-      console.error(error);
+
       notification.error({
         message: t("approveFailed") || "Approve failed",
       });
@@ -228,7 +228,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         message: t("reject") || "Rejected",
       });
     } catch (error) {
-      console.error(error);
+
       notification.error({
         message: t("rejectFailed") || "Reject failed",
       });
@@ -243,7 +243,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       const data = Array.isArray(res?.data) ? res.data : [];
       setMajors(data);
     } catch (error) {
-      console.error(error);
+
       notification.error({
         message: t("error") || "Failed to load majors.",
       });
@@ -273,7 +273,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       );
       setTopics(openTopics);
     } catch (error) {
-      console.error(error);
+
       notification.error({
         message: t("error") || "Failed to load topics.",
       });
@@ -316,7 +316,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       handleCloseTopicModal();
       await fetchMyGroups();
     } catch (error) {
-      console.error(error);
+
       notification.error({
         message: t("error") || "Failed to assign topic.",
       });
@@ -345,7 +345,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
               : [];
             return [group.id, list];
           } catch (error) {
-            console.error(error);
+
             return [group.id, []];
           }
         })
@@ -374,7 +374,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
               progress: completionPercent,
             };
           } catch (error) {
-            console.error(`Failed to load report for group ${group.id}:`, error);
+
             return group; // Return group with original progress if report fetch fails
           }
         })
@@ -383,7 +383,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       setGroups(groupsWithProgress);
       await loadPendingApplications(groupsWithProgress);
     } catch (error) {
-      console.error(error);
+
       setGroups([]);
       setPendingByGroup({});
     } finally {
@@ -396,12 +396,12 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     try {
       setLoading(true);
       const res = await BoardService.getBoard(groupId);
-      console.log(res);
+
       const data = res?.data || null;
       setBoard(data);
       return data;
     }catch (error) {
-      console.error(error);
+
     }
   } 
 
@@ -436,10 +436,9 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         pageSize: 100
       };
       const response = await SkillService.list(params, false);
-      console.log("Skills API full response:", response);
-      console.log("response.data:", response?.data);
-      console.log("response.data type:", typeof response?.data);
-      
+
+
+
       // Try different possible structures
       let data = [];
       if (Array.isArray(response?.data)) {
@@ -449,12 +448,11 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       } else if (response?.data?.items && Array.isArray(response.data.items)) {
         data = response.data.items;
       }
-      
-      console.log("Final parsed skills:", data);
-      console.log("First skill sample:", data[0]);
+
+
       setSkills(data);
     } catch (error) {
-      console.error("Error fetching skills:", error);
+
       setSkills([]);
     } finally {
       setSkillsLoading(false);
@@ -515,3 +513,4 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     getAllTasksFromBoard,
   };
 };
+

@@ -164,7 +164,7 @@ const ProjectCard = ({ project, onSelectTopic }) => {
 
               navigate(`/my-group`);
             } catch (err) {
-              console.error("Failed to select topic:", err);
+
               notification.error({
                 message: t("failedToSelectTopic"),
                 description: err?.response?.data?.message || t("pleaseTryAgain"),
@@ -193,3 +193,4 @@ const ProjectCard = ({ project, onSelectTopic }) => {
 };
 
 export default ProjectCard;
+

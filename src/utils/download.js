@@ -11,7 +11,7 @@ export function downloadBlob(data, fallbackName = "TeammyUsersTemplate.xlsx", di
       try {
         filename = decodeURIComponent(utf8Match[1].trim());
       } catch (e) {
-        console.warn('Failed to decode UTF-8 filename:', e);
+
       }
     } else {
       // Fall back to regular filename
@@ -38,3 +38,4 @@ export function downloadBlob(data, fallbackName = "TeammyUsersTemplate.xlsx", di
   a.remove();
   URL.revokeObjectURL(url);
 }
+

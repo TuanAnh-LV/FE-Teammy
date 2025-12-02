@@ -240,7 +240,7 @@ export function useKanbanBoard(groupId) {
       setColumns(colState);
       setColumnMeta(metaState);
     } catch (err) {
-      console.error(err);
+
       setError("Failed to load board");
       setColumns({});
       setColumnMeta({});
@@ -269,7 +269,7 @@ export function useKanbanBoard(groupId) {
       }
       setGroupMembers(normalizePersonList(rawList));
     } catch (err) {
-      console.error(err);
+
       setGroupMembers([]);
     }
   };
@@ -380,7 +380,7 @@ export function useKanbanBoard(groupId) {
     
     // Prevent multiple simultaneous drag operations
     if (dragProcessingRef.current) {
-      console.log('Drag already in progress, skipping...');
+
       return;
     }
     
@@ -430,7 +430,7 @@ export function useKanbanBoard(groupId) {
         await updateTaskFields(activeId, { status: targetStatus }, { skipMove: true });
       }
     } catch (err) {
-      console.error(err);
+
       fetchBoard();
     } finally {
       setTimeout(() => {
@@ -445,7 +445,7 @@ export function useKanbanBoard(groupId) {
       await BoardService.createColumn(groupId, payload);
       fetchBoard({ showLoading: false });
     } catch (err) {
-      console.error(err);
+
     }
   };
 
@@ -455,7 +455,7 @@ export function useKanbanBoard(groupId) {
       await BoardService.deleteColumn(groupId, columnId);
       fetchBoard({ showLoading: false });
     } catch (err) {
-      console.error(err);
+
     }
   };
 
@@ -481,7 +481,7 @@ export function useKanbanBoard(groupId) {
       await BoardService.createTask(groupId, payload);
       fetchBoard({ showLoading: false });
     } catch (err) {
-      console.error(err);
+
     }
   };
 
@@ -561,7 +561,7 @@ export function useKanbanBoard(groupId) {
         }
       }
     } catch (err) {
-      console.error(err);
+
       fetchBoard({ showLoading: false });
     }
   };
@@ -587,7 +587,7 @@ export function useKanbanBoard(groupId) {
         userIds,
       });
     } catch (err) {
-      console.error(err);
+
       fetchBoard({ showLoading: false });
     }
   };
@@ -622,7 +622,7 @@ export function useKanbanBoard(groupId) {
         nextTaskId: null,
       });
     } catch (err) {
-      console.error(err);
+
       fetchBoard({ showLoading: false });
     }
   };
@@ -641,7 +641,7 @@ export function useKanbanBoard(groupId) {
     try {
       await BoardService.deleteTask(groupId, taskId);
     } catch (err) {
-      console.error(err);
+
       fetchBoard({ showLoading: false });
     }
   };
@@ -657,7 +657,7 @@ export function useKanbanBoard(groupId) {
       patchTaskState(taskId, () => ({ comments }));
       return comments;
     } catch (err) {
-      console.error(err);
+
       return [];
     }
   };
@@ -684,13 +684,13 @@ export function useKanbanBoard(groupId) {
         await Promise.all(
           taskIds.map((taskId) =>
             loadTaskComments(taskId).catch((err) => {
-              console.error(`Failed to load comments for task ${taskId}:`, err);
+
               return [];
             })
           )
         );
       } catch (err) {
-        console.error("Error loading all task comments:", err);
+
       }
     }
   };
@@ -714,7 +714,7 @@ export function useKanbanBoard(groupId) {
       });
       await loadTaskComments(taskId);
     } catch (err) {
-      console.error(err);
+
       patchTaskState(taskId, (task) => ({
         comments: (task.comments || []).filter(
           (comment) => comment.id !== tempComment.id
@@ -737,7 +737,7 @@ export function useKanbanBoard(groupId) {
         content: trimmed,
       });
     } catch (err) {
-      console.error(err);
+
       await loadTaskComments(taskId);
     }
   };
@@ -753,7 +753,7 @@ export function useKanbanBoard(groupId) {
     try {
       await BoardService.deleteTaskComment(groupId, commentId);
     } catch (err) {
-      console.error(err);
+
       patchTaskState(taskId, () => ({
         comments: snapshot?.comments || [],
       }));
@@ -793,3 +793,4 @@ export function useKanbanBoard(groupId) {
 }
 
 export default useKanbanBoard;
+

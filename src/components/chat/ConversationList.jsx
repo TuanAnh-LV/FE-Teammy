@@ -34,7 +34,7 @@ const ConversationList = ({
       const data = Array.isArray(res?.data) ? res.data : [];
       setConversations(data);
     } catch (err) {
-      console.error("Failed to fetch conversations:", err);
+
       setConversations([]);
     } finally {
       setLoading(false);
@@ -178,3 +178,4 @@ const ConversationList = ({
 };
 
 export default ConversationList;
+

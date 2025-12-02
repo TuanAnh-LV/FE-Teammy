@@ -66,7 +66,7 @@ export default function TopicDetailModal({
           setDetailData(payload);
         }
       } catch (err) {
-        console.error(err);
+
         notification.error({
           message:
             t("failedLoadTopicDetails") || "Failed to load topic details",
@@ -245,3 +245,4 @@ export default function TopicDetailModal({
     </Modal>
   );
 }
+

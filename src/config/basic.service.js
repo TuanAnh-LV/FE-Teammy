@@ -67,7 +67,7 @@ axiosInstance.interceptors.response.use(
 
     // nếu thiếu token => 403 public page: giữ nguyên logic nhưng dùng getAccessToken()
     if (response?.status === 403 && !getAccessToken()) {
-      console.warn("403 Forbidden - likely due to missing token on public page");
+
       return Promise.reject(err);
     }
 
@@ -163,3 +163,4 @@ export const BaseService = {
     }
   },
 };
+
