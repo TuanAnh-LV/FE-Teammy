@@ -66,7 +66,7 @@ export default function GroupManagement() {
         }));
         if (mounted) setRows(mapped);
       } catch (err) {
-        console.error(err);
+
         notification.error({
           message: t("failedLoadGroups") || "Failed to load groups",
         });
@@ -181,7 +181,7 @@ export default function GroupManagement() {
                       setOpen(true);
                     }
                   } catch (err) {
-                    console.error(err);
+
                     notification.error({
                       message:
                         t("failedLoadGroupDetail") ||
@@ -315,3 +315,4 @@ export default function GroupManagement() {
     </div>
   );
 }
+

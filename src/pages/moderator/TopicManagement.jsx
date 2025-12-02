@@ -68,7 +68,7 @@ const TopicManagement = () => {
 
       setTopics(mapped);
     } catch (err) {
-      console.error(err);
+
       notification.error({
         message: t("failedLoadTopics") || "Failed to load topics",
       });
@@ -138,7 +138,7 @@ const TopicManagement = () => {
           // Refresh list
           setTopics((prev) => prev.filter((t) => t.key !== record.key));
         } catch (err) {
-          console.error(err);
+
           notification.error({
             message: t("failedDeleteTopic") || "Failed to delete topic",
           });
@@ -325,3 +325,4 @@ const TopicManagement = () => {
 };
 
 export default TopicManagement;
+

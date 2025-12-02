@@ -236,7 +236,7 @@ const TaskModal = ({
       
       setFiles(mappedFiles);
     } catch (error) {
-      console.error("Failed to fetch task files:", error);
+
       setFiles([]);
     } finally {
       setLoadingFiles(false);
@@ -285,7 +285,7 @@ const TaskModal = ({
       // Refetch files from server to ensure we have the latest data
       await fetchTaskFiles();
     } catch (error) {
-      console.error("Failed to upload files:", error);
+
       notification.error({
         message: t("failedUploadFiles") || "Failed to upload files",
         description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
@@ -315,7 +315,7 @@ const TaskModal = ({
       
       setFiles(prev => prev.filter(f => f.id !== fileId));
     } catch (error) {
-      console.error("Failed to delete file:", error);
+
       notification.error({
         message: t("failedDeleteFile") || "Failed to delete file",
         description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
@@ -838,3 +838,4 @@ const TaskModal = ({
 };
 
 export default TaskModal;
+

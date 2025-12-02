@@ -40,7 +40,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
           setMajors(response.data);
         }
       } catch (error) {
-        console.error("Error fetching majors:", error);
+
       }
     };
     if (isOpen) {
@@ -68,7 +68,7 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
         onClose();
       }
     } catch (error) {
-      console.error("Error updating profile:", error);
+
       toast.error(t("updateProfileFailed") || "Failed to update profile. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -241,3 +241,4 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
 };
 
 export default EditProfileModal;
+

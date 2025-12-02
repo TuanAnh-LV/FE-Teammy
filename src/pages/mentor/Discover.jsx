@@ -71,7 +71,7 @@ const Discover = () => {
             
             return { ...g, calculatedProgress: progress, activities };
           } catch (err) {
-            console.error(`Failed to fetch data for group ${g.id}:`, err);
+
             return { ...g, calculatedProgress: 0, activities: [] };
           }
         })
@@ -79,7 +79,7 @@ const Discover = () => {
 
       setGroups(withProgressAndActivities);
     } catch (error) {
-      console.error("Failed to fetch groups:", error);
+
       setGroups([]);
     } finally {
       setLoading(false);
@@ -92,7 +92,7 @@ const Discover = () => {
       const data = Array.isArray(res?.data) ? res.data : [];
       setInvitations(data);
     } catch (error) {
-      console.error("Failed to fetch invitations:", error);
+
       setInvitations([]);
     }
   };
@@ -105,7 +105,7 @@ const Discover = () => {
       setInvitations((prev) => prev.filter((x) => x.id !== invitation.id));
       fetchAvailableGroups();
     } catch (error) {
-      console.error("Failed to accept invitation:", error);
+
       notificationApi.error({
         message: "Chấp nhận lời mời thất bại",
         description: "Vui lòng thử lại sau.",
@@ -121,7 +121,7 @@ const Discover = () => {
         message: "Đã từ chối lời mời",
       });
     } catch (error) {
-      console.error("Failed to reject invitation:", error);
+
       notificationApi.error({
         message: "Từ chối lời mời thất bại",
         description: "Vui lòng thử lại sau.",
@@ -513,3 +513,4 @@ const Discover = () => {
 };
 
 export default Discover;
+

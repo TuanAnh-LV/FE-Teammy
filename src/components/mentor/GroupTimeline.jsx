@@ -28,7 +28,7 @@ export default function GroupTimeline({ groupId, groupDetail }) {
       const response = await BoardService.getBoard(groupId);
       setBoard(response?.data || null);
     } catch (error) {
-      console.error("Failed to fetch board data:", error);
+
       setBoard(null);
     } finally {
       setLoading(false);
@@ -62,7 +62,7 @@ export default function GroupTimeline({ groupId, groupDetail }) {
       
       setGroupMembers(allMembers);
     } catch (error) {
-      console.error("Failed to fetch members:", error);
+
       setGroupMembers([]);
     }
   };
@@ -79,7 +79,7 @@ export default function GroupTimeline({ groupId, groupDetail }) {
         });
       }
     } catch (error) {
-      console.error("Failed to load comments:", error);
+
     }
   };
 
@@ -89,7 +89,7 @@ export default function GroupTimeline({ groupId, groupDetail }) {
       await loadTaskComments(taskId);
       await fetchBoardData(); // Refresh board
     } catch (error) {
-      console.error("Failed to add comment:", error);
+
     }
   };
 
@@ -98,7 +98,7 @@ export default function GroupTimeline({ groupId, groupDetail }) {
       await BoardService.updateTaskComment(groupId, commentId, { content });
       await loadTaskComments(selectedTask?.id);
     } catch (error) {
-      console.error("Failed to update comment:", error);
+
     }
   };
 
@@ -108,7 +108,7 @@ export default function GroupTimeline({ groupId, groupDetail }) {
       await loadTaskComments(selectedTask?.id);
       await fetchBoardData(); // Refresh board
     } catch (error) {
-      console.error("Failed to delete comment:", error);
+
     }
   };
 
@@ -126,7 +126,7 @@ export default function GroupTimeline({ groupId, groupDetail }) {
         });
       }
     } catch (error) {
-      console.error("Failed to update task:", error);
+
     }
   };
 
@@ -143,7 +143,7 @@ export default function GroupTimeline({ groupId, groupDetail }) {
         });
       }
     } catch (error) {
-      console.error("Failed to update assignees:", error);
+
     }
   };
 
@@ -153,7 +153,7 @@ export default function GroupTimeline({ groupId, groupDetail }) {
       await fetchBoardData(); // Refresh board
       setSelectedTask(null); // Close modal
     } catch (error) {
-      console.error("Failed to delete task:", error);
+
     }
   };
 
@@ -196,7 +196,7 @@ export default function GroupTimeline({ groupId, groupDetail }) {
   const onDragEnd = (result) => {
     if (!result.destination) return;
     // Note: Mentor can view but drag-drop functionality would need API implementation
-    console.log("Drag operation:", result);
+
   };
 
   if (loading) {
@@ -303,3 +303,4 @@ export default function GroupTimeline({ groupId, groupDetail }) {
     </div>
   );
 }
+

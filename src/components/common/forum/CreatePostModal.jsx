@@ -74,7 +74,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           setAvailableSkills(response.data);
         }
       } catch (error) {
-        console.error("Error fetching skills:", error);
+
         setAvailableSkills([]);
       }
     };
@@ -402,3 +402,4 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
 };
 
 export default CreatePostModal;
+

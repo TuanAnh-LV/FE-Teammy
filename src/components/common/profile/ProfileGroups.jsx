@@ -25,7 +25,7 @@ const ProfileGroups = ({ userId }) => {
           }))
         );
       } catch (error) {
-        console.error("Error fetching groups:", error);
+
         setGroups([]);
       } finally {
         setLoading(false);
@@ -98,3 +98,4 @@ const ProfileGroups = ({ userId }) => {
 };
 
 export default ProfileGroups;
+

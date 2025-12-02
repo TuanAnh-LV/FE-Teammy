@@ -52,7 +52,7 @@ export default function GroupDetailModal({ group, open, onClose }) {
         setMembers(membersList);
       }
     } catch (error) {
-      console.error("Failed to fetch group details:", error);
+
     } finally {
       setLoading(false);
     }
@@ -228,3 +228,4 @@ export default function GroupDetailModal({ group, open, onClose }) {
     </Modal>
   );
 }
+
