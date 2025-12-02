@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { ChatService } from "../../services/chat.service";
 import { signalRService } from "../../services/signalr.service";
 import { useTranslation } from "../../hook/useTranslation";
+import logger from "../../utils/logger";
 import MemberListDrawer from "./MemberListDrawer";
 import {
   setMessages,
@@ -85,7 +86,7 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
             data.length > MAX_MESSAGES ? data.slice(-MAX_MESSAGES) : data;
           dispatch(setMessages({ sessionId: effectiveSessionId, messages: limited }));
         } catch (loadErr) {
-
+          logger.error("Failed to load messages:", loadErr.message);
           dispatch(setMessages({ sessionId: effectiveSessionId, messages: [] }));
         }
 
@@ -97,6 +98,7 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
           await signalRService.joinGroup(effectiveGroupId);
         }
       } catch (err) {
+        logger.error("Failed to initialize chat:", err);
 
         notification.error({
           message: t("failedLoadMessages") || "Failed to initialize chat",
@@ -141,7 +143,7 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
       // Don't manually add message - backend will broadcast via SignalR ReceiveMessage event
       // This prevents duplicate messages
     } catch (err) {
-
+      logger.error("Failed to send message:", err);
       notification.error({
         message: t("failedSendMessage") || "Failed to send message",
       });
