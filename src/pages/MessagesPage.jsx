@@ -146,7 +146,7 @@ const MessagesPage = () => {
         className={`${
           showChatView ? "hidden md:flex" : "flex"
         } w-full md:w-80 bg-white border-r border-gray-200 flex-col ${
-          isMentorRoute ? "rounded-l-xl md:rounded-xl overflow-hidden shadow-sm" : ""
+          isMentorRoute ? "overflow-hidden shadow-sm" : ""
         }`}
       >
         <ConversationList
@@ -160,7 +160,7 @@ const MessagesPage = () => {
       {/* Chat Window Container */}
       <div
         className={`${showChatView ? "flex" : "hidden md:flex"} flex-1 flex-col min-h-0 ${
-          isMentorRoute ? "p-4" : ""
+          isMentorRoute ? "w-full h-full flex flex-col bg-white border-r border-gray-200" : ""
         }`}
       >
         <div className="flex-1 bg-white overflow-hidden">

@@ -9,6 +9,7 @@ import {
   Card,
   Modal,
   notification,
+  Tooltip,
 } from "antd";
 import {
   UploadOutlined,
@@ -235,23 +236,28 @@ const ManageUsers = () => {
       key: "actions",
       render: (_, record) => (
         <Space>
-          <Button
-            icon={<EyeOutlined />}
-            shape="circle"
-            onClick={() => handleView(record)}
-          />
-          <Button
-            icon={<EditOutlined />}
-            shape="circle"
-            onClick={() => handleEdit(record)}
-          />
-          <Button
-            icon={<StopOutlined />}
-            shape="circle"
-            danger
-            onClick={() => handleBan(record)}
-            title="Ban User"
-          />
+          <Tooltip title={t("viewDetails") || "View Details"}>
+            <Button
+              icon={<EyeOutlined />}
+              shape="circle"
+              onClick={() => handleView(record)}
+            />
+          </Tooltip>
+          <Tooltip title={t("edit") || "Edit"}>
+            <Button
+              icon={<EditOutlined />}
+              shape="circle"
+              onClick={() => handleEdit(record)}
+            />
+          </Tooltip>
+          <Tooltip title={t("banUser") || "Ban User"}>
+            <Button
+              icon={<StopOutlined />}
+              shape="circle"
+              danger
+              onClick={() => handleBan(record)}
+            />
+          </Tooltip>
         </Space>
       ),
     },

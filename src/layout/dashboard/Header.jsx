@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Layout, Avatar } from "antd";
 import {
   BellOutlined,
@@ -8,11 +8,28 @@ import {
 } from "@ant-design/icons";
 import { Globe } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
+import { AuthService } from "../../services/auth.service";
 
 const { Header } = Layout;
 
 const HeaderBar = ({ collapsed, onToggle }) => {
   const { language, toggleLanguage } = useLanguage();
+  const [avatarUrl, setAvatarUrl] = useState(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await AuthService.me();
+        if (response?.data?.avatarUrl) {
+          setAvatarUrl(response.data.avatarUrl);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   return (
     <Header
@@ -50,7 +67,11 @@ const HeaderBar = ({ collapsed, onToggle }) => {
         </button>
 
         <BellOutlined className="text-gray-500 text-lg cursor-pointer hover:text-blue-600 transition" />
-        <Avatar size="small" icon={<UserOutlined />} />
+        <Avatar 
+          size="medium" 
+          icon={<UserOutlined />}
+          src={avatarUrl}
+        />
       </div>
     </Header>
   );

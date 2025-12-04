@@ -172,7 +172,7 @@ export default function MentorDashboard() {
   };
 
   return (
-    <div className="space-y-8 bg-gray-50 min-h-screen p-8">
+    <div className="space-y-6 space-x-8 bg-gray-50 min-h-screen">
       {/* HEADER */}
       <div className="flex justify-between items-start md:items-center flex-col md:flex-row">
         <div>

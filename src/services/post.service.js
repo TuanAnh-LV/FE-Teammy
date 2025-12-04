@@ -28,4 +28,11 @@ export const PostService = {
       isLoading: true,
     });
   },
+  inviteProfilePost(postId) {
+    return BaseService.post({
+      url: API.POST.INVITE_PROFILE_POST(postId),
+      payload: {},
+      isLoading: true,
+    });
+  },
 };

@@ -1,15 +1,34 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import FilterSidebar from "../../components/common/discover/FilterSidebar";
 import ProjectCard from "../../components/common/discover/ProjectCard";
 import { useTranslation } from "../../hook/useTranslation";
 import { TopicService } from "../../services/topic.service";
 import { GroupService } from "../../services/group.service";
+import { AuthService } from "../../services/auth.service";
+import { AiService } from "../../services/ai.service";
 import { Modal, Input, notification } from "antd";
+import { Sparkles } from "lucide-react";
 
 const Discover = () => {
   const { t } = useTranslation();
   const [projects, setProjects] = useState([]);
-  const [inviteState, setInviteState] = useState({ open: false, topic: null, loading: false, message: "" });
+  const [aiSuggestedTopics, setAiSuggestedTopics] = useState([]);
+  const [membership, setMembership] = useState({
+    hasGroup: false,
+    groupId: null,
+  });
+  const [inviteState, setInviteState] = useState({
+    open: false,
+    topic: null,
+    loading: false,
+    message: "",
+  });
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [filters, setFilters] = useState({
     major: "all",
@@ -17,6 +36,122 @@ const Discover = () => {
     teamSize: "all",
     aiRecommended: false,
   });
+
+  // Use ref to track if AI suggestions have been fetched for current groupId
+  const aiSuggestionsFetchedRef = useRef(null);
+
+  // Fetch membership khi component mount
+  useEffect(() => {
+    let mounted = true;
+    const fetchMembership = async () => {
+      try {
+        const res = await AuthService.getMembership();
+        if (mounted) {
+          const groupId = res?.data?.groupId || null;
+          const hasGroup = !!res?.data?.hasGroup;
+          setMembership({
+            hasGroup,
+            groupId,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch membership:", err);
+      }
+    };
+    fetchMembership();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Fetch AI topic suggestions khi có groupId
+  useEffect(() => {
+    if (!membership.groupId) {
+      setAiSuggestedTopics([]);
+      aiSuggestionsFetchedRef.current = null;
+      return;
+    }
+
+    // Skip if already fetched for this groupId
+    if (aiSuggestionsFetchedRef.current === membership.groupId) {
+      return;
+    }
+
+    let mounted = true;
+    const fetchAISuggestions = async () => {
+      try {
+        const aiResponse = await AiService.getTopicSuggestions({
+          groupId: membership.groupId,
+          limit: 5,
+        });
+
+        if (
+          !aiResponse ||
+          aiResponse.success === false ||
+          !aiResponse.data.data
+        ) {
+          if (mounted) setAiSuggestedTopics([]);
+          return;
+        }
+
+        // Take all data without filtering
+        let suggestions = Array.isArray(aiResponse.data.data)
+          ? aiResponse.data.data
+          : [];
+
+        if (mounted && suggestions.length > 0) {
+          // Map AI suggestions to match project format
+          const mapped = suggestions.map((item) => {
+            const detail = item.detail || {};
+            return {
+              topicId: item.topicId || detail.topicId,
+              title: item.title || detail.title || "Untitled",
+              description: item.description || detail.description || "",
+              domain: detail.majorName || "General",
+              majorId: detail.majorId,
+              status: detail.status || "open",
+              tags: [detail.status || "open"],
+              mentor: detail.createdByName || "",
+              mentorsRaw: detail.mentors || [],
+              progress: 0,
+              members: (detail.mentors || []).map((m) =>
+                (m.mentorName || m.name || "M")
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+              ),
+              createdAt: detail.createdAt,
+              attachedFiles: detail.attachedFiles || [],
+              referenceDocs: detail.referenceDocs || [],
+              score: item.score || 0,
+              canTakeMore: item.canTakeMore,
+              matchingSkills: item.matchingSkills || [],
+              isAISuggestion: true,
+            };
+          });
+          setAiSuggestedTopics(mapped);
+          aiSuggestionsFetchedRef.current = membership.groupId;
+          notification.info({
+            message: t("aiSuggestionsAvailable") || "AI Suggestions Available",
+            description: `Found ${mapped.length} recommended topics for your group`,
+            placement: "topRight",
+            duration: 3,
+          });
+        } else {
+          if (mounted) setAiSuggestedTopics([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch AI suggestions:", err);
+        if (mounted) setAiSuggestedTopics([]);
+      }
+    };
+
+    fetchAISuggestions();
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membership.groupId]);
 
   useEffect(() => {
     let mounted = true;
@@ -32,9 +167,11 @@ const Discover = () => {
           domain: t.majorName || "General",
           majorId: t.majorId,
           status: t.status || "open",
-            tags: [t.status || "open"],
+          tags: [t.status || "open"],
           mentor:
-            (t.mentors && t.mentors[0] && (t.mentors[0].mentorName || t.mentors[0].name)) ||
+            (t.mentors &&
+              t.mentors[0] &&
+              (t.mentors[0].mentorName || t.mentors[0].name)) ||
             t.createdByName ||
             "",
           mentorsRaw: t.mentors || [],
@@ -66,10 +203,19 @@ const Discover = () => {
     return () => {
       mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Filter out topics that are already in AI suggestions
+  const aiTopicIds = useMemo(() => {
+    return new Set(aiSuggestedTopics.map((t) => t.topicId));
+  }, [aiSuggestedTopics]);
 
   useEffect(() => {
     let filtered = [...projects];
+
+    // Remove topics already shown in AI suggestions
+    filtered = filtered.filter((p) => !aiTopicIds.has(p.topicId));
 
     // Filter by major
     if (filters.major !== "all") {
@@ -85,7 +231,7 @@ const Discover = () => {
     }
 
     setFilteredProjects(filtered);
-  }, [filters, projects]);
+  }, [filters, projects, aiTopicIds]);
 
   const handleFilterChange = useCallback((newFilters) => {
     setFilters(newFilters);
@@ -123,16 +269,91 @@ const Discover = () => {
 
           {/* Projects */}
           <div className="flex flex-col gap-4">
+            {/* AI Suggested Topics - Only show when user has group */}
+            {membership.hasGroup && aiSuggestedTopics.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+                  <h3 className="text-lg md:text-xl font-bold text-gray-900">
+                    {t("aiRecommendedTopics") || "AI Recommended Topics"}
+                  </h3>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-600 text-white">
+                    {aiSuggestedTopics.length}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  {t("aiTopicSuggestionsDesc") ||
+                    "Topics matched to your group's interests and skills"}
+                </p>
+                <div className="flex flex-col gap-4">
+                  {aiSuggestedTopics.map((project, i) => (
+                    <div key={`ai-${i}`} className="relative">
+                      {/* AI Badge - Top Left */}
+                      <div className="absolute -top-3 -left-3 flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold rounded-full shadow-lg z-10">
+                        <Sparkles className="w-3.5 h-3.5 fill-white" />
+                        AI Recommended
+                      </div>
+
+                      {/* Match Score Badge - Top Right */}
+                      <div className="absolute -top-3 -right-3 flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg z-10">
+                        <svg
+                          className="w-3.5 h-3.5 fill-white"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        {project.score}% Match
+                      </div>
+
+                      <ProjectCard
+                        project={project}
+                        onSelectTopic={(p) =>
+                          setInviteState({
+                            open: true,
+                            topic: p,
+                            loading: false,
+                            message: "",
+                          })
+                        }
+                        isAISuggestion={true}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Regular Projects */}
             {filteredProjects.length > 0 ? (
-              filteredProjects.map((project, i) => (
-                <ProjectCard
-                key={i}
-                project={project}
-                onSelectTopic={(p) =>
-                  setInviteState({ open: true, topic: p, loading: false, message: "" })
-                }
-              />
-              ))
+              <>
+                {/* Only show header if AI suggestions are also displayed */}
+                {membership.hasGroup && aiSuggestedTopics.length > 0 && (
+                  <div className="mt-8 mb-4">
+                    <h3 className="text-lg md:text-xl font-bold text-gray-900">
+                      {t("allTopics") || "All Available Topics"}
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {t("browseAllTopics") ||
+                        "Browse all topics from the catalog"}
+                    </p>
+                  </div>
+                )}
+
+                {filteredProjects.map((project, i) => (
+                  <ProjectCard
+                    key={i}
+                    project={project}
+                    onSelectTopic={(p) =>
+                      setInviteState({
+                        open: true,
+                        topic: p,
+                        loading: false,
+                        message: "",
+                      })
+                    }
+                  />
+                ))}
+              </>
             ) : (
               <div className="flex flex-col items-center justify-center py-16 px-4">
                 <div className="text-gray-400 mb-4">
@@ -165,7 +386,14 @@ const Discover = () => {
       <Modal
         open={inviteState.open}
         title={t("inviteMentor") || "Mời mentor"}
-        onCancel={() => setInviteState({ open: false, topic: null, loading: false, message: "" })}
+        onCancel={() =>
+          setInviteState({
+            open: false,
+            topic: null,
+            loading: false,
+            message: "",
+          })
+        }
         onOk={async () => {
           const { topic } = inviteState;
           if (!topic) return;
@@ -192,9 +420,15 @@ const Discover = () => {
             if (!mentorCandidate) {
               notification.warning({
                 message: t("noMentorFound") || "Không tìm thấy mentor",
-                description: t("topicHasNoMentor") || "Topic này không có mentor gắn kèm",
+                description:
+                  t("topicHasNoMentor") || "Topic này không có mentor gắn kèm",
               });
-              setInviteState({ open: false, topic: null, loading: false, message: "" });
+              setInviteState({
+                open: false,
+                topic: null,
+                loading: false,
+                message: "",
+              });
               return;
             }
 
@@ -214,26 +448,40 @@ const Discover = () => {
                 ` "${topic.title}" ` +
                 (t("andSentMentorInvite") || "và đã gửi thư mời cho mentor"),
             });
-            setInviteState({ open: false, topic: null, loading: false, message: "" });
+            setInviteState({
+              open: false,
+              topic: null,
+              loading: false,
+              message: "",
+            });
           } catch (err) {
 
             const statusCode = err?.response?.status;
             const errorMessage = err?.response?.data?.message || "";
-            
+
             let errorTitle = t("failedToSelectTopic") || "Thất bại";
             let errorDesc = errorMessage || t("pleaseTryAgain");
-            
+
             // Handle 409 Conflict - Group is active
             if (statusCode === 409) {
-              errorTitle = t("groupIsActive") || "Cannot change topic when group is active";
-              errorDesc = t("groupActiveDescription") || "The group is currently active and cannot change topics. Please contact the mentor or administrator for assistance.";
+              errorTitle =
+                t("groupIsActive") ||
+                "Cannot change topic when group is active";
+              errorDesc =
+                t("groupActiveDescription") ||
+                "The group is currently active and cannot change topics. Please contact the mentor or administrator for assistance.";
             }
-            
+
             notification.error({
               message: errorTitle,
               description: errorDesc,
             });
-            setInviteState({ open: false, topic: null, loading: false, message: "" });
+            setInviteState({
+              open: false,
+              topic: null,
+              loading: false,
+              message: "",
+            });
           } finally {
             setInviteState((s) => ({ ...s, loading: false }));
           }
@@ -241,7 +489,8 @@ const Discover = () => {
         confirmLoading={inviteState.loading}
       >
         <p className="text-sm mb-2">
-          {t("sendingInviteForTopic") || "Gửi lời mời mentor cho topic"}: <strong>{inviteState.topic?.title}</strong>
+          {t("sendingInviteForTopic") || "Gửi lời mời mentor cho topic"}:{" "}
+          <strong>{inviteState.topic?.title}</strong>
         </p>
         <Input.TextArea
           rows={4}

@@ -13,6 +13,7 @@ import {
   Switch,
   InputNumber,
   Select,
+  Tooltip,
 } from "antd";
 import {
   PlusOutlined,
@@ -135,19 +136,33 @@ const ManageSemesters = () => {
   const handleManagePolicy = async (record) => {
     setSelectedSemester(record);
     try {
-      const response = await SemesterService.getPolicy(record.semesterId);
-      const policy = response?.data || {};
+      const response = await SemesterService.detail(record.semesterId);
+      const data = response?.data || {};
+      const policy = data.policy || {};
+
       policyForm.setFieldsValue({
-        minGroupSize: policy.minGroupSize || 3,
-        maxGroupSize: policy.maxGroupSize || 6,
-        allowLateSubmission: policy.allowLateSubmission || false,
-        lateSubmissionPenalty: policy.lateSubmissionPenalty || 10,
-        requireMentorApproval: policy.requireMentorApproval || true,
-        allowTopicChange: policy.allowTopicChange || false,
-        topicChangeDeadline: policy.topicChangeDeadline
-          ? dayjs(policy.topicChangeDeadline)
+        teamSelfSelectStart: policy.teamSelfSelectStart
+          ? dayjs(policy.teamSelfSelectStart)
           : null,
+        teamSelfSelectEnd: policy.teamSelfSelectEnd
+          ? dayjs(policy.teamSelfSelectEnd)
+          : null,
+        teamSuggestStart: policy.teamSuggestStart
+          ? dayjs(policy.teamSuggestStart)
+          : null,
+        topicSelfSelectStart: policy.topicSelfSelectStart
+          ? dayjs(policy.topicSelfSelectStart)
+          : null,
+        topicSelfSelectEnd: policy.topicSelfSelectEnd
+          ? dayjs(policy.topicSelfSelectEnd)
+          : null,
+        topicSuggestStart: policy.topicSuggestStart
+          ? dayjs(policy.topicSuggestStart)
+          : null,
+        desiredGroupSizeMin: policy.desiredGroupSizeMin,
+        desiredGroupSizeMax: policy.desiredGroupSizeMax,
       });
+
       setIsPolicyModalOpen(true);
     } catch (error) {
 
@@ -199,19 +214,34 @@ const ManageSemesters = () => {
   const handlePolicySubmit = async () => {
     try {
       const values = await policyForm.validateFields();
+
       const payload = {
-        minGroupSize: values.minGroupSize,
-        maxGroupSize: values.maxGroupSize,
-        allowLateSubmission: values.allowLateSubmission,
-        lateSubmissionPenalty: values.lateSubmissionPenalty,
-        requireMentorApproval: values.requireMentorApproval,
-        allowTopicChange: values.allowTopicChange,
-        topicChangeDeadline: values.topicChangeDeadline
-          ? values.topicChangeDeadline.format("YYYY-MM-DD")
-          : null,
+        req: {
+          teamSelfSelectStart: values.teamSelfSelectStart
+            ? values.teamSelfSelectStart.format("YYYY-MM-DD")
+            : null,
+          teamSelfSelectEnd: values.teamSelfSelectEnd
+            ? values.teamSelfSelectEnd.format("YYYY-MM-DD")
+            : null,
+          teamSuggestStart: values.teamSuggestStart
+            ? values.teamSuggestStart.format("YYYY-MM-DD")
+            : null,
+          topicSelfSelectStart: values.topicSelfSelectStart
+            ? values.topicSelfSelectStart.format("YYYY-MM-DD")
+            : null,
+          topicSelfSelectEnd: values.topicSelfSelectEnd
+            ? values.topicSelfSelectEnd.format("YYYY-MM-DD")
+            : null,
+          topicSuggestStart: values.topicSuggestStart
+            ? values.topicSuggestStart.format("YYYY-MM-DD")
+            : null,
+          desiredGroupSizeMin: values.desiredGroupSizeMin,
+          desiredGroupSizeMax: values.desiredGroupSizeMax,
+        },
       };
 
       await SemesterService.updatePolicy(selectedSemester.semesterId, payload);
+
       notification.success({
         message: t("success") || "Success",
         description: t("policyUpdated") || "Policy updated successfully",
@@ -283,29 +313,36 @@ const ManageSemesters = () => {
       key: "actions",
       render: (_, record) => (
         <Space>
-          <Button
-            icon={<EyeOutlined />}
-            shape="circle"
-            onClick={() => handleView(record)}
-          />
-          <Button
-            icon={<EditOutlined />}
-            shape="circle"
-            onClick={() => handleEdit(record)}
-          />
-          <Button
-            icon={<SettingOutlined />}
-            shape="circle"
-            onClick={() => handleManagePolicy(record)}
-          />
-          {!record.isActive && (
+          <Tooltip title={t("viewDetails") || "View Details"}>
             <Button
-              icon={<CheckCircleOutlined />}
+              icon={<EyeOutlined />}
               shape="circle"
-              style={{ color: "#52c41a", borderColor: "#52c41a" }}
-              onClick={() => handleActivate(record)}
-              title={t("activate") || "Activate"}
+              onClick={() => handleView(record)}
             />
+          </Tooltip>
+          <Tooltip title={t("edit") || "Edit"}>
+            <Button
+              icon={<EditOutlined />}
+              shape="circle"
+              onClick={() => handleEdit(record)}
+            />
+          </Tooltip>
+          <Tooltip title={t("managePolicy") || "Manage Policy"}>
+            <Button
+              icon={<SettingOutlined />}
+              shape="circle"
+              onClick={() => handleManagePolicy(record)}
+            />
+          </Tooltip>
+          {!record.isActive && (
+            <Tooltip title={t("activate") || "Activate"}>
+              <Button
+                icon={<CheckCircleOutlined />}
+                shape="circle"
+                style={{ color: "#52c41a", borderColor: "#52c41a" }}
+                onClick={() => handleActivate(record)}
+              />
+            </Tooltip>
           )}
         </Space>
       ),
@@ -501,61 +538,104 @@ const ManageSemesters = () => {
         width={700}
       >
         <Form form={policyForm} layout="vertical" className="mt-4">
+          {/* Team self-select */}
           <div className="grid grid-cols-2 gap-4">
             <Form.Item
-              label={t("minGroupSize") || "Min Group Size"}
-              name="minGroupSize"
-              rules={[{ required: true }]}
+              label={t("teamSelfSelectStart") || "Team Self-Select Start"}
+              name="teamSelfSelectStart"
+              rules={[{ required: true, message: "Please select start date" }]}
             >
-              <InputNumber min={1} max={10} style={{ width: "100%" }} />
+              <DatePicker
+                style={{ width: "100%" }}
+                showTime
+                format="YYYY-MM-DD HH:mm"
+              />
             </Form.Item>
 
             <Form.Item
-              label={t("maxGroupSize") || "Max Group Size"}
-              name="maxGroupSize"
-              rules={[{ required: true }]}
+              label={t("teamSelfSelectEnd") || "Team Self-Select End"}
+              name="teamSelfSelectEnd"
+              rules={[{ required: true, message: "Please select end date" }]}
             >
-              <InputNumber min={1} max={20} style={{ width: "100%" }} />
+              <DatePicker
+                style={{ width: "100%" }}
+                showTime
+                format="YYYY-MM-DD HH:mm"
+              />
             </Form.Item>
           </div>
 
+          {/* Team suggest start */}
           <Form.Item
-            label={t("allowLateSubmission") || "Allow Late Submission"}
-            name="allowLateSubmission"
-            valuePropName="checked"
+            label={t("teamSuggestStart") || "Team Suggest Start"}
+            name="teamSuggestStart"
+            rules={[{ required: true, message: "Please select date" }]}
           >
-            <Switch />
+            <DatePicker
+              style={{ width: "100%" }}
+              showTime
+              format="YYYY-MM-DD HH:mm"
+            />
           </Form.Item>
 
+          {/* Topic self-select */}
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item
+              label={t("topicSelfSelectStart") || "Topic Self-Select Start"}
+              name="topicSelfSelectStart"
+              rules={[{ required: true, message: "Please select start date" }]}
+            >
+              <DatePicker
+                style={{ width: "100%" }}
+                showTime
+                format="YYYY-MM-DD HH:mm"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={t("topicSelfSelectEnd") || "Topic Self-Select End"}
+              name="topicSelfSelectEnd"
+              rules={[{ required: true, message: "Please select end date" }]}
+            >
+              <DatePicker
+                style={{ width: "100%" }}
+                showTime
+                format="YYYY-MM-DD HH:mm"
+              />
+            </Form.Item>
+          </div>
+
+          {/* Topic suggest start */}
           <Form.Item
-            label={t("lateSubmissionPenalty") || "Late Submission Penalty (%)"}
-            name="lateSubmissionPenalty"
+            label={t("topicSuggestStart") || "Topic Suggest Start"}
+            name="topicSuggestStart"
+            rules={[{ required: true, message: "Please select date" }]}
           >
-            <InputNumber min={0} max={100} style={{ width: "100%" }} />
+            <DatePicker
+              style={{ width: "100%" }}
+              showTime
+              format="YYYY-MM-DD HH:mm"
+            />
           </Form.Item>
 
-          <Form.Item
-            label={t("requireMentorApproval") || "Require Mentor Approval"}
-            name="requireMentorApproval"
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
+          {/* Group size */}
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item
+              label={t("desiredGroupSizeMin") || "Desired Group Size Min"}
+              name="desiredGroupSizeMin"
+              rules={[{ required: true, message: "Please enter min size" }]}
+            >
+              <InputNumber min={1} max={20} style={{ width: "100%" }} />
+            </Form.Item>
 
-          <Form.Item
-            label={t("allowTopicChange") || "Allow Topic Change"}
-            name="allowTopicChange"
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-
-          <Form.Item
-            label={t("topicChangeDeadline") || "Topic Change Deadline"}
-            name="topicChangeDeadline"
-          >
-            <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
-          </Form.Item>
+            <Form.Item
+              label={t("desiredGroupSizeMax") || "Desired Group Size Max"}
+              name="desiredGroupSizeMax"
+              rules={[{ required: true, message: "Please enter max size" }]}
+            >
+              <InputNumber min={1} max={50} style={{ width: "100%" }} />
+            </Form.Item>
+          </div>
         </Form>
       </Modal>
     </div>

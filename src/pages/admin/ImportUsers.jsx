@@ -100,7 +100,7 @@ const ImportUsers = () => {
         <Button
           type="default"
           icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/moderator/topics")}
+          onClick={() => navigate("/admin/users")}
           className="mt-2 sm:mt-0 !border-gray-300 hover:!border-orange-400 hover:!text-orange-500"
         >
           {t("backToUsers") || "Back to Users"}

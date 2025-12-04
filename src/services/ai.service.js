@@ -46,5 +46,32 @@ export const AiService = {
       isLoading: true,
     });
   },
+
+  // Get AI summary
+  getSummary(params) {
+    return BaseService.get({
+      url: API.AI.SUMMARY,
+      params,
+      isLoading: true,
+    });
+  },
+
+  // Get AI options
+  getOptions(params) {
+    return BaseService.get({
+      url: API.AI.OPTIONS,
+      params,
+      isLoading: true,
+    });
+  },
+
+  // Auto resolve
+  autoResolve(payload) {
+    return BaseService.post({
+      url: API.AI.AUTO_RESOLVE,
+      payload,
+      isLoading: true,
+    });
+  },
 };
 

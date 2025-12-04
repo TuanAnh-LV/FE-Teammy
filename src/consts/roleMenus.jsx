@@ -35,8 +35,8 @@ export const getRoleMenus = (role, language = "EN") => {
         icon: <BarChartOutlined />,
       },
       {
-        key: "invitations",
-        label: getTranslation("invitationsMenu", language),
+        key: "discover",
+        label: getTranslation("discover", language),
         path: "/mentor/discover",
         icon: <HomeOutlined />,
       },
@@ -139,5 +139,7 @@ export const getRoleMenus = (role, language = "EN") => {
     ],
   };
 
-  return [...(roleMenus[role] || []), ...common];
+  return role === "mentor" 
+    ? roleMenus[role] || [] 
+    : [...(roleMenus[role] || []), ...common];
 };
