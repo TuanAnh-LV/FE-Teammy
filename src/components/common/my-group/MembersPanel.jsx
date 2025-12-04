@@ -109,7 +109,7 @@ export default function MembersPanel({
         setAssignRoleOpen(false);
         setSelectedMember(null);
       } catch (error) {
-        console.error('Failed to assign role:', error);
+
       } finally {
         setAssignSubmitting(false);
       }
@@ -214,8 +214,10 @@ export default function MembersPanel({
                     <p className="font-semibold text-gray-900">
                       {member.name || member.displayName || "Unknown"}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {member.role || t("member") || "Member"}
+                    <p className="text-xs text-gray-500 capitalize">
+                      {(member.assignedRoles && member.assignedRoles.length > 0
+                        ? member.assignedRoles.join(", ")
+                        : member.role) || t("member") || "Member"}
                     </p>
                   </div>
                 </div>
@@ -320,8 +322,10 @@ export default function MembersPanel({
                     <p className="text-sm font-semibold text-gray-800 truncate">
                       {member.name || member.displayName || "Unknown"}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {member.role || "Member"}
+                    <p className="text-xs text-gray-500 capitalize">
+                      {(member.assignedRoles && member.assignedRoles.length > 0
+                        ? member.assignedRoles.join(", ")
+                        : member.role) || "Member"}
                     </p>
                   </div>
                 </div>
@@ -394,7 +398,7 @@ export default function MembersPanel({
               <img
                 src={mentor.avatarUrl}
                 alt={mentor.displayName || mentor.name || "mentor"}
-                className="w-12 h-12 rounded-full object-cover border bg-white"
+                className="w-12 h-12 rounded-full object-cover bg-white"
                 referrerPolicy="no-referrer"
                 onError={(e) => {
                   const fallbackName = mentor.displayName || mentor.name || "Mentor";
@@ -441,3 +445,4 @@ export default function MembersPanel({
     </>
   );
 }
+

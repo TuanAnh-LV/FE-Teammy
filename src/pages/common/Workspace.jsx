@@ -1,4 +1,4 @@
-﻿// src/pages/Workspace.jsx
+// src/pages/Workspace.jsx
 import React, { useEffect, useState } from "react";
 import {
   DndContext,
@@ -93,7 +93,7 @@ const Workspace = () => {
           localStorage.setItem("last_group_id", fallback);
         }
       } catch (err) {
-        console.error(err);
+
       }
     };
     fetchDefaultGroup();
@@ -466,6 +466,7 @@ const Workspace = () => {
 };
 
 export default Workspace;
+
 
 
 

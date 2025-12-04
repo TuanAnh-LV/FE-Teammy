@@ -44,7 +44,7 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
         }))
       );
     } catch (err) {
-      console.error("Search failed:", err);
+
       setResults([]);
     } finally {
       setLoading(false);
@@ -82,7 +82,7 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
       });
       onClose();
     } catch (err) {
-      console.error("Invite failed:", err);
+
       notification.error({
         message: t("inviteFailed") || "Failed to send invitation",
       });
@@ -123,7 +123,7 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
 
           {/* Autocomplete list */}
           {loading && (
-            <p className="text-sm text-gray-500 mt-2 pl-2">Đang tìm kiếm...</p>
+            <p className="text-sm text-gray-500 mt-2 pl-2">{t("searching")}</p>
           )}
           {!loading && results.length > 0 && (
             <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto z-20">
@@ -176,3 +176,4 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
     </div>
   );
 }
+

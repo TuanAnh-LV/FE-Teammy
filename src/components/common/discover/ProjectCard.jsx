@@ -172,7 +172,7 @@ const ProjectCard = ({ project, onSelectTopic, isAISuggestion = false }) => {
 
               navigate(`/my-group`);
             } catch (err) {
-              console.error("Failed to select topic:", err);
+
               notification.error({
                 message: t("failedToSelectTopic"),
                 description:
@@ -201,3 +201,4 @@ const ProjectCard = ({ project, onSelectTopic, isAISuggestion = false }) => {
 };
 
 export default ProjectCard;
+

@@ -71,7 +71,7 @@ const ManageUsers = () => {
       };
       setSelectedUser(enriched);
     } catch (err) {
-      console.error(err);
+
       notification.error({
         message: t("failedLoadUserDetails") || "Failed to load user details",
       });
@@ -134,7 +134,7 @@ const ManageUsers = () => {
               `${user.displayName || user.name} has been banned.`,
           });
         } catch (err) {
-          console.error(err);
+
           notification.error({
             message:
               (t("userBanFailed") &&
@@ -180,7 +180,7 @@ const ManageUsers = () => {
 
         if (mounted) setUserList(mapped);
       } catch (err) {
-        console.error(err);
+
         notification.error({
           message: t("failedLoadUsers") || "Failed to load users",
         });
@@ -394,3 +394,4 @@ const ManageUsers = () => {
 };
 
 export default ManageUsers;
+

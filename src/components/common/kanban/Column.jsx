@@ -6,8 +6,10 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import TaskCard from "./TaskCard";
+import { useTranslation } from "../../../hook/useTranslation";
 
 const Column = ({ id, meta, tasks, onOpen, onCreate, onDelete, columnMeta = {} }) => {
+  const { t } = useTranslation();
   const [showQuickTask, setShowQuickTask] = useState(false);
   const [quickTitle, setQuickTitle] = useState("");
   const { setNodeRef, isOver } = useDroppable({ id });
@@ -19,7 +21,7 @@ const Column = ({ id, meta, tasks, onOpen, onCreate, onDelete, columnMeta = {} }
   return (
     <div
       ref={setNodeRef}
-      className={`w-80 md:w-96 min-h-[560px] rounded-2xl p-5
+      className={`w-76 md:w-[23.2rem] min-h-[560px] rounded-2xl p-4
       ${isOver ? "bg-[#EEF2FF] border-indigo-200" : "bg-[#F7F8FA] border-gray-200"}
       transition`}
     >
@@ -37,7 +39,7 @@ const Column = ({ id, meta, tasks, onOpen, onCreate, onDelete, columnMeta = {} }
               type="button"
               onClick={onDelete}
               className="text-xs text-red-500 hover:text-red-700 "
-              title="Delete column"
+              title={t("deleteColumnTitle") || "Delete column"}
             >
               ✕
             </button>
@@ -45,14 +47,16 @@ const Column = ({ id, meta, tasks, onOpen, onCreate, onDelete, columnMeta = {} }
         </div>
       </div>
 
-      <SortableContext
-        items={tasks.map((t) => t.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} onOpen={onOpen} columnMeta={columnMeta} />
-        ))}
-      </SortableContext>
+      <div className="max-h-[500px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
+        <SortableContext
+          items={tasks.map((t) => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {tasks.map((task) => (
+            <TaskCard key={task.id} task={task} onOpen={onOpen} columnMeta={columnMeta} />
+          ))}
+        </SortableContext>
+      </div>
 
       {onCreate && (
         <div className="mt-3">
@@ -62,7 +66,7 @@ const Column = ({ id, meta, tasks, onOpen, onCreate, onDelete, columnMeta = {} }
                 autoFocus
                 value={quickTitle}
                 onChange={(e) => setQuickTitle(e.target.value)}
-                placeholder="What needs to be done?"
+                placeholder={t("whatNeedsToBeDone") || "What needs to be done?"}
                 className="w-full border border-gray-200 rounded-lg px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-blue-200"
               />
               <div className="flex gap-2">

@@ -191,7 +191,7 @@ const Discover = () => {
           setFilteredProjects(mapped);
         }
       } catch (err) {
-        console.error(err);
+
         notification.error({
           message: t("failedLoadTopics") || "Failed to load topics",
         });
@@ -455,7 +455,7 @@ const Discover = () => {
               message: "",
             });
           } catch (err) {
-            console.error("Failed to select topic and invite mentor:", err);
+
             const statusCode = err?.response?.status;
             const errorMessage = err?.response?.data?.message || "";
 
@@ -506,3 +506,4 @@ const Discover = () => {
 };
 
 export default Discover;
+

@@ -34,10 +34,10 @@ export default function SelectTopicModal({
           String(topic?.status || topic?.topicStatus || topic?.state || "").toLowerCase() ===
           "open"
       );
-      console.log("Loaded topics:", openTopics.map(t => ({ id: t.id, name: t.name })));
+
       setTopics(openTopics);
     } catch (err) {
-      console.error("Failed to load topics:", err);
+
       setTopics([]);
     } finally {
       setLoading(false);
@@ -72,12 +72,11 @@ export default function SelectTopicModal({
         });
         return;
       }
-      
-      console.log("Submitting topic:", selectedTopicId, selectedTopic);
+
       try {
         await onSelect?.(selectedTopicId, selectedTopic);
       } catch (error) {
-        console.error("Failed to assign topic:", error);
+
       }
     }
   };
@@ -145,9 +144,9 @@ export default function SelectTopicModal({
             <div className="space-y-2">
               {filteredTopics.map((topic, index) => {
                 const topicId = topic.id || topic._id || topic.topicId;
-                console.log("Rendering topic:", { index, topic, topicId });
+
                 if (!topicId) {
-                  console.error("Topic missing ID - full object:", JSON.stringify(topic));
+
                 }
                 const finalTopicId = topicId || `temp-${index}`;
                 const isSelected = String(selectedTopicId) === String(finalTopicId);
@@ -159,10 +158,10 @@ export default function SelectTopicModal({
                     e.preventDefault();
                     e.stopPropagation();
                     if (!topicId) {
-                      console.error("Cannot select topic without ID");
+
                       return;
                     }
-                    console.log("Selected topic:", { id: finalTopicId, name: topic.name, fullTopic: topic });
+
                     setSelectedTopicId(finalTopicId);
                   }}
                   className={`w-full rounded-lg border-2 p-4 text-left transition ${
@@ -230,3 +229,4 @@ export default function SelectTopicModal({
     </div>
   );
 }
+

@@ -8,6 +8,7 @@ import {
   PaperClipOutlined,
   EditOutlined,
 } from "@ant-design/icons";
+import { useTranslation } from "../../hook/useTranslation";
 
 /**
  * TaskCard
@@ -21,6 +22,8 @@ import {
  *  - compact?: boolean  // true: thu gọn padding
  */
 export default function TaskCard({ task, onClick, onEdit, compact = false }) {
+  const { t } = useTranslation();
+
   if (!task) return null;
 
   const format = (d) =>
@@ -80,7 +83,7 @@ export default function TaskCard({ task, onClick, onEdit, compact = false }) {
       {/* Progress */}
       <div className="mt-3">
         <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-          <span>Tiến độ</span>
+          <span>{t("progressTitle") || "Tiến độ"}</span>
           <span className="font-semibold text-gray-700">
             {task.progress ?? 0}%
           </span>

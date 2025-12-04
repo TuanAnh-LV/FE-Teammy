@@ -62,8 +62,8 @@ const Discover = () => {
               sortedTasks.forEach(task => {
                 activities.push({
                   type: 'task',
-                  title: task.title || "Task mới",
-                  user: task.assignee?.displayName || "Member",
+                  title: task.title || t("newTask") || "Task mới",
+                  user: task.assignee?.displayName || t("member") || "Member",
                   time: task.createdAt,
                 });
               });
@@ -71,7 +71,7 @@ const Discover = () => {
             
             return { ...g, calculatedProgress: progress, activities };
           } catch (err) {
-            console.error(`Failed to fetch data for group ${g.id}:`, err);
+
             return { ...g, calculatedProgress: 0, activities: [] };
           }
         })
@@ -79,7 +79,7 @@ const Discover = () => {
 
       setGroups(withProgressAndActivities);
     } catch (error) {
-      console.error("Failed to fetch groups:", error);
+
       setGroups([]);
     } finally {
       setLoading(false);
@@ -92,7 +92,7 @@ const Discover = () => {
       const data = Array.isArray(res?.data) ? res.data : [];
       setInvitations(data);
     } catch (error) {
-      console.error("Failed to fetch invitations:", error);
+
       setInvitations([]);
     }
   };
@@ -105,7 +105,7 @@ const Discover = () => {
       setInvitations((prev) => prev.filter((x) => x.id !== invitation.id));
       fetchAvailableGroups();
     } catch (error) {
-      console.error("Failed to accept invitation:", error);
+
       notificationApi.error({
         message: "Chấp nhận lời mời thất bại",
         description: "Vui lòng thử lại sau.",
@@ -121,7 +121,7 @@ const Discover = () => {
         message: "Đã từ chối lời mời",
       });
     } catch (error) {
-      console.error("Failed to reject invitation:", error);
+
       notificationApi.error({
         message: "Từ chối lời mời thất bại",
         description: "Vui lòng thử lại sau.",
@@ -166,10 +166,10 @@ const Discover = () => {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return "vừa xong";
-    if (diffMins < 60) return `${diffMins} phút trước`;
-    if (diffHours < 24) return `${diffHours} giờ trước`;
-    if (diffDays < 7) return `${diffDays} ngày trước`;
+    if (diffMins < 1) return t("justNow") || "vừa xong";
+    if (diffMins < 60) return `${diffMins} ${t("minutesAgo") || "phút trước"}`;
+    if (diffHours < 24) return `${diffHours} ${t("hoursAgo") || "giờ trước"}`;
+    if (diffDays < 7) return `${diffDays} ${t("daysAgo") || "ngày trước"}`;
     return date.toLocaleDateString("vi-VN");
   };
 
@@ -192,13 +192,13 @@ const Discover = () => {
   const acceptedCount = invitations.filter(inv => inv.status === "accepted").length;
 
   return (
-    <div className="space-y-6 bg-gray-50 min-h-screen px-4 sm:px-6 lg:px-8 py-6">
+    <div className="space-y-6 bg-gray-50 min-h-screen">
       {contextHolder}
       
       {/* Header Section */}
       <div className="space-y-1">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-green-400 bg-clip-text text-transparent">
-          Nhóm đang hướng dẫn
+          {t("groupsBeingMentored")}
         </h1>
         <p className="text-gray-600">
           Quản lý và theo dõi các nhóm dự án bạn đang hướng dẫn. Hỗ trợ sinh viên thực hiện capstone project thành công.
@@ -211,7 +211,7 @@ const Discover = () => {
           <div className="flex items-center gap-2 mb-4">
             <UserPlus className="w-5 h-5 text-blue-600" />
             <h2 className="text-lg font-semibold text-gray-900">
-              Lời mời hướng dẫn
+              {t("mentoringInvitations")}
             </h2>
           </div>
           
@@ -226,7 +226,7 @@ const Discover = () => {
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Tất cả ({invitations.length})
+              {t("all")} ({invitations.length})
             </button>
             <button
               type="button"
@@ -237,7 +237,7 @@ const Discover = () => {
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Đang chờ ({pendingCount})
+              {t("pending")} ({pendingCount})
             </button>
             <button
               type="button"
@@ -248,7 +248,7 @@ const Discover = () => {
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Đã chấp nhận ({acceptedCount})
+              {t("accepted")} ({acceptedCount})
             </button>
           </div>
 
@@ -331,19 +331,19 @@ const Discover = () => {
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition sm:w-auto"
           >
             <Filter className="w-4 h-4" />
-            <span>Bộ lọc</span>
+            <span>{t("filters")}</span>
           </button>
         </div>
 
         <div className="flex items-center gap-4 mt-4 text-sm text-gray-600">
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
-            <span>{normalizedGroups.length} nhóm đang hướng dẫn</span>
+            <span>{normalizedGroups.length} {t("groupsBeingMentored")}</span>
           </div>
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
             <span>
-              {normalizedGroups.reduce((sum, g) => sum + g.members, 0)} sinh viên
+              {normalizedGroups.reduce((sum, g) => sum + g.members, 0)} {t("sinh_vien") || "sinh viên"}
             </span>
           </div>
         </div>
@@ -385,7 +385,7 @@ const Discover = () => {
             {/* Progress */}
             <div>
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs text-gray-500">Tiến độ dự án</span>
+                <span className="text-xs text-gray-500">{t("projectProgress")}</span>
                 <span className="text-sm font-semibold text-gray-700">
                   {group.progress}%
                 </span>
@@ -402,7 +402,7 @@ const Discover = () => {
             <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
               <div className="flex items-center gap-1">
                 <Users className="w-3.5 h-3.5" />
-                <span>{group.members}/{group.maxMembers} thành viên</span>
+                <span>{group.members}/{group.maxMembers} {t("thanh_vien") || "thành viên"}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5" />
@@ -461,7 +461,7 @@ const Discover = () => {
               onClick={() => navigate(`/mentor/my-groups/${group.id}`)}
               className="mt-3 inline-flex items-center justify-center gap-2 w-full rounded-lg bg-[#4264D7] hover:bg-[#3451b8] text-white text-sm font-medium py-2.5 shadow-sm transition"
             >
-              <span>Xem chi tiết nhóm</span>
+              <span>{t("viewGroupDetails")}</span>
             </button>
           </div>
           ))}
@@ -513,3 +513,4 @@ const Discover = () => {
 };
 
 export default Discover;
+

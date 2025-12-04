@@ -47,7 +47,7 @@ const MessagesPage = () => {
   const createDMConversation = async (userId) => {
     // Validate userId before making the request
     if (!userId || String(userId).trim() === "") {
-      console.error("Invalid userId provided");
+
       return;
     }
     try {
@@ -59,7 +59,7 @@ const MessagesPage = () => {
         fetchConversations();
       }
     } catch (err) {
-      console.error("Failed to create DM conversation:", err);
+
       setTargetUserId(userId);
     }
   };
@@ -70,7 +70,7 @@ const MessagesPage = () => {
       const data = Array.isArray(res?.data) ? res.data : [];
       setConversations(data);
     } catch (err) {
-      console.error("Failed to fetch conversations:", err);
+
     }
   };
 
@@ -86,7 +86,7 @@ const MessagesPage = () => {
       }));
       setGroupConversations(mapped);
     } catch (err) {
-      console.error("Failed to fetch group chats:", err);
+
       setGroupConversations([]);
     }
   };
@@ -146,7 +146,7 @@ const MessagesPage = () => {
         className={`${
           showChatView ? "hidden md:flex" : "flex"
         } w-full md:w-80 bg-white border-r border-gray-200 flex-col ${
-          isMentorRoute ? "rounded-l-xl md:rounded-xl overflow-hidden shadow-sm" : ""
+          isMentorRoute ? "overflow-hidden shadow-sm" : ""
         }`}
       >
         <ConversationList
@@ -160,7 +160,7 @@ const MessagesPage = () => {
       {/* Chat Window Container */}
       <div
         className={`${showChatView ? "flex" : "hidden md:flex"} flex-1 flex-col min-h-0 ${
-          isMentorRoute ? "p-4" : ""
+          isMentorRoute ? "w-full h-full flex flex-col bg-white border-r border-gray-200" : ""
         }`}
       >
         <div className="flex-1 bg-white overflow-hidden">
@@ -186,3 +186,4 @@ const MessagesPage = () => {
 };
 
 export default MessagesPage;
+

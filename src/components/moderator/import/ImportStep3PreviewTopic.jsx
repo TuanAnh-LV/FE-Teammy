@@ -27,8 +27,6 @@ export default function ImportStep3PreviewTopic({
       return;
     }
 
-    console.debug("Validation result:", validationResult);
-
     const mapped = validationResult.rows.map((row, i) => {
       // Lấy data từ validation result
       const rowData = {};
@@ -108,7 +106,7 @@ export default function ImportStep3PreviewTopic({
         setCurrentStep(3);
       }
     } catch (err) {
-      console.error(err);
+
       notification.error({
         message: t("importFailed") || "Import Failed",
         description: err?.response?.data?.message || t("pleaseTryAgain"),
@@ -214,3 +212,4 @@ export default function ImportStep3PreviewTopic({
     </div>
   );
 }
+

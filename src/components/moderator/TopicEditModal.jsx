@@ -25,7 +25,7 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
           setMajors(majorsRes?.data || []);
           setSemesters(semestersRes?.data || []);
         } catch (err) {
-          console.error("Failed to load metadata:", err);
+
         }
       };
       fetchMetadata();
@@ -65,7 +65,7 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
       onSuccess();
       onClose();
     } catch (err) {
-      console.error(err);
+
       if (err.errorFields) {
         // Form validation error
         return;
@@ -174,3 +174,4 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
 };
 
 export default TopicEditModal;
+

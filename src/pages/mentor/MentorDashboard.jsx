@@ -38,21 +38,18 @@ export default function MentorDashboard() {
   const fetchMyGroups = async () => {
     try {
       setLoading(true);
-      console.log('Starting fetchMyGroups...');
-      console.log('UserInfo:', userInfo);
-      
+
+
       const res = await GroupService.getMyGroups();
       const groups = Array.isArray(res?.data) ? res.data : [];
-      console.log(`Found ${groups.length} groups:`, groups);
-      
+
       let totalFeedbackCount = 0;
       
       // Fetch progress, board data and calculate feedback for each group
       const groupsWithProgress = await Promise.all(
         groups.map(async (g) => {
           try {
-            console.log(`Processing group ${g.id} (${g.name})...`);
-            
+
             const [reportRes, boardRes] = await Promise.all([
               ReportService.getProjectReport(g.id),
               BoardService.getBoard(g.id)
@@ -63,10 +60,10 @@ export default function MentorDashboard() {
             
             // Get all tasks from board
             const tasks = boardData?.columns?.flatMap((col) => col.tasks || [])?.filter(Boolean) || [];
-            console.log(`Group ${g.id} has ${tasks.length} tasks`);
+
             if (tasks.length > 0) {
-              console.log('First task object:', tasks[0]);
-              console.log('Task keys:', Object.keys(tasks[0]));
+
+
             }
             
             // Recent activity logic (like MyGroup.jsx)
@@ -83,17 +80,16 @@ export default function MentorDashboard() {
             let mentorCommentCount = 0;
             if (tasks.length > 0) {
               try {
-                console.log(`Fetching comments for ${tasks.length} tasks in group ${g.id}`);
-                console.log(`UserInfo ID: ${userInfo?.userId}`);
-                
+
+
                 const commentPromises = tasks.map(task => 
                   BoardService.getTaskComments(g.id, task.taskId, false)
                     .then(res => {
-                      console.log(`Comments for task ${task.taskId}:`, res?.data);
+
                       return { taskId: task.taskId, comments: res?.data || [] };
                     })
                     .catch(err => {
-                      console.error(`Failed to fetch comments for task ${task.taskId}:`, err);
+
                       return { taskId: task.taskId, comments: [] };
                     })
                 );
@@ -104,15 +100,15 @@ export default function MentorDashboard() {
                   commentResults.forEach(result => {
                     const comments = Array.isArray(result.comments) ? result.comments : [];
                     const mentorComments = comments.filter(comment => comment.userId === userInfo.userId);
-                    console.log(`Task ${result.taskId}: ${comments.length} total comments, ${mentorComments.length} from mentor`);
+
                     mentorCommentCount += mentorComments.length;
                   });
-                  console.log(`Total mentor comments in group ${g.id}: ${mentorCommentCount}`);
+
                 } else {
-                  console.log('UserInfo.userId not available yet, skipping comment count');
+
                 }
               } catch (err) {
-                console.error(`Failed to fetch comments for group ${g.id}:`, err);
+
               }
             }
             
@@ -133,7 +129,7 @@ export default function MentorDashboard() {
               recentActivity: recentActivity?.title || "Chưa có hoạt động",
             };
           } catch (err) {
-            console.error(`Failed to fetch data for group ${g.id}:`, err);
+
             return {
               id: g.id,
               name: g.name || "Nhóm không tên",
@@ -164,7 +160,7 @@ export default function MentorDashboard() {
         feedbackCount: totalFeedbackCount,
       });
     } catch (error) {
-      console.error("Failed to fetch groups:", error);
+
     } finally {
       setLoading(false);
     }
@@ -176,7 +172,7 @@ export default function MentorDashboard() {
   };
 
   return (
-    <div className="space-y-8 bg-gray-50 min-h-screen p-8">
+    <div className="space-y-6 space-x-8 bg-gray-50 min-h-screen">
       {/* HEADER */}
       <div className="flex justify-between items-start md:items-center flex-col md:flex-row">
         <div>
@@ -198,7 +194,7 @@ export default function MentorDashboard() {
               <Users className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Tổng số nhóm</p>
+              <p className="text-sm text-gray-500">{t("totalGroupsLabel")}</p>
               <h2 className="text-2xl font-semibold">{stats.totalGroups}</h2>
             </div>
           </div>
@@ -222,7 +218,7 @@ export default function MentorDashboard() {
               <TrendingUp className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Tiến độ trung bình</p>
+              <p className="text-sm text-gray-500">{t("averageProgress")}</p>
               <h2 className="text-2xl font-semibold">{stats.avgProgress}%</h2>
             </div>
           </div>
@@ -250,7 +246,7 @@ export default function MentorDashboard() {
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-blue-500" />
                 <span className="font-semibold text-gray-800 text-lg">
-                  Các nhóm đang hướng dẫn
+                  {t("groupsBeingMentored")}
                 </span>
               </div>
             }
@@ -273,7 +269,7 @@ export default function MentorDashboard() {
             ) : mentoringGroups.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <Users className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                <p>Chưa có nhóm nào đang hướng dẫn</p>
+                <p>{t("noGroupsBeingMentored")}</p>
               </div>
             ) : (
               mentoringGroups.map((group) => {
@@ -409,3 +405,4 @@ export default function MentorDashboard() {
     </div>
   );
 }
+

@@ -63,7 +63,7 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
           }
         }
       } catch (e) {
-        console.error("Failed to load majors", e);
+
       } finally {
         if (mounted) setMajorsLoading(false);
       }
@@ -131,7 +131,7 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
         onSave?.(updated);
         onClose();
       } catch (err) {
-        console.error(err);
+
         notification.error({
           message: t("userUpdateFailed") || "Failed to update user",
         });
@@ -305,3 +305,4 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
     </Modal>
   );
 }
+

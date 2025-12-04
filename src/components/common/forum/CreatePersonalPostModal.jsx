@@ -41,7 +41,7 @@ const CreatePersonalPostModal = ({
       closeModal();
       onCreated?.();
     } catch (err) {
-      console.error(err);
+
     }
   };
 
@@ -136,3 +136,4 @@ const CreatePersonalPostModal = ({
 };
 
 export default CreatePersonalPostModal;
+

@@ -6,8 +6,11 @@ import {
   CalendarOutlined,
   ClockCircleOutlined,
 } from "@ant-design/icons";
+import { useTranslation } from "../../hook/useTranslation";
 
 export default function TaskDetailModal({ open, onClose, task }) {
+  const { t } = useTranslation();
+  
   if (!task) return null;
 
   const startDate = task.startDate
@@ -52,7 +55,7 @@ export default function TaskDetailModal({ open, onClose, task }) {
                 <span className="text-blue-500">
                   <i className="ri-line-chart-line"></i>
                 </span>
-                Tiến độ
+                {t("progressTitle") || "Progress"}
               </h3>
             </div>
 
@@ -67,7 +70,7 @@ export default function TaskDetailModal({ open, onClose, task }) {
               </div>
             </div>
 
-            <p className="text-gray-600 text-sm mb-1">Hoàn thành</p>
+            <p className="text-gray-600 text-sm mb-1">{t("completedLabel") || "Completed"}</p>
             <Progress
               percent={task.progress ?? 0}
               strokeColor="#22C55E"
@@ -80,11 +83,11 @@ export default function TaskDetailModal({ open, onClose, task }) {
           <section className="p-5 border border-gray-200 rounded-xl bg-white shadow-sm hover:shadow-md transition">
             <div className="flex justify-between items-center mb-3">
               <h3 className="font-semibold text-gray-800 text-base flex items-center gap-2">
-                <i className="ri-file-list-line text-blue-500"></i> Mô tả
+                <i className="ri-file-list-line text-blue-500"></i> {t("descriptionTitle") || "Description"}
               </h3>
             </div>
             <p className="text-gray-600 text-sm whitespace-pre-line leading-relaxed">
-              {task.description || "Chưa có mô tả"}
+              {task.description || t("noDescription") || "No description"}
             </p>
           </section>
 
@@ -92,7 +95,7 @@ export default function TaskDetailModal({ open, onClose, task }) {
           <section className="p-5 border border-gray-200 rounded-xl bg-white shadow-sm hover:shadow-md transition">
             <div className="flex justify-between items-center mb-3">
               <h3 className="font-semibold text-gray-800 text-base flex items-center gap-2">
-                <i className="ri-checkbox-line text-blue-500"></i> Công việc
+                <i className="ri-checkbox-line text-blue-500"></i> {t("subtasksTitle") || "Subtasks"}
               </h3>
             </div>
             {task.subtasks?.length ? (
@@ -106,7 +109,7 @@ export default function TaskDetailModal({ open, onClose, task }) {
                 </div>
               ))
             ) : (
-              <p className="text-gray-400 text-sm">Chưa có công việc con</p>
+              <p className="text-gray-400 text-sm">{t("noSubtasks") || "No subtasks"}</p>
             )}
           </section>
         </div>
@@ -116,7 +119,7 @@ export default function TaskDetailModal({ open, onClose, task }) {
           {/* MEMBERS */}
           <section className="p-5 border border-gray-200 rounded-xl bg-white shadow-sm hover:shadow-md transition">
             <h3 className="font-semibold text-gray-800 text-base mb-3 flex items-center gap-2">
-              <i className="ri-team-line text-blue-500"></i> Thành viên
+              <i className="ri-team-line text-blue-500"></i> {t("teamMembers") || "Team Members"}
             </h3>
             {task.members?.length ? (
               task.members.map((m, i) => (
@@ -129,7 +132,7 @@ export default function TaskDetailModal({ open, onClose, task }) {
                 </div>
               ))
             ) : (
-              <p className="text-gray-400 text-sm">Chưa có thành viên</p>
+              <p className="text-gray-400 text-sm">{t("noMembersYet") || "No members yet"}</p>
             )}
           </section>
 
@@ -139,14 +142,14 @@ export default function TaskDetailModal({ open, onClose, task }) {
               block
               className="!border-red-400 !text-red-500 hover:!bg-red-50 !rounded-lg"
             >
-              Hủy tham gia
+              {t("cancelParticipation") || "Cancel Participation"}
             </Button>
             <Button
               block
               type="primary"
               className="!bg-gradient-to-r from-blue-500 to-indigo-500 !rounded-lg"
             >
-              Phân công
+              {t("assignTask") || "Assign Task"}
             </Button>
           </div>
         </div>

@@ -17,7 +17,7 @@ const Notifications = () => {
   };
 
   const handleSave = () => {
-    console.log("Saved settings:", settings);
+
   };
 
   return (
@@ -224,3 +224,4 @@ const Notifications = () => {
 };
 
 export default Notifications;
+

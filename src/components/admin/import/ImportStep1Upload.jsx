@@ -23,7 +23,7 @@ export default function ImportStep1Upload({
         description: `${parsed.length} rows found`,
       });
     } catch (err) {
-      console.error(err);
+
       notification.error({
         message: t("fileUploadFailed") || "Failed to upload file",
         description: err.message || "Please try again",
@@ -71,7 +71,7 @@ export default function ImportStep1Upload({
         });
       }
     } catch (err) {
-      console.error(err);
+
       // Fallback: generate template locally
       const template = [
         {
@@ -140,3 +140,4 @@ export default function ImportStep1Upload({
     </div>
   );
 }
+

@@ -24,7 +24,7 @@ export default function ImportStep1UploadTopic({
         description: `${parsed.length} rows found`,
       });
     } catch (err) {
-      console.error(err);
+
       notification.error({
         message: t("fileUploadFailed") || "Failed to upload file",
         description: err.message || "Please try again",
@@ -66,7 +66,7 @@ export default function ImportStep1UploadTopic({
         });
       }
     } catch (err) {
-      console.error(err);
+
       const template = [
         {
           title: "AI Tutor",
@@ -132,3 +132,4 @@ export default function ImportStep1UploadTopic({
     </div>
   );
 }
+

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Layout, Modal } from "antd";
 import Sidebar from "./Sidebar";
 import HeaderBar from "./Header";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useTranslation } from "../../hook/useTranslation";
 
@@ -13,6 +13,9 @@ const DashboardLayout = ({ role }) => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const location = useLocation();
+
+  const isMessagesPage = location.pathname.includes("/messages");
 
   const handleLogout = () => {
     Modal.confirm({
@@ -45,7 +48,7 @@ const DashboardLayout = ({ role }) => {
         />
 
         <Content
-          className="overflow-y-auto bg-white"
+          className={`overflow-y-auto bg-white ${!isMessagesPage ? "p-8" : ""}`}
           style={{
             height: "calc(100vh - 64px)",
           }}

@@ -53,14 +53,13 @@ const ProfileSettings = ({ profile, onUpdate }) => {
         if (majorName) {
           params.major = majorName;
         }
-        
-        console.log("Fetching skills with params:", params);
+
         const response = await SkillService.list(params);
-        console.log("Skills response:", response);
+
         const skillsList = Array.isArray(response?.data) ? response.data : [];
         setAvailableSkills(skillsList);
       } catch (error) {
-        console.error("Failed to fetch skills:", error);
+
         setAvailableSkills([]);
       } finally {
         setSkillsLoading(false);
@@ -179,7 +178,7 @@ const ProfileSettings = ({ profile, onUpdate }) => {
         onUpdate(response.data);
       }
     } catch (error) {
-      console.error("Error updating profile:", error);
+
       notification.error({
         message: "Error",
         description: error?.response?.data?.message || "Failed to update profile",
@@ -381,3 +380,4 @@ const ProfileSettings = ({ profile, onUpdate }) => {
 };
 
 export default ProfileSettings;
+

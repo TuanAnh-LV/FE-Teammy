@@ -67,7 +67,7 @@ export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
         onUploadSuccess();
       }
     } catch (error) {
-      console.error("Failed to upload file:", error);
+
       notification.error({
         message: t("uploadFailed") || "Upload failed",
         description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
@@ -100,7 +100,7 @@ export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
         onUploadSuccess();
       }
     } catch (error) {
-      console.error("Failed to delete file:", error);
+
       notification.error({
         message: t("deleteFailed") || "Delete failed",
         description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
@@ -310,3 +310,4 @@ export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
     </div>
   );
 }
+

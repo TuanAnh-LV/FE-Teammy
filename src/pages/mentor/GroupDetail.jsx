@@ -63,7 +63,7 @@ export default function GroupDetail() {
       const response = await GroupService.getGroupDetail(id);
       setGroupDetail(response?.data || null);
     } catch (error) {
-      console.error("Failed to fetch group detail:", error);
+
       setGroupDetail(null);
     } finally {
       setLoading(false);
@@ -173,7 +173,7 @@ export default function GroupDetail() {
   ];
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen space-y-6 animate-fadeIn p-8">
+    <div className="bg-[#f8fafc] min-h-screen space-y-6 animate-fadeIn">
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
@@ -240,3 +240,4 @@ export default function GroupDetail() {
     </div>
   );
 }
+
