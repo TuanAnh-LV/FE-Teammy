@@ -14,12 +14,14 @@ export const API = {
     VALIDATE_IMPORT: "/users/import/validate",
     EXPORT_USERS: "/users/import/template",
     UPDATE_USER: (id) => `/users/admin/${id}`,
+    DASHBOARD: "/dashboard",
   },
   POST: {
     GET_PERSONAL: "/profile-posts",
     GET_GROUP: "/recruitment-posts",
     POST_PERSONAL: "/profile-posts",
     POST_GROUP: "/recruitment-posts",
+    INVITE_PROFILE_POST: (postId) => `/profile-posts/${postId}/invites`,
   },
   GROUPS: {
     MEMBERSHIP: "/groups/membership",
@@ -147,6 +149,9 @@ export const API = {
     PROFILE_POST_SUGGESTIONS: "/ai/profile-post-suggestions",
     AUTO_ASSIGN_TEAMS: "/ai/auto-assign/teams",
     AUTO_ASSIGN_TOPIC: "/ai/auto-assign/topic",
+    SUMMARY: "/ai/summary",
+    OPTIONS: "/ai/options",
+    AUTO_RESOLVE: "/ai/auto-resolve"
   },
   SEMESTERS: {
     LIST: "/semesters",

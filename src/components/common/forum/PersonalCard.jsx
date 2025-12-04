@@ -1,5 +1,6 @@
+import React from "react";
 import { UserPlus } from "lucide-react";
-import { Chip } from "./Chip";
+import { Chip, StatusChip } from "./Chip";
 import { initials, timeAgoFrom, toArraySkills } from "../../../utils/helpers";
 import { useTranslation } from "../../../hook/useTranslation";
 
@@ -12,6 +13,10 @@ const clamp3 = {
 
 export function PersonalCard({ post, userRole, onInvite, onClickProfile }) {
   const { t } = useTranslation();
+  // Show status only when hasApplied is true
+  const inviteStatus = post.hasApplied
+    ? post.myApplicationStatus || "pending"
+    : null;
 
   const author = post.user || post.owner || post;
   const authorId =
@@ -103,23 +108,22 @@ export function PersonalCard({ post, userRole, onInvite, onClickProfile }) {
       <div className="mt-5 pt-4 border-t border-gray-300">
         {userRole === "leader" && (
           <div className="flex justify-end">
-            <button
-              onClick={() => onInvite(post.id)}
-              className="inline-flex items-center justify-center rounded-lg bg-[#FF7A00] hover:opacity-90 px-3 md:px-3.5 py-2 text-xs font-bold text-white shadow-sm transition focus:outline-none focus:ring-4 focus:ring-emerald-100"
-              disabled={post.emailSent}
-            >
-              <UserPlus className="mr-1 h-4 w-4" />
-              <span className="hidden sm:inline">
-                {post.emailSent
-                  ? t("alreadyInvited") || "Already Invited"
-                  : t("inviteToGroup") || "Invite to Group"}
-              </span>
-              <span className="sm:hidden">
-                {post.emailSent
-                  ? t("invited") || "Invited"
-                  : t("invite") || "Invite"}
-              </span>
-            </button>
+            {post.hasApplied && inviteStatus ? (
+              <StatusChip status={inviteStatus} />
+            ) : (
+              <button
+                onClick={async () => {
+                  await onInvite(post.id);
+                }}
+                className="inline-flex items-center justify-center rounded-lg bg-[#FF7A00] hover:opacity-90 px-3 md:px-3.5 py-2 text-xs font-bold text-white shadow-sm transition focus:outline-none focus:ring-4 focus:ring-emerald-100"
+              >
+                <UserPlus className="mr-1 h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {t("inviteToGroup") || "Invite to Group"}
+                </span>
+                <span className="sm:hidden">{t("invite") || "Invite"}</span>
+              </button>
+            )}
           </div>
         )}
       </div>

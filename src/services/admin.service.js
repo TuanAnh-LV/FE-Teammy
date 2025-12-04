@@ -82,4 +82,14 @@ export const AdminService = {
       responseType: "blob",
     });
   },
+
+  /** GET DASHBOARD STATS
+   * - fetch dashboard statistics
+   */
+  getDashboardStats(isLoading = true) {
+    return BaseService.get({
+      url: API.ADMIN.DASHBOARD,
+      isLoading,
+    });
+  },
 };

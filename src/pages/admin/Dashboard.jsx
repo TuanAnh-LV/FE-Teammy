@@ -1,6 +1,13 @@
-import React from "react";
-import { Card } from "antd";
-import { UserOutlined } from "@ant-design/icons";
+import React, { useEffect, useState } from "react";
+import { Card, Spin, notification } from "antd";
+import {
+  UserOutlined,
+  TeamOutlined,
+  ProjectOutlined,
+  CheckCircleOutlined,
+  UserAddOutlined,
+  ClockCircleOutlined,
+} from "@ant-design/icons";
 import {
   LineChart,
   Line,
@@ -14,66 +21,129 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { AdminService } from "../../services/admin.service";
+import { MajorService } from "../../services/major.service";
+import { useTranslation } from "../../hook/useTranslation";
 
-const lineData = [
-  { name: "Mar 2", Active: 120, New: 35, Tasks: 60 },
-  { name: "Mar 4", Active: 148, New: 28, Tasks: 72 },
-  { name: "Mar 6", Active: 200, New: 45, Tasks: 88 },
-  { name: "Mar 8", Active: 260, New: 50, Tasks: 120 },
-  { name: "Mar 10", Active: 300, New: 60, Tasks: 140 },
-];
-
-const pieData = [
-  { name: "Computer Science", value: 32, color: "#3B82F6" },
-  { name: "Business", value: 21, color: "#22C55E" },
-  { name: "Engineering", value: 16, color: "#F97316" },
-  { name: "Psychology", value: 10, color: "#EAB308" },
-  { name: "Biology", value: 8, color: "#8B5CF6" },
-  { name: "Other", value: 12, color: "#CBD5E1" },
+const COLORS = [
+  "#3B82F6",
+  "#22C55E",
+  "#F97316",
+  "#EAB308",
+  "#8B5CF6",
+  "#EC4899",
+  "#06B6D4",
+  "#CBD5E1",
 ];
 
 const AdminDashboard = () => {
+  const { t } = useTranslation();
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [majorsData, setMajorsData] = useState([]);
+
+  useEffect(() => {
+    fetchDashboardData();
+    fetchMajorsData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const response = await AdminService.getDashboardStats();
+      if (response?.data) {
+        setDashboardData(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+      notification.error({
+        message: t("error"),
+        description: "Failed to load dashboard statistics",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMajorsData = async () => {
+    try {
+      const response = await MajorService.getMajors();
+      if (response?.data) {
+        const majors = Array.isArray(response.data) ? response.data : [];
+        // Transform majors data for pie chart
+        // Note: API doesn't return studentCount, so we'll display all majors with equal distribution
+        // or you can fetch student counts from a different endpoint
+        const pieData = majors.map((major, index) => ({
+          name: major.majorName || major.name || "Unknown",
+          value: 1, // Equal distribution since we don't have student counts
+          color: COLORS[index % COLORS.length],
+        }));
+        setMajorsData(pieData);
+      }
+    } catch (error) {
+      console.error("Failed to fetch majors data:", error);
+    }
+  };
+
   const cards = [
     {
-      title: "Total Users",
-      value: "12,847",
-      change: "+8.2%",
+      title: t("totalUsers") || "Total Users",
+      value: dashboardData?.totalUsers || 0,
       icon: <UserOutlined />,
     },
     {
-      title: "Total Groups",
-      value: "2,341",
-      change: "+12.4%",
-      icon: <UserOutlined />,
+      title: t("activeUsers7d") || "Active Users (7d)",
+      value: dashboardData?.activeUsers || 0,
+      icon: <UserAddOutlined />,
     },
     {
-      title: "Groups with Mentor",
-      value: "12,847",
-      change: "+8.2%",
-      icon: <UserOutlined />,
+      title: t("totalGroups") || "Total Groups",
+      value: dashboardData?.totalGroups || 0,
+      icon: <TeamOutlined />,
     },
     {
-      title: "Open Recruitments",
-      value: "156",
-      change: "+8.2%",
-      icon: <UserOutlined />,
+      title: t("groupsWithMentor") || "Groups with Mentor",
+      value: dashboardData?.recruitingGroups || 0,
+      icon: <TeamOutlined />,
     },
     {
-      title: "Task Completion",
-      value: "84.5%",
-      change: "+8.2%",
-      icon: <UserOutlined />,
+      title: t("totalTopics") || "Total Topics",
+      value: dashboardData?.totalTopics || 0,
+      icon: <ProjectOutlined />,
     },
     {
-      title: "Active Users (7d)",
-      value: "3,247",
-      change: "+8.2%",
+      title: t("openTopics") || "Open Topics",
+      value: dashboardData?.openTopics || 0,
+      icon: <ClockCircleOutlined />,
+    },
+    {
+      title: t("totalPosts") || "Total Posts",
+      value: dashboardData?.totalPosts || 0,
+      icon: <ProjectOutlined />,
+    },
+    {
+      title: t("groupPosts") || "Group Posts",
+      value: dashboardData?.groupPosts || 0,
+      icon: <TeamOutlined />,
+    },
+    {
+      title: t("profilePosts") || "Profile Posts",
+      value: dashboardData?.profilePosts || 0,
       icon: <UserOutlined />,
     },
   ];
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -94,83 +164,58 @@ const AdminDashboard = () => {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-gray-500 text-sm">{card.title}</p>
-                <p className="text-2xl font-bold text-gray-800">{card.value}</p>
-                <p className="text-green-500 text-xs mt-1">
-                  {card.change} from last month
+                <p className="text-2xl font-bold text-gray-800">
+                  {typeof card.value === "number"
+                    ? card.value.toLocaleString()
+                    : card.value}
                 </p>
               </div>
-              <div className="text-gray-400 text-lg">{card.icon}</div>
+              <div className="text-blue-500 text-2xl">{card.icon}</div>
             </div>
           </Card>
         ))}
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        {/* Line Chart */}
-        <Card
-          title="30-Day Activity"
-          className="shadow-sm border-gray-100"
-          bodyStyle={{ padding: "20px" }}
-        >
-          <p className="text-gray-500 text-sm mb-3">
-            User engagement over the last 30 days
-          </p>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={lineData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="Active"
-                stroke="#3B82F6"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="New"
-                stroke="#22C55E"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="Tasks"
-                stroke="#F97316"
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
-
+      <div className="grid grid-cols-1 gap-6 mt-6">
         {/* Pie Chart */}
         <Card
-          title="Majors Distribution"
+          title={t("majorsDistribution") || "Majors Distribution"}
           className="shadow-sm border-gray-100"
           bodyStyle={{ padding: "20px" }}
         >
           <p className="text-gray-500 text-sm mb-3">
-            Student distribution across different majors
+            {t("studentDistributionMajors") ||
+              "Student distribution across different majors"}
           </p>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                outerRadius={90}
-                dataKey="value"
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+          {majorsData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={400}>
+              <PieChart>
+                <Pie
+                  data={majorsData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={120}
+                  dataKey="value"
+                  labelLine={true}
+                >
+                  {majorsData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  wrapperStyle={{ paddingTop: "20px" }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex justify-center items-center h-[400px] text-gray-400">
+              {t("noData") || "No data available"}
+            </div>
+          )}
         </Card>
       </div>
     </div>
