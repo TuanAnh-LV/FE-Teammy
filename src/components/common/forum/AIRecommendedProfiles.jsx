@@ -1,7 +1,8 @@
+import React from "react";
 import { Sparkles, Star, UserPlus } from "lucide-react";
 import { notification } from "antd";
-import { Chip } from "./Chip";
-import { GroupService } from "../../../services/group.service";
+import { Chip, StatusChip } from "./Chip";
+import { PostService } from "../../../services/post.service";
 import { initials, timeAgoFrom } from "../../../utils/helpers";
 import { useTranslation } from "../../../hook/useTranslation";
 
@@ -20,7 +21,7 @@ export function AIRecommendedProfiles({ aiSuggestedPosts, membership }) {
     !Array.isArray(aiSuggestedPosts) ||
     aiSuggestedPosts.length === 0 ||
     !aiSuggestedPosts.some(
-      (s) => s && typeof s === "object" && (s.userId || s.ownerUserId || s.id)
+      (s) => s && typeof s === "object" && s.profilePost && s.profilePost.id
     )
   ) {
     return null;
@@ -42,35 +43,40 @@ export function AIRecommendedProfiles({ aiSuggestedPosts, membership }) {
       </p>
 
       {aiSuggestedPosts.map((suggestion, idx) => {
-        const detail = suggestion.detail || {};
-        const user = detail.user || suggestion.user || {};
+        // Extract data from new API structure
+        const profilePost = suggestion.profilePost || {};
+        const user = profilePost.user || {};
+        const major = profilePost.major || {};
 
-        const userId =
-          suggestion.ownerUserId ||
-          suggestion.userId ||
-          user.userId ||
-          suggestion.id;
-        const userName =
-          suggestion.ownerDisplayName ||
-          user.displayName ||
-          detail.userDisplayName ||
-          "User";
-        const matchScore = suggestion.score || 0;
-        const avatarUrl = user.avatarUrl || suggestion.avatarUrl || null;
-        const description = suggestion.description || detail.description || "";
-        const createdAt =
-          suggestion.createdAt || detail.createdAt || new Date();
+        const postId = profilePost.id; // Post ID for invite
+        const userName = user.displayName || "User";
+        const matchScore = suggestion.scorePercent || 0;
+        const avatarUrl = user.avatarUrl || null;
+        const description = profilePost.description || "";
+        const createdAt = profilePost.createdAt || new Date();
         const timeAgo = createdAt ? timeAgoFrom(createdAt) : "";
 
-        // Skills
-        const skillsText = suggestion.skillsText || detail.skillsText || "";
-        const skillsArray = skillsText
-          ? skillsText.split(",").map((s) => s.trim())
-          : [];
+        // Skills - parse from matchingSkills array or position_needed string
+        const matchingSkills = suggestion.matchingSkills || [];
+        const positionNeeded = profilePost.position_needed || "";
+        const skillsArray =
+          matchingSkills.length > 0
+            ? matchingSkills
+            : positionNeeded
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean);
 
         // Major
-        const majorName =
-          user.majorName || detail.majorName || suggestion.majorName || "";
+        const majorName = user.majorName || major.majorName || "";
+
+        // Primary role
+        const primaryRole = suggestion.primaryRole || "";
+
+        // Show status only when hasApplied is true
+        const inviteStatus = profilePost.hasApplied
+          ? profilePost.myApplicationStatus || "pending"
+          : null;
 
         return (
           <div
@@ -121,6 +127,15 @@ export function AIRecommendedProfiles({ aiSuggestedPosts, membership }) {
               {description}
             </p>
 
+            {/* Primary Role Badge */}
+            {primaryRole && (
+              <div className="mt-3">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                  {primaryRole.charAt(0).toUpperCase() + primaryRole.slice(1)}
+                </span>
+              </div>
+            )}
+
             {/* Skills & Major */}
             <div className="mt-5 flex flex-col gap-3">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -149,35 +164,38 @@ export function AIRecommendedProfiles({ aiSuggestedPosts, membership }) {
             {/* Actions */}
             <div className="mt-5 pt-4 border-t border-gray-300">
               <div className="flex justify-end">
-                <button
-                  onClick={async () => {
-                    if (userId) {
-                      try {
-                        await GroupService.inviteMember(membership.groupId, {
-                          userId,
-                        });
-                        notification.success({
-                          message:
-                            t("userInvitedToGroup") ||
-                            "User invited to the group successfully!",
-                        });
-                      } catch (error) {
-                        console.error("Failed to send invitation", error);
-                        notification.error({
-                          message:
-                            t("failedToInviteUser") || "Failed to invite user.",
-                        });
+                {profilePost.hasApplied && inviteStatus ? (
+                  <StatusChip status={inviteStatus} />
+                ) : (
+                  <button
+                    onClick={async () => {
+                      if (postId) {
+                        try {
+                          await PostService.inviteProfilePost(postId);
+                          notification.success({
+                            message:
+                              t("userInvitedToGroup") ||
+                              "User invited to the group successfully!",
+                          });
+                        } catch (error) {
+                          console.error("Failed to send invitation", error);
+                          notification.error({
+                            message:
+                              t("failedToInviteUser") ||
+                              "Failed to invite user.",
+                          });
+                        }
                       }
-                    }
-                  }}
-                  className="inline-flex items-center justify-center rounded-lg bg-[#FF7A00] hover:opacity-90 px-3 md:px-3.5 py-2 text-xs font-bold text-white shadow-sm transition focus:outline-none focus:ring-4 focus:ring-emerald-100"
-                >
-                  <UserPlus className="mr-1 h-4 w-4" />
-                  <span className="hidden sm:inline">
-                    {t("inviteToGroup") || "Invite to Group"}
-                  </span>
-                  <span className="sm:hidden">{t("invite") || "Invite"}</span>
-                </button>
+                    }}
+                    className="inline-flex items-center justify-center rounded-lg bg-[#FF7A00] hover:opacity-90 px-3 md:px-3.5 py-2 text-xs font-bold text-white shadow-sm transition focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                  >
+                    <UserPlus className="mr-1 h-4 w-4" />
+                    <span className="hidden sm:inline">
+                      {t("inviteToGroup") || "Invite to Group"}
+                    </span>
+                    <span className="sm:hidden">{t("invite") || "Invite"}</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

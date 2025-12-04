@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Select,
@@ -17,179 +17,238 @@ import {
   BookOutlined,
 } from "@ant-design/icons";
 import { useTranslation } from "../../hook/useTranslation";
+import { AiService } from "../../services/ai.service";
 
 const { Option } = Select;
 
 export default function AIAssistantModerator() {
   const { t } = useTranslation();
-  const [mode, setMode] = useState("missingTopics");
+  const [mode, setMode] = useState("groupsAndMembers");
   const [autoMerge, setAutoMerge] = useState(false);
   const [analysisResults, setAnalysisResults] = useState([]);
+  const [summary, setSummary] = useState({
+    missingTopics: 0,
+    membersWithoutGroup: 0,
+    groupsMissingMembers: 0,
+  });
+  const [loading, setLoading] = useState(false);
+  const [aiOptionsData, setAiOptionsData] = useState(null);
 
-  const summary = {
-    missingTopics: 3,
-    membersWithoutGroup: 5,
-    groupsMissingMembers: 4,
+  // Fetch AI options on component mount
+  useEffect(() => {
+    fetchAiOptions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fetch AI options data
+  const fetchAiOptions = async () => {
+    try {
+      setLoading(true);
+      const response = await AiService.getOptions({
+        section: "All",
+        page: 1,
+        pageSize: 20,
+      });
+
+      // Check response structure
+      const data = response?.data?.data || response?.data;
+      const isSuccess = response?.data?.success ?? response?.status === 200;
+
+      if (isSuccess && data) {
+        setAiOptionsData(data);
+
+        // Fetch summary for counts
+        const summaryResponse = await AiService.getSummary();
+
+        const summaryData =
+          summaryResponse?.data?.data || summaryResponse?.data;
+        const summarySuccess =
+          summaryResponse?.data?.success ?? summaryResponse?.status === 200;
+
+        if (summarySuccess && summaryData) {
+          const counts = {
+            missingTopics: summaryData.groupsWithoutTopic || 0,
+            membersWithoutGroup: summaryData.studentsWithoutGroup || 0,
+            groupsMissingMembers: summaryData.groupsUnderCapacity || 0,
+          };
+          setSummary(counts);
+        }
+
+        // Set initial analysis results based on current mode
+        updateAnalysisResults(mode, data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch AI options:", error);
+      notification.error({
+        message: t("error") || "Error",
+        description: t("failedToFetchAiData") || "Failed to fetch AI data",
+        placement: "topRight",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const allFindings = {
-    missingTopics: [
-      {
-        id: 1,
-        group: "Gamma Force",
-        status: ["No Topic"],
-        suggestions: {
-          topic: "AI Campus Assistant",
-        },
-        confidence: 91,
-      },
-      {
-        id: 2,
-        group: "Delta Group",
-        status: ["No Topic"],
-        suggestions: {
-          topic: "Cloud Service Optimization for Education",
-        },
-        confidence: 85,
-      },
-      {
-        id: 3,
-        group: "Alpha Team",
-        status: ["No Topic"],
-        suggestions: {
-          topic: "Mobile Learning Platform",
-        },
-        confidence: 88,
-      },
-    ],
-    membersWithoutGroup: [
-      {
-        id: 1,
-        member: "Nguyen Van A",
-        status: ["No Group"],
-        suggestions: {
-          group: "Gamma Force",
-          reason: "Matching skills: React, Node.js",
-        },
-        confidence: 92,
-      },
-      {
-        id: 2,
-        member: "Tran Thi B",
-        status: ["No Group"],
-        suggestions: {
-          group: "Beta Squad",
-          reason: "Matching skills: Python, AI/ML",
-        },
-        confidence: 89,
-      },
-      {
-        id: 3,
-        member: "Le Van C",
-        status: ["No Group"],
-        suggestions: {
-          group: "Delta Group",
-          reason: "Matching skills: Java, Spring Boot",
-        },
-        confidence: 87,
-      },
-      {
-        id: 4,
-        member: "Pham Thi D",
-        status: ["No Group"],
-        suggestions: {
-          group: "Omega Crew",
-          reason: "Matching skills: Flutter, Firebase",
-        },
-        confidence: 90,
-      },
-      {
-        id: 5,
-        member: "Hoang Van E",
-        status: ["No Group"],
-        suggestions: {
-          group: "Alpha Team",
-          reason: "Matching skills: Angular, .NET",
-        },
-        confidence: 85,
-      },
-    ],
-    groupsMissingMembers: [
-      {
-        id: 1,
-        group: "Beta Squad",
-        status: ["Missing Members (2/4)"],
-        suggestions: {
-          mergeWith: "Omega Crew",
-          reason: "Similar project scope and timeline",
-        },
-        confidence: 88,
-      },
-      {
-        id: 2,
-        group: "Sigma Team",
-        status: ["Missing Members (1/3)"],
-        suggestions: {
-          member: "Available students with matching skills",
-          reason: "2 qualified candidates found",
-        },
-        confidence: 86,
-      },
-      {
-        id: 3,
-        group: "Theta Group",
-        status: ["Missing Members (2/5)"],
-        suggestions: {
-          mergeWith: "Kappa Force",
-          reason: "Overlapping topic areas",
-        },
-        confidence: 84,
-      },
-      {
-        id: 4,
-        group: "Lambda Squad",
-        status: ["Missing Members (1/4)"],
-        suggestions: {
-          member: "Students without group",
-          reason: "3 potential matches available",
-        },
-        confidence: 91,
-      },
-    ],
-  };
+  // Update analysis results based on mode
+  const updateAnalysisResults = (selectedMode, data) => {
+    if (!data) {
+      console.log("No data to update analysis results");
+      return;
+    }
 
-  const runAnalysis = () => {
-    const results = allFindings[mode] || [];
+    console.log("Updating analysis results for mode:", selectedMode);
+    console.log("Data:", data);
+
+    // Build từng loại riêng
+    const missingTopicsResults =
+      (data.groupsWithoutTopic?.items || []).map((item, index) => ({
+        id: `missingTopics-${index + 1}`,
+        group: item.name,
+        groupId: item.groupId,
+        status: ["No Topic"],
+        suggestions: {
+          topics: item.suggestions || [],
+        },
+        confidence: item.suggestions?.[0]?.score || 0,
+        majorName: item.majorName,
+        currentMembers: item.currentMembers,
+        maxMembers: item.maxMembers,
+      })) || [];
+
+    const membersWithoutGroupResults =
+      (data.studentsWithoutGroup?.items || []).map((item, index) => ({
+        id: `membersWithoutGroup-${index + 1}`,
+        member: item.displayName,
+        studentId: item.studentId,
+        status: ["No Group"],
+        suggestions: {
+          group: item.suggestedGroup?.name || "",
+          groupId: item.suggestedGroup?.groupId || "",
+          reason: item.suggestedGroup?.reason || "",
+        },
+        confidence: extractConfidenceFromReason(item.suggestedGroup?.reason),
+        majorName: item.majorName,
+        primaryRole: item.primaryRole,
+        skillTags: item.skillTags || [],
+      })) || [];
+
+    const groupsMissingMembersResults =
+      (data.groupsNeedingMembers?.items || []).map((item, index) => ({
+        id: `groupsMissingMembers-${index + 1}`,
+        group: item.name,
+        groupId: item.groupId,
+        status: [`Missing Members (${item.currentMembers}/${item.maxMembers})`],
+        suggestions: {
+          members: item.suggestedMembers || [],
+        },
+        confidence: item.suggestedMembers?.[0]?.score || 0,
+        majorName: item.majorName,
+        currentMembers: item.currentMembers,
+        maxMembers: item.maxMembers,
+      })) || [];
+
+    let results = [];
+
+    // Chỉ còn 2 mode: missingTopics và groupsAndMembers
+    if (selectedMode === "missingTopics") {
+      results = missingTopicsResults;
+    } else if (selectedMode === "groupsAndMembers") {
+      // Gộp cả group thiếu member + member chưa có group
+      results = [...groupsMissingMembersResults, ...membersWithoutGroupResults];
+    }
+
+    console.log("Analysis results:", results);
     setAnalysisResults(results);
-    notification.success({
-      message: t("aiAnalysisComplete") || "AI analysis complete!",
-      description: `Found ${results.length} items with actionable suggestions`,
-      placement: "topRight",
-    });
   };
 
-  const sendNotice = (group) => {
-    notification.info({
-      message: "Notification Sent",
-      description: `Sent reminder notification to ${group}`,
-      placement: "topRight",
-    });
+  // Extract confidence score from reason string
+  const extractConfidenceFromReason = (reason) => {
+    if (!reason) return 0;
+    const match = reason.match(/Điểm AI (\d+)/);
+    return match ? parseInt(match[1]) : 0;
   };
 
-  const autoMergeHandler = (group) => {
-    notification.success({
-      message: "Auto Merge Completed",
-      description: `Successfully merged ${group} with suggested team`,
-      placement: "topRight",
-    });
+  const runAnalysis = async () => {
+    try {
+      setLoading(true);
+
+      if (mode === "groupsAndMembers") {
+        // Gọi auto-assign teams
+        await AiService.autoAssignTeams({
+          semesterId: aiOptionsData?.semesterId || null,
+          majorId: null,
+          limit: null,
+        });
+
+        notification.success({
+          message: t("aiAnalysisComplete") || "AI analysis complete!",
+          description:
+            t("aiGroupsAndMembersUpdated") ||
+            "Groups and members have been analysed and updated.",
+          placement: "topRight",
+        });
+      } else if (mode === "missingTopics") {
+        // Gọi auto-assign topic
+        await AiService.autoAssignTopic({
+          groupId: null,
+          majorId: null,
+          limitPerGroup: 3,
+        });
+
+        notification.success({
+          message: t("aiAnalysisComplete") || "AI analysis complete!",
+          description:
+            t("aiMissingTopicsUpdated") ||
+            "Topics have been suggested and assigned for groups without topics.",
+          placement: "topRight",
+        });
+      }
+
+      // Sau khi BE xử lý xong thì load lại dữ liệu để UI cập nhật
+      await fetchAiOptions();
+    } catch (error) {
+      console.error("Run analysis failed:", error);
+      notification.error({
+        message: t("error") || "Error",
+        description: t("failedToRunAiAnalysis") || "Failed to run AI analysis",
+        placement: "topRight",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const applySuggestion = (group) => {
-    notification.success({
-      message: "Suggestions Applied",
-      description: `Applied AI recommendations for ${group}`,
-      placement: "topRight",
-    });
+  // Run AI auto-assign
+  const runAIAutoAssign = async () => {
+    try {
+      setLoading(true);
+
+      await AiService.autoResolve({
+        semesterId: aiOptionsData?.semesterId || null,
+        majorId: null,
+      });
+
+      notification.success({
+        message: t("aiAutoAssignComplete") || "AI Auto-Assign Complete!",
+        description:
+          t("aiAutoAssignSuccess") ||
+          "AI has automatically resolved groups, members and topics.",
+        placement: "topRight",
+      });
+
+      // Refresh lại options + summary
+      await fetchAiOptions();
+    } catch (error) {
+      console.error("Failed to run AI auto-resolve:", error);
+      notification.error({
+        message: t("error") || "Error",
+        description:
+          t("failedToRunAiAutoAssign") || "Failed to run AI auto-assign",
+        placement: "topRight",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -281,37 +340,49 @@ export default function AIAssistantModerator() {
           <Space size="middle" className="flex-wrap">
             <Select
               value={mode}
-              onChange={setMode}
+              onChange={(value) => {
+                setMode(value);
+                if (aiOptionsData) {
+                  updateAnalysisResults(value, aiOptionsData);
+                }
+              }}
               className="w-64"
               size="large"
             >
+              <Option value="groupsAndMembers">
+                <Space>
+                  <ThunderboltOutlined />
+                  {t("groupsAndMembers") || "Groups & Members Overview"}
+                </Space>
+              </Option>
+
               <Option value="missingTopics">
                 <Space>
                   <BookOutlined />
                   {t("missingTopics") || "Missing Topics"}
                 </Space>
               </Option>
-              <Option value="membersWithoutGroup">
-                <Space>
-                  <UsergroupAddOutlined />
-                  {t("membersWithoutGroup") || "Members Without Group"}
-                </Space>
-              </Option>
-              <Option value="groupsMissingMembers">
-                <Space>
-                  <ThunderboltOutlined />
-                  {t("groupsMissingMembers") || "Groups Missing Members"}
-                </Space>
-              </Option>
             </Select>
+
             <Button
               type="primary"
               icon={<ThunderboltOutlined />}
               size="large"
               className="!bg-blue-600 hover:!bg-blue-700 !shadow-md"
               onClick={runAnalysis}
+              loading={loading}
             >
               Run Analysis
+            </Button>
+            <Button
+              type="primary"
+              icon={<ThunderboltOutlined />}
+              size="large"
+              className="!bg-green-600 hover:!bg-green-700 !shadow-md"
+              onClick={runAIAutoAssign}
+              loading={loading}
+            >
+              {t("runAIAutoAssign") || "Run AI Auto-Assign"}
             </Button>
           </Space>
         </div>
@@ -391,19 +462,37 @@ export default function AIAssistantModerator() {
                         AI Recommendations
                       </div>
                       <div className="space-y-2 text-sm text-gray-700">
-                        {item.suggestions.topic && (
-                          <div className="flex items-start gap-2">
-                            <CheckOutlined className="text-green-600 mt-0.5" />
+                        {/* Topics for missingTopics mode */}
+                        {item.suggestions.topics &&
+                          item.suggestions.topics.length > 0 && (
                             <div>
                               <span className="font-semibold">
-                                {t("suggestedTopic") || "Suggested Topic"}:
-                              </span>{" "}
-                              <span className="text-blue-600 font-medium">
-                                {item.suggestions.topic}
+                                {t("suggestedTopics") || "Suggested Topics"}:
                               </span>
+                              <div className="mt-2 space-y-2">
+                                {item.suggestions.topics
+                                  .slice(0, 3)
+                                  .map((topic, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="flex items-start gap-2 pl-4"
+                                    >
+                                      <CheckOutlined className="text-green-600 mt-0.5" />
+                                      <div className="flex-1">
+                                        <div className="text-blue-600 font-medium">
+                                          {topic.title}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {topic.reason}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+
+                        {/* Group for membersWithoutGroup mode */}
                         {item.suggestions.group && (
                           <div className="flex items-start gap-2">
                             <CheckOutlined className="text-green-600 mt-0.5" />
@@ -417,33 +506,37 @@ export default function AIAssistantModerator() {
                             </div>
                           </div>
                         )}
-                        {item.suggestions.member && (
-                          <div className="flex items-start gap-2">
-                            <CheckOutlined className="text-green-600 mt-0.5" />
+
+                        {/* Members for groupsMissingMembers mode */}
+                        {item.suggestions.members &&
+                          item.suggestions.members.length > 0 && (
                             <div>
                               <span className="font-semibold">
-                                {t("suggestedMember") || "Suggested Member"}:
-                              </span>{" "}
-                              <span className="text-blue-600 font-medium">
-                                {item.suggestions.member}
+                                {t("suggestedMembers") || "Suggested Members"}:
                               </span>
+                              <div className="mt-2 space-y-2">
+                                {item.suggestions.members
+                                  .slice(0, 3)
+                                  .map((member, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="flex items-start gap-2 pl-4"
+                                    >
+                                      <CheckOutlined className="text-green-600 mt-0.5" />
+                                      <div className="flex-1">
+                                        <div className="text-blue-600 font-medium">
+                                          {member.displayName}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {member.primaryRole} • {member.reason}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                        {item.suggestions.mergeWith && (
-                          <div className="flex items-start gap-2">
-                            <UsergroupAddOutlined className="text-purple-600 mt-0.5" />
-                            <div>
-                              <span className="font-semibold">
-                                {t("mergeSuggestion") || "Merge Suggestion"}:
-                              </span>{" "}
-                              <span className="text-purple-600 font-medium">
-                                {t("mergeWith") || "Merge with"}{" "}
-                                {item.suggestions.mergeWith}
-                              </span>
-                            </div>
-                          </div>
-                        )}
+                          )}
+
                         {item.suggestions.reason && (
                           <div className="flex items-start gap-2">
                             <CheckOutlined className="text-gray-500 mt-0.5" />
@@ -469,9 +562,9 @@ export default function AIAssistantModerator() {
                       </div>
                       <div
                         className={`text-3xl font-bold ${
-                          item.confidence >= 90
+                          item.confidence >= 80
                             ? "text-green-600"
-                            : item.confidence >= 80
+                            : item.confidence >= 50
                             ? "text-blue-600"
                             : "text-yellow-600"
                         }`}
@@ -481,53 +574,23 @@ export default function AIAssistantModerator() {
                     </div>
                     <div
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        item.confidence >= 90
+                        item.confidence >= 80
                           ? "bg-green-100 text-green-700"
-                          : item.confidence >= 80
+                          : item.confidence >= 50
                           ? "bg-blue-100 text-blue-700"
                           : "bg-yellow-100 text-yellow-700"
                       }`}
                     >
-                      {item.confidence >= 90
+                      {item.confidence >= 80
                         ? "High"
-                        : item.confidence >= 80
-                        ? "Good"
-                        : "Medium"}
+                        : item.confidence >= 50
+                        ? "Medium"
+                        : "Low"}
                     </div>
                   </div>
                 </div>
 
                 <Divider className="my-4" />
-
-                {/* Actions */}
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="primary"
-                    icon={<CheckOutlined />}
-                    className="!bg-blue-600 hover:!bg-blue-700"
-                    onClick={() => applySuggestion(item.group || item.member)}
-                  >
-                    Apply Suggestion
-                  </Button>
-                  <Button
-                    icon={<SendOutlined />}
-                    onClick={() => sendNotice(item.group || item.member)}
-                    className="hover:!bg-gray-50"
-                  >
-                    Send Notification
-                  </Button>
-                  {item.suggestions.mergeWith && (
-                    <Button
-                      icon={<UsergroupAddOutlined />}
-                      onClick={() =>
-                        autoMergeHandler(item.group || item.member)
-                      }
-                      className="!text-purple-600 !border-purple-300 hover:!bg-purple-50"
-                    >
-                      Auto Merge
-                    </Button>
-                  )}
-                </div>
               </Card>
             ))}
           </div>

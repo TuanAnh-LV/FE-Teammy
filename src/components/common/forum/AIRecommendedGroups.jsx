@@ -1,5 +1,5 @@
 import { Sparkles, Star, Clock, Eye, Calendar, Users } from "lucide-react";
-import { Chip } from "./Chip";
+import { Chip, StatusChip } from "./Chip";
 import { useTranslation } from "../../../hook/useTranslation";
 
 const clamp3 = {
@@ -38,52 +38,41 @@ export function AIRecommendedGroups({
       </p>
 
       {aiSuggestedGroupPosts.map((suggestion, idx) => {
-        const detail = suggestion.detail || {};
-        const group = detail.group || {};
-
-        // Extract data from both levels
-        const postId = detail.id || suggestion.postId || suggestion.id;
-        const groupId = detail.groupId || suggestion.groupId || group.groupId;
-        const groupName =
-          detail.groupName || suggestion.groupName || group.name || "Group";
-        const title = detail.title || suggestion.title || groupName;
-        const description = detail.description || suggestion.description || "";
-        const status = detail.status || suggestion.status || "open";
-        const matchScore = suggestion.score || 0;
+        // Extract data from new API structure with post wrapper
+        const post = suggestion.post || {};
+        const postId = post.id;
+        const group = post.group || {};
+        const groupId = group.groupId;
+        const groupName = group.name || "Group";
+        const title = post.title || groupName;
+        const description = post.description || "";
+        const status = post.status || "open";
+        const matchScore = suggestion.scorePercent || 0;
 
         // Members info
-        const currentMembers = detail.currentMembers || 0;
-        const maxMembers = group.maxMembers || detail.maxMembers || 0;
+        const currentMembers = post.currentMembers || 0;
+        const maxMembers = group.maxMembers || 0;
 
-        // Positions - convert single position to array for consistency
-        const positionNeeded =
-          detail.positionNeeded || suggestion.positionNeeded || "";
+        // Position - convert to array for consistency
+        const positionNeeded = post.position_needed || "";
         const positions = positionNeeded ? [positionNeeded] : [];
 
-        // Skills
-        const skills =
-          detail.skills ||
-          suggestion.matchingSkills ||
-          suggestion.requiredSkills ||
-          [];
+        // Skills - use matchingSkills from suggestion or skills from post
+        const skills = suggestion.matchingSkills || post.skills || [];
 
         // Major
-        const major = detail.major ||
-          group.major || {
-            majorId: detail.majorId || suggestion.majorId,
-            majorName: detail.majorName || suggestion.majorName,
-          };
+        const major = post.major || {};
 
         // Dates
-        const createdAt =
-          detail.createdAt || suggestion.createdAt || new Date();
-        const applicationDeadline =
-          detail.applicationDeadline || suggestion.applicationDeadline || null;
+        const createdAt = post.createdAt || new Date();
+        const applicationDeadline = post.applicationDeadline || null;
 
         // Applications
-        const applicationsCount = detail.applicationsCount || 0;
+        const applicationsCount = post.applicationsCount || 0;
+        const hasApplied = post.hasApplied || false;
+        const myApplicationStatus = post.myApplicationStatus || null;
 
-        // Leader info - might not be available in AI response
+        // Leader info
         const leader = group.leader || {};
         const leaderName = leader.displayName || leader.name || "";
 
@@ -241,14 +230,17 @@ export function AIRecommendedGroups({
                 >
                   {t("viewDetails") || "View Details"}
                 </button>
-                {!membership.hasGroup && (
-                  <button
-                    onClick={() => onApply(detail, postId, groupId)}
-                    className="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-lg bg-[#FF7A00] px-3 md:px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:!opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100"
-                  >
-                    {t("applyNow") || "Apply Now"}
-                  </button>
-                )}
+                {!membership.hasGroup &&
+                  (hasApplied && myApplicationStatus ? (
+                    <StatusChip status={myApplicationStatus} />
+                  ) : (
+                    <button
+                      onClick={() => onApply(post, postId, groupId)}
+                      className="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-lg bg-[#FF7A00] px-3 md:px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:!opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                    >
+                      {t("applyNow") || "Apply Now"}
+                    </button>
+                  ))}
               </div>
             </div>
           </div>

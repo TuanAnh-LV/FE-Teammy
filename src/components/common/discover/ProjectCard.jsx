@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../../../hook/useTranslation";
 
 // Added optional onSelectTopic callback so parent can show invite mentor modal.
-const ProjectCard = ({ project, onSelectTopic }) => {
+const ProjectCard = ({ project, onSelectTopic, isAISuggestion = false }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
@@ -16,8 +16,13 @@ const ProjectCard = ({ project, onSelectTopic }) => {
     : "";
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 p-6 flex flex-row gap-6">
-      
+    <div
+      className={`rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 p-6 flex flex-row gap-6 ${
+        isAISuggestion
+          ? "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 border-2 border-purple-300"
+          : "bg-white border border-gray-100"
+      }`}
+    >
       {/* Left section */}
       <div className="flex-1 flex flex-col gap-4">
         <div>
@@ -62,11 +67,12 @@ const ProjectCard = ({ project, onSelectTopic }) => {
         {((project.attachedFiles || []).length > 0 ||
           (project.referenceDocs || []).length > 0) && (
           <div className="text-sm text-gray-600 flex gap-6">
-            
             {/* Attached Files */}
             {(project.attachedFiles || []).length > 0 && (
               <div className="flex-1">
-                <div className="text-xs text-gray-500 mb-2">{t("attachedFiles") || "Attached Files"}</div>
+                <div className="text-xs text-gray-500 mb-2">
+                  {t("attachedFiles") || "Attached Files"}
+                </div>
                 <ul className="space-y-2">
                   {(project.attachedFiles || []).slice(0, 2).map((f, idx) => (
                     <li
@@ -99,14 +105,12 @@ const ProjectCard = ({ project, onSelectTopic }) => {
                 </ul>
               </div>
             )}
-
           </div>
         )}
       </div>
 
       {/* Right section - Button */}
       <div className="flex-shrink-0 w-40 flex flex-col justify-between">
-        
         {/* Date + AI Tag */}
         <div className="flex flex-col items-end gap-2">
           <div className="text-xs text-gray-400 flex items-center gap-1">
@@ -114,7 +118,7 @@ const ProjectCard = ({ project, onSelectTopic }) => {
           </div>
           <div className="text-xs text-gray-500">{formattedDate}</div>
         </div>
-        
+
         {/* Select Topic Button */}
         <button
           onClick={async () => {
@@ -150,7 +154,9 @@ const ProjectCard = ({ project, onSelectTopic }) => {
               if (currentMembers < maxMembers) {
                 notification.error({
                   message: t("groupNotFull"),
-                  description: `${t("groupMustBeFull")} ${currentMembers}/${maxMembers} ${t("members")}.`,
+                  description: `${t(
+                    "groupMustBeFull"
+                  )} ${currentMembers}/${maxMembers} ${t("members")}.`,
                 });
                 return;
               }
@@ -159,7 +165,9 @@ const ProjectCard = ({ project, onSelectTopic }) => {
 
               notification.success({
                 message: t("topicSelected"),
-                description: `${t("successfullySelected")} "${project.title}" ${t("forYourGroup")}`,
+                description: `${t("successfullySelected")} "${
+                  project.title
+                }" ${t("forYourGroup")}`,
               });
 
               navigate(`/my-group`);
@@ -167,7 +175,8 @@ const ProjectCard = ({ project, onSelectTopic }) => {
               console.error("Failed to select topic:", err);
               notification.error({
                 message: t("failedToSelectTopic"),
-                description: err?.response?.data?.message || t("pleaseTryAgain"),
+                description:
+                  err?.response?.data?.message || t("pleaseTryAgain"),
               });
             } finally {
               setLoading(false);
@@ -186,7 +195,6 @@ const ProjectCard = ({ project, onSelectTopic }) => {
             ? t("topicClosed")
             : t("selectTopic")}
         </button>
-
       </div>
     </div>
   );

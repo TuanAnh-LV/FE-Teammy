@@ -137,6 +137,17 @@ const Forum = () => {
           groupId: membership.groupId,
           limit: 10,
         });
+        console.log("AI profile suggestions response:", aiResponse);
+        console.log("AI profile suggestions data:", aiResponse.data);
+        console.log("AI profile suggestions data.data:", aiResponse.data?.data);
+        console.log(
+          "AI profile suggestions data.data[0]:",
+          aiResponse.data?.data?.[0]
+        );
+        console.log(
+          "AI profile suggestions data.data[0].profilePost:",
+          aiResponse.data?.data?.[0]?.profilePost
+        );
 
         // Check if response is successful
         if (!aiResponse || aiResponse.success === false || !aiResponse.data) {
@@ -144,35 +155,16 @@ const Forum = () => {
           return;
         }
 
-        // Handle different response structures
         let suggestions = [];
 
-        if (Array.isArray(aiResponse.data)) {
-          suggestions = aiResponse.data.filter(
-            (item) =>
-              item &&
-              typeof item === "object" &&
-              (item.userId || item.ownerUserId || item.id)
-          );
-        } else if (Array.isArray(aiResponse.data.data)) {
+        if (Array.isArray(aiResponse.data.data)) {
           suggestions = aiResponse.data.data.filter(
             (item) =>
               item &&
               typeof item === "object" &&
-              (item.userId || item.ownerUserId || item.id)
+              item.profilePost &&
+              item.profilePost.id
           );
-        } else if (
-          typeof aiResponse.data === "object" &&
-          aiResponse.data !== null
-        ) {
-          // Only add if it has valid userId
-          if (
-            aiResponse.data.userId ||
-            aiResponse.data.ownerUserId ||
-            aiResponse.data.id
-          ) {
-            suggestions = [aiResponse.data];
-          }
         }
 
         if (mounted && suggestions.length > 0) {
@@ -218,36 +210,14 @@ const Forum = () => {
           if (mounted) setAiSuggestedGroupPosts([]);
           return;
         }
-
-        // Handle different response structures
+        // Handle array response structure with post wrapper
         let suggestions = [];
 
-        if (Array.isArray(aiResponse.data)) {
-          suggestions = aiResponse.data.filter(
-            (item) =>
-              item &&
-              typeof item === "object" &&
-              (item.groupId || item.id || item.postId)
-          );
-        } else if (Array.isArray(aiResponse.data.data)) {
+        if (Array.isArray(aiResponse.data.data)) {
           suggestions = aiResponse.data.data.filter(
             (item) =>
-              item &&
-              typeof item === "object" &&
-              (item.groupId || item.id || item.postId)
+              item && typeof item === "object" && item.post && item.post.id
           );
-        } else if (
-          typeof aiResponse.data === "object" &&
-          aiResponse.data !== null
-        ) {
-          // Only add if it has valid groupId
-          if (
-            aiResponse.data.groupId ||
-            aiResponse.data.id ||
-            aiResponse.data.postId
-          ) {
-            suggestions = [aiResponse.data];
-          }
         }
 
         if (mounted && suggestions.length > 0) {
@@ -295,6 +265,19 @@ const Forum = () => {
     }
   };
 
+  /** Create sets of AI suggested IDs to filter duplicates */
+  const aiGroupPostIds = useMemo(() => {
+    return new Set(
+      aiSuggestedGroupPosts.map((item) => item.post?.id).filter(Boolean)
+    );
+  }, [aiSuggestedGroupPosts]);
+
+  const aiProfilePostIds = useMemo(() => {
+    return new Set(
+      aiSuggestedPosts.map((item) => item.profilePost?.id).filter(Boolean)
+    );
+  }, [aiSuggestedPosts]);
+
   /** filter */
   const filtered = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase();
@@ -302,6 +285,14 @@ const Forum = () => {
       // Hide posts that are explicitly closed
       if ((item?.status || "").toString().toLowerCase() === "closed")
         return false;
+
+      // Hide posts that are already shown in AI suggestions
+      if (activeTab === "groups" && aiGroupPostIds.has(item.id)) {
+        return false;
+      }
+      if (activeTab === "individuals" && aiProfilePostIds.has(item.id)) {
+        return false;
+      }
 
       const texts = [
         item.title,
@@ -315,7 +306,7 @@ const Forum = () => {
         .map((s) => String(s).toLowerCase());
       return !q || texts.some((h) => h.includes(q));
     });
-  }, [postsData, debouncedQuery]);
+  }, [postsData, debouncedQuery, activeTab, aiGroupPostIds, aiProfilePostIds]);
 
   useEffect(() => {
     setPage(1);
@@ -370,7 +361,9 @@ const Forum = () => {
             : item
         )
       );
-      notification.success(t("inviteRequestSent") || "Invite request sent!");
+      notification.success({
+        message: t("inviteRequestSent") || "Invite request sent!",
+      });
     } catch (e) {
       console.error(e);
     } finally {
@@ -380,17 +373,22 @@ const Forum = () => {
     }
   };
 
-  const onInvite = async (id) => {
-    const user = paged.find((u) => u.id === id);
-    const userId = user?.user?.userId;
-    const groupId = membership.groupId;
-    const payload = {
-      userId,
-    };
-
+  const onInvite = async (postId) => {
     try {
-      // Call the inviteMember API method
-      await GroupService.inviteMember(groupId, payload);
+      // Call the profile post invite API with post ID
+      await PostService.inviteProfilePost(postId);
+
+      // Update local state to show invited status
+      setAllPostsData((prev) =>
+        prev.map((item) =>
+          item.id === postId ? { ...item, hasApplied: true } : item
+        )
+      );
+      setPostsData((prev) =>
+        prev.map((item) =>
+          item.id === postId ? { ...item, hasApplied: true } : item
+        )
+      );
 
       // Display success message when the invite is successful
       notification.success({
@@ -569,25 +567,32 @@ const Forum = () => {
 
         {/* LISTS */}
         <div className="space-y-4">
-          {/* AI Suggested Profiles - Only show for individuals tab with groupId */}
-          <AIRecommendedProfiles
-            aiSuggestedPosts={aiSuggestedPosts}
-            membership={membership}
-          />
-
-          {filtered.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">
-              {t("noData") || "No results found."}
-            </div>
+          {/* AI Suggested Groups - Show at top for groups tab */}
+          {activeTab === "groups" && (
+            <AIRecommendedGroups
+              aiSuggestedGroupPosts={aiSuggestedGroupPosts}
+              membership={membership}
+              onOpenDetail={handleOpenGroupDetail}
+              onApply={handleAIGroupApply}
+            />
           )}
 
-          {/* AI Suggested Groups - Only show for groups tab */}
-          <AIRecommendedGroups
-            aiSuggestedGroupPosts={aiSuggestedGroupPosts}
-            membership={membership}
-            onOpenDetail={handleOpenGroupDetail}
-            onApply={handleAIGroupApply}
-          />
+          {/* AI Suggested Profiles - Show at top for individuals tab */}
+          {activeTab === "individuals" && (
+            <AIRecommendedProfiles
+              aiSuggestedPosts={aiSuggestedPosts}
+              membership={membership}
+            />
+          )}
+
+          {/* Only show "No results" if there are no AI suggestions AND no filtered posts */}
+          {filtered.length === 0 &&
+            aiSuggestedGroupPosts.length === 0 &&
+            aiSuggestedPosts.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">
+                {t("noData") || "No results found."}
+              </div>
+            )}
 
           {/* GROUP CARDS */}
           {activeTab === "groups" &&
