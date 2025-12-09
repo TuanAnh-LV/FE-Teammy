@@ -24,8 +24,10 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
           ]);
           setMajors(majorsRes?.data || []);
           setSemesters(semestersRes?.data || []);
-        } catch (err) {
-
+        } catch {
+          notification.error({
+            message: t("failedLoadMetadata") || "Failed to load metadata",
+          });
         }
       };
       fetchMetadata();
@@ -65,7 +67,6 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
       onSuccess();
       onClose();
     } catch (err) {
-
       if (err.errorFields) {
         // Form validation error
         return;
@@ -151,7 +152,16 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
           </Form.Item>
         </div>
 
-        <Form.Item label={t("source") || "Source"} name="source">
+        <Form.Item
+          label={t("source") || "Source"}
+          name="source"
+          rules={[
+            {
+              required: true,
+              message: t("pleaseImportSource") || "Please import source",
+            },
+          ]}
+        >
           <Input placeholder="https://example.com" />
         </Form.Item>
 
@@ -165,6 +175,13 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
         <Form.Item
           label={t("mentorEmails") || "Mentor Emails"}
           name="mentorEmails"
+          rules={[
+            {
+              required: true,
+              message:
+                t("pleaseImportMailMentor") || "Please import mentor emails",
+            },
+          ]}
         >
           <Input placeholder="email1@example.com, email2@example.com" />
         </Form.Item>
@@ -174,4 +191,3 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
 };
 
 export default TopicEditModal;
-

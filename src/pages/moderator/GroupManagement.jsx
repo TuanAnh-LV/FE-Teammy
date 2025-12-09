@@ -11,18 +11,12 @@ import {
   Tooltip,
   notification,
 } from "antd";
-import {
-  SearchOutlined,
-  EyeOutlined,
-  CheckCircleOutlined,
-  StopOutlined,
-  BellOutlined,
-} from "@ant-design/icons";
+import { SearchOutlined, EyeOutlined, BellOutlined } from "@ant-design/icons";
 import GroupDetailModal from "../../components/moderator/GroupDetailModal";
 import { useTranslation } from "../../hook/useTranslation";
 import { GroupService } from "../../services/group.service";
 import { normalizeGroup } from "../../utils/group.utils";
-
+import { MajorService } from "../../services/major.service";
 const { Option } = Select;
 
 export default function GroupManagement() {
@@ -40,9 +34,11 @@ export default function GroupManagement() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const [majorList, setMajorList] = useState([]);
   useEffect(() => {
     let mounted = true;
-    const fetchList = async () => {
+
+    const fetchGroups = async () => {
       setLoading(true);
       try {
         const res = await GroupService.getListGroup();
@@ -65,8 +61,7 @@ export default function GroupManagement() {
           raw: g,
         }));
         if (mounted) setRows(mapped);
-      } catch (err) {
-
+      } catch {
         notification.error({
           message: t("failedLoadGroups") || "Failed to load groups",
         });
@@ -74,20 +69,28 @@ export default function GroupManagement() {
         if (mounted) setLoading(false);
       }
     };
-    fetchList();
-    return () => (mounted = false);
-  }, []);
 
-  const toggleFull = (record) => {
-    setRows((prev) =>
-      prev.map((r) => (r.key === record.key ? { ...r, isFull: !r.isFull } : r))
-    );
-    notification.success({
-      message: !record.isFull
-        ? t("groupMarkedFull") || "Marked group as full"
-        : t("groupReopened") || "Reopened recruiting",
-    });
-  };
+    const fetchMajors = async () => {
+      try {
+        const res = await MajorService.getMajors();
+        const payload = res?.data ?? res;
+        if (mounted) {
+          setMajorList(Array.isArray(payload) ? payload : []);
+        }
+      } catch {
+        notification.error({
+          message: t("failedLoadMajors") || "Failed to load majors",
+        });
+      }
+    };
+
+    fetchGroups();
+    fetchMajors();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const remindTopic = (record) => {
     // TODO: call real API here
@@ -132,7 +135,7 @@ export default function GroupManagement() {
         ),
     },
     {
-      title: t("members") || "Members",
+      title: t("Members") || "Members",
       key: "members",
       align: "center",
       render: (_, r) => {
@@ -148,9 +151,9 @@ export default function GroupManagement() {
       key: "status",
       render: (status) => {
         const colorMap = {
+          Recruiting: "orange",
+          Pending: "yellow",
           Active: "green",
-          Pending: "orange",
-          Inactive: "gray",
         };
         return (
           <Tag
@@ -168,7 +171,7 @@ export default function GroupManagement() {
       render: (_, record) => {
         const noTopic = record.topic === "Not Assigned";
         return (
-          <Space size="middle">
+          <Space size="small">
             <Tooltip title={t("viewDetails") || "View details"}>
               <Button
                 type="text"
@@ -180,8 +183,7 @@ export default function GroupManagement() {
                       setCurrent(res.data);
                       setOpen(true);
                     }
-                  } catch (err) {
-
+                  } catch {
                     notification.error({
                       message:
                         t("failedLoadGroupDetail") ||
@@ -191,23 +193,6 @@ export default function GroupManagement() {
                 }}
               />
             </Tooltip>
-
-            <Tooltip
-              title={
-                record.isFull
-                  ? t("reopenRecruiting") || "Reopen recruiting"
-                  : t("markAsFull") || "Mark as Full"
-              }
-            >
-              <Button
-                type="text"
-                icon={
-                  record.isFull ? <StopOutlined /> : <CheckCircleOutlined />
-                }
-                onClick={() => toggleFull(record)}
-              />
-            </Tooltip>
-
             <Tooltip
               title={
                 noTopic
@@ -268,23 +253,21 @@ export default function GroupManagement() {
             <Select
               value={filters.major}
               onChange={(v) => setFilters({ ...filters, major: v })}
-              className="w-40"
+              className="w-60"
             >
               <Option value="All Major">{t("allMajor") || "All Major"}</Option>
-              <Option value="Computer Science">
-                {t("computerScience") || "Computer Science"}
-              </Option>
-              <Option value="Engineering">
-                {t("engineering") || "Engineering"}
-              </Option>
-              <Option value="Information Technology">
-                {t("informationTechnology") || "Information Technology"}
-              </Option>
+
+              {majorList.map((m) => (
+                <Option key={m.majorId} value={m.majorName}>
+                  {m.majorName}
+                </Option>
+              ))}
             </Select>
+
             <Select
               value={filters.status}
               onChange={(v) => setFilters({ ...filters, status: v })}
-              className="w-36"
+              className="w-50"
             >
               <Option value="All Status">
                 {t("allStatus") || "All Status"}
@@ -315,4 +298,3 @@ export default function GroupManagement() {
     </div>
   );
 }
-

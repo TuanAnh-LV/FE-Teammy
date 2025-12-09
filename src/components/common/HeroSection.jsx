@@ -48,7 +48,7 @@ const HeroSection = () => {
             <div className="flex flex-col gap-4 md:gap-6">
               <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                 <Link
-                  to="/discover"
+                  to="/forum"
                   className="!font-sans inline-flex items-center justify-center px-5 md:px-6 py-2.5 rounded-full text-sm md:text-base font-semibold text-white"
                   style={{
                     background: "linear-gradient(90deg,#43D08A,#3182ED)",

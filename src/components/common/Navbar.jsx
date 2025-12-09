@@ -17,9 +17,7 @@ import { useTranslation } from "../../hook/useTranslation";
 import { notification } from "antd";
 import NotificationDrawer from "./NotificationDrawer";
 import { InvitationService } from "../../services/invitation.service";
-
 const Navbar = () => {
-  const { t } = useTranslation();
   const location = useLocation();
   const { logout, userInfo, token, role } = useAuth();
   const navigate = useNavigate();
@@ -33,7 +31,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [notificationApi, contextHolder] = notification.useNotification();
-
+  const { t } = useTranslation();
   useEffect(() => {
     setUser(userInfo || null);
   }, [userInfo]);
@@ -43,18 +41,32 @@ const Navbar = () => {
       if (!iso) return "";
       const d = new Date(iso);
       const diff = Math.max(0, (Date.now() - d.getTime()) / 1000);
-      if (diff < 60) return `${Math.floor(diff)} ${t("secondsAgo") || "seconds ago"}`;
-      if (diff < 3600) return `${Math.floor(diff / 60)} ${t("minutesAgo") || "minutes ago"}`;
-      if (diff < 86400) return `${Math.floor(diff / 3600)} ${t("hoursAgo") || "hours ago"}`;
+      if (diff < 60)
+        return `${Math.floor(diff)} ${t("secondsAgo") || "seconds ago"}`;
+      if (diff < 3600)
+        return `${Math.floor(diff / 60)} ${t("minutesAgo") || "minutes ago"}`;
+      if (diff < 86400)
+        return `${Math.floor(diff / 3600)} ${t("hoursAgo") || "hours ago"}`;
       return `${Math.floor(diff / 86400)} ${t("daysAgo") || "days ago"}`;
     };
 
     const fetchInvites = async () => {
       try {
-        const res = await InvitationService.list({ status: "pending" }, false);
-        const data = Array.isArray(res?.data) ? res.data : [];
-        const items = data.map((i) => ({
+        const [directRes, postRes] = await Promise.all([
+          InvitationService.list({ status: "pending" }, false),
+          InvitationService.getMyProfilePostInvitations(
+            { status: "pending" },
+            false
+          ),
+        ]);
+
+        const directData = Array.isArray(directRes?.data) ? directRes.data : [];
+        const postData = Array.isArray(postRes?.data) ? postRes.data : [];
+
+        // Lời mời trực tiếp
+        const directItems = directData.map((i) => ({
           id: i.invitationId || i.id,
+          type: "direct",
           title:
             getTranslation("groupInviteTitle", language) || "Group invitation",
           message: `${
@@ -66,12 +78,28 @@ const Navbar = () => {
           time: formatRelative(i.createdAt),
           actions: ["reject", "accept"],
         }));
-        setNotifications(items);
-      } catch (e) {
 
+        // Lời mời qua bài post
+        const postItems = postData.map((p) => ({
+          id: `${p.postId}-${p.candidateId}`,
+          type: "post",
+          postId: p.postId,
+          candidateId: p.candidateId,
+          title: t("postInviteTitle"),
+          message: `${p.leaderDisplayName || t("someone")} ${t(
+            "invitedYouFromPost"
+          )}`,
+          time: formatRelative(p.createdAt),
+          actions: ["reject", "accept"],
+        }));
+
+        // Gộp lại
+        setNotifications([...directItems, ...postItems]);
+      } catch (e) {
         setNotifications([]);
       }
     };
+
     if (token) {
       if (inviteFetchTokenRef.current !== token) {
         inviteFetchTokenRef.current = token;
@@ -173,7 +201,9 @@ const Navbar = () => {
               <input
                 type="search"
                 name="navbar-search"
-                placeholder={t("searchPlaceholder") || "Search skills, majors, projects..."}
+                placeholder={
+                  t("searchPlaceholder") || "Search skills, majors, projects..."
+                }
                 className="!w-full !rounded-full !border !border-blue-200 !py-2.5 !pl-11 !pr-4 !text-sm !text-gray-700 placeholder:!text-gray-400 focus:!outline-none focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-100"
               />
             </label>
@@ -201,7 +231,11 @@ const Navbar = () => {
             {/* Language toggle - Desktop only */}
             <button
               onClick={toggleLanguage}
-              title={language === "EN" ? (t("switchToVietnamese") || "Switch to Vietnamese") : (t("switchToEnglish") || "Switch to English")}
+              title={
+                language === "EN"
+                  ? t("switchToVietnamese") || "Switch to Vietnamese"
+                  : t("switchToEnglish") || "Switch to English"
+              }
               className="!hidden md:!flex !items-center !gap-1 !px-2 !py-1 !rounded-full hover:!bg-gray-100 !transition-colors !duration-200"
             >
               <Globe className="!w-5 !h-5 !text-gray-700" />
@@ -403,8 +437,8 @@ const Navbar = () => {
                 <Globe className="!w-4 !h-4" />
                 <span className="!text-sm !font-semibold">
                   {language === "EN"
-                    ? (t("switchToVietnamese") || "Switch to Vietnamese")
-                    : (t("switchToEnglish") || "Switch to English")}
+                    ? t("switchToVietnamese") || "Switch to Vietnamese"
+                    : t("switchToEnglish") || "Switch to English"}
                 </span>
               </button>
             </div>
@@ -417,13 +451,22 @@ const Navbar = () => {
         items={notifications}
         onAccept={async (n) => {
           try {
-            await InvitationService.accept(n.id);
+            if (n.type === "post") {
+              // lời mời qua bài post
+              await InvitationService.acceptProfilePostInvitation(
+                n.postId,
+                n.candidateId
+              );
+            } else {
+              // lời mời trực tiếp
+              await InvitationService.accept(n.id);
+            }
+
             setNotifications((prev) => prev.filter((x) => x.id !== n.id));
             notificationApi.success({
               message: getTranslation("acceptSuccess", language) || "Accepted",
             });
           } catch (e) {
-
             notificationApi.error({
               message:
                 getTranslation("approveFailed", language) || "Accept failed",
@@ -432,13 +475,20 @@ const Navbar = () => {
         }}
         onReject={async (n) => {
           try {
-            await InvitationService.decline(n.id);
+            if (n.type === "post") {
+              await InvitationService.rejectProfilePostInvitation(
+                n.postId,
+                n.candidateId
+              );
+            } else {
+              await InvitationService.decline(n.id);
+            }
+
             setNotifications((prev) => prev.filter((x) => x.id !== n.id));
             notificationApi.info({
               message: getTranslation("declineInfo", language) || "Declined",
             });
           } catch (e) {
-
             notificationApi.error({
               message:
                 getTranslation("rejectFailed", language) || "Decline failed",
@@ -451,4 +501,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-

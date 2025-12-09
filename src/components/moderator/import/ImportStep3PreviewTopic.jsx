@@ -106,7 +106,6 @@ export default function ImportStep3PreviewTopic({
         setCurrentStep(3);
       }
     } catch (err) {
-
       notification.error({
         message: t("importFailed") || "Import Failed",
         description: err?.response?.data?.message || t("pleaseTryAgain"),
@@ -118,37 +117,40 @@ export default function ImportStep3PreviewTopic({
 
   const columns = useMemo(
     () => [
-      { title: "Row", dataIndex: "row", width: 60 },
-      { title: "Title", dataIndex: "title" },
-      { title: "Semester", dataIndex: "semesterCode" },
-      { title: "Major Name", dataIndex: "majorName" },
-      { title: "Source", dataIndex: "source" },
-      { title: "Mentor Emails", dataIndex: "mentorEmails" },
+      { title: t("row") || "Row", dataIndex: "row", width: 60 },
+      { title: t("title") || "Title", dataIndex: "title" },
+      { title: t("semester") || "Semester", dataIndex: "semesterCode" },
+      { title: t("majorName") || "Major Name", dataIndex: "majorName" },
+      { title: t("source") || "Source", dataIndex: "source" },
       {
-        title: "Status",
+        title: t("mentorEmails") || "Mentor Emails",
+        dataIndex: "mentorEmails",
+      },
+      {
+        title: t("status") || "Status",
         dataIndex: "statusLabel",
         render: (status) => {
           if (status === "Valid")
             return (
               <Tag icon={<CheckCircleOutlined />} color="success">
-                Valid
+                {t("Valid") || "Valid"}
               </Tag>
             );
           if (status === "Warning")
             return (
               <Tag icon={<ExclamationCircleOutlined />} color="warning">
-                Warning
+                {t("Warning") || "Warning"}
               </Tag>
             );
           return (
             <Tag icon={<CloseCircleOutlined />} color="error">
-              Error
+              {t("Error") || "Error"}
             </Tag>
           );
         },
       },
       {
-        title: "Issues",
+        title: t("issues") || "Issues",
         dataIndex: "issues",
         render: (issues) =>
           issues.length ? (
@@ -173,9 +175,9 @@ export default function ImportStep3PreviewTopic({
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold text-gray-800 mb-1">
-          Preview & Validate
+          {t("previewValidate")}
         </h2>
-        <p className="text-gray-500">Review the data before importing.</p>
+        <p className="text-gray-500">{t("reviewDataBeforeImporting")}</p>
       </div>
 
       <Table
@@ -191,7 +193,7 @@ export default function ImportStep3PreviewTopic({
           onClick={() => setCurrentStep(1)}
           className="border-gray-300 hover:border-orange-400"
         >
-          Back to Mapping
+          {t("backToMapping") || "Back to Mapping"}
         </Button>
 
         <Button
@@ -204,7 +206,7 @@ export default function ImportStep3PreviewTopic({
         >
           {importing
             ? t("importing") || "Importing..."
-            : `${t("import") || "Import"} ${previewData.length} ${
+            : `${t("importTopic") || "Import"} ${previewData.length} ${
                 t("topics") || "Topics"
               }`}
         </Button>
@@ -212,4 +214,3 @@ export default function ImportStep3PreviewTopic({
     </div>
   );
 }
-

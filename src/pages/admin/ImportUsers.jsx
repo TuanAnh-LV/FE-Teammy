@@ -33,7 +33,7 @@ const ImportUsers = () => {
   const steps = useMemo(
     () => [
       {
-        title: "Upload File",
+        title: t("uploadFile") || "Upload File",
         icon: <UploadOutlined />,
         content: (
           <ImportStep1Upload
@@ -44,7 +44,7 @@ const ImportUsers = () => {
         ),
       },
       {
-        title: "Map Columns",
+        title: t("mapColumns") || "Map Columns",
         icon: <SwapOutlined />,
         content: (
           <ImportStep2Mapping
@@ -56,7 +56,7 @@ const ImportUsers = () => {
         ),
       },
       {
-        title: "Review",
+        title: t("review") || "Review",
         icon: <EyeOutlined />,
         content: (
           <ImportStep3Preview
@@ -70,7 +70,7 @@ const ImportUsers = () => {
         ),
       },
       {
-        title: "Import",
+        title: t("import") || "Import Users",
         icon: <CheckCircleOutlined />,
         content: (
           <ImportStep4Result

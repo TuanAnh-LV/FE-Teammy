@@ -41,7 +41,14 @@ const CreatePersonalPostModal = ({
       closeModal();
       onCreated?.();
     } catch (err) {
-
+      notification.error({
+        message:
+          t("createProfilePostFailed") || "Failed to create profile post",
+        description:
+          err?.response?.data?.message ||
+          t("pleaseTryAgain") ||
+          "Please try again",
+      });
     }
   };
 
@@ -123,10 +130,15 @@ const CreatePersonalPostModal = ({
               form.resetFields();
               closeModal();
             }}
+            className="!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all"
           >
             {t("cancel") || "Cancel"}
           </Button>
-          <Button type="primary" htmlType="submit">
+          <Button
+            type="primary"
+            htmlType="submit"
+            className="!bg-[#FF7A00] hover:!opacity-90 !text-white !border-none"
+          >
             {t("publishProfile") || "Publish Profile"}
           </Button>
         </div>
@@ -136,4 +148,3 @@ const CreatePersonalPostModal = ({
 };
 
 export default CreatePersonalPostModal;
-

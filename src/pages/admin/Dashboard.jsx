@@ -9,10 +9,8 @@ import {
   ClockCircleOutlined,
 } from "@ant-design/icons";
 import {
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
+  BarChart,
+  Bar,
   Cell,
   Tooltip,
   XAxis,
@@ -190,26 +188,26 @@ const AdminDashboard = () => {
           </p>
           {majorsData.length > 0 ? (
             <ResponsiveContainer width="100%" height={400}>
-              <PieChart>
-                <Pie
-                  data={majorsData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={120}
-                  dataKey="value"
-                  labelLine={true}
-                >
+              <BarChart
+                data={majorsData}
+                margin={{ top: 20, right: 30, left: 0, bottom: 80 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="name"
+                  angle={-35}
+                  textAnchor="end"
+                  interval={0} // hiện tất cả nhãn
+                />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="value">
                   {majorsData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
-                </Pie>
-                <Tooltip />
-                <Legend
-                  verticalAlign="bottom"
-                  height={36}
-                  wrapperStyle={{ paddingTop: "20px" }}
-                />
-              </PieChart>
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           ) : (
             <div className="flex justify-center items-center h-[400px] text-gray-400">

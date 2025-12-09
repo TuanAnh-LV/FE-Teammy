@@ -9,21 +9,17 @@ const Home = () => {
   const [showCompleteProfile, setShowCompleteProfile] = useState(false);
 
   useEffect(() => {
-    // Check if user needs to complete profile
-    // Admin, Moderator, Mentor don't need to complete profile
     const roleNormalized = role?.toLowerCase();
     const isStaffRole = ["admin", "moderator", "mentor"].includes(
       roleNormalized
     );
 
-    // Only show modal for non-staff roles who haven't completed their profile
     if (userInfo && userInfo.skillsCompleted === false && !isStaffRole) {
       setShowCompleteProfile(true);
     }
   }, [userInfo, role]);
 
   const handleProfileComplete = (updatedProfile) => {
-    // Update userInfo in context
     setUserInfo({
       ...userInfo,
       ...updatedProfile,
