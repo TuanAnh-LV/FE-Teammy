@@ -24,7 +24,6 @@ const { Option } = Select;
 export default function AIAssistantModerator() {
   const { t } = useTranslation();
   const [mode, setMode] = useState("groupsAndMembers");
-  const [autoMerge, setAutoMerge] = useState(false);
   const [analysisResults, setAnalysisResults] = useState([]);
   const [summary, setSummary] = useState({
     missingTopics: 0,
@@ -33,7 +32,10 @@ export default function AIAssistantModerator() {
   });
   const [loading, setLoading] = useState(false);
   const [aiOptionsData, setAiOptionsData] = useState(null);
-
+  const itemsFoundText = (t("itemsFound") || "{count} items found").replace(
+    "{count}",
+    analysisResults.length
+  );
   // Fetch AI options on component mount
   useEffect(() => {
     fetchAiOptions();
@@ -92,20 +94,17 @@ export default function AIAssistantModerator() {
   // Update analysis results based on mode
   const updateAnalysisResults = (selectedMode, data) => {
     if (!data) {
-      console.log("No data to update analysis results");
       return;
     }
 
-    console.log("Updating analysis results for mode:", selectedMode);
-    console.log("Data:", data);
-
-    // Build từng loại riêng
+    // 1) Groups thiếu topic
     const missingTopicsResults =
       (data.groupsWithoutTopic?.items || []).map((item, index) => ({
         id: `missingTopics-${index + 1}`,
         group: item.name,
         groupId: item.groupId,
-        status: ["No Topic"],
+        // lưu code, không dịch ở đây
+        status: ["noTopic"],
         suggestions: {
           topics: item.suggestions || [],
         },
@@ -115,12 +114,13 @@ export default function AIAssistantModerator() {
         maxMembers: item.maxMembers,
       })) || [];
 
+    // 2) Thành viên chưa có nhóm
     const membersWithoutGroupResults =
       (data.studentsWithoutGroup?.items || []).map((item, index) => ({
         id: `membersWithoutGroup-${index + 1}`,
         member: item.displayName,
         studentId: item.studentId,
-        status: ["No Group"],
+        status: ["noGroup"],
         suggestions: {
           group: item.suggestedGroup?.name || "",
           groupId: item.suggestedGroup?.groupId || "",
@@ -132,12 +132,19 @@ export default function AIAssistantModerator() {
         skillTags: item.skillTags || [],
       })) || [];
 
+    // 3) Group thiếu thành viên
     const groupsMissingMembersResults =
       (data.groupsNeedingMembers?.items || []).map((item, index) => ({
         id: `groupsMissingMembers-${index + 1}`,
         group: item.name,
         groupId: item.groupId,
-        status: [`Missing Members (${item.currentMembers}/${item.maxMembers})`],
+        status: [
+          {
+            type: "missingMembers",
+            current: item.currentMembers,
+            max: item.maxMembers,
+          },
+        ],
         suggestions: {
           members: item.suggestedMembers || [],
         },
@@ -149,15 +156,12 @@ export default function AIAssistantModerator() {
 
     let results = [];
 
-    // Chỉ còn 2 mode: missingTopics và groupsAndMembers
     if (selectedMode === "missingTopics") {
       results = missingTopicsResults;
     } else if (selectedMode === "groupsAndMembers") {
-      // Gộp cả group thiếu member + member chưa có group
       results = [...groupsMissingMembersResults, ...membersWithoutGroupResults];
     }
 
-    console.log("Analysis results:", results);
     setAnalysisResults(results);
   };
 
@@ -252,7 +256,7 @@ export default function AIAssistantModerator() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
@@ -261,8 +265,8 @@ export default function AIAssistantModerator() {
             {t("aiAssistant") || "AI Assistant"}
           </h1>
           <p className="text-gray-500 mt-2">
-            Intelligent detection and automated suggestions for group
-            optimization
+            {t("aiAssistantDescription") ||
+              "Intelligent detection and automated suggestions for group optimization"}
           </p>
         </div>
       </div>
@@ -276,7 +280,7 @@ export default function AIAssistantModerator() {
           <div className="bg-white rounded-xl p-5 shadow-sm border border-red-100">
             <div className="flex items-center justify-between mb-2">
               <div className="text-xs font-semibold text-red-600 uppercase tracking-wide">
-                Missing Topics
+                {t("missingTopics") || "Missing Topics"}
               </div>
               <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
                 <BookOutlined className="text-lg text-red-600" />
@@ -293,7 +297,7 @@ export default function AIAssistantModerator() {
           <div className="bg-white rounded-xl p-5 shadow-sm border border-orange-100">
             <div className="flex items-center justify-between mb-2">
               <div className="text-xs font-semibold text-orange-600 uppercase tracking-wide">
-                Members Without Group
+                {t("membersWithoutGroup") || "Members Without Group"}
               </div>
               <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
                 <UsergroupAddOutlined className="text-lg text-orange-600" />
@@ -310,7 +314,7 @@ export default function AIAssistantModerator() {
           <div className="bg-white rounded-xl p-5 shadow-sm border border-yellow-100">
             <div className="flex items-center justify-between mb-2">
               <div className="text-xs font-semibold text-yellow-600 uppercase tracking-wide">
-                Groups Missing Members
+                {t("groupsMissingMembers") || "Groups Missing Members"}
               </div>
               <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
                 <UsergroupAddOutlined className="text-lg text-yellow-600" />
@@ -331,13 +335,14 @@ export default function AIAssistantModerator() {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div className="flex-1">
             <h3 className="font-semibold text-gray-900 text-lg mb-1">
-              Analysis Mode
+              {t("analysisMode") || "Analysis Mode"}
             </h3>
             <p className="text-gray-500 text-sm">
-              Configure AI analysis settings and run intelligent detection
+              {t("configureAIAnalysis") ||
+                "Configure AI analysis settings and run intelligent detection"}
             </p>
           </div>
-          <Space size="middle" className="flex-wrap">
+          <Space size="large" className="flex-wrap">
             <Select
               value={mode}
               onChange={(value) => {
@@ -346,7 +351,7 @@ export default function AIAssistantModerator() {
                   updateAnalysisResults(value, aiOptionsData);
                 }
               }}
-              className="w-64"
+              className="w-80"
               size="large"
             >
               <Option value="groupsAndMembers">
@@ -372,7 +377,7 @@ export default function AIAssistantModerator() {
               onClick={runAnalysis}
               loading={loading}
             >
-              Run Analysis
+              {t("runAnalysis") || "Run Analysis"}
             </Button>
             <Button
               type="primary"
@@ -386,25 +391,6 @@ export default function AIAssistantModerator() {
             </Button>
           </Space>
         </div>
-
-        <Divider className="my-4" />
-
-        <div className="flex items-center gap-3 bg-blue-50 p-4 rounded-lg">
-          <Switch
-            checked={autoMerge}
-            onChange={setAutoMerge}
-            className="bg-gray-300"
-          />
-          <div className="flex-1">
-            <span className="text-gray-700 font-medium text-sm">
-              {t("autoMerge") || "Enable Auto-Merge"}
-            </span>
-            <p className="text-gray-500 text-xs mt-1">
-              Automatically merge compatible teams with high confidence scores
-              (≥85%)
-            </p>
-          </div>
-        </div>
       </Card>
 
       {/* FINDINGS & ACTIONS */}
@@ -412,10 +398,11 @@ export default function AIAssistantModerator() {
         <Card className="shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-semibold text-gray-900 text-xl">
-              AI Findings & Recommendations
+              {t("aiFindingsRecommendations") ||
+                "AI Findings & Recommendations"}
             </h3>
             <Tag color="blue" className="px-3 py-1 text-sm">
-              {analysisResults.length} Items Found
+              {itemsFoundText}
             </Tag>
           </div>
 
@@ -437,21 +424,41 @@ export default function AIAssistantModerator() {
                           {item.group || item.member}
                         </h4>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {item.status.map((s) => (
-                            <Tag
-                              key={s}
-                              color={
-                                s.includes("Topic")
-                                  ? "red"
-                                  : s.includes("Mentor")
-                                  ? "orange"
-                                  : "gold"
+                          {item.status.map((s, idx) => {
+                            let label = "";
+                            let color = "gold";
+
+                            if (typeof s === "string") {
+                              if (s === "noTopic") {
+                                label = t("noTopic") || "No Topic";
+                                color = "red";
+                              } else if (s === "noGroup") {
+                                label = t("noGroup") || "No Group";
+                                color = "orange";
+                              } else {
+                                label = s;
                               }
-                              className="rounded-full px-3 py-1 font-medium"
-                            >
-                              {s}
-                            </Tag>
-                          ))}
+                            } else if (
+                              s &&
+                              typeof s === "object" &&
+                              s.type === "missingMembers"
+                            ) {
+                              label = `${
+                                t("missingMembers") || "Missing Members"
+                              } (${s.current}/${s.max})`;
+                              color = "gold";
+                            }
+
+                            return (
+                              <Tag
+                                key={`${item.id}-status-${idx}`}
+                                color={color}
+                                className="rounded-full px-3 py-1 font-medium"
+                              >
+                                {label}
+                              </Tag>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
@@ -459,7 +466,7 @@ export default function AIAssistantModerator() {
                     {/* Suggestions */}
                     <div className="bg-gray-50 rounded-lg p-4 mt-3">
                       <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                        AI Recommendations
+                        {t("aiRecommendations") || "AI Recommendations"}
                       </div>
                       <div className="space-y-2 text-sm text-gray-700">
                         {/* Topics for missingTopics mode */}
@@ -558,7 +565,7 @@ export default function AIAssistantModerator() {
                   <div className="flex lg:flex-col items-center lg:items-end justify-between lg:justify-start gap-2">
                     <div className="text-center lg:text-right">
                       <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                        Confidence
+                        {t("confidence") || "Confidence"}
                       </div>
                       <div
                         className={`text-3xl font-bold ${
@@ -582,10 +589,10 @@ export default function AIAssistantModerator() {
                       }`}
                     >
                       {item.confidence >= 80
-                        ? "High"
+                        ? t("high") || "High"
                         : item.confidence >= 50
-                        ? "Medium"
-                        : "Low"}
+                        ? t("medium") || "Medium"
+                        : t("low") || "Low"}
                     </div>
                   </div>
                 </div>

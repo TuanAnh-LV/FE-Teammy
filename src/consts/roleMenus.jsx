@@ -17,15 +17,6 @@ import {
 import { getTranslation } from "../translations";
 
 export const getRoleMenus = (role, language = "EN") => {
-  const common = [
-    {
-      key: "profile",
-      label: getTranslation("profile", language),
-      path: `/profile`,
-      icon: <UserOutlined />,
-    },
-  ];
-
   const roleMenus = {
     mentor: [
       {
@@ -139,7 +130,7 @@ export const getRoleMenus = (role, language = "EN") => {
     ],
   };
 
-  return role === "mentor" 
-    ? roleMenus[role] || [] 
-    : [...(roleMenus[role] || []), ...common];
+  return role === "mentor"
+    ? roleMenus[role] || []
+    : [...(roleMenus[role] || [])];
 };

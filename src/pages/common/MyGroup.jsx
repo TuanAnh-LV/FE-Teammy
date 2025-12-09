@@ -48,6 +48,7 @@ export default function MyGroup() {
   const [editErrors, setEditErrors] = useState({});
   const [availableSkills, setAvailableSkills] = useState([]);
   const [skillsLoading, setSkillsLoading] = useState(false);
+  const [groupSkillsWithRole, setGroupSkillsWithRole] = useState([]);
   const loadedGroupIdRef = useRef(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState("kanban");
@@ -64,9 +65,15 @@ export default function MyGroup() {
     try {
       const res = await ReportService.getProjectReport(id);
       const completionPercent = res?.data?.project?.completionPercent ?? 0;
-      setGroup(prev => prev ? { ...prev, progress: completionPercent } : prev);
-    } catch (err) {
-
+      setGroup((prev) =>
+        prev ? { ...prev, progress: completionPercent } : prev
+      );
+    } catch {
+      notification.error({
+        message: t("error") || "Error",
+        description:
+          t("failedToFetchProgress") || "Failed to fetch project progress.",
+      });
     }
   };
 
@@ -170,9 +177,9 @@ export default function MyGroup() {
         );
 
         // Get completion percent from API
-        const completionPercent = 
-          reportRes.status === "fulfilled" 
-            ? (reportRes.value?.data?.project?.completionPercent ?? 0)
+        const completionPercent =
+          reportRes.status === "fulfilled"
+            ? reportRes.value?.data?.project?.completionPercent ?? 0
             : 0;
 
         setGroup({
@@ -194,25 +201,46 @@ export default function MyGroup() {
           statusText: d.status || "",
           maxMembers: Number(d.maxMembers || d.capacity || 5),
           majorId:
-            d.majorId ||
-            d.major?.id ||
-            d.major?.majorId ||
-            d.majorID ||
-            "",
+            d.majorId || d.major?.id || d.major?.majorId || d.majorID || "",
           topicId: d.topicId || d.topic?.id || "",
-          topicName:
-            d.topicName || d.topic?.title || d.topic?.name || "",
-          skills: Array.isArray(d.skills) 
-            ? d.skills 
-            : (typeof d.skills === "string" && d.skills)
-              ? d.skills.split(",").map(s => s.trim()).filter(Boolean)
-              : [],
+          topicName: d.topicName || d.topic?.title || d.topic?.name || "",
+          skills: Array.isArray(d.skills)
+            ? d.skills
+            : typeof d.skills === "string" && d.skills
+            ? d.skills
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : [],
           canEdit: detailRole === "leader" || leaderFromMembers,
         });
 
         setGroupMembers(normalizedMembers);
-      } catch (err) {
 
+        // Fetch full skill info for technologies display
+        if (d.skills && d.skills.length > 0) {
+          try {
+            const skillsResponse = await SkillService.list({});
+            const allSkills = Array.isArray(skillsResponse?.data)
+              ? skillsResponse.data
+              : [];
+            const groupSkillTokens = Array.isArray(d.skills) ? d.skills : [];
+            const matchedSkills = allSkills.filter((s) =>
+              groupSkillTokens.includes(s.token)
+            );
+            setGroupSkillsWithRole(matchedSkills);
+          } catch {
+            setGroupSkillsWithRole([]);
+          }
+        } else {
+          setGroupSkillsWithRole([]);
+        }
+      } catch {
+        notification.error({
+          message: t("error") || "Error",
+          description:
+            t("failedToLoadGroupData") || "Failed to load group data.",
+        });
       } finally {
         setLoading(false);
       }
@@ -227,8 +255,12 @@ export default function MyGroup() {
       const res = await BoardService.getGroupFiles(id);
       const list = Array.isArray(res?.data) ? res.data : res?.items || [];
       setGroupFiles(list);
-    } catch (err) {
-
+    } catch {
+      notification.error({
+        message: t("error") || "Error",
+        description:
+          t("failedToLoadGroupFiles") || "Failed to load group files.",
+      });
       setGroupFiles([]);
     }
   };
@@ -277,17 +309,16 @@ export default function MyGroup() {
       try {
         setSkillsLoading(true);
         const majorName = userInfo?.majorName || group?.field;
-        
+
         const params = { pageSize: 100 };
         if (majorName) {
           params.major = majorName;
         }
-        
+
         const response = await SkillService.list(params);
         const skillsList = Array.isArray(response?.data) ? response.data : [];
         setAvailableSkills(skillsList);
-      } catch (error) {
-
+      } catch {
         setAvailableSkills([]);
       } finally {
         setSkillsLoading(false);
@@ -300,9 +331,12 @@ export default function MyGroup() {
       if (Array.isArray(group.skills)) {
         groupSkills = group.skills;
       } else if (typeof group.skills === "string" && group.skills) {
-        groupSkills = group.skills.split(",").map(s => s.trim()).filter(Boolean);
+        groupSkills = group.skills
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
       }
-      
+
       // Update form with current group data including skills
       setEditForm({
         name: group.title || "",
@@ -312,7 +346,7 @@ export default function MyGroup() {
         topicId: group.topicId || "",
         skills: groupSkills,
       });
-      
+
       fetchSkills();
     }
   }, [editOpen, group, groupMembers.length, userInfo?.majorName]);
@@ -336,7 +370,7 @@ export default function MyGroup() {
 
       if (editForm.majorId.trim()) payload.majorId = editForm.majorId.trim();
       if (editForm.topicId.trim()) payload.topicId = editForm.topicId.trim();
-      
+
       // Add skills as array
       if (editForm.skills && editForm.skills.length > 0) {
         payload.skills = editForm.skills;
@@ -357,13 +391,13 @@ export default function MyGroup() {
               maxMembers: payload.maxMembers,
               majorId: payload.majorId ?? prev.majorId,
               topicId: payload.topicId ?? prev.topicId,
+              skills: payload.skills ?? prev.skills,
             }
           : prev
       );
 
       setEditOpen(false);
-    } catch (err) {
-
+    } catch {
       notification.error({
         message: t("error") || "Failed to update group.",
       });
@@ -376,7 +410,8 @@ export default function MyGroup() {
     if (!group?.id || !memberId) return;
 
     const confirmed = window.confirm(
-      t("confirmKickMember") || `Are you sure you want to remove ${memberName} from the group?`
+      t("confirmKickMember") ||
+        `Are you sure you want to remove ${memberName} from the group?`
     );
 
     if (!confirmed) return;
@@ -386,13 +421,14 @@ export default function MyGroup() {
 
       notification.success({
         message: t("success") || "Success",
-        description: t("memberRemovedSuccessfully") || "Member removed successfully.",
+        description:
+          t("memberRemovedSuccessfully") || "Member removed successfully.",
       });
 
       // Refresh group members
       const membersRes = await GroupService.getListMembers(group.id);
       const members = Array.isArray(membersRes?.data) ? membersRes.data : [];
-      
+
       const normalizedMembers = members.map((m) => {
         const email = m.email || "";
         const normalizedEmail = email.toLowerCase();
@@ -436,8 +472,7 @@ export default function MyGroup() {
       });
 
       setGroupMembers(normalizedMembers);
-    } catch (err) {
-
+    } catch {
       notification.error({
         message: t("error") || "Error",
         description: t("failedToRemoveMember") || "Failed to remove member.",
@@ -453,13 +488,14 @@ export default function MyGroup() {
 
       notification.success({
         message: t("success") || "Success",
-        description: t("roleAssignedSuccessfully") || "Role assigned successfully.",
+        description:
+          t("roleAssignedSuccessfully") || "Role assigned successfully.",
       });
 
       // Refresh group members to show updated role
       const membersRes = await GroupService.getListMembers(group.id);
       const members = Array.isArray(membersRes?.data) ? membersRes.data : [];
-      
+
       const normalizedMembers = members.map((m) => {
         const email = m.email || "";
         const normalizedEmail = email.toLowerCase();
@@ -504,7 +540,6 @@ export default function MyGroup() {
 
       setGroupMembers(normalizedMembers);
     } catch (err) {
-
       notification.error({
         message: t("error") || "Error",
         description: t("failedToAssignRole") || "Failed to assign role.",
@@ -543,11 +578,11 @@ export default function MyGroup() {
       const boardData = {
         columns: Object.entries(filteredColumns).map(([columnId, tasks]) => ({
           id: columnId,
-          tasks: tasks || []
-        }))
+          tasks: tasks || [],
+        })),
       };
       setBoard(boardData);
-      
+
       // Fetch progress from API instead of calculating
       fetchCompletionPercent();
     }
@@ -616,7 +651,8 @@ export default function MyGroup() {
       (assignee?.displayName ||
         assignee?.name ||
         assignee?.email ||
-        assignee) ?? "";
+        assignee) ??
+      "";
     const initials = String(name || "U")
       .trim()
       .split(" ")
@@ -683,7 +719,6 @@ export default function MyGroup() {
     );
   }
 
-
   return (
     <div className="relative bg-[#f7fafc]">
       <div className="relative z-10 min-h-screen flex flex-col items-center pt-4 xl:pt-8 pb-24">
@@ -721,7 +756,7 @@ export default function MyGroup() {
                   statusMeta={statusMeta}
                   findAssignees={findAssignees}
                   renderAssignee={renderAssignee}
-                  groupSkills={group?.skills || []}
+                  groupSkills={groupSkillsWithRole}
                   t={t}
                 />
                 <MembersPanel
@@ -794,7 +829,8 @@ export default function MyGroup() {
                     }`}
                   >
                     <FolderKanban className="w-4 h-4" />
-                    {(t("kanban") || "Kanban").charAt(0).toUpperCase() + (t("kanban") || "Kanban").slice(1)}
+                    {(t("kanban") || "Kanban").charAt(0).toUpperCase() +
+                      (t("kanban") || "Kanban").slice(1)}
                   </button>
                   <button
                     onClick={() => setActiveWorkspaceTab("backlog")}
@@ -805,7 +841,8 @@ export default function MyGroup() {
                     }`}
                   >
                     <ListTodo className="w-4 h-4" />
-                    {(t("backlog") || "Backlog").charAt(0).toUpperCase() + (t("backlog") || "Backlog").slice(1)}
+                    {(t("backlog") || "Backlog").charAt(0).toUpperCase() +
+                      (t("backlog") || "Backlog").slice(1)}
                   </button>
                   <button
                     onClick={() => setActiveWorkspaceTab("milestones")}
@@ -816,7 +853,8 @@ export default function MyGroup() {
                     }`}
                   >
                     <Flag className="w-4 h-4" />
-                    {(t("milestones") || "Milestones").charAt(0).toUpperCase() + (t("milestones") || "Milestones").slice(1)}
+                    {(t("milestones") || "Milestones").charAt(0).toUpperCase() +
+                      (t("milestones") || "Milestones").slice(1)}
                   </button>
                   <button
                     onClick={() => setActiveWorkspaceTab("reports")}
@@ -827,7 +865,8 @@ export default function MyGroup() {
                     }`}
                   >
                     <BarChart3 className="w-4 h-4" />
-                    {(t("reports") || "Reports").charAt(0).toUpperCase() + (t("reports") || "Reports").slice(1)}
+                    {(t("reports") || "Reports").charAt(0).toUpperCase() +
+                      (t("reports") || "Reports").slice(1)}
                   </button>
                 </div>
 
@@ -858,7 +897,9 @@ export default function MyGroup() {
                     groupId={id}
                     columnMeta={columnMeta}
                     groupMembers={groupMembers}
-                    onPromoteSuccess={() => refetchBoard({ showLoading: false })}
+                    onPromoteSuccess={() =>
+                      refetchBoard({ showLoading: false })
+                    }
                   />
                 )}
 
@@ -868,15 +909,17 @@ export default function MyGroup() {
                 )}
 
                 {/* REPORTS SUB-TAB */}
-                {activeWorkspaceTab === "reports" && <ReportsTab groupId={id} />}
+                {activeWorkspaceTab === "reports" && (
+                  <ReportsTab groupId={id} />
+                )}
               </div>
             )}
 
             {/* FILES */}
             {activeTab === "files" && (
-              <FilesPanel 
-                fileItems={fileItems} 
-                t={t} 
+              <FilesPanel
+                fileItems={fileItems}
+                t={t}
                 groupId={id}
                 onUploadSuccess={loadGroupFiles}
               />
@@ -960,8 +1003,6 @@ export default function MyGroup() {
           </Form.Item>
         </Form>
       </Modal>
-
     </div>
   );
 }
-

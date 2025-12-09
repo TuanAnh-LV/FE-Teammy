@@ -54,10 +54,13 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
   const typingTimeoutsRef = useRef({});
 
   const isGroupSession =
-    (session?.type || session?.sessionType || "").toLowerCase().includes("group") ||
-    session?.groupId;
-  const effectiveSessionId = session?.sessionId || session?.id || session?.groupId;
-  const effectiveGroupId = session?.groupId || session?.sessionId || session?.id;
+    (session?.type || session?.sessionType || "")
+      .toLowerCase()
+      .includes("group") || session?.groupId;
+  const effectiveSessionId =
+    session?.sessionId || session?.id || session?.groupId;
+  const effectiveGroupId =
+    session?.groupId || session?.sessionId || session?.id;
 
   // Auto scroll to latest message
   useEffect(() => {
@@ -75,7 +78,7 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
     const initChat = async () => {
       try {
         setLoading(true);
-        
+
         // Try to load messages, but don't fail if it doesn't work
         try {
           const res = isGroupSession
@@ -84,10 +87,14 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
           const data = Array.isArray(res?.data) ? res.data : [];
           const limited =
             data.length > MAX_MESSAGES ? data.slice(-MAX_MESSAGES) : data;
-          dispatch(setMessages({ sessionId: effectiveSessionId, messages: limited }));
+          dispatch(
+            setMessages({ sessionId: effectiveSessionId, messages: limited })
+          );
         } catch (loadErr) {
           logger.error("Failed to load messages:", loadErr.message);
-          dispatch(setMessages({ sessionId: effectiveSessionId, messages: [] }));
+          dispatch(
+            setMessages({ sessionId: effectiveSessionId, messages: [] })
+          );
         }
 
         // Initialize SignalR connection
@@ -137,8 +144,16 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
     try {
       setSending(true);
       const res = isGroupSession
-        ? await ChatService.sendGroupMessage(effectiveGroupId, messageContent, "text")
-        : await ChatService.sendMessage(effectiveSessionId, messageContent, "text");
+        ? await ChatService.sendGroupMessage(
+            effectiveGroupId,
+            messageContent,
+            "text"
+          )
+        : await ChatService.sendMessage(
+            effectiveSessionId,
+            messageContent,
+            "text"
+          );
 
       // Don't manually add message - backend will broadcast via SignalR ReceiveMessage event
       // This prevents duplicate messages
@@ -200,7 +215,7 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
   useEffect(() => {
     const unsubMessage = signalRService.on("ReceiveMessage", (msg) => {
       if (!msg) return;
-      
+
       const normalizedMsg = {
         messageId: msg.messageId || msg.id,
         sessionId: msg.sessionId || msg.SessionId,
@@ -211,18 +226,20 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
         senderDisplayName: msg.senderDisplayName || msg.SenderDisplayName,
         createdAt: msg.createdAt || msg.CreatedAt,
       };
-      
+
       let msgSessionId = normalizedMsg.sessionId;
       if (!msgSessionId) {
         msgSessionId = effectiveSessionId;
         normalizedMsg.sessionId = effectiveSessionId;
       }
-      
+
       if (msgSessionId !== effectiveSessionId) {
         return;
       }
-      
-      dispatch(addMessage({ sessionId: effectiveSessionId, message: normalizedMsg }));
+
+      dispatch(
+        addMessage({ sessionId: effectiveSessionId, message: normalizedMsg })
+      );
     });
 
     return () => unsubMessage();
@@ -235,17 +252,26 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
       const userId = payload.userId || payload.senderId;
       if (!userId || userId === currentUser?.userId) return;
 
-      const displayName = payload.displayName || payload.senderDisplayName || "Someone";
+      const displayName =
+        payload.displayName || payload.senderDisplayName || "Someone";
 
       if (payload.isTyping) {
-        dispatch(setTypingUser({ sessionId: effectiveSessionId, userId, displayName }));
+        dispatch(
+          setTypingUser({ sessionId: effectiveSessionId, userId, displayName })
+        );
       } else {
         dispatch(removeTypingUser({ sessionId: effectiveSessionId, userId }));
       }
     };
 
-    const unsubReceiveTyping = signalRService.on("ReceiveTyping", handleTypingEvent);
-    const unsubTypingSession = signalRService.on("TypingSession", handleTypingEvent);
+    const unsubReceiveTyping = signalRService.on(
+      "ReceiveTyping",
+      handleTypingEvent
+    );
+    const unsubTypingSession = signalRService.on(
+      "TypingSession",
+      handleTypingEvent
+    );
 
     return () => {
       unsubReceiveTyping();
@@ -264,7 +290,9 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
       const status = payload.status === "left" ? "offline" : "online";
 
       if (status === "offline") {
-        dispatch(removeSessionPresenceUser({ sessionId: effectiveSessionId, userId }));
+        dispatch(
+          removeSessionPresenceUser({ sessionId: effectiveSessionId, userId })
+        );
       } else {
         dispatch(
           updateSessionPresenceUser({
@@ -277,7 +305,10 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
       }
     };
 
-    const unsub = signalRService.on("SessionPresenceChanged", handleSessionPresence);
+    const unsub = signalRService.on(
+      "SessionPresenceChanged",
+      handleSessionPresence
+    );
     return () => unsub();
   }, [effectiveSessionId, dispatch]);
 
@@ -294,7 +325,9 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
       const status = payload.status === "left" ? "offline" : "online";
 
       if (status === "offline") {
-        dispatch(removeGroupPresenceUser({ groupId: effectiveGroupId, userId }));
+        dispatch(
+          removeGroupPresenceUser({ groupId: effectiveGroupId, userId })
+        );
       } else {
         dispatch(
           updateGroupPresenceUser({
@@ -317,17 +350,19 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
         <div className="text-center">
           <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500">
-            {t("selectConversation") || "Select a conversation to start chatting"}
+            {t("selectConversation") ||
+              "Select a conversation to start chatting"}
           </p>
         </div>
       </div>
     );
   }
 
-  const headerTitle =
-    (session.type || session.sessionType || "").toLowerCase().includes("group")
-      ? session.groupName || session.title || "Group chat"
-      : session.otherDisplayName || session.title || "Chat";
+  const headerTitle = (session.type || session.sessionType || "")
+    .toLowerCase()
+    .includes("group")
+    ? session.groupName || session.title || "Group chat"
+    : session.otherDisplayName || session.title || "Chat";
 
   let dmUserStatus = null;
   if (!isGroupSession && session?.otherUserId) {
@@ -335,15 +370,15 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
     dmUserStatus = otherUserPresence?.status || null;
   }
 
-  const headerSubtitle =
-    (session.type || session.sessionType || "").toLowerCase().includes("group")
-      ? t("group") || "Group"
-      : t("direct") || "Direct";
+  const headerSubtitle = (session.type || session.sessionType || "")
+    .toLowerCase()
+    .includes("group")
+    ? t("group") || "Group"
+    : t("direct") || "Direct";
 
   // Get presence list for header
   const presenceList = isGroupSession ? groupPresence : sessionPresence;
   const onlineCount = Object.keys(presenceList).length;
-
   return (
     <div className="flex flex-col bg-white h-full">
       <div className="border-b border-gray-200 p-4 flex items-center justify-between">
@@ -363,7 +398,9 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
                 {isGroupSession ? (
                   <>
                     <Users className="w-4 h-4 text-blue-600" />
-                    <span className="text-xs text-gray-500">({onlineCount})</span>
+                    <span className="text-xs text-gray-500">
+                      ({onlineCount})
+                    </span>
                   </>
                 ) : dmUserStatus === "online" ? (
                   <>
@@ -412,7 +449,9 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
                 return (
                   <div
                     key={msg.messageId || msg.id}
-                    className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                    className={`flex ${
+                      isOwn ? "justify-end" : "justify-start"
+                    }`}
                   >
                     <div
                       className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg break-words ${
@@ -433,10 +472,13 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
                         }`}
                       >
                         {msg.createdAt
-                          ? new Date(msg.createdAt).toLocaleTimeString("en-US", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
+                          ? new Date(msg.createdAt).toLocaleTimeString(
+                              "en-US",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )
                           : ""}
                       </p>
                     </div>
@@ -471,13 +513,17 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
 
         {Object.keys(typingUsers).length > 0 && (
           <p className="text-xs text-gray-500 animate-pulse">
-            {Object.values(typingUsers).join(", ")} {t("typing") || "is typing..."}
+            {Object.values(typingUsers).join(", ")}{" "}
+            {t("typing") || "is typing..."}
           </p>
         )}
 
         {isGroupSession && onlineCount > 0 && (
           <p className="text-xs text-green-600">
-            {onlineCount} {onlineCount === 1 ? "member" : "members"} online
+            {(t("onlineCount") || "{count} members online").replace(
+              "{count}",
+              onlineCount
+            )}
           </p>
         )}
       </div>
@@ -486,4 +532,3 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
 };
 
 export default ChatWindow;
-

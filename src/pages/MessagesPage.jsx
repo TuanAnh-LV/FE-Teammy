@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useSearchParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import ConversationList from "../components/chat/ConversationList";
 import ChatWindow from "../components/chat/ChatWindow";
 import { useAuth } from "../context/AuthContext";
@@ -7,14 +7,11 @@ import { ChatService } from "../services/chat.service";
 import { useTranslation } from "../hook/useTranslation";
 import { GroupService } from "../services/group.service";
 
-
 const MessagesPage = () => {
   const { t } = useTranslation();
   const { userInfo } = useAuth();
   const location = useLocation();
   const { userId: paramUserId } = useParams();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
 
   const [selectedSession, setSelectedSession] = useState(null);
   const [conversations, setConversations] = useState([]);
@@ -47,7 +44,6 @@ const MessagesPage = () => {
   const createDMConversation = async (userId) => {
     // Validate userId before making the request
     if (!userId || String(userId).trim() === "") {
-
       return;
     }
     try {
@@ -59,7 +55,6 @@ const MessagesPage = () => {
         fetchConversations();
       }
     } catch (err) {
-
       setTargetUserId(userId);
     }
   };
@@ -69,9 +64,7 @@ const MessagesPage = () => {
       const res = await ChatService.getConversations();
       const data = Array.isArray(res?.data) ? res.data : [];
       setConversations(data);
-    } catch (err) {
-
-    }
+    } catch (err) {}
   };
 
   const fetchGroupChats = async () => {
@@ -86,7 +79,6 @@ const MessagesPage = () => {
       }));
       setGroupConversations(mapped);
     } catch (err) {
-
       setGroupConversations([]);
     }
   };
@@ -97,12 +89,14 @@ const MessagesPage = () => {
       const rawType = c?.type || c?.sessionType || "";
       const type = rawType.toLowerCase().includes("group")
         ? "group"
-        : rawType.toLowerCase().includes("dm") || rawType.toLowerCase().includes("direct")
+        : rawType.toLowerCase().includes("dm") ||
+          rawType.toLowerCase().includes("direct")
         ? "dm"
         : "dm";
       const sessionId = c.sessionId || c.id || c.groupId;
       // Extract base ID for group deduplication (remove "group-" prefix if present)
-      const baseId = type === "group" ? String(sessionId).replace(/^group-/, "") : sessionId;
+      const baseId =
+        type === "group" ? String(sessionId).replace(/^group-/, "") : sessionId;
       return { ...c, type, sessionId, baseId };
     };
     const includeGroups = !(isMentor && isMentorRoute);
@@ -110,14 +104,20 @@ const MessagesPage = () => {
     // dedupe conversations by sessionId and baseId for groups
     conversations.forEach((c) => {
       const normalized = normalize(c);
-      const key = normalized.type === "group" ? `group-${normalized.baseId}` : normalized.sessionId;
+      const key =
+        normalized.type === "group"
+          ? `group-${normalized.baseId}`
+          : normalized.sessionId;
       if (key) map.set(key, normalized);
     });
 
     if (includeGroups) {
       groupConversations.forEach((c) => {
         const normalized = normalize(c);
-        const key = normalized.type === "group" ? `group-${normalized.baseId}` : normalized.sessionId;
+        const key =
+          normalized.type === "group"
+            ? `group-${normalized.baseId}`
+            : normalized.sessionId;
         if (key && !map.has(key)) {
           map.set(key, normalized);
         }
@@ -129,7 +129,7 @@ const MessagesPage = () => {
   const handleSelectConversation = (conversation) => {
     setSelectedSession(conversation);
     setShowChatView(true);
-    setTargetUserId(null); 
+    setTargetUserId(null);
   };
 
   const handleBackClick = () => {
@@ -140,7 +140,7 @@ const MessagesPage = () => {
     <div
       className={`${
         isMentorRoute ? "mt-0" : "mt-16"
-      } mb-20 w-full h-[calc(100vh-64px)] flex bg-gray-100`}
+      }  w-full h-[calc(100vh-64px)] flex bg-gray-100`}
     >
       <div
         className={`${
@@ -159,8 +159,12 @@ const MessagesPage = () => {
 
       {/* Chat Window Container */}
       <div
-        className={`${showChatView ? "flex" : "hidden md:flex"} flex-1 flex-col min-h-0 ${
-          isMentorRoute ? "w-full h-full flex flex-col bg-white border-r border-gray-200" : ""
+        className={`${
+          showChatView ? "flex" : "hidden md:flex"
+        } flex-1 flex-col min-h-0 ${
+          isMentorRoute
+            ? "w-full h-full flex flex-col bg-white border-r border-gray-200"
+            : ""
         }`}
       >
         <div className="flex-1 bg-white overflow-hidden">
@@ -174,7 +178,8 @@ const MessagesPage = () => {
             <div className="flex-1 flex items-center justify-center bg-gray-50">
               <div className="text-center">
                 <p className="text-gray-500 text-lg">
-                  {t("selectConversation") || "Select a conversation to start chatting"}
+                  {t("selectConversation") ||
+                    "Select a conversation to start chatting"}
                 </p>
               </div>
             </div>
@@ -186,4 +191,3 @@ const MessagesPage = () => {
 };
 
 export default MessagesPage;
-

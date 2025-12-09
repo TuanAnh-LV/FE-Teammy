@@ -24,8 +24,10 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
           ]);
           setMajors(majorsRes?.data || []);
           setSemesters(semestersRes?.data || []);
-        } catch (err) {
-
+        } catch {
+          notification.error({
+            message: t("failedLoadMetadata") || "Failed to load metadata",
+          });
         }
       };
       fetchMetadata();
@@ -52,7 +54,6 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
       onSuccess();
       onClose();
     } catch (err) {
-
       if (err.errorFields) {
         // Form validation error
         return;
@@ -95,26 +96,45 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
         <Form.Item
           label={t("title") || "Title"}
           name="title"
-          rules={[{ required: true, message: "Please input title" }]}
+          rules={[
+            {
+              required: true,
+              message: t("pleaseInputTitle") || "Please input title",
+            },
+          ]}
         >
-          <Input placeholder="Enter topic title" />
+          <Input placeholder={t("enterTopicTitle") || "Enter topic title"} />
         </Form.Item>
 
         <Form.Item
           label={t("description") || "Description"}
           name="description"
-          rules={[{ required: true, message: "Please input description" }]}
+          rules={[
+            {
+              required: true,
+              message:
+                t("pleaseInputDescription") || "Please input description",
+            },
+          ]}
         >
-          <Input.TextArea rows={4} placeholder="Enter description" />
+          <Input.TextArea
+            rows={4}
+            placeholder={t("enterDescription") || "Enter description"}
+          />
         </Form.Item>
 
         <div className="grid grid-cols-2 gap-4">
           <Form.Item
             label={t("major") || "Major"}
             name="majorId"
-            rules={[{ required: true, message: "Please select major" }]}
+            rules={[
+              {
+                required: true,
+                message: t("pleaseSelectMajor") || "Please select major",
+              },
+            ]}
           >
-            <Select placeholder="Select major">
+            <Select placeholder={t("selectMajor") || "Select major"}>
               {majors.map((major) => (
                 <Option key={major.majorId} value={major.majorId}>
                   {major.majorName}
@@ -126,9 +146,14 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
           <Form.Item
             label={t("semester") || "Semester"}
             name="semesterId"
-            rules={[{ required: true, message: "Please select semester" }]}
+            rules={[
+              {
+                required: true,
+                message: t("pleaseSelectSemester") || "Please select semester",
+              },
+            ]}
           >
-            <Select placeholder="Select semester">
+            <Select placeholder={t("selectSemester") || "Select semester"}>
               {semesters.map((sem) => (
                 <Option key={sem.semesterId} value={sem.semesterId}>
                   {sem.season} {sem.year}
@@ -138,7 +163,16 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
           </Form.Item>
         </div>
 
-        <Form.Item label={t("source") || "Source"} name="source">
+        <Form.Item
+          label={t("source") || "Source"}
+          name="source"
+          rules={[
+            {
+              required: true,
+              message: t("pleaseImportSource") || "Please import source",
+            },
+          ]}
+        >
           <Input placeholder="https://example.com" />
         </Form.Item>
 
@@ -156,6 +190,13 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
         <Form.Item
           label={t("mentorEmails") || "Mentor Emails"}
           name="mentorEmails"
+          rules={[
+            {
+              required: true,
+              message:
+                t("pleaseImportMailMentor") || "Please import mentor emails",
+            },
+          ]}
         >
           <Input placeholder="email1@example.com, email2@example.com" />
         </Form.Item>
@@ -165,4 +206,3 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
 };
 
 export default TopicAddModal;
-

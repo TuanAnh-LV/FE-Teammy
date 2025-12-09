@@ -89,3 +89,20 @@ export function avatarFromEmail(email = "", size = 96) {
   const normalizedSize = Math.max(32, Math.min(Number(size) || 96, 512));
   return `https://ui-avatars.com/api/?name=${encodedName}&size=${normalizedSize}&background=${background}&color=ffffff&bold=true`;
 }
+
+/**
+ * Extract error message from API error response
+ * Handles various error response formats from backend
+ * @param {Error} error - The error object from axios/fetch
+ * @param {string} fallback - Optional fallback message
+ * @returns {string} - The extracted error message
+ */
+export function getErrorMessage(error, fallback = "An error occurred") {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    (typeof error?.response?.data === "string" ? error.response.data : "") ||
+    error?.message ||
+    fallback
+  );
+}

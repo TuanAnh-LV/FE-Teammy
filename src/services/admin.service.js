@@ -58,6 +58,16 @@ export const AdminService = {
       isLoading,
     });
   },
+  /** CREATE NEW USER
+   * - payload: object containing user details
+   */
+  createUser(payload = {}, isLoading = true) {
+    return BaseService.post({
+      url: API.ADMIN.CREATE_USER,
+      payload,
+      isLoading,
+    });
+  },
 
   /** UPDATE USER
    * - userId: string
@@ -89,6 +99,22 @@ export const AdminService = {
   getDashboardStats(isLoading = true) {
     return BaseService.get({
       url: API.ADMIN.DASHBOARD,
+      isLoading,
+    });
+  },
+    /** GET ACTIVITY LOGS (System Log)
+   * params: {
+   *   limit?: number,
+   *   before?: string,      // ISO datetime string
+   *   entityType?: string,
+   *   action?: string,
+   *   groupId?: string
+   * }
+   */
+  getActivityLogs(params = {}, isLoading = true) {
+    return BaseService.get({
+      url: API.ADMIN.ACTIVITY_LOGS,
+      params,
       isLoading,
     });
   },

@@ -10,21 +10,21 @@ export default function OverviewSection({
   groupSkills = [],
   t,
 }) {
-  const getRoleColor = (skillName) => {
-    const name = skillName?.toLowerCase() || "";
-    if (name.includes("react") || name.includes("vue") || name.includes("angular") || name.includes("frontend")) {
+  const getRoleColor = (role) => {
+    const roleStr = (role || "").toLowerCase();
+    if (roleStr === "frontend") {
       return "bg-blue-100 text-blue-700 border-blue-300";
     }
-    if (name.includes("node") || name.includes("java") || name.includes("python") || name.includes("backend")) {
+    if (roleStr === "backend") {
       return "bg-green-100 text-green-700 border-green-300";
     }
-    if (name.includes("mobile") || name.includes("android") || name.includes("ios") || name.includes("flutter")) {
+    if (roleStr === "mobile") {
       return "bg-purple-100 text-purple-700 border-purple-300";
     }
-    if (name.includes("devops") || name.includes("docker") || name.includes("kubernetes")) {
+    if (roleStr === "devops") {
       return "bg-orange-100 text-orange-700 border-orange-300";
     }
-    if (name.includes("qa") || name.includes("test")) {
+    if (roleStr === "qa") {
       return "bg-red-100 text-red-700 border-red-300";
     }
     return "bg-gray-100 text-gray-700 border-gray-300";
@@ -59,7 +59,9 @@ export default function OverviewSection({
         {recentActivity.length > 0 ? (
           <div className="divide-y divide-gray-200">
             {recentActivity.map((task, idx) => {
-              const statusKey = (task.status || "").toLowerCase().replace(/\s+/g, "_");
+              const statusKey = (task.status || "")
+                .toLowerCase()
+                .replace(/\s+/g, "_");
               const statusInfo = statusMeta[statusKey] || statusMeta.todo;
               const assignees = findAssignees(task);
               const assigneeNames = assignees
@@ -67,8 +69,13 @@ export default function OverviewSection({
                 .filter(Boolean)
                 .join(", ");
               return (
-                <div key={task.id || idx} className="flex items-start gap-3 py-3">
-                  <span className={`mt-2 w-2.5 h-2.5 rounded-full ${statusInfo.dot}`} />
+                <div
+                  key={task.id || idx}
+                  className="flex items-start gap-3 py-3"
+                >
+                  <span
+                    className={`mt-2 w-2.5 h-2.5 rounded-full ${statusInfo.dot}`}
+                  />
                   <div className="flex-1 space-y-1">
                     <p className="font-semibold text-gray-800">
                       {task.title || "Untitled task"}
@@ -99,14 +106,19 @@ export default function OverviewSection({
             {t("technologies") || "Technologies"}
           </h3>
           <div className="flex flex-wrap gap-2">
-            {groupSkills.map((skill, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border bg-blue-100 text-blue-700 border-blue-300"
-              >
-                {capitalizeFirst(skill)}
-              </span>
-            ))}
+            {groupSkills.map((skill, index) => {
+              const skillName = skill?.token || skill?.name || skill;
+              const skillRole = skill?.role || "";
+              const colorClass = getRoleColor(skillRole);
+              return (
+                <span
+                  key={skill?.id || index}
+                  className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border ${colorClass}`}
+                >
+                  {capitalizeFirst(skillName)}
+                </span>
+              );
+            })}
           </div>
         </div>
       )}

@@ -8,6 +8,7 @@ export const API = {
   },
   ADMIN: {
     LIST_USERS: "/users/admin",
+    CREATE_USER: "/users/admin",
     DETAIL_USER: (id) => `/users/admin/${id}`,
     BAN_USER: (id) => `/users/admin/${id}`,
     IMPORT_USERS: "/users/import",
@@ -15,6 +16,7 @@ export const API = {
     EXPORT_USERS: "/users/import/template",
     UPDATE_USER: (id) => `/users/admin/${id}`,
     DASHBOARD: "/dashboard",
+    ACTIVITY_LOGS: "/admin/activity-logs"
   },
   POST: {
     GET_PERSONAL: "/profile-posts",
@@ -38,6 +40,11 @@ export const API = {
     LIST: "/invitations",
     ACCEPT: (id) => `/invitations/${id}/accept`,
     DECLINE: (id) => `/invitations/${id}/decline`,
+     MY_PROFILE_POSTS: "/profile-posts/my/invitations",
+    PROFILE_POST_ACCEPT: (postId, candidateId) =>
+      `/profile-posts/${postId}/invitations/${candidateId}/accept`,
+    PROFILE_POST_REJECT: (postId, candidateId) =>
+      `/profile-posts/${postId}/invitations/${candidateId}/reject`,
   },
   GROUP: {
     LIST_GROUP: "/groups",

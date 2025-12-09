@@ -1,23 +1,79 @@
-import React from "react";
-import { Modal, Form, Input, Select, Row, Col, Divider } from "antd";
+import React, { useState } from "react";
+import { Modal, Form, Input, Select, Row, Col, notification } from "antd";
 import { useTranslation } from "../../hook/useTranslation";
+import { AdminService } from "../../services/admin.service";
 
 const { Option } = Select;
 
-export default function UserAddModal({ open, onClose, onAdd }) {
+export default function UserAddModal({ open, onClose, onAdd, majorList }) {
   const [form] = Form.useForm();
   const { t } = useTranslation();
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    form.validateFields().then((values) => {
-      onAdd({
-        key: Date.now(),
-        ...values,
-        status: values.status || "Active",
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      setSubmitting(true);
+
+      // build payload đúng với API POST /api/users/admin
+      const payload = {
+        email: values.email,
+        displayName: values.name,
+        role: values.role,
+        studentCode: values.studentCode || null,
+        gender: values.gender || null, // hiện chưa có field gender, có thể bỏ
+        majorId: values.majorId || null,
+      };
+
+      const res = await AdminService.createUser(payload);
+      const created = res?.data ?? res;
+
+      // map data trả về để hiển thị trong bảng
+      const majorName =
+        created.majorName ||
+        majorList?.find((m) => m.majorId === payload.majorId)?.majorName ||
+        "";
+
+      const newUser = {
+        key: created.userId || created.id || Date.now(),
+        name: created.displayName || payload.displayName,
+        email: created.email || payload.email,
+        role:
+          (created.role &&
+            String(created.role).charAt(0).toUpperCase() +
+              String(created.role).slice(1)) ||
+          payload.role,
+        phone: created.phone || values.phone || "",
+        major: majorName,
+        studentCode: created.studentCode || payload.studentCode || null,
+        avatarUrl: created.avatarUrl || null,
+        displayName: created.displayName || payload.displayName,
+        majorId: created.majorId || payload.majorId || null,
+        isActive:
+          typeof created.isActive === "boolean"
+            ? created.isActive
+            : values.status === (t("Active") || "Active"),
+        raw: created,
+      };
+
+      onAdd?.(newUser);
+      notification.success({
+        message: t("addUserSuccess") || "User created successfully",
       });
+
       form.resetFields();
       onClose();
-    });
+    } catch (err) {
+      if (err?.errorFields) {
+        // lỗi validate form – bỏ qua
+        return;
+      }
+      notification.error({
+        message: t("addUserFailed") || "Failed to create user",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -26,6 +82,7 @@ export default function UserAddModal({ open, onClose, onAdd }) {
       onCancel={onClose}
       onOk={handleSubmit}
       okText={t("addUser") || "Add User"}
+      confirmLoading={submitting}
       centered
       width={720}
       title={
@@ -121,26 +178,27 @@ export default function UserAddModal({ open, onClose, onAdd }) {
 
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item label={t("major") || "Major"} name="major">
+            <Form.Item
+              label={t("major") || "Major"}
+              name="majorId"
+              rules={[
+                {
+                  required: true,
+                  message: t("selectMajor") || "Select a major",
+                },
+              ]}
+            >
               <Select
                 placeholder={t("enterMajorPlaceholder") || "Select major"}
               >
-                <Option value="Engineering">Engineering</Option>
-                <Option value="Business">Business</Option>
-                <Option value="IT">IT</Option>
+                {majorList?.map((m) => (
+                  <Option key={m.majorId} value={m.majorId}>
+                    {m.majorName}
+                  </Option>
+                ))}
               </Select>
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item label={t("major") || "Major"} name="major">
-              <Input
-                placeholder={t("enterMajorPlaceholder") || "Enter major"}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               label={t("studentCode") || "Student Code"}
@@ -154,12 +212,22 @@ export default function UserAddModal({ open, onClose, onAdd }) {
               />
             </Form.Item>
           </Col>
+        </Row>
+
+        <Row gutter={16}>
           <Col span={12}>
-            <Form.Item label="Status" name="status" initialValue="Active">
-              <Select placeholder="Select status">
-                <Option value="Active">Active</Option>
-                <Option value="Inactive">Inactive</Option>
-                <Option value="Suspended">Suspended</Option>
+            <Form.Item
+              label={t("status") || "Status"}
+              name="status"
+              initialValue={t("Active") || "Active"}
+            >
+              <Select placeholder={t("selectStatus") || "Select status"}>
+                <Option value={t("Active") || "Active"}>
+                  {t("Active") || "Active"}
+                </Option>
+                <Option value={t("Suspended") || "Suspended"}>
+                  {t("Suspended") || "Suspended"}
+                </Option>
               </Select>
             </Form.Item>
           </Col>

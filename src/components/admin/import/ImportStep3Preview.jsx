@@ -106,7 +106,6 @@ export default function ImportStep3Preview({
         setCurrentStep(3);
       }
     } catch (err) {
-
       notification.error({
         message: t("importFailed") || "Import Failed",
         description: err?.response?.data?.message || t("pleaseTryAgain"),
@@ -178,16 +177,11 @@ export default function ImportStep3Preview({
         <h2 className="text-2xl font-semibold text-gray-800 mb-1">
           Preview & Validate
         </h2>
-        <p className="text-gray-500">
-          Review the data before importing.{" "}
-          <span className="text-blue-500 cursor-pointer hover:underline">
-            Review the data before importing
-          </span>
-        </p>
+        <p className="text-gray-500">Review the data before importing. </p>
       </div>
 
       {/* Options */}
-      <div className="flex items-start justify-between bg-gray-50 p-5 rounded-lg border border-gray-200">
+      {/* <div className="flex items-start justify-between bg-gray-50 p-5 rounded-lg border border-gray-200">
         <div className="flex flex-col gap-2">
           <label className="font-medium text-gray-700">Import Mode</label>
           <Select
@@ -215,7 +209,7 @@ export default function ImportStep3Preview({
             Send email notifications to new users
           </span>
         </div>
-      </div>
+      </div> */}
 
       {/* Status Summary */}
       <div className="flex justify-end items-center gap-6 text-sm font-medium text-gray-600">
@@ -248,7 +242,7 @@ export default function ImportStep3Preview({
           onClick={() => setCurrentStep(1)}
           className="border-gray-300 hover:border-orange-400"
         >
-          Back to Mapping
+          {t("backToMapping") || "Back to Mapping"}
         </Button>
 
         <Button
@@ -269,4 +263,3 @@ export default function ImportStep3Preview({
     </div>
   );
 }
-

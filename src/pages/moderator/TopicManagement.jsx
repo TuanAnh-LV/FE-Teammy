@@ -62,13 +62,12 @@ const TopicManagement = () => {
           "",
         majorName: t.majorName || "",
         createdAt: t.createdAt ? t.createdAt.slice(0, 10) : "",
-        status: t.status === "open" ? "available" : t.status === "closed" ? "notAvailable" : "available",
+        status: (t.status || "open").toLowerCase(),
         raw: t,
       }));
 
       setTopics(mapped);
-    } catch (err) {
-
+    } catch {
       notification.error({
         message: t("failedLoadTopics") || "Failed to load topics",
       });
@@ -137,8 +136,7 @@ const TopicManagement = () => {
           });
           // Refresh list
           setTopics((prev) => prev.filter((t) => t.key !== record.key));
-        } catch (err) {
-
+        } catch {
           notification.error({
             message: t("failedDeleteTopic") || "Failed to delete topic",
           });
@@ -176,15 +174,16 @@ const TopicManagement = () => {
       render: (status) => (
         <span
           className={`px-2 py-1 rounded-full text-xs font-medium ${
-            status === "available"
+            status === "open"
               ? "text-green-600 bg-green-50"
               : "text-orange-600 bg-orange-50"
           }`}
         >
-          {status === "available" ? t("available") || "Available" : t("notAvailable") || "Not Available"}
+          {status === "open" ? t("open") || "Open" : t("closed") || "Closed"}
         </span>
       ),
     },
+
     {
       title: t("actions") || "Actions",
       key: "actions",
@@ -277,12 +276,8 @@ const TopicManagement = () => {
                 <Option value="All Status">
                   {t("allStatus") || "All Status"}
                 </Option>
-                <Option value="available">
-                  {t("available") || "Available"}
-                </Option>
-                <Option value="notAvailable">
-                  {t("notAvailable") || "Not Available"}
-                </Option>
+                <Option value="open">{t("open") || "Open"}</Option>
+                <Option value="closed">{t("closed") || "Closed"}</Option>
               </Select>
             </div>
           </div>
@@ -325,4 +320,3 @@ const TopicManagement = () => {
 };
 
 export default TopicManagement;
-
