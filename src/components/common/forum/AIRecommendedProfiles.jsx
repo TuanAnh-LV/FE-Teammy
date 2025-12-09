@@ -13,7 +13,11 @@ const clamp3 = {
   overflow: "hidden",
 };
 
-export function AIRecommendedProfiles({ aiSuggestedPosts, membership }) {
+export function AIRecommendedProfiles({
+  aiSuggestedPosts,
+  membership,
+  onInvite,
+}) {
   const { t } = useTranslation();
 
   if (
@@ -169,22 +173,8 @@ export function AIRecommendedProfiles({ aiSuggestedPosts, membership }) {
                 ) : (
                   <button
                     onClick={async () => {
-                      if (postId) {
-                        try {
-                          await PostService.inviteProfilePost(postId);
-                          notification.success({
-                            message:
-                              t("userInvitedToGroup") ||
-                              "User invited to the group successfully!",
-                          });
-                        } catch (error) {
-                          console.error("Failed to send invitation", error);
-                          notification.error({
-                            message:
-                              t("failedToInviteUser") ||
-                              "Failed to invite user.",
-                          });
-                        }
+                      if (postId && onInvite) {
+                        await onInvite(postId);
                       }
                     }}
                     className="inline-flex items-center justify-center rounded-lg bg-[#FF7A00] hover:opacity-90 px-3 md:px-3.5 py-2 text-xs font-bold text-white shadow-sm transition focus:outline-none focus:ring-4 focus:ring-emerald-100"

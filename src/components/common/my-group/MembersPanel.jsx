@@ -29,9 +29,9 @@ export default function MembersPanel({
     // Flatten tasks from all columns
     let allTasks = [];
     if (Array.isArray(board.columns)) {
-      allTasks = board.columns.flatMap(col => col.tasks || []);
-    } else if (typeof board.columns === 'object') {
-      allTasks = Object.values(board.columns).flatMap(col => 
+      allTasks = board.columns.flatMap((col) => col.tasks || []);
+    } else if (typeof board.columns === "object") {
+      allTasks = Object.values(board.columns).flatMap((col) =>
         Array.isArray(col.tasks) ? col.tasks : Object.values(col.tasks || {})
       );
     }
@@ -40,13 +40,14 @@ export default function MembersPanel({
     const memberTaskCount = {};
 
     // Count tasks per member
-    allTasks.forEach(task => {
+    allTasks.forEach((task) => {
       const assignees = task.assignees || [];
-      assignees.forEach(assignee => {
-        const assigneeId = typeof assignee === 'string' 
-          ? assignee 
-          : assignee?.userId || assignee?.id;
-        
+      assignees.forEach((assignee) => {
+        const assigneeId =
+          typeof assignee === "string"
+            ? assignee
+            : assignee?.userId || assignee?.id;
+
         if (assigneeId) {
           memberTaskCount[assigneeId] = (memberTaskCount[assigneeId] || 0) + 1;
         }
@@ -54,7 +55,7 @@ export default function MembersPanel({
     });
 
     // Map to members with contribution percentage
-    return groupMembers.map(member => {
+    return groupMembers.map((member) => {
       const memberId = member.id || member.userId || member.email;
       const taskCount = memberTaskCount[memberId] || 0;
       const contribution = Math.round((taskCount / totalTasks) * 100);
@@ -62,13 +63,15 @@ export default function MembersPanel({
       return {
         ...member,
         taskCount,
-        contribution
+        contribution,
       };
     });
   };
 
   // Use calculated contributions if board data is available
-  const memberStats = board ? calculateMemberContributions() : contributionStats;
+  const memberStats = board
+    ? calculateMemberContributions()
+    : contributionStats;
   const openProfile = (member = {}) => {
     const memberId =
       member.id ||
@@ -109,7 +112,6 @@ export default function MembersPanel({
         setAssignRoleOpen(false);
         setSelectedMember(null);
       } catch (error) {
-
       } finally {
         setAssignSubmitting(false);
       }
@@ -123,7 +125,10 @@ export default function MembersPanel({
   const handleKickMember = async (member) => {
     if (onKickMember) {
       const memberId = getMemberId(member);
-      await onKickMember(memberId, member.name || member.displayName || "this member");
+      await onKickMember(
+        memberId,
+        member.name || member.displayName || "this member"
+      );
     }
     setOpenMenuId(null);
   };
@@ -132,7 +137,7 @@ export default function MembersPanel({
     const memberEmail = (member.email || "").toLowerCase();
     const memberRole = (member.role || "").toLowerCase();
     const currentEmail = (currentUserEmail || "").toLowerCase();
-    
+
     // Current user is leader and this is not the leader themselves
     return memberRole !== "leader" && currentEmail !== memberEmail;
   };
@@ -217,7 +222,9 @@ export default function MembersPanel({
                     <p className="text-xs text-gray-500 capitalize">
                       {(member.assignedRoles && member.assignedRoles.length > 0
                         ? member.assignedRoles.join(", ")
-                        : member.role) || t("member") || "Member"}
+                        : member.role) ||
+                        t("member") ||
+                        "Member"}
                     </p>
                   </div>
                 </div>
@@ -227,7 +234,9 @@ export default function MembersPanel({
                     <span className="font-semibold">{tasksCompleted}</span>
                   </div>
                   <div className="mt-2 flex justify-between">
-                    <span>{t("contributionScore") || "Contribution Score"}</span>
+                    <span>
+                      {t("contributionScore") || "Contribution Score"}
+                    </span>
                     <span className="font-semibold">{contribution}%</span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
@@ -256,178 +265,182 @@ export default function MembersPanel({
       </div>
     );
   }
-  
+
   return (
     <>
       <div className="space-y-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {t("teamMembers") || "Team Members"}
-          </h3>
-          <span className="text-sm text-gray-400">
-            {groupMembers?.length || 0}{" "}
-            {groupMembers?.length === 1 ? "person" : "people"}
-          </span>
-        </div>
-        <div className="mt-3 space-y-3">
-          {groupMembers?.length ? (
-            groupMembers.map((member) => (
-              <div
-                key={member.id || member.email}
-                className="flex items-center justify-between border border-gray-200 rounded-xl px-3 py-3 bg-white shadow-sm relative"
-              >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              {t("teamMembers") || "Team Members"}
+            </h3>
+            <span className="text-sm text-gray-400">
+              {groupMembers?.length || 0}{" "}
+              {groupMembers?.length === 1 ? "person" : "people"}
+            </span>
+          </div>
+          <div className="mt-3 space-y-3">
+            {groupMembers?.length ? (
+              groupMembers.map((member) => (
                 <div
-                  className="flex items-center gap-3 min-w-0 cursor-pointer flex-1"
-                  onClick={() => openProfile(member)}
+                  key={member.id || member.email}
+                  className="flex items-center justify-between border border-gray-200 rounded-xl px-3 py-3 bg-white shadow-sm relative"
                 >
-                  {member.avatarUrl ? (
-                    <img
-                      src={member.avatarUrl}
-                      alt={member.name || member.displayName || "avatar"}
-                      className="w-10 h-10 rounded-full object-cover"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        const fallbackName =
-                          member.name || member.displayName || "User";
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          fallbackName
-                        )}`;
-                      }}
-                    />
-                  ) : member.user?.avatarUrl ? (
-                    <img
-                      src={member.user.avatarUrl}
-                      alt={member.name || member.displayName || "avatar"}
-                      className="w-10 h-10 rounded-full object-cover"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        const fallbackName =
-                          member.name || member.displayName || "User";
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          fallbackName
-                        )}`;
-                      }}
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold">
-                      {(member.name || member.displayName || "U")
-                        .slice(0, 2)
-                        .toUpperCase()}
+                  <div
+                    className="flex items-center gap-3 min-w-0 cursor-pointer flex-1"
+                    onClick={() => openProfile(member)}
+                  >
+                    {member.avatarUrl ? (
+                      <img
+                        src={member.avatarUrl}
+                        alt={member.name || member.displayName || "avatar"}
+                        className="w-10 h-10 rounded-full object-cover"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          const fallbackName =
+                            member.name || member.displayName || "User";
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                            fallbackName
+                          )}`;
+                        }}
+                      />
+                    ) : member.user?.avatarUrl ? (
+                      <img
+                        src={member.user.avatarUrl}
+                        alt={member.name || member.displayName || "avatar"}
+                        className="w-10 h-10 rounded-full object-cover"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          const fallbackName =
+                            member.name || member.displayName || "User";
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                            fallbackName
+                          )}`;
+                        }}
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold">
+                        {(member.name || member.displayName || "U")
+                          .slice(0, 2)
+                          .toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">
+                        {member.name || member.displayName || "Unknown"}
+                      </p>
+                      <p className="text-xs text-gray-500 capitalize">
+                        {(member.assignedRoles &&
+                        member.assignedRoles.length > 0
+                          ? member.assignedRoles.join(", ")
+                          : member.role) || "Member"}
+                      </p>
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">
-                      {member.name || member.displayName || "Unknown"}
-                    </p>
-                    <p className="text-xs text-gray-500 capitalize">
-                      {(member.assignedRoles && member.assignedRoles.length > 0
-                        ? member.assignedRoles.join(", ")
-                        : member.role) || "Member"}
-                    </p>
                   </div>
-                </div>
-                {group?.canEdit && (
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => toggleMenu(getMemberId(member))}
-                      className="p-1 hover:bg-gray-100 rounded-md transition-colors"
-                    >
-                      <MoreVertical className="w-4 h-4 text-gray-500" />
-                    </button>
-                    {openMenuId === getMemberId(member) && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          onClick={() => setOpenMenuId(null)}
-                        />
-                        <div className="absolute right-0 top-8 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px]">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenAssignRole(member)}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                          >
-                            {t("assignRole") || "Assign Role"}
-                          </button>
-                          {group?.canEdit && isLeader(member) && (
+                  {group?.canEdit && (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => toggleMenu(getMemberId(member))}
+                        className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                      >
+                        <MoreVertical className="w-4 h-4 text-gray-500" />
+                      </button>
+                      {openMenuId === getMemberId(member) && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setOpenMenuId(null)}
+                          />
+                          <div className="absolute right-0 top-8 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px]">
                             <button
                               type="button"
-                              onClick={() => handleKickMember(member)}
-                              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                              onClick={() => handleOpenAssignRole(member)}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                             >
-                              {t("kickMember") || "Remove"}
+                              {t("assignRole") || "Assign Role"}
                             </button>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">
-              {t("noMembersYet") || "No members yet."}
-            </p>
-          )}
-          {group?.canEdit && (
-            <button
-              type="button"
-              onClick={onInvite}
-              className="w-full border border-dashed border-blue-400 rounded-xl py-2 text-sm font-semibold text-blue-600 bg-white hover:bg-blue-50 transition"
-            >
-              {t("inviteMembers") || "Invite Members"}
-            </button>
-          )}
+                            {group?.canEdit && isLeader(member) && (
+                              <button
+                                type="button"
+                                onClick={() => handleKickMember(member)}
+                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                              >
+                                {t("kickMember") || "Remove"}
+                              </button>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">
+                {t("noMembersYet") || "No members yet."}
+              </p>
+            )}
+            {group?.canEdit && (
+              <button
+                type="button"
+                onClick={onInvite}
+                className="w-full border border-dashed border-blue-400 rounded-xl py-2 text-sm font-semibold text-blue-600 bg-white hover:bg-blue-50 transition"
+              >
+                {t("inviteMembers") || "Invite Members"}
+              </button>
+            )}
+          </div>
         </div>
-      </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          {t("projectMentor") || "Mentor"}
-        </h3>
-        {mentor ? (
-          <div
-            className="flex items-center gap-3 cursor-pointer"
-            onClick={() => openProfile(mentor)}
-          >
-            {mentor.avatarUrl ? (
-              <img
-                src={mentor.avatarUrl}
-                alt={mentor.displayName || mentor.name || "mentor"}
-                className="w-12 h-12 rounded-full object-cover bg-white"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  const fallbackName = mentor.displayName || mentor.name || "Mentor";
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    fallbackName
-                  )}`;
-                }}
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-semibold">
-                {(mentor.displayName || mentor.name || "M").slice(0, 2).toUpperCase()}
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            {t("projectMentor") || "Mentor"}
+          </h3>
+          {mentor ? (
+            <div
+              className="flex items-center gap-3 cursor-pointer"
+              onClick={() => openProfile(mentor)}
+            >
+              {mentor.avatarUrl ? (
+                <img
+                  src={mentor.avatarUrl}
+                  alt={mentor.displayName || mentor.name || "mentor"}
+                  className="w-12 h-12 rounded-full object-cover bg-white"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    const fallbackName =
+                      mentor.displayName || mentor.name || "Mentor";
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      fallbackName
+                    )}`;
+                  }}
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-semibold">
+                  {(mentor.displayName || mentor.name || "M")
+                    .slice(0, 2)
+                    .toUpperCase()}
+                </div>
+              )}
+              <div>
+                <p className="font-medium text-gray-800">
+                  {mentor.displayName || mentor.name}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {mentor.email || t("mentor") || "Mentor"}
+                </p>
               </div>
-            )}
-            <div>
-              <p className="font-medium text-gray-800">
-                {mentor.displayName || mentor.name}
-              </p>
-              <p className="text-sm text-gray-500">
-                {mentor.email || t("mentor") || "Mentor"}
-              </p>
             </div>
-          </div>
-        ) : (
-          <div className="text-sm text-gray-500">
-            {t("noMentorAssigned") ||
-              "No mentor assigned. Add a mentor to keep guidance aligned."}
-          </div>
-        )}
+          ) : (
+            <div className="text-sm text-gray-500">
+              {t("noMentorAssigned") ||
+                "No mentor assigned. Add a mentor to keep guidance aligned."}
+            </div>
+          )}
         </div>
       </div>
 
@@ -445,4 +458,3 @@ export default function MembersPanel({
     </>
   );
 }
-

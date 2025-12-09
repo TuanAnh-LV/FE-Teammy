@@ -21,8 +21,7 @@ export default function ImportStep2Mapping({
     columns.forEach((col) => {
       const c = col.toLowerCase();
       if (c.includes("email")) auto.email = col;
-      if (c.includes("displayname") || c.includes("name"))
-        auto.displayName = col;
+      if (c.includes("displayname")) auto.displayName = col;
       if (c.includes("role")) auto.role = col;
       if (c.includes("major")) auto.majorName = col;
       if (c.includes("gender")) auto.gender = col;
@@ -60,7 +59,6 @@ export default function ImportStep2Mapping({
         });
       }
     } catch (err) {
-
       notification.error({
         message: t("validationFailed") || "Validation Failed",
         description: err?.response?.data?.message || t("pleaseTryAgain"),
@@ -74,10 +72,11 @@ export default function ImportStep2Mapping({
     <div className="space-y-8 text-center">
       <div>
         <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-          Column Mapping
+          {t("columnMapping") || "Column Mapping"}
         </h2>
         <p className="text-gray-500">
-          Columns have been automatically mapped. Adjust if needed.
+          {t("columnsAutoMapped") ||
+            "Columns have been automatically mapped. Adjust if needed."}
         </p>
       </div>
 
@@ -151,4 +150,3 @@ export default function ImportStep2Mapping({
     </div>
   );
 }
-

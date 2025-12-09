@@ -14,17 +14,15 @@ export default function ImportStep1UploadTopic({
   const { t } = useTranslation();
   const handleFile = async (file) => {
     try {
-      // Parse file locally (không gọi API import)
       const parsed = await parseFile(file);
       setRawData(parsed);
-      setOriginalFile(file); // Lưu file gốc để dùng cho import API
+      setOriginalFile(file);
       setCurrentStep(1);
       notification.success({
         message: t("fileUploadedSuccess") || "File uploaded successfully",
         description: `${parsed.length} rows found`,
       });
     } catch (err) {
-
       notification.error({
         message: t("fileUploadFailed") || "Failed to upload file",
         description: err.message || "Please try again",
@@ -65,8 +63,7 @@ export default function ImportStep1UploadTopic({
           message: t("templateDownloaded") || "Template downloaded",
         });
       }
-    } catch (err) {
-
+    } catch {
       const template = [
         {
           title: "AI Tutor",
@@ -100,10 +97,11 @@ export default function ImportStep1UploadTopic({
       >
         <CloudUploadOutlined className="text-5xl text-gray-400 mb-4" />
         <h3 className="text-lg font-medium text-gray-700 mb-2">
-          Upload your file
+          {t("uploadYourFile") || "Upload your file"}
         </h3>
         <p className="text-gray-400 text-sm mb-6">
-          Drag and drop your CSV or Excel file here, or click to browse
+          {t("dragDropOrClick") ||
+            "Drag and drop your CSV or Excel file here, or click to browse"}
         </p>
 
         <Button
@@ -118,7 +116,7 @@ export default function ImportStep1UploadTopic({
           }}
           className="hover:opacity-90"
         >
-          Choose File
+          {t("chooseFile") || "Choose File"}
         </Button>
       </Upload.Dragger>
 
@@ -127,9 +125,8 @@ export default function ImportStep1UploadTopic({
         className="!mt-8 !px-5 !py-2 !border-gray-300 hover:!border-orange-400 hover:!text-orange-500"
         onClick={handleDownloadTemplate}
       >
-        Download Template
+        {t("downloadTemplate") || "Download Template"}
       </Button>
     </div>
   );
 }
-

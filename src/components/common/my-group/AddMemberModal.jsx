@@ -31,10 +31,10 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
       setLoading(true);
       const res = await UserService.list({ email: value });
       const data = Array.isArray(res.data) ? res.data : [];
-      
+
       // Filter out users who already have a group in this semester
-      const filteredData = data.filter(u => u.hasGroupInSemester !== true);
-      
+      const filteredData = data.filter((u) => u.hasGroupInSemester !== true);
+
       setResults(
         filteredData.map((u) => ({
           userId: u.userId,
@@ -43,8 +43,7 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
           photoURL: u.avatarUrl,
         }))
       );
-    } catch (err) {
-
+    } catch {
       setResults([]);
     } finally {
       setLoading(false);
@@ -82,9 +81,19 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
       });
       onClose();
     } catch (err) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data ||
+        err.message ||
+        t("inviteFailed") ||
+        "Failed to send invitation";
 
       notification.error({
-        message: t("inviteFailed") || "Failed to send invitation",
+        message:
+          typeof errorMessage === "string"
+            ? errorMessage
+            : t("inviteFailed") || "Failed to send invitation",
       });
     } finally {
       setLoading(false);
@@ -160,14 +169,14 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
         <div className="!flex !justify-end !gap-3 mt-4">
           <button
             onClick={onClose}
-            className="!px-5 !py-2 !rounded-lg !text-gray-700 hover:!bg-gray-100 !transition"
+            className="!px-5 !py-2 !rounded-lg border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all"
           >
             {t("cancel") || "Cancel"}
           </button>
           <button
             onClick={handleAddClick}
             disabled={loading || !selected}
-            className="!flex !items-center !gap-2 !bg-[#404040] !text-white !px-5 !py-2 !rounded-lg !font-semibold hover:!bg-black !transition"
+            className="!flex !items-center !gap-2 !bg-[#FF7A00] hover:!opacity-90 !text-white !px-5 !py-2 !rounded-lg !font-semibold !transition"
           >
             <Plus className="!w-4 !h-4" /> {t("add") || "Add"}
           </button>
@@ -176,4 +185,3 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
     </div>
   );
 }
-

@@ -56,15 +56,21 @@ export default function ImportStep2MappingTopic({
       if (res?.data) {
         setValidationResult(res.data);
         setCurrentStep(2);
+        const valid = res.data.summary?.validRows || 0;
+        const total = res.data.summary?.totalRows || 0;
+
+        const template = t("validRowsSummary") || "{valid}/{total} valid rows";
+
+        const description = template
+          .replace("{valid}", valid)
+          .replace("{total}", total);
+
         notification.success({
           message: t("validationComplete") || "Validation Complete",
-          description: `${res.data.summary?.validRows || 0}/${
-            res.data.summary?.totalRows || 0
-          } valid rows`,
+          description,
         });
       }
     } catch (err) {
-
       notification.error({
         message: t("validationFailed") || "Validation Failed",
         description: err?.response?.data?.message || t("pleaseTryAgain"),
@@ -78,10 +84,11 @@ export default function ImportStep2MappingTopic({
     <div className="space-y-8 text-center">
       <div>
         <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-          Column Mapping
+          {t("columnMapping") || "Column Mapping"}
         </h2>
         <p className="text-gray-500">
-          Columns have been automatically mapped. Adjust if needed.
+          {t("columnsAutoMapped") ||
+            "Columns have been automatically mapped. Adjust if needed."}
         </p>
       </div>
 
@@ -158,4 +165,3 @@ export default function ImportStep2MappingTopic({
     </div>
   );
 }
-

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Table,
@@ -12,102 +12,108 @@ import {
 import {
   SearchOutlined,
   UploadOutlined,
-  EllipsisOutlined,
   InfoCircleOutlined,
 } from "@ant-design/icons";
 import { useTranslation } from "../../hook/useTranslation";
+import { AdminService } from "../../services/admin.service";
+
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const AuditLogs = () => {
   const { t } = useTranslation();
+
   const [filters, setFilters] = useState({
     search: "",
     action: "All Action",
     dateRange: null,
   });
 
-  const logs = [
-    {
-      key: 1,
-      timestamp: "2025-10-22 09:15:45",
-      actor: "truonglv11@fe.edu.vn",
-      action: "USER SUSPENDED",
-      entity: "User",
-      entityId: "U1023",
-      status: "Success",
-      ipAddress: "192.168.10.12",
-      platform: "Web",
-      level: "Critical",
-      description: "Suspended user due to policy violation",
-    },
-    {
-      key: 2,
-      timestamp: "2025-10-22 09:18:22",
-      actor: "admin@teammy.edu.vn",
-      action: "POST HIDDEN",
-      entity: "Post",
-      entityId: "P552",
-      status: "Success",
-      ipAddress: "10.0.2.15",
-      platform: "API",
-      level: "Warning",
-      description: "Hidden a report-flagged post",
-    },
-    {
-      key: 3,
-      timestamp: "2025-10-22 09:25:19",
-      actor: "mentor01@fpt.edu.vn",
-      action: "GROUP CREATED",
-      entity: "Group",
-      entityId: "G87",
-      status: "Success",
-      ipAddress: "192.168.0.54",
-      platform: "Mobile",
-      level: "Info",
-      description: "Created new project group: AI Tutor System",
-    },
-    {
-      key: 4,
-      timestamp: "2025-10-22 10:01:02",
-      actor: "sysadmin@teammy.edu.vn",
-      action: "SETTINGS UPDATED",
-      entity: "SystemSettings",
-      entityId: "CFG001",
-      status: "Failed",
-      ipAddress: "172.16.1.3",
-      platform: "Web",
-      level: "Warning",
-      description: "Attempted to update SMTP configuration",
-    },
-  ];
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(false);
 
+  // ================== CALL API ==================
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        setLoading(true);
+        // có thể truyền limit, before... nếu cần
+        const res = await AdminService.getActivityLogs({ limit: 200 }, false);
+        const data = Array.isArray(res?.data) ? res.data : [];
+
+        const mapped = data.map((item, index) => ({
+          key: item.activityId || index,
+          // dùng raw createdAt, filter + sort đều dùng ISO này
+          timestamp: item.createdAt,
+          actor:
+            item.actorEmail ||
+            item.actorDisplayName ||
+            item.actorId ||
+            "Unknown",
+          action: item.action, // ví dụ: "GROUP_CREATED"
+          entity: item.entityType || "-",
+          entityId: item.entityId || "-",
+          status: item.status || "", // ví dụ: "success"
+          platform: item.platform || "Unknown",
+          level: item.severity || "", // ví dụ: "info"
+          description: item.message || "",
+        }));
+
+        setLogs(mapped);
+      } catch (err) {
+        console.error("Failed to fetch activity logs", err);
+        setLogs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogs();
+  }, []);
+
+  // ================== COLOR CONFIG ==================
   const actionColors = {
-    "USER SUSPENDED": "red",
-    "POST HIDDEN": "default",
-    "GROUP CREATED": "green",
-    "SETTINGS UPDATED": "gold",
+    GROUP_CREATED: "green",
+    USER_SUSPENDED: "red",
+    POST_HIDDEN: "default",
+    SETTINGS_UPDATED: "gold",
   };
 
   const statusColors = {
-    Success: "green",
-    Failed: "red",
-    Pending: "blue",
+    success: "green",
+    failed: "red",
+    pending: "blue",
   };
 
   const levelColors = {
-    Info: "blue",
-    Warning: "orange",
-    Critical: "red",
+    info: "blue",
+    warning: "orange",
+    critical: "red",
   };
 
+  // helper format
+  const formatIsoToDisplay = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    const pad = (n) => (n < 10 ? `0${n}` : n);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
+      d.getDate()
+    )} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  };
+
+  const upperFirst = (s) =>
+    s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+
+  // ================== TABLE COLUMNS ==================
   const columns = [
     {
       title: "Timestamp",
       dataIndex: "timestamp",
       key: "timestamp",
       render: (text) => (
-        <span className="text-gray-800 font-medium">{text}</span>
+        <span className="text-gray-800 font-medium">
+          {formatIsoToDisplay(text)}
+        </span>
       ),
     },
     {
@@ -125,7 +131,7 @@ const AuditLogs = () => {
           color={actionColors[action] || "blue"}
           className="px-3 py-0.5 rounded-full font-medium"
         >
-          {action}
+          {action?.replace(/_/g, " ") || "-"}
         </Tag>
       ),
     },
@@ -135,10 +141,12 @@ const AuditLogs = () => {
       key: "entity",
       render: (_, record) => (
         <span>
-          {record.entity}{" "}
-          <Tag color="geekblue" className="ml-1">
-            {record.entityId}
-          </Tag>
+          {record.entity || "-"}{" "}
+          {record.entityId && (
+            <Tag color="geekblue" className="ml-1">
+              {record.entityId}
+            </Tag>
+          )}
         </span>
       ),
     },
@@ -147,27 +155,25 @@ const AuditLogs = () => {
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <Tag color={statusColors[status] || "default"}>{status}</Tag>
+        <Tag color={statusColors[status?.toLowerCase()] || "default"}>
+          {upperFirst(status)}
+        </Tag>
       ),
-    },
-    {
-      title: "IP",
-      dataIndex: "ipAddress",
-      key: "ipAddress",
-      render: (ip) => <span className="text-gray-500">{ip}</span>,
     },
     {
       title: "Platform",
       dataIndex: "platform",
       key: "platform",
-      render: (p) => <Tag color="purple">{p}</Tag>,
+      render: (p) => <Tag color="purple">{p || "-"}</Tag>,
     },
     {
       title: "Severity",
       dataIndex: "level",
       key: "level",
       render: (level) => (
-        <Tag color={levelColors[level] || "blue"}>{level}</Tag>
+        <Tag color={levelColors[level?.toLowerCase()] || "blue"}>
+          {upperFirst(level)}
+        </Tag>
       ),
     },
     {
@@ -184,22 +190,23 @@ const AuditLogs = () => {
       ),
     },
   ];
-  // Thêm ngay trước return
+
+  // ================== FILTER CLIENT SIDE ==================
   const filteredLogs = logs.filter((log) => {
     const searchText = filters.search.toLowerCase();
 
     const searchMatch =
       log.actor.toLowerCase().includes(searchText) ||
-      log.action.toLowerCase().includes(searchText) ||
-      log.entity.toLowerCase().includes(searchText);
+      (log.action || "").toLowerCase().includes(searchText) ||
+      (log.entity || "").toLowerCase().includes(searchText);
 
     const actionMatch =
       filters.action === "All Action" || log.action === filters.action;
 
     const dateMatch =
       !filters.dateRange ||
-      (new Date(log.timestamp) >= filters.dateRange[0]._d &&
-        new Date(log.timestamp) <= filters.dateRange[1]._d);
+      (new Date(log.timestamp) >= filters.dateRange[0].toDate() &&
+        new Date(log.timestamp) <= filters.dateRange[1].toDate());
 
     return searchMatch && actionMatch && dateMatch;
   });
@@ -227,10 +234,6 @@ const AuditLogs = () => {
         className="shadow-sm border-gray-100 rounded-lg"
         bodyStyle={{ padding: "20px 24px" }}
       >
-        <h3 className="font-semibold text-gray-800 mb-3">Filters & Search</h3>
-        <p className="text-gray-500 text-sm mb-4">
-          Filter audit logs by actor, action, or entity
-        </p>
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <Input
             prefix={<SearchOutlined className="text-gray-400" />}
@@ -246,10 +249,10 @@ const AuditLogs = () => {
             className="w-full"
           >
             <Option value="All Action">All Action</Option>
-            <Option value="USER SUSPENDED">USER SUSPENDED</Option>
-            <Option value="POST HIDDEN">POST HIDDEN</Option>
-            <Option value="GROUP CREATED">GROUP CREATED</Option>
-            <Option value="SETTINGS UPDATED">SETTINGS UPDATED</Option>
+            <Option value="GROUP_CREATED">GROUP_CREATED</Option>
+            <Option value="USER_SUSPENDED">USER_SUSPENDED</Option>
+            <Option value="POST_HIDDEN">POST_HIDDEN</Option>
+            <Option value="SETTINGS_UPDATED">SETTINGS_UPDATED</Option>
           </Select>
           <RangePicker
             onChange={(range) => setFilters({ ...filters, dateRange: range })}
@@ -257,27 +260,17 @@ const AuditLogs = () => {
             placeholder={["From Date", "To Date"]}
           />
         </div>
-      </Card>
-
-      {/* Table */}
-      <Card
-        className="shadow-sm border-gray-100 rounded-lg"
-        bodyStyle={{ padding: "20px 24px" }}
-      >
-        <h3 className="font-semibold text-gray-800 mb-3">Audit Trail</h3>
-        <p className="text-gray-500 text-sm mb-4">
-          Chronological record of all system actions
-        </p>
-
         <Table
           columns={columns}
           dataSource={filteredLogs}
+          loading={loading}
           pagination={{
-            pageSize: 5,
+            pageSize: 10,
             showSizeChanger: false,
           }}
+          rowKey="key"
           bordered
-          className="rounded-lg overflow-hidden"
+          className="rounded-lg overflow-hidden mt-6"
           scroll={{ x: "max-content" }}
         />
       </Card>

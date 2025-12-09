@@ -111,18 +111,16 @@ export default function AssignRoleModal({
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all px-4 py-2.5 text-sm font-medium"
           >
             {t("cancel") || "Cancel"}
           </button>
           <button
             type="submit"
             disabled={submitting || !selectedRole}
-            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-lg !bg-[#FF7A00] hover:!opacity-90 px-4 py-2.5 text-sm font-semibold text-white transition focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-60"
           >
-            {submitting
-              ? t("saving") || "Saving..."
-              : t("save") || "Save"}
+            {submitting ? t("saving") || "Saving..." : t("save") || "Save"}
           </button>
         </div>
       </form>

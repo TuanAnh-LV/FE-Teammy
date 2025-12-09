@@ -23,6 +23,7 @@ const Discover = () => {
     hasGroup: false,
     groupId: null,
   });
+  const [myGroupDetails, setMyGroupDetails] = useState(null);
   const [inviteState, setInviteState] = useState({
     open: false,
     topic: null,
@@ -53,6 +54,16 @@ const Discover = () => {
             hasGroup,
             groupId,
           });
+
+          // Fetch group details if user has group
+          if (groupId) {
+            try {
+              const groupRes = await GroupService.getGroupDetail(groupId);
+              setMyGroupDetails(groupRes?.data || null);
+            } catch {
+              setMyGroupDetails(null);
+            }
+          }
         }
       } catch (err) {
         console.error("Failed to fetch membership:", err);
@@ -66,7 +77,22 @@ const Discover = () => {
 
   // Fetch AI topic suggestions khi có groupId
   useEffect(() => {
+    // Don't show AI suggestions if:
     if (!membership.groupId) {
+      setAiSuggestedTopics([]);
+      aiSuggestionsFetchedRef.current = null;
+      return;
+    }
+
+    // If group already has topic, don't show AI suggestions
+    // Check both topicId directly and topic.topicId
+    const hasTopicId =
+      myGroupDetails?.topicId && myGroupDetails.topicId.trim() !== "";
+    const hasTopicObject =
+      myGroupDetails?.topic?.topicId &&
+      myGroupDetails.topic.topicId.trim() !== "";
+
+    if (hasTopicId || hasTopicObject) {
       setAiSuggestedTopics([]);
       aiSuggestionsFetchedRef.current = null;
       return;
@@ -100,9 +126,10 @@ const Discover = () => {
           : [];
 
         if (mounted && suggestions.length > 0) {
-          // Map AI suggestions to match project format
           const mapped = suggestions.map((item) => {
             const detail = item.detail || {};
+            const mentors = Array.isArray(detail.mentors) ? detail.mentors : [];
+
             return {
               topicId: item.topicId || detail.topicId,
               title: item.title || detail.title || "Untitled",
@@ -111,10 +138,17 @@ const Discover = () => {
               majorId: detail.majorId,
               status: detail.status || "open",
               tags: [detail.status || "open"],
-              mentor: detail.createdByName || "",
-              mentorsRaw: detail.mentors || [],
+              mentor:
+                mentors.length > 0
+                  ? mentors
+                      .map((m) => m.mentorName || m.name || m.mentorEmail)
+                      .join(", ")
+                  : detail.createdByName || "",
+
+              mentorsRaw: mentors,
+
               progress: 0,
-              members: (detail.mentors || []).map((m) =>
+              members: mentors.map((m) =>
                 (m.mentorName || m.name || "M")
                   .split(" ")
                   .map((n) => n[0])
@@ -151,7 +185,7 @@ const Discover = () => {
       mounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [membership.groupId]);
+  }, [membership.groupId, myGroupDetails]);
 
   useEffect(() => {
     let mounted = true;
@@ -190,8 +224,7 @@ const Discover = () => {
           setProjects(mapped);
           setFilteredProjects(mapped);
         }
-      } catch (err) {
-
+      } catch {
         notification.error({
           message: t("failedLoadTopics") || "Failed to load topics",
         });
@@ -455,7 +488,6 @@ const Discover = () => {
               message: "",
             });
           } catch (err) {
-
             const statusCode = err?.response?.status;
             const errorMessage = err?.response?.data?.message || "";
 
@@ -486,6 +518,13 @@ const Discover = () => {
             setInviteState((s) => ({ ...s, loading: false }));
           }
         }}
+        okButtonProps={{
+          className: "!bg-[#FF7A00] hover:!opacity-90 !text-white !border-none",
+        }}
+        cancelButtonProps={{
+          className:
+            "!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all",
+        }}
         confirmLoading={inviteState.loading}
       >
         <p className="text-sm mb-2">
@@ -506,4 +545,3 @@ const Discover = () => {
 };
 
 export default Discover;
-

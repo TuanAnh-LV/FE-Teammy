@@ -9,8 +9,9 @@ import {
   InfoCircleOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-
+import { useTranslation } from "../../hook/useTranslation";
 export default function GroupDetailModal({ open, onClose, group }) {
+  const { t } = useTranslation();
   if (!group) return null;
 
   // ----- Extract fields -----
@@ -65,7 +66,9 @@ export default function GroupDetailModal({ open, onClose, group }) {
 
               {daysLeft !== null && (
                 <Tag color={daysLeft > 0 ? "blue" : "red"}>
-                  {daysLeft > 0 ? `${daysLeft} days left` : "Deadline passed"}
+                  {daysLeft > 0
+                    ? `${daysLeft} ${t("daysLeft") || "days left"}`
+                    : t("deadlinePassed") || "Deadline passed"}
                 </Tag>
               )}
             </div>
@@ -75,7 +78,7 @@ export default function GroupDetailModal({ open, onClose, group }) {
         {/* Description */}
         <div className="mt-4 p-4 border rounded-xl bg-gray-50">
           <h3 className="font-semibold text-gray-600 mb-1 flex items-center gap-2">
-            <InfoCircleOutlined /> Description
+            <InfoCircleOutlined /> {t("description") || "Description"}
           </h3>
           <p className="text-gray-700">{description}</p>
         </div>
@@ -88,7 +91,7 @@ export default function GroupDetailModal({ open, onClose, group }) {
           <div className="border rounded-xl shadow-sm">
             <div className="flex items-center gap-3 px-4 py-3 border-b">
               <BookOutlined className="text-blue-500 text-lg" />
-              <span className="font-medium">Topic</span>
+              <span className="font-medium">{t("Topic") || "Topic"}</span>
             </div>
             <div className="px-4 py-3">
               <p className="font-medium">{topic}</p>
@@ -99,13 +102,13 @@ export default function GroupDetailModal({ open, onClose, group }) {
           <div className="border rounded-xl shadow-sm">
             <div className="flex items-center gap-3 px-4 py-3 border-b">
               <UserOutlined className="text-blue-500 text-lg" />
-              <span className="font-medium">Mentor</span>
+              <span className="font-medium">{t("mentor") || "Mentor"}</span>
             </div>
             <div className="px-4 py-3 flex items-center gap-3">
               <Avatar src={mentor?.avatarUrl} size={48} />
               <div>
                 <p className="font-medium">
-                  {mentor?.displayName || "Not Assigned"}
+                  {mentor?.displayName || t("notAssigned") || "Not Assigned"}
                 </p>
                 <p className="text-xs text-gray-500">{mentor?.email}</p>
               </div>
@@ -116,7 +119,7 @@ export default function GroupDetailModal({ open, onClose, group }) {
           <div className="border rounded-xl p-4 shadow-sm">
             <div className="flex items-center gap-3 mb-1">
               <SafetyCertificateOutlined className="text-blue-500 text-lg" />
-              <span className="text-gray-500">Major</span>
+              <span className="text-gray-500">{t("major") || "Major"}</span>
             </div>
             <p className="font-medium">{majorName}</p>
           </div>
@@ -125,7 +128,9 @@ export default function GroupDetailModal({ open, onClose, group }) {
           <div className="border rounded-xl p-4 shadow-sm">
             <div className="flex items-center gap-3 mb-1">
               <CalendarOutlined className="text-blue-500 text-lg" />
-              <span className="text-gray-500">Semester</span>
+              <span className="text-gray-500">
+                {t("semester") || "Semester"}
+              </span>
             </div>
             {semester ? (
               <div>
@@ -150,7 +155,7 @@ export default function GroupDetailModal({ open, onClose, group }) {
           <div className="flex items-center gap-2 mb-3">
             <TeamOutlined className="text-blue-500" />
             <span className="font-semibold">
-              Members ({currentMembers}/{maxMembers})
+              {t("Members") || "Members"} ({currentMembers}/{maxMembers})
             </span>
           </div>
 

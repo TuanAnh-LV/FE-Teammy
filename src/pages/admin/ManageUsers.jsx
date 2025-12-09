@@ -26,7 +26,7 @@ import UserEditModal from "../../components/admin/UserEditModal";
 import { AdminService } from "../../services/admin.service";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../../hook/useTranslation";
-
+import { MajorService } from "../../services/major.service";
 const ManageUsers = () => {
   // users will be loaded from API
   const [filters, setFilters] = useState({
@@ -45,6 +45,7 @@ const ManageUsers = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [majorList, setMajorList] = useState([]);
 
   const handleView = async (user) => {
     setSelectedUser(user);
@@ -71,7 +72,6 @@ const ManageUsers = () => {
       };
       setSelectedUser(enriched);
     } catch (err) {
-
       notification.error({
         message: t("failedLoadUserDetails") || "Failed to load user details",
       });
@@ -92,7 +92,7 @@ const ManageUsers = () => {
   };
 
   const handleAddUser = (newUser) => {
-    setUserList((prev) => [...prev, newUser]);
+    setUserList((prev) => [newUser, ...prev]);
   };
 
   const handleBan = (user) => {
@@ -102,8 +102,9 @@ const ManageUsers = () => {
           t("confirmBanTitle").replace("{name}", user.displayName)) ||
         `Ban ${user.displayName}?`,
       content:
-        t("confirmBanContent") ||
-        "Are you sure you want to ban this user? This action can be undone later.",
+        (t("confirmBanContent") &&
+          t("confirmBanContent").replace("{name}", user.displayName)) ||
+        `Are you sure you want to ban ${user.displayName}? This action can be undone later.`,
       centered: true,
       okText: t("confirmBanOk") || "Confirm Ban",
       cancelText: t("confirmBanCancel") || "Cancel",
@@ -134,7 +135,6 @@ const ManageUsers = () => {
               `${user.displayName || user.name} has been banned.`,
           });
         } catch (err) {
-
           notification.error({
             message:
               (t("userBanFailed") &&
@@ -180,7 +180,6 @@ const ManageUsers = () => {
 
         if (mounted) setUserList(mapped);
       } catch (err) {
-
         notification.error({
           message: t("failedLoadUsers") || "Failed to load users",
         });
@@ -194,10 +193,26 @@ const ManageUsers = () => {
       mounted = false;
     };
   }, []);
+  useEffect(() => {
+    const fetchMajors = async () => {
+      try {
+        const res = await MajorService.getMajors();
+        const payload = res?.data ?? res;
+
+        setMajorList(payload || []);
+      } catch (err) {
+        notification.error({
+          message: t("failedLoadMajors") || "Failed to load majors",
+        });
+      }
+    };
+
+    fetchMajors();
+  }, []);
 
   const columns = [
     {
-      title: "Name",
+      title: t("name") || "Name",
       dataIndex: "name",
       key: "name",
       render: (text) => (
@@ -205,24 +220,41 @@ const ManageUsers = () => {
       ),
     },
     {
-      title: "Email",
+      title: t("email") || "Email",
       dataIndex: "email",
       key: "email",
       render: (text) => <span className="text-gray-500">{text}</span>,
     },
     {
-      title: "Role",
+      title: t("role") || "Role",
       dataIndex: "role",
       key: "role",
-      render: (role) => <Tag color="blue">{role}</Tag>,
+      render: (role) => {
+        const key = String(role).toLowerCase(); // "admin"
+        const label =
+          {
+            admin: t("admin") || "Admin",
+            mentor: t("mentor") || "Mentor",
+            moderator: t("moderator") || "Moderator",
+            student: t("student") || "Student",
+          }[key] || role;
+
+        return <Tag color="blue">{label}</Tag>;
+      },
     },
-    { title: "Major", dataIndex: "major", key: "major" },
     {
-      title: "Status",
+      title: t("major") || "Major",
+      dataIndex: "major",
+      key: "major",
+    },
+    {
+      title: t("status") || "Status",
       dataIndex: "isActive",
       key: "status",
       render: (isActive) => {
-        const label = isActive ? "Active" : "Suspended";
+        const label = isActive
+          ? t("active") || "Active"
+          : t("suspended") || "Suspended";
         const color = isActive ? "green" : "red";
         return (
           <Tag color={color} className="px-3 py-0.5 rounded-full text-xs">
@@ -232,7 +264,7 @@ const ManageUsers = () => {
       },
     },
     {
-      title: "Actions",
+      title: t("actions") || "Actions",
       key: "actions",
       render: (_, record) => (
         <Space>
@@ -286,7 +318,7 @@ const ManageUsers = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
-            Users & Roles
+            {t("usersAndRoles") || "Mangage Users and Roles"}
           </h1>
         </div>
         <Space className="flex-wrap">
@@ -295,14 +327,18 @@ const ManageUsers = () => {
             onClick={() => navigate("/admin/import-users")}
             className="!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all !py-5"
           >
-            <span className="hidden sm:inline">Import Users</span>
+            <span className="hidden sm:inline">
+              {t("importUsers") || "Import Users"}
+            </span>
           </Button>
           <Button
             icon={<PlusOutlined />}
             onClick={() => setIsAddOpen(true)}
             className="!bg-[#FF7A00] !text-white !border-none !rounded-md !px-6 !py-5 hover:!opacity-90"
           >
-            <span className="hidden sm:inline">Add User</span>
+            <span className="hidden sm:inline">
+              {t("addUser") || "Add User"}
+            </span>
           </Button>
         </Space>
       </div>
@@ -327,10 +363,11 @@ const ManageUsers = () => {
               onChange={(v) => setFilters({ ...filters, role: v })}
               className="w-full"
             >
-              <Option value="All Roles">All Roles</Option>
-              <Option value="Admin">Admin</Option>
-              <Option value="Mentor">Mentor</Option>
-              <Option value="Student">Student</Option>
+              <Option value="All Roles">{t("allRoles") || "All Roles"}</Option>
+              <Option value="Admin">{t("admin") || "Admin"}</Option>
+              <Option value="Mentor">{t("mentor") || "Mentor"}</Option>
+              <Option value="Moderator">{t("moderator") || "Moderator"}</Option>
+              <Option value="Student">{t("student") || "Student"}</Option>
             </Select>
             <Select
               value={filters.status}
@@ -349,11 +386,12 @@ const ManageUsers = () => {
               className="w-full"
             >
               <Option value="All Major">{t("allMajor") || "All Major"}</Option>
-              <Option value="Engineering">
-                {t("engineering") || "Engineering"}
-              </Option>
-              <Option value="Business">{t("business") || "Business"}</Option>
-              <Option value="IT">{t("informationTechnology") || "IT"}</Option>
+
+              {majorList.map((m) => (
+                <Option key={m.majorId} value={m.majorName}>
+                  {m.majorName}
+                </Option>
+              ))}
             </Select>
           </div>
 
@@ -387,6 +425,7 @@ const ManageUsers = () => {
         open={isAddOpen}
         onClose={() => setIsAddOpen(false)}
         onAdd={handleAddUser}
+        majorList={majorList}
         destroyOnClose
       />
     </div>
@@ -394,4 +433,3 @@ const ManageUsers = () => {
 };
 
 export default ManageUsers;
-

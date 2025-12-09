@@ -56,8 +56,7 @@ const ManageSemesters = () => {
       const response = await SemesterService.list();
       const data = response?.data || [];
       setSemesters(Array.isArray(data) ? data : []);
-    } catch (error) {
-
+    } catch {
       notification.error({
         message: t("error") || "Error",
         description: t("failedToFetchSemesters") || "Failed to fetch semesters",
@@ -123,8 +122,7 @@ const ManageSemesters = () => {
               t("semesterActivated") || "Semester activated successfully",
           });
           fetchSemesters();
-        } catch (error) {
-
+        } catch {
           notification.error({
             message: t("failedToActivate") || "Failed to activate semester",
           });
@@ -164,8 +162,7 @@ const ManageSemesters = () => {
       });
 
       setIsPolicyModalOpen(true);
-    } catch (error) {
-
+    } catch {
       notification.error({
         message: t("error") || "Error",
         description: t("failedToFetchPolicy") || "Failed to fetch policy",
@@ -202,8 +199,7 @@ const ManageSemesters = () => {
       setIsModalOpen(false);
       fetchSemesters();
       form.resetFields();
-    } catch (error) {
-
+    } catch {
       notification.error({
         message: t("error") || "Error",
         description: t("failedToSaveSemester") || "Failed to save semester",
@@ -248,8 +244,7 @@ const ManageSemesters = () => {
       });
       setIsPolicyModalOpen(false);
       policyForm.resetFields();
-    } catch (error) {
-
+    } catch {
       notification.error({
         message: t("error") || "Error",
         description: t("failedToUpdatePolicy") || "Failed to update policy",
@@ -456,6 +451,13 @@ const ManageSemesters = () => {
           modalMode === "view" ? t("close") || "Close" : t("save") || "Save"
         }
         cancelText={t("cancel") || "Cancel"}
+        okButtonProps={{
+          className: "!bg-[#FF7A00] hover:!opacity-90 !text-white !border-none",
+        }}
+        cancelButtonProps={{
+          className:
+            "!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all",
+        }}
         width={600}
       >
         <Form
@@ -535,6 +537,13 @@ const ManageSemesters = () => {
         }}
         okText={t("save") || "Save"}
         cancelText={t("cancel") || "Cancel"}
+        okButtonProps={{
+          className: "!bg-[#FF7A00] hover:!opacity-90 !text-white !border-none",
+        }}
+        cancelButtonProps={{
+          className:
+            "!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all",
+        }}
         width={700}
       >
         <Form form={policyForm} layout="vertical" className="mt-4">
@@ -643,4 +652,3 @@ const ManageSemesters = () => {
 };
 
 export default ManageSemesters;
-
