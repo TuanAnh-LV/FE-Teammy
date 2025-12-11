@@ -445,6 +445,9 @@ const Forum = () => {
       notification.success({
         message: t("inviteRequestSent") || "Invite request sent!",
       });
+
+      // Close detail modal if open
+      setDetailOpen(false);
     } catch {
       notification.error({
         message:
@@ -507,18 +510,11 @@ const Forum = () => {
     }
   };
 
-  const openDetail = (post) => {
-    const gid =
-      post?.group?.groupId ||
-      post?.groupId ||
-      post?.group?.id ||
-      post?.group_id ||
-      null;
-
-    if (!gid) {
+  const openDetail = (postId) => {
+    if (!postId) {
       return;
     }
-    setDetailGroupId(gid);
+    setDetailGroupId(postId);
     setDetailOpen(true);
   };
 
@@ -549,8 +545,8 @@ const Forum = () => {
   };
 
   // Handler for opening group detail
-  const handleOpenGroupDetail = (groupId) => {
-    setDetailGroupId(groupId);
+  const handleOpenGroupDetail = (postId) => {
+    setDetailGroupId(postId);
     setDetailOpen(true);
   };
 
@@ -751,6 +747,8 @@ const Forum = () => {
           isOpen={detailOpen}
           onClose={() => setDetailOpen(false)}
           groupId={detailGroupId}
+          onApply={onClickOpenApply}
+          membership={membership}
         />
         <ApplyModal
           open={applyOpen}

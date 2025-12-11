@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
+import { Tag } from "antd";
 
 export default function CreateGroupModal({
   t,
@@ -7,52 +8,30 @@ export default function CreateGroupModal({
   submitting,
   form,
   errors,
-  majors = [],
-  majorsLoading = false,
   skills = [],
   skillsLoading = false,
   onClose,
   onSubmit,
   onChange,
 }) {
-  const [activeSkillCategory, setActiveSkillCategory] = useState("All");
-  const [skillSearchTerm, setSkillSearchTerm] = useState("");
-
-  const skillCategories = useMemo(() => {
-    const categories = ["All"];
-    const uniqueCategories = new Set();
-    skills.forEach((skill) => {
-      if (skill.role) {
-        uniqueCategories.add(skill.role);
-      }
-    });
-    return [...categories, ...Array.from(uniqueCategories)];
-  }, [skills]);
+  const [skillFilter, setSkillFilter] = useState("all"); // all, frontend, backend, mobile, devops, qa
 
   const filteredSkills = useMemo(() => {
-    let filtered = skills;
-    
-    if (activeSkillCategory !== "All") {
-      filtered = filtered.filter(
-        (skill) => skill.role === activeSkillCategory
-      );
-    }
-    
-    if (skillSearchTerm) {
-      filtered = filtered.filter((skill) =>
-        skill.token?.toLowerCase().includes(skillSearchTerm.toLowerCase())
-      );
-    }
-    
-    return filtered;
-  }, [skills, activeSkillCategory, skillSearchTerm]);
+    if (skillFilter === "all") return skills;
+    return skills.filter(
+      (skill) => skill.role?.toLowerCase() === skillFilter.toLowerCase()
+    );
+  }, [skills, skillFilter]);
 
   const handleToggleSkill = (skillName) => {
     const currentSkills = form.skills || [];
     const isSelected = currentSkills.includes(skillName);
-    
+
     if (isSelected) {
-      onChange("skills", currentSkills.filter((s) => s !== skillName));
+      onChange(
+        "skills",
+        currentSkills.filter((s) => s !== skillName)
+      );
     } else {
       onChange("skills", [...currentSkills, skillName]);
     }
@@ -60,24 +39,37 @@ export default function CreateGroupModal({
 
   const getRoleColor = (role) => {
     const colors = {
-      frontend: "bg-blue-100 text-blue-700 border-blue-300",
-      backend: "bg-green-100 text-green-700 border-green-300",
-      mobile: "bg-purple-100 text-purple-700 border-purple-300",
-      devops: "bg-orange-100 text-orange-700 border-orange-300",
-      qa: "bg-red-100 text-red-700 border-red-300",
+      frontend: "blue",
+      backend: "green",
+      mobile: "purple",
+      devops: "orange",
+      qa: "red",
     };
-    return colors[role] || "bg-gray-100 text-gray-700 border-gray-300";
+    return colors[role?.toLowerCase()] || "default";
   };
 
-  const capitalizeFirst = (str) => {
-    if (!str) return str;
-    return str.charAt(0).toUpperCase() + str.slice(1);
+  const getRoleButtonClass = (role, isActive) => {
+    const baseClass =
+      "px-3 py-1 rounded-full text-xs font-medium transition capitalize";
+    const inactiveClass = "bg-gray-200 text-gray-700 hover:bg-gray-300";
+
+    if (!isActive) return `${baseClass} ${inactiveClass}`;
+
+    const activeClasses = {
+      frontend: "bg-blue-600 text-white",
+      backend: "bg-green-600 text-white",
+      mobile: "bg-purple-600 text-white",
+      devops: "bg-orange-600 text-white",
+      qa: "bg-red-600 text-white",
+    };
+
+    return `${baseClass} ${activeClasses[role] || "bg-gray-800 text-white"}`;
   };
 
   if (!open) return null;
 
   const handleBackdrop = (e) => {
-    if (e.target === e.currentTarget) {
+    if (e.target === e.currentTarget && !submitting) {
       onClose();
     }
   };
@@ -93,7 +85,7 @@ export default function CreateGroupModal({
 
       <form
         onSubmit={onSubmit}
-        className="relative z-10 w-full max-w-lg rounded-2xl bg-white shadow-xl"
+        className="relative z-10 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-xl"
       >
         <div className="flex items-center justify-between border-b px-6 py-4">
           <h3 className="text-lg font-semibold">
@@ -110,6 +102,7 @@ export default function CreateGroupModal({
         </div>
 
         <div className="space-y-4 px-6 py-5">
+          {/* Group name */}
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
               {t("groupName") || "Group name"}{" "}
@@ -130,6 +123,7 @@ export default function CreateGroupModal({
             )}
           </div>
 
+          {/* Description */}
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
               {t("description") || "Description"}
@@ -143,6 +137,7 @@ export default function CreateGroupModal({
             />
           </div>
 
+          {/* Max members */}
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
               {t("maxMembers") || "Max members"}{" "}
@@ -165,91 +160,116 @@ export default function CreateGroupModal({
             )}
           </div>
 
+          {/* Tech Stack / Skills - đồng bộ với EditGroupModal */}
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">
               {t("techStack") || "Tech Stack"}
             </label>
 
             {/* Selected Skills */}
-            <div className="mb-3 min-h-[60px] rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-3">
-              <p className="mb-2 text-xs font-medium text-gray-600">
-                {t("selectedSkills") || "Selected Skills"} ({(form.skills || []).length})
+            <div className="min-h-[90px] p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
+              <p className="text-xs font-medium text-gray-700 mb-2">
+                {t("yourSelectedSkills") || "Your selected skills"} (
+                {(form.skills || []).length})
               </p>
-              {!form.skills || form.skills.length === 0 ? (
-                <p className="text-xs text-gray-400">
-                  {t("clickSkillsToAdd") || "Click skills below to add them"}
-                </p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {form.skills.map((skillName) => {
-                    const skill = skills.find(s => s.token === skillName);
-                    const colorClass = skill ? getRoleColor(skill.role) : "bg-blue-100 text-blue-700 border-blue-300";
+              <div className="flex flex-wrap gap-2">
+                {!form.skills || form.skills.length === 0 ? (
+                  <p className="text-gray-400 text-xs">
+                    {t("clickSkillsBelowToAdd") ||
+                      "Click skills below to add them to the group"}
+                  </p>
+                ) : (
+                  form.skills.map((skillToken) => {
+                    const skill = skills.find((s) => s.token === skillToken);
                     return (
-                      <button
-                        key={skillName}
-                        type="button"
-                        onClick={() => handleToggleSkill(skillName)}
-                        className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium hover:opacity-80 ${colorClass}`}
+                      <Tag
+                        key={skillToken}
+                        color={getRoleColor(skill?.role)}
+                        closable
+                        onClose={(e) => {
+                          e.preventDefault();
+                          handleToggleSkill(skillToken);
+                        }}
+                        className="cursor-pointer text-xs px-2 py-1"
                       >
-                        {capitalizeFirst(skillName)}
-                        <X className="h-3 w-3" />
-                      </button>
+                        {skillToken}
+                      </Tag>
                     );
-                  })}
-                </div>
-              )}
+                  })
+                )}
+              </div>
             </div>
 
-            {/* Skill Categories */}
-            <div className="mb-2 flex flex-wrap gap-1.5">
-              {skillCategories.map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => setActiveSkillCategory(category)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                    activeSkillCategory === category
-                      ? "bg-blue-500 text-white shadow-sm"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {capitalizeFirst(category)}
-                </button>
-              ))}
+            {/* Role Filter */}
+            <div className="flex gap-2 flex-wrap mt-3">
+              <button
+                type="button"
+                onClick={() => setSkillFilter("all")}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                  skillFilter === "all"
+                    ? "bg-gray-800 text-white"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                {t("all") || "All"} ({skills.length})
+              </button>
+              {["frontend", "backend", "mobile", "devops", "qa"].map((role) => {
+                const count = skills.filter(
+                  (s) => s.role?.toLowerCase() === role
+                ).length;
+                if (count === 0) return null;
+                return (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => setSkillFilter(role)}
+                    className={getRoleButtonClass(role, skillFilter === role)}
+                  >
+                    {role} ({count})
+                  </button>
+                );
+              })}
             </div>
 
             {/* Available Skills */}
-            <div className="max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2">
-              <p className="mb-2 px-2 text-xs font-medium text-gray-600">
-                {t("availableSkills") || "Available Skills"} ({t("clickToAdd") || "Click to add"})
+            <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-200 bg-white p-3 mt-3">
+              <p className="mb-2 text-xs font-medium text-gray-700">
+                {t("availableSkills") || "Available skills"}
               </p>
               {skillsLoading ? (
-                <p className="px-2 text-xs text-gray-400">
+                <p className="text-xs text-gray-400">
                   {t("loading") || "Loading..."}
                 </p>
               ) : filteredSkills.length === 0 ? (
-                <p className="px-2 text-xs text-gray-400">
+                <p className="text-xs text-gray-400">
                   {t("noSkillsFound") || "No skills found"}
                 </p>
               ) : (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {filteredSkills.map((skill) => {
-                    const isSelected = (form.skills || []).includes(skill.token);
-                    const colorClass = getRoleColor(skill.role);
+                    const isSelected = (form.skills || []).includes(
+                      skill.token
+                    );
                     return (
-                      <button
+                      <Tag
                         key={skill.id || skill.token}
-                        type="button"
-                        onClick={() => handleToggleSkill(skill.token)}
-                        className={`rounded-md px-2.5 py-1 text-xs font-medium transition border ${
+                        color={
+                          isSelected ? "default" : getRoleColor(skill.role)
+                        }
+                        className={`cursor-pointer text-xs px-2 py-1 transition ${
                           isSelected
-                            ? "opacity-50 cursor-not-allowed"
-                            : `${colorClass} hover:opacity-80`
+                            ? "opacity-40 cursor-not-allowed"
+                            : "hover:scale-105"
                         }`}
-                        disabled={isSelected}
+                        onClick={() =>
+                          !isSelected && handleToggleSkill(skill.token)
+                        }
                       >
-                        {capitalizeFirst(skill.token)} +
-                      </button>
+                        {skill.token}
+                        {!isSelected && (
+                          <Plus className="inline-block w-3 h-3 ml-1" />
+                        )}
+                      </Tag>
                     );
                   })}
                 </div>

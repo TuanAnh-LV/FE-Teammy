@@ -16,7 +16,8 @@ export const API = {
     EXPORT_USERS: "/users/import/template",
     UPDATE_USER: (id) => `/users/admin/${id}`,
     DASHBOARD: "/dashboard",
-    ACTIVITY_LOGS: "/admin/activity-logs"
+    ACTIVITY_LOGS: "/admin/activity-logs",
+    MAJOR_STATS: "/users/admin/major-stats",
   },
   POST: {
     GET_PERSONAL: "/profile-posts",
@@ -24,6 +25,9 @@ export const API = {
     POST_PERSONAL: "/profile-posts",
     POST_GROUP: "/recruitment-posts",
     INVITE_PROFILE_POST: (postId) => `/profile-posts/${postId}/invites`,
+    DETAIL_PERSONAL: (id) => `/profile-posts/${id}`,
+    DETAIL_GROUP: (id) => `/recruitment-posts/${id}`,
+    UPDATE_PERSONAL: (id) => `/profile-posts/${id}`,
     GET_GROUP_POSTS: (groupId) => `/recruitment-posts/group/${groupId}`,
   },
   GROUPS: {

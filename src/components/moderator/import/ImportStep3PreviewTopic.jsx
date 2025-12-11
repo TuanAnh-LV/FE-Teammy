@@ -40,7 +40,6 @@ export default function ImportStep3PreviewTopic({
       const description = rowData.Description || "";
       const majorName = rowData.MajorName || "-";
       const semesterCode = rowData.SemesterCode || "-";
-      const source = rowData.Source || "-";
       const mentorEmails = rowData.MentorEmails || "-";
       const status = rowData.Status || "open";
 
@@ -72,7 +71,6 @@ export default function ImportStep3PreviewTopic({
         description,
         majorName,
         semesterCode,
-        source,
         mentorEmails,
         status,
         statusLabel,
@@ -121,7 +119,6 @@ export default function ImportStep3PreviewTopic({
       { title: t("title") || "Title", dataIndex: "title" },
       { title: t("semester") || "Semester", dataIndex: "semesterCode" },
       { title: t("majorName") || "Major Name", dataIndex: "majorName" },
-      { title: t("source") || "Source", dataIndex: "source" },
       {
         title: t("mentorEmails") || "Mentor Emails",
         dataIndex: "mentorEmails",

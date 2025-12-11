@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "antd";
 import { Users, Shield } from "lucide-react";
-import { GroupService } from "../../../services/group.service";
+import { PostService } from "../../../services/post.service";
 import { useTranslation } from "../../../hook/useTranslation";
 const clamp3 = {
   display: "-webkit-box",
@@ -21,7 +21,36 @@ function Row({ label, children }) {
   );
 }
 
-const GroupDetailModal = ({ isOpen, onClose, groupId }) => {
+function StatusChip({ status }) {
+  const colorMap = {
+    pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    approved: "bg-green-50 text-green-700 border-green-200",
+    rejected: "bg-red-50 text-red-700 border-red-200",
+  };
+  const label =
+    status === "pending"
+      ? "Pending"
+      : status === "approved"
+      ? "Approved"
+      : "Rejected";
+  return (
+    <span
+      className={`inline-flex items-center rounded-lg border px-3 py-2 text-xs font-bold ${
+        colorMap[status] || colorMap.pending
+      }`}
+    >
+      {label}
+    </span>
+  );
+}
+
+const GroupDetailModal = ({
+  isOpen,
+  onClose,
+  groupId,
+  onApply,
+  membership,
+}) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [group, setGroup] = useState(null);
@@ -38,8 +67,9 @@ const GroupDetailModal = ({ isOpen, onClose, groupId }) => {
     (async () => {
       try {
         setLoading(true);
-        const res = await GroupService.getGroupDetail(groupId);
+        const res = await PostService.getRecruitmentPostDetail(groupId);
         if (!mounted) return;
+        // Store the entire post object, not just the nested group
         setGroup(res?.data || res);
       } catch {
         setGroup(null);
@@ -54,9 +84,17 @@ const GroupDetailModal = ({ isOpen, onClose, groupId }) => {
 
   // Title ưu tiên tên nhóm, fallback dùng key "groupDetail"
   const title = useMemo(
-    () => group?.name || t("groupDetail") || "Group Detail",
+    () =>
+      group?.group?.name || group?.title || t("groupDetail") || "Group Detail",
     [group, t]
   );
+  const mentor = group?.group?.mentor || group?.mentor;
+  const memberList = [
+    ...(group?.group?.leader
+      ? [{ ...group.group.leader, isLeader: true }]
+      : []),
+    ...(group?.group?.members || []),
+  ];
 
   return (
     <Modal
@@ -64,7 +102,7 @@ const GroupDetailModal = ({ isOpen, onClose, groupId }) => {
       onCancel={onClose}
       footer={null}
       title={<div className="font-bold text-base">{title}</div>}
-      width={720}
+      width={780}
       destroyOnClose
       styles={{ body: { paddingTop: 12, paddingBottom: 16 } }}
     >
@@ -90,66 +128,211 @@ const GroupDetailModal = ({ isOpen, onClose, groupId }) => {
               <div
                 className="text-sm text-gray-700 whitespace-pre-wrap"
                 style={clamp3}
-                title={group.description || ""}
+                title={group.description || group.group?.description || ""}
               >
-                {group.description || "—"}
+                {group.description || group.group?.description || "—"}
               </div>
             </div>
 
-            {/* Info grid */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* Members */}
-              <div className="rounded-xl border border-gray-200 bg-white p-4">
-                <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-800">
-                  <Users className="h-4 w-4" /> {t("members") || "Members"}
-                </div>
-                <div className="space-y-2">
-                  {/* 3 label dưới chưa có key riêng -> giữ tiếng Anh */}
-                  <Row label={t("groupStatus")}>{group.status}</Row>
-                  <Row label={t("groupMaxMembers")}>{group.maxMembers}</Row>
-                  <Row label={t("groupCurrentMembers")}>
-                    {group.currentMembers}
+            {/* Major, Position, Skills */}
+            <div className="rounded-xl border border-gray-200 p-4">
+              <div className="space-y-2">
+                <Row label={t("major") || "Major"}>
+                  {group.major?.majorName || "—"}
+                </Row>
+                <Row label={t("position") || "Position Needed"}>
+                  {group.position_needed || group.positionNeeded || "—"}
+                </Row>
+                {group.skills && group.skills.length > 0 && (
+                  <Row label={t("skills") || "Skills"}>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {group.skills.map((skill, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
                   </Row>
-                </div>
-              </div>
-
-              {/* Leader */}
-              <div className="rounded-xl border border-gray-200 bg-white p-4">
-                <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-800">
-                  <Shield className="h-4 w-4" /> {t("leader") || "Leader"}
-                </div>
-                <div className="space-y-2">
-                  <Row label={t("fullName") || "Name"}>
-                    {group.leader?.displayName}
+                )}
+                {(group.topicName || group.topic?.title) && (
+                  <Row label={t("topic") || "Topic"}>
+                    {group.topicName || group.topic?.title}
                   </Row>
-                  <Row label={t("email") || "Email"}>{group.leader?.email}</Row>
-                </div>
+                )}
               </div>
             </div>
 
-            {/* Members list nếu có */}
-            {!!group.members?.length && (
-              <div className="rounded-xl border border-gray-200 bg-white p-4">
-                <div className="mb-3 text-sm font-semibold text-gray-800">
-                  {(t("members") || "Members") + ` (${group.members.length})`}
+            {/* Group info + Members */}
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              {/* Header: group name */}
+              <div className="mb-2 flex items-center gap-2">
+                <Users className="h-4 w-4 text-gray-700" />
+                <span className="text-sm font-semibold text-gray-800">
+                  {group.group?.name || title}
+                </span>
+              </div>
+
+              {/* Group basic info */}
+              <div className="mb-3 space-y-1 text-xs text-gray-500">
+                {/* Status + members summary */}
+                <div className="flex flex-wrap gap-2">
+                  {(group.group?.status || group.status) && (
+                    <span className="inline-flex items-center rounded-full border border-gray-200 px-2 py-[2px] text-[11px]">
+                      {t("groupStatus") || "Status"}:{" "}
+                      <span className="ml-1 font-medium text-gray-700">
+                        {group.group?.status || group.status}
+                      </span>
+                    </span>
+                  )}
+
+                  {typeof group.group?.maxMembers === "number" && (
+                    <span className="inline-flex items-center rounded-full border border-gray-200 px-2 py-[2px] text-[11px]">
+                      {t("groupMaxMembers") || "Max"}:{" "}
+                      <span className="ml-1 font-medium text-gray-700">
+                        {group.group.maxMembers}
+                      </span>
+                    </span>
+                  )}
+
+                  {(typeof group.currentMembers === "number" ||
+                    group.group?.members?.length) && (
+                    <span className="inline-flex items-center rounded-full border border-gray-200 px-2 py-[2px] text-[11px]">
+                      {t("groupCurrentMembers") || "Current"}:{" "}
+                      <span className="ml-1 font-medium text-gray-700">
+                        {group.currentMembers ??
+                          group.group?.members?.length ??
+                          0}
+                      </span>
+                    </span>
+                  )}
                 </div>
-                <ul className="space-y-2 text-sm">
-                  {group.members.map((m) => (
-                    <li
-                      key={m.userId || m.id}
-                      className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2"
+
+                {/* Description của group */}
+                <p className="mt-1 text-xs text-gray-500">
+                  {group.group?.description ||
+                    group.description ||
+                    t("noDescription") ||
+                    "No description"}
+                </p>
+              </div>
+              {mentor && (
+                <div className="mt-3">
+                  <div className="mb-1 text-xs font-semibold text-gray-600">
+                    {t("mentor") || "Mentor"}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {/* Avatar mentor */}
+                    {mentor.avatarUrl ? (
+                      <img
+                        src={mentor.avatarUrl}
+                        alt={mentor.displayName || "mentor"}
+                        className="h-8 w-8 rounded-full object-cover bg-gray-200"
+                      />
+                    ) : (
+                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-[11px] font-semibold text-gray-600">
+                        {(mentor.displayName || "?").charAt(0)}
+                      </div>
+                    )}
+
+                    {/* Name + email */}
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-medium text-gray-800 break-all">
+                        {mentor.displayName || "Unknown"}
+                      </span>
+                      {mentor.email && (
+                        <span className="text-[11px] text-gray-500 break-all">
+                          {mentor.email}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Members list */}
+              <div className="mt-3">
+                <div className="mb-2 text-xs font-semibold text-gray-600">
+                  {(t("members") || "Members") + ` (${memberList.length})`}
+                </div>
+
+                {memberList.length ? (
+                  <ul className="space-y-2 text-sm">
+                    {memberList.map((m, idx) => (
+                      <li
+                        key={m.userId || m.id || idx}
+                        className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2"
+                      >
+                        {/* Avatar + text */}
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Avatar */}
+                          {m.avatarUrl ? (
+                            <img
+                              src={m.avatarUrl}
+                              alt={m.displayName || m.name || "avatar"}
+                              className="h-8 w-8 rounded-full object-cover bg-gray-200 flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-[11px] font-semibold text-gray-600 flex-shrink-0">
+                              {(m.displayName || m.name || "?").charAt(0)}
+                            </div>
+                          )}
+
+                          {/* Name + email */}
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-medium text-gray-800 break-all">
+                              {m.displayName || m.name || "Unknown"}
+                            </span>
+                            {m.email && (
+                              <span className="text-[11px] text-gray-500 break-all">
+                                {m.email}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Badge Leader */}
+                        {(m.isLeader ||
+                          m.role === "leader" ||
+                          m.assignedRole === "leader") && (
+                          <span className="rounded-full bg-blue-50 px-2 py-[2px] text-[11px] font-semibold text-blue-700">
+                            Leader
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-xs text-gray-500">
+                    {t("noMembers") || "This group has no members yet."}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Apply Button */}
+            {!loading &&
+              group &&
+              onApply &&
+              membership &&
+              !membership.hasGroup && (
+                <div className="flex justify-end pt-3 border-t border-gray-200">
+                  {group.hasApplied || group.myApplicationStatus ? (
+                    <StatusChip
+                      status={group.myApplicationStatus || "pending"}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => onApply(group)}
+                      className="inline-flex items-center justify-center rounded-lg bg-[#FF7A00] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:!opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100"
                     >
-                      <span className="font-medium text-gray-800 break-all">
-                        {m.displayName || m.name || "Unknown"}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {m.role || m.status || ""}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+                      {t("applyNow") || "Apply Now"}
+                    </button>
+                  )}
+                </div>
+              )}
           </div>
         )}
       </div>
