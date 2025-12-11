@@ -11,6 +11,7 @@ import ProfileStats from "../../components/common/profile/ProfileStats";
 import ProfileOverview from "../../components/common/profile/ProfileOverview";
 import ProfileGroups from "../../components/common/profile/ProfileGroups";
 import ProfileSettings from "../../components/common/profile/ProfileSettings";
+import { notification } from "antd";
 
 const Profile = () => {
   const { t } = useTranslation();
@@ -63,7 +64,11 @@ const Profile = () => {
         localStorage.setItem("userInfo", JSON.stringify(mapped));
         localStorage.setItem("role", mapped.role);
       } catch (e) {
-
+        notification.error({
+          message: t("fetchProfileFailed") || "Failed to fetch profile",
+          description: t("pleaseLoginAgain") || "Please log in again.",
+        });
+        navigate("/login");
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -88,7 +93,13 @@ const Profile = () => {
           setProfileData(response?.data || null);
         }
       } catch (error) {
-
+        notification.error({
+          message: t("fetchProfileFailed") || "Failed to fetch profile",
+          description:
+            error?.response?.data?.message ||
+            t("pleaseTryAgain") ||
+            "Please try again.",
+        });
       } finally {
         if (mounted) setProfileLoading(false);
       }
@@ -181,10 +192,11 @@ const Profile = () => {
             {/* Overview */}
             <button
               onClick={() => setActiveTab("overview")}
-              className={`px-6 py-2 text-sm font-medium rounded-xl transition ${activeTab === "overview"
+              className={`px-6 py-2 text-sm font-medium rounded-xl transition ${
+                activeTab === "overview"
                   ? "bg-white text-gray-900 shadow-sm border-gray-200"
                   : "bg-transparent text-gray-600 hover:text-gray-900"
-                }`}
+              }`}
             >
               Overview
             </button>
@@ -192,10 +204,11 @@ const Profile = () => {
             {/* My Groups */}
             <button
               onClick={() => setActiveTab("groups")}
-              className={`px-6 py-2 text-sm font-medium rounded-xl transition ${activeTab === "groups"
+              className={`px-6 py-2 text-sm font-medium rounded-xl transition ${
+                activeTab === "groups"
                   ? "bg-white text-gray-900 shadow-sm border-gray-200"
                   : "bg-transparent text-gray-600 hover:text-gray-900"
-                }`}
+              }`}
             >
               My Groups
             </button>
@@ -203,10 +216,11 @@ const Profile = () => {
             {/* Settings */}
             <button
               onClick={() => setActiveTab("settings")}
-              className={`px-6 py-2 text-sm font-medium rounded-xl transition ${activeTab === "settings"
+              className={`px-6 py-2 text-sm font-medium rounded-xl transition ${
+                activeTab === "settings"
                   ? "bg-white text-gray-900 shadow-sm border-gray-200"
                   : "bg-transparent text-gray-600 hover:text-gray-900"
-                }`}
+              }`}
             >
               Settings
             </button>
@@ -236,4 +250,3 @@ const Profile = () => {
 };
 
 export default Profile;
-

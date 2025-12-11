@@ -9,7 +9,7 @@ export default function TabSwitcher({ activeTab, onChange, tabs }) {
           onClick={() => onChange(tab.key)}
           className={`px-16 py-2 text-sm font-semibold capitalize transition ${
             activeTab === tab.key
-              ? "bg-[#f9fafb] text-gray-900"
+              ? "bg-white text-gray-900 font-semibold"
               : "text-gray-600 hover:bg-white/60"
           }`}
         >

@@ -222,8 +222,8 @@ export function AIRecommendedGroups({
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
-                    if (groupId) {
-                      onOpenDetail(groupId);
+                    if (postId) {
+                      onOpenDetail(postId);
                     }
                   }}
                   className="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-lg px-3 md:px-3.5 py-2 text-xs font-bold shadow-sm hover:border-orange-400 hover:text-orange-400 transition-all focus:outline-none focus:ring-4 focus:ring-blue-100"

@@ -304,27 +304,58 @@ export default function MyGroupsPage() {
                   {group.skills.map((skill, idx) => {
                     const getRoleColor = (skillName) => {
                       const lowerSkill = skillName.toLowerCase();
-                      if (['react', 'angular', 'vue', 'javascript', 'html', 'css'].includes(lowerSkill)) {
-                        return 'bg-blue-100 text-blue-700 border-blue-300';
-                      } else if (['nodejs', 'java', 'python', 'csharp', 'dotnet'].includes(lowerSkill)) {
-                        return 'bg-green-100 text-green-700 border-green-300';
-                      } else if (['flutter', 'swift', 'kotlin', 'android', 'ios'].includes(lowerSkill)) {
-                        return 'bg-purple-100 text-purple-700 border-purple-300';
-                      } else if (['docker', 'kubernetes', 'aws', 'azure'].includes(lowerSkill)) {
-                        return 'bg-orange-100 text-orange-700 border-orange-300';
+                      if (
+                        [
+                          "react",
+                          "angular",
+                          "vue",
+                          "javascript",
+                          "html",
+                          "css",
+                        ].includes(lowerSkill)
+                      ) {
+                        return "bg-blue-100 text-blue-700 border-blue-300";
+                      } else if (
+                        [
+                          "nodejs",
+                          "java",
+                          "python",
+                          "csharp",
+                          "dotnet",
+                        ].includes(lowerSkill)
+                      ) {
+                        return "bg-green-100 text-green-700 border-green-300";
+                      } else if (
+                        [
+                          "flutter",
+                          "swift",
+                          "kotlin",
+                          "android",
+                          "ios",
+                        ].includes(lowerSkill)
+                      ) {
+                        return "bg-purple-100 text-purple-700 border-purple-300";
+                      } else if (
+                        ["docker", "kubernetes", "aws", "azure"].includes(
+                          lowerSkill
+                        )
+                      ) {
+                        return "bg-orange-100 text-orange-700 border-orange-300";
                       }
-                      return 'bg-gray-100 text-gray-700 border-gray-300';
+                      return "bg-gray-100 text-gray-700 border-gray-300";
                     };
-                    
+
                     const capitalizeFirst = (str) => {
                       if (!str) return str;
                       return str.charAt(0).toUpperCase() + str.slice(1);
                     };
-                    
+
                     return (
                       <span
                         key={idx}
-                        className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full border ${getRoleColor(skill)}`}
+                        className={`inline-block px-2.5 py-1 text-xs font-medium rounded-full border ${getRoleColor(
+                          skill
+                        )}`}
                       >
                         {capitalizeFirst(skill)}
                       </span>
@@ -411,7 +442,8 @@ export default function MyGroupsPage() {
                   {t("pendingRequests") || "No pending applications"}
                 </p>
                 <p className="mt-1 text-sm text-gray-500">
-                  {t("noPendingRequests") || "You have reviewed all applications for now."}
+                  {t("noPendingRequests") ||
+                    "You have reviewed all applications for now."}
                 </p>
               </div>
             ) : (
@@ -465,13 +497,18 @@ export default function MyGroupsPage() {
                                 <p className="text-sm font-semibold text-gray-900">
                                   {request.name}
                                 </p>
-                                <p className="text-xs text-gray-500">{request.email}</p>
+                                <p className="text-xs text-gray-500">
+                                  {request.email}
+                                </p>
                                 {request.message &&
                                   (() => {
                                     const parts = request.message.split("-");
                                     if (parts.length >= 2) {
                                       const badge = parts[0].trim();
-                                      const message = parts.slice(1).join("-").trim();
+                                      const message = parts
+                                        .slice(1)
+                                        .join("-")
+                                        .trim();
                                       return (
                                         <div className="mt-2 flex items-center gap-2">
                                           <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200">
@@ -522,7 +559,8 @@ export default function MyGroupsPage() {
                   {t("noInvitations") || "No invitations"}
                 </p>
                 <p className="mt-1 text-sm text-gray-500">
-                  {t("noInvitationsMessage") || "You have no pending invitations."}
+                  {t("noInvitationsMessage") ||
+                    "You have no pending invitations."}
                 </p>
               </div>
             ) : (
@@ -547,10 +585,13 @@ export default function MyGroupsPage() {
                         <p className="text-sm font-semibold text-gray-900">
                           {invitation.displayName}
                         </p>
-                        <p className="text-xs text-gray-500">{invitation.email}</p>
+                        <p className="text-xs text-gray-500">
+                          {invitation.email}
+                        </p>
                         {invitation.topicTitle && (
                           <p className="mt-1 text-xs text-gray-600">
-                            {t("invitedFor") || "Invited for"}: {invitation.topicTitle}
+                            {t("invitedFor") || "Invited for"}:{" "}
+                            {invitation.topicTitle}
                           </p>
                         )}
                         {invitation.message && (
@@ -609,31 +650,24 @@ export default function MyGroupsPage() {
                   "Create new groups or join existing ones to build amazing projects together."}
               </p>
 
-              <div className="mt-4 md:mt-5 flex flex-col gap-3 md:gap-4 lg:flex-row lg:justify-between lg:gap-8">
+              <div className="mt-4 md:mt-5 flex flex-col gap-3 md:gap-4 lg:flex-row lg:items-center lg:gap-4">
                 {/* Buttons */}
                 <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 lg:flex-none">
                   <button
                     onClick={() => setOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 md:px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF7A00] hover:opacity-90 px-4 md:px-5 py-2.5 text-sm font-semibold text-white shadow-sm"
                   >
                     <span>+</span>
                     {t("createNewGroup") || "Create New Group"}
                   </button>
-                  <button
-                    onClick={() => navigate("/discover")}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 md:px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-orange-600"
-                  >
-                    <UserPlus className="!h-4 !w-4" />
-                    {t("joinGroup") || "Join Group"}
-                  </button>
                 </div>
 
                 {/* Stats */}
-                <div className="flex flex-wrap items-center gap-3 md:gap-4 text-xs md:text-sm font-semibold text-[#627084] lg:flex-1 lg:justify-end">
+                <div className="flex flex-wrap items-center text-xs md:text-sm font-semibold text-[#627084] lg:ml-4">
                   {heroStatsWithIcons.map((stat) => (
                     <div
                       key={stat.label}
-                      className="inline-flex items-center gap-2 text-[#627084]"
+                      className="inline-flex items-center gap-2 text-[#627084] mr-4"
                     >
                       {stat.icon}
                       <span>

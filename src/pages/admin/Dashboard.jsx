@@ -20,7 +20,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { AdminService } from "../../services/admin.service";
-import { MajorService } from "../../services/major.service";
 import { useTranslation } from "../../hook/useTranslation";
 
 const COLORS = [
@@ -63,24 +62,23 @@ const AdminDashboard = () => {
       setLoading(false);
     }
   };
-
   const fetchMajorsData = async () => {
     try {
-      const response = await MajorService.getMajors();
+      const response = await AdminService.getMajorStats(false); // dùng API admin
       if (response?.data) {
-        const majors = Array.isArray(response.data) ? response.data : [];
-        // Transform majors data for pie chart
-        // Note: API doesn't return studentCount, so we'll display all majors with equal distribution
-        // or you can fetch student counts from a different endpoint
-        const pieData = majors.map((major, index) => ({
-          name: major.majorName || major.name || "Unknown",
-          value: 1, // Equal distribution since we don't have student counts
-          color: COLORS[index % COLORS.length],
+        const stats = Array.isArray(response.data) ? response.data : [];
+
+        const chartData = stats.map((major) => ({
+          name: major.majorName || "Unknown",
+          studentCount: major.studentCount ?? 0,
+          studentsWithoutGroup: major.studentsWithoutGroup ?? 0,
+          groupCount: major.groupCount ?? 0,
         }));
-        setMajorsData(pieData);
+
+        setMajorsData(chartData);
       }
     } catch (error) {
-      console.error("Failed to fetch majors data:", error);
+      console.error("Failed to fetch majors stats:", error);
     }
   };
 
@@ -184,7 +182,7 @@ const AdminDashboard = () => {
         >
           <p className="text-gray-500 text-sm mb-3">
             {t("studentDistributionMajors") ||
-              "Student distribution across different majors"}
+              "Student & group statistics across majors"}
           </p>
           {majorsData.length > 0 ? (
             <ResponsiveContainer width="100%" height={400}>
@@ -197,16 +195,35 @@ const AdminDashboard = () => {
                   dataKey="name"
                   angle={-35}
                   textAnchor="end"
-                  interval={0} // hiện tất cả nhãn
+                  interval={0}
                 />
                 <YAxis allowDecimals={false} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="value">
-                  {majorsData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Bar>
+
+                {/* Tổng số sinh viên */}
+                <Bar
+                  dataKey="studentCount"
+                  name={t("students") || "Students"}
+                  barSize={18}
+                  fill={COLORS[0]}
+                />
+
+                {/* Số sinh viên chưa có nhóm */}
+                <Bar
+                  dataKey="studentsWithoutGroup"
+                  name={t("studentsWithoutGroup") || "Students without group"}
+                  barSize={18}
+                  fill={COLORS[2]}
+                />
+
+                {/* Số nhóm */}
+                <Bar
+                  dataKey="groupCount"
+                  name={t("groups") || "Groups"}
+                  barSize={18}
+                  fill={COLORS[1]}
+                />
               </BarChart>
             </ResponsiveContainer>
           ) : (

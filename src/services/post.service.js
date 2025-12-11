@@ -35,4 +35,23 @@ export const PostService = {
       isLoading: true,
     });
   },
+  getPersonalPostDetail(id) {
+    return BaseService.get({
+      url: API.POST.DETAIL_PERSONAL(id),
+      isLoading: true,
+    });
+  },
+  getRecruitmentPostDetail(id) {
+    return BaseService.get({
+      url: API.POST.DETAIL_GROUP(id),
+      isLoading: true,
+    });
+  },
+  updatePersonalPost(id, payload) {
+    return BaseService.put({
+      url: API.POST.UPDATE_PERSONAL(id),
+      payload,
+      isLoading: true,
+    });
+  }
 };
