@@ -28,6 +28,7 @@ export const API = {
     DETAIL_PERSONAL: (id) => `/profile-posts/${id}`,
     DETAIL_GROUP: (id) => `/recruitment-posts/${id}`,
     UPDATE_PERSONAL: (id) => `/profile-posts/${id}`,
+    GET_GROUP_POSTS: (groupId) => `/recruitment-posts/group/${groupId}`,
   },
   GROUPS: {
     MEMBERSHIP: "/groups/membership",
