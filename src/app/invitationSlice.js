@@ -3,6 +3,8 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   pendingInvitations: [],
   unreadCount: 0,
+  applications: [],
+  applicationCount: 0,
 };
 
 const invitationSlice = createSlice({
@@ -55,6 +57,57 @@ const invitationSlice = createSlice({
         (inv) => inv.id !== invitationId
       );
     },
+
+    // ========== Application Status Management ==========
+    // Add application từ realtime
+    addApplication: (state, action) => {
+      const application = action.payload;
+      const exists = state.applications.find(
+        (app) => app.id === application.id
+      );
+      if (!exists) {
+        state.applications.unshift(application);
+        if (application.status === "pending") {
+          state.applicationCount += 1;
+        }
+      }
+    },
+
+    // Update application status
+    updateApplicationStatus: (state, action) => {
+      const { applicationId, status } = action.payload;
+      const application = state.applications.find(
+        (app) => app.id === applicationId
+      );
+      if (application) {
+        const wasPending = application.status === "pending";
+        application.status = status;
+        if (wasPending && status !== "pending") {
+          state.applicationCount = Math.max(0, state.applicationCount - 1);
+        }
+      }
+    },
+
+    // Set applications từ API
+    setApplications: (state, action) => {
+      state.applications = action.payload;
+      state.applicationCount = action.payload.filter(
+        (app) => app.status === "pending"
+      ).length;
+    },
+
+    // Remove application
+    removeApplication: (state, action) => {
+      const applicationId = action.payload;
+      state.applications = state.applications.filter(
+        (app) => app.id !== applicationId
+      );
+    },
+
+    // Mark applications as read
+    markApplicationsAsRead: (state) => {
+      state.applicationCount = 0;
+    },
   },
 });
 
@@ -64,6 +117,11 @@ export const {
   setPendingInvitations,
   markAsRead,
   removeInvitation,
+  addApplication,
+  updateApplicationStatus,
+  setApplications,
+  removeApplication,
+  markApplicationsAsRead,
 } = invitationSlice.actions;
 
 export default invitationSlice.reducer;
