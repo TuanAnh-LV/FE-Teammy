@@ -2,6 +2,8 @@ import React, { Suspense } from "react";
 import { useRoutes } from "react-router-dom";
 import routes from "./routes/app.routes";
 import LoadingState from "./components/common/LoadingState";
+import RealtimeInvitationListener from "./components/realtime/RealtimeInvitationListener";
+import SignalRConnectionIndicator from "./components/realtime/SignalRConnectionIndicator";
 
 export default function App() {
   const element = useRoutes(routes);
@@ -15,6 +17,9 @@ export default function App() {
         />
       }
     >
+      {/* Realtime listener cho invitations */}
+      <RealtimeInvitationListener />
+      <SignalRConnectionIndicator />
       {element}
     </Suspense>
   );
