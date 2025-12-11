@@ -5,7 +5,7 @@ import { CloudUploadOutlined, DownloadOutlined } from "@ant-design/icons";
 import * as XLSX from "xlsx";
 import { TopicService } from "../../../services/topic.service";
 import { downloadBlob } from "../../../utils/download";
-
+import JSZip from "jszip";
 export default function ImportStep1UploadTopic({
   setRawData,
   setCurrentStep,
@@ -31,20 +31,55 @@ export default function ImportStep1UploadTopic({
     return false;
   };
 
+  // Helper: parse 1 file Excel/CSV thành JSON
+  const parseExcelBuffer = (buffer) => {
+    const workbook = XLSX.read(buffer, { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(sheet, { defval: "" });
+  };
+
   const parseFile = (file) =>
     new Promise((resolve, reject) => {
       try {
         const reader = new FileReader();
-        reader.onload = (e) => {
+
+        reader.onload = async (e) => {
           try {
-            const workbook = XLSX.read(e.target.result, { type: "array" });
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-            resolve(json);
+            const arrayBuffer = e.target.result;
+
+            const isZip =
+              file.name?.toLowerCase().endsWith(".zip") ||
+              file.type === "application/zip" ||
+              file.type === "application/x-zip-compressed";
+
+            if (isZip) {
+              // Nếu upload ZIP: mở zip và tìm file Excel/CSV
+              const zip = await JSZip.loadAsync(arrayBuffer);
+
+              // ưu tiên file tên Topics.* nếu có
+              let excelEntry =
+                zip.file(/(?:^|\/)Topics\.(xlsx|xls|csv)$/i)[0] ||
+                zip.file(/\.(xlsx|xls|csv)$/i)[0];
+
+              if (!excelEntry) {
+                throw new Error(
+                  "Không tìm thấy file Excel/CSV trong gói upload. Vui lòng kiểm tra lại."
+                );
+              }
+
+              const excelBuffer = await excelEntry.async("arraybuffer");
+              const json = parseExcelBuffer(excelBuffer);
+              resolve(json);
+            } else {
+              // Trường hợp user upload thẳng file Excel như cũ
+              const json = parseExcelBuffer(arrayBuffer);
+              resolve(json);
+            }
           } catch (ex) {
             reject(ex);
           }
         };
+
         reader.onerror = (ev) => reject(ev);
         reader.readAsArrayBuffer(file);
       } catch (ex) {
@@ -58,12 +93,14 @@ export default function ImportStep1UploadTopic({
       if (res && res.data) {
         const blob = res.data;
         const disposition = res?.headers?.["content-disposition"];
-        downloadBlob(blob, "TeammyTopicsTemplate.xlsx", disposition);
+        // đổi mặc định từ .xlsx → .zip
+        downloadBlob(blob, "TopicRegistrationPackage.zip", disposition);
         notification.success({
           message: t("templateDownloaded") || "Template downloaded",
         });
       }
     } catch {
+      // fallback: tự tạo zip local nếu API lỗi
       const template = [
         {
           title: "AI Tutor",
@@ -74,10 +111,21 @@ export default function ImportStep1UploadTopic({
           mentorEmails: "mentor1@example.com",
         },
       ];
+
+      // Tạo file Excel như trước
       const ws = XLSX.utils.json_to_sheet(template);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Template");
-      XLSX.writeFile(wb, "TeammyTopicsTemplate.xlsx");
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+
+      // Gói vào ZIP: /docs + Topics.xlsx
+      const zip = new JSZip();
+      zip.folder("docs"); // có thể thêm tài liệu sau
+      zip.file("Topics.xlsx", wbout);
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+
+      downloadBlob(zipBlob, "TopicRegistrationPackage.zip");
       notification.warning({
         message:
           t("templateGeneratedLocally") ||
@@ -90,7 +138,7 @@ export default function ImportStep1UploadTopic({
     <div className="flex flex-col items-center w-full text-center mt-6">
       <Upload.Dragger
         multiple={false}
-        accept=".xlsx,.xls,.csv"
+        accept=".xlsx,.xls,.csv,.zip"
         showUploadList={false}
         customRequest={({ file }) => handleFile(file)}
         className="w-full max-w-3xl border-2 border-dashed border-gray-300 bg-white rounded-xl py-14 hover:border-orange-400 transition-all"

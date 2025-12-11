@@ -118,4 +118,13 @@ export const AdminService = {
       isLoading,
     });
   },
+    /** GET MAJOR STATS
+   * - fetch statistics by major
+   */
+  getMajorStats(isLoading = true) {
+    return BaseService.get({
+      url: API.ADMIN.MAJOR_STATS,
+      isLoading,
+    });
+  }
 };

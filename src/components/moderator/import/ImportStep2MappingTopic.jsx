@@ -26,7 +26,6 @@ export default function ImportStep2MappingTopic({
       if (c.includes("major")) auto.majorName = col;
       if (c.includes("semester")) auto.semesterCode = col;
       if (c.includes("status")) auto.status = col;
-      if (c.includes("source")) auto.source = col;
       if (c.includes("mentor") && c.includes("email")) auto.mentorEmails = col;
     });
     setMapping(auto);
@@ -44,7 +43,6 @@ export default function ImportStep2MappingTopic({
         majorName: row[mapping.majorName] || "",
         semesterCode: row[mapping.semesterCode] || "",
         status: row[mapping.status] || "open",
-        source: row[mapping.source] || "",
         mentorEmails: row[mapping.mentorEmails]
           ? [row[mapping.mentorEmails]]
           : [],
@@ -99,7 +97,6 @@ export default function ImportStep2MappingTopic({
           "majorName",
           "semesterCode",
           "status",
-          "source",
           "mentorEmails",
         ].map((field) => (
           <Col span={12} key={field}>
@@ -111,8 +108,6 @@ export default function ImportStep2MappingTopic({
                   ? "Semester Code"
                   : field === "mentorEmails"
                   ? "Mentor Emails"
-                  : field === "source"
-                  ? "Source"
                   : field}
               </span>
               <Select
