@@ -11,6 +11,7 @@ import ProfileStats from "../../components/common/profile/ProfileStats";
 import ProfileOverview from "../../components/common/profile/ProfileOverview";
 import ProfileGroups from "../../components/common/profile/ProfileGroups";
 import ProfileSettings from "../../components/common/profile/ProfileSettings";
+import ProfilePostsTab from "../../components/common/profile/ProfilePostsTab";
 
 const Profile = () => {
   const { t } = useTranslation();
@@ -200,6 +201,17 @@ const Profile = () => {
               My Groups
             </button>
 
+            {/* Posts */}
+            <button
+              onClick={() => setActiveTab("posts")}
+              className={`px-6 py-2 text-sm font-medium rounded-xl transition ${activeTab === "posts"
+                  ? "bg-white text-gray-900 shadow-sm border-gray-200"
+                  : "bg-transparent text-gray-600 hover:text-gray-900"
+                }`}
+            >
+              Posts
+            </button>
+
             {/* Settings */}
             <button
               onClick={() => setActiveTab("settings")}
@@ -217,6 +229,9 @@ const Profile = () => {
         <div className="bg-white rounded-2xl shadow-sm p-4 md:p-6">
           {activeTab === "overview" && <ProfileOverview profile={profile} />}
           {activeTab === "groups" && <ProfileGroups userId={profile.userId} />}
+          {activeTab === "posts" && (
+            <ProfilePostsTab userId={profile.userId} />
+          )}
           {activeTab === "settings" && (
             <ProfileSettings profile={profile} onUpdate={handleUpdateProfile} />
           )}

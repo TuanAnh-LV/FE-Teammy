@@ -35,4 +35,25 @@ export const PostService = {
       isLoading: true,
     });
   },
+  // Get all profile posts (lay tat ca posts ca nhan, roi filter o client)
+  getAllProfilePosts() {
+    return BaseService.get({
+      url: API.POST.GET_PERSONAL,
+      isLoading: true,
+    });
+  },
+  // Delete a profile post
+  deleteProfilePost(postId) {
+    return BaseService.delete({
+      url: `${API.POST.GET_PERSONAL}/${postId}`,
+      isLoading: true,
+    });
+  },
+  // Get posts for a specific group
+  getGroupPostsByGroupId(groupId) {
+    return BaseService.get({
+      url: API.POST.GET_GROUP_POSTS(groupId),
+      isLoading: true,
+    });
+  },
 };
