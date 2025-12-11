@@ -24,6 +24,7 @@ export const API = {
     POST_PERSONAL: "/profile-posts",
     POST_GROUP: "/recruitment-posts",
     INVITE_PROFILE_POST: (postId) => `/profile-posts/${postId}/invites`,
+    GET_GROUP_POSTS: (groupId) => `/recruitment-posts/group/${groupId}`,
   },
   GROUPS: {
     MEMBERSHIP: "/groups/membership",

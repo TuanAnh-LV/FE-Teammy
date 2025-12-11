@@ -11,7 +11,7 @@ import AddMemberModal from "../../components/common/my-group/AddMemberModal";
 import EditGroupModal from "../../components/common/my-group/EditGroupModal";
 import LoadingState from "../../components/common/LoadingState";
 import { notification } from "antd";
-import { Plus, FolderKanban, ListTodo, Flag, BarChart3 } from "lucide-react";
+import { Plus, FolderKanban, ListTodo, Flag, BarChart3, FileText } from "lucide-react";
 import { Modal, Form, Input } from "antd";
 import TaskModal from "../../components/common/kanban/TaskModal";
 import useKanbanBoard from "../../hook/useKanbanBoard";
@@ -19,6 +19,7 @@ import TabSwitcher from "../../components/common/my-group/TabSwitcher";
 import OverviewSection from "../../components/common/my-group/OverviewSection";
 import MembersPanel from "../../components/common/my-group/MembersPanel";
 import FilesPanel from "../../components/common/my-group/FilesPanel";
+import GroupPostsTab from "../../components/common/my-group/GroupPostsTab";
 import KanbanTab from "../../components/common/workspace/KanbanTab";
 import BacklogTab from "../../components/common/workspace/BacklogTab";
 import MilestonesTab from "../../components/common/workspace/MilestonesTab";
@@ -743,6 +744,7 @@ export default function MyGroup() {
                 { key: "overview", label: t("overview") || "Overview" },
                 { key: "members", label: t("teamMembers") || "Members" },
                 { key: "workspace", label: t("workspace") || "Workspace" },
+                { key: "posts", label: t("posts") || "Posts" },
                 { key: "files", label: t("files") || "Files" },
               ]}
             />
@@ -924,6 +926,11 @@ export default function MyGroup() {
                 onUploadSuccess={loadGroupFiles}
               />
             )}
+
+            {/* POSTS */}
+            {activeTab === "posts" && (
+              <GroupPostsTab groupId={id} groupData={group} />
+            )}
           </div>
         </div>
       </div>
@@ -978,7 +985,6 @@ export default function MyGroup() {
         }}
         okText={t("create") || "Create"}
         cancelText={t("cancel") || "Cancel"}
-        destroyOnClose
       >
         <Form form={columnForm} layout="vertical">
           <Form.Item
