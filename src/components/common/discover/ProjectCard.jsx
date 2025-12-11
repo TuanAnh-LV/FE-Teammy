@@ -174,7 +174,7 @@ const ProjectCard = ({ project, onSelectTopic, isAISuggestion = false }) => {
             } catch (err) {
 
               notification.error({
-                message: t("failedToSelectTopic"),
+                message: getErrorMessage(err, t("failedToSelectTopic")),
                 description:
                   err?.response?.data?.message || t("pleaseTryAgain"),
               });

@@ -14,6 +14,7 @@ import { AuthService } from "../../services/auth.service";
 import { AiService } from "../../services/ai.service";
 import { Modal, Input, notification } from "antd";
 import { Sparkles } from "lucide-react";
+import { getErrorMessage } from "../../utils/helpers";
 
 const Discover = () => {
   const { t } = useTranslation();
@@ -38,10 +39,8 @@ const Discover = () => {
     aiRecommended: false,
   });
 
-  // Use ref to track if AI suggestions have been fetched for current groupId
   const aiSuggestionsFetchedRef = useRef(null);
 
-  // Fetch membership khi component mount
   useEffect(() => {
     let mounted = true;
     const fetchMembership = async () => {
@@ -55,7 +54,6 @@ const Discover = () => {
             groupId,
           });
 
-          // Fetch group details if user has group
           if (groupId) {
             try {
               const groupRes = await GroupService.getGroupDetail(groupId);
@@ -75,17 +73,13 @@ const Discover = () => {
     };
   }, []);
 
-  // Fetch AI topic suggestions khi có groupId
   useEffect(() => {
-    // Don't show AI suggestions if:
     if (!membership.groupId) {
       setAiSuggestedTopics([]);
       aiSuggestionsFetchedRef.current = null;
       return;
     }
 
-    // If group already has topic, don't show AI suggestions
-    // Check both topicId directly and topic.topicId
     const hasTopicId =
       myGroupDetails?.topicId && myGroupDetails.topicId.trim() !== "";
     const hasTopicObject =
@@ -98,7 +92,6 @@ const Discover = () => {
       return;
     }
 
-    // Skip if already fetched for this groupId
     if (aiSuggestionsFetchedRef.current === membership.groupId) {
       return;
     }
@@ -120,7 +113,6 @@ const Discover = () => {
           return;
         }
 
-        // Take all data without filtering
         let suggestions = Array.isArray(aiResponse.data.data)
           ? aiResponse.data.data
           : [];
@@ -184,7 +176,6 @@ const Discover = () => {
     return () => {
       mounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [membership.groupId, myGroupDetails]);
 
   useEffect(() => {
@@ -236,10 +227,8 @@ const Discover = () => {
     return () => {
       mounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Filter out topics that are already in AI suggestions
   const aiTopicIds = useMemo(() => {
     return new Set(aiSuggestedTopics.map((t) => t.topicId));
   }, [aiSuggestedTopics]);
@@ -247,7 +236,6 @@ const Discover = () => {
   useEffect(() => {
     let filtered = [...projects];
 
-    // Remove topics already shown in AI suggestions
     filtered = filtered.filter((p) => !aiTopicIds.has(p.topicId));
 
     // Filter by major
@@ -257,10 +245,7 @@ const Discover = () => {
       );
     }
 
-    // Filter by AI recommended (placeholder logic - adjust based on your API)
     if (filters.aiRecommended) {
-      // You can add your AI recommendation logic here
-      // For now, just showing all when AI is enabled
     }
 
     setFilteredProjects(filtered);
@@ -489,19 +474,52 @@ const Discover = () => {
             });
           } catch (err) {
             const statusCode = err?.response?.status;
-            const errorMessage = err?.response?.data?.message || "";
+            const errorMessage = getErrorMessage(err, "");
+            const normalizedMessage = (errorMessage || "").toLowerCase();
 
             let errorTitle = t("failedToSelectTopic") || "Thất bại";
             let errorDesc = errorMessage || t("pleaseTryAgain");
 
+            // Handle group must be full before inviting mentor
+            if (
+              normalizedMessage.includes("group must be full") ||
+              normalizedMessage.includes("full before inviting mentor")
+            ) {
+              errorTitle =
+                t("groupMustBeFullBeforeInvite") ||
+                "Group must be full before inviting mentor";
+              errorDesc =
+                t("groupMustBeFullBeforeInviteDesc") ||
+                "Please fill your group to the required size before inviting a mentor.";
+            }
+
             // Handle 409 Conflict - Group is active
             if (statusCode === 409) {
-              errorTitle =
-                t("groupIsActive") ||
-                "Cannot change topic when group is active";
-              errorDesc =
-                t("groupActiveDescription") ||
-                "The group is currently active and cannot change topics. Please contact the mentor or administrator for assistance.";
+              if (normalizedMessage.includes("invite_pending_other_topic")) {
+                errorTitle =
+                  t("invitePendingOtherTopic") ||
+                  "Pending invite for another topic";
+                errorDesc =
+                  t("invitePendingOtherTopicDesc") ||
+                  "Your group already has another mentor invite pending for a different topic. Please resolve it before sending a new invite.";
+              } else if (
+                normalizedMessage.includes("group must be full") ||
+                normalizedMessage.includes("full before inviting mentor")
+              ) {
+                errorTitle =
+                  t("groupMustBeFullBeforeInvite") ||
+                  "Group must be full before inviting mentor";
+                errorDesc =
+                  t("groupMustBeFullBeforeInviteDesc") ||
+                  "Please fill your group to the required size before inviting a mentor.";
+              } else {
+                errorTitle =
+                  t("groupIsActive") ||
+                  "Cannot change topic when group is active";
+                errorDesc =
+                  t("groupActiveDescription") ||
+                  "The group is currently active and cannot change topics. Please contact the mentor or administrator for assistance.";
+              }
             }
 
             notification.error({
