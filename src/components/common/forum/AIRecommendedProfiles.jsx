@@ -5,6 +5,7 @@ import { Chip, StatusChip } from "./Chip";
 import { PostService } from "../../../services/post.service";
 import { initials, timeAgoFrom } from "../../../utils/helpers";
 import { useTranslation } from "../../../hook/useTranslation";
+import { useNavigate } from "react-router-dom";
 
 const clamp3 = {
   display: "-webkit-box",
@@ -19,6 +20,7 @@ export function AIRecommendedProfiles({
   onInvite,
 }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   if (
     !membership.groupId ||
@@ -54,6 +56,7 @@ export function AIRecommendedProfiles({
 
         const postId = profilePost.id; // Post ID for invite
         const userName = user.displayName || "User";
+        const userId = user.userId || user.id || profilePost.userId || null;
         const matchScore = suggestion.scorePercent || 0;
         const avatarUrl = user.avatarUrl || null;
         const description = profilePost.description || "";
@@ -101,6 +104,9 @@ export function AIRecommendedProfiles({
                     src={avatarUrl}
                     alt={userName}
                     className="h-10 w-10 rounded-full object-cover shadow-sm"
+                    role={userId ? "button" : undefined}
+                    onClick={() => userId && navigate(`/profile/${userId}`)}
+                    style={{ cursor: userId ? "pointer" : "default" }}
                     onError={(e) => {
                       e.target.style.display = "none";
                       e.target.nextElementSibling.style.display = "flex";
@@ -109,7 +115,9 @@ export function AIRecommendedProfiles({
                 )}
                 <div
                   className="h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white"
-                  style={{ display: avatarUrl ? "none" : "flex" }}
+                  style={{ display: avatarUrl ? "none" : "flex", cursor: userId ? "pointer" : "default" }}
+                  role={userId ? "button" : undefined}
+                  onClick={() => userId && navigate(`/profile/${userId}`)}
                 >
                   {initials(userName)}
                 </div>
