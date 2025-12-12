@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+﻿import React, { useEffect, useRef, useState } from "react";
 import { MessageSquare, Upload, X, FileIcon } from "lucide-react";
 import { priorityStyles, statusStyles, initials } from "../../../utils/kanbanHelpers";
 import { useNavigate } from "react-router-dom";
@@ -39,9 +39,6 @@ const formatColumnName = (name) => {
     .join(" ");
 };
 
-const normalizeStatusKey = (value = "") =>
-  value.toLowerCase().replace(/[\s_]+/g, "");
-
 const TaskModal = ({
   task,
   members = [],
@@ -78,14 +75,6 @@ const TaskModal = ({
   const fileInputRef = useRef(null);
   const assigneeMenuRef = useRef(null);
   const fetchCommentsRef = useRef(onFetchComments);
-  const getColumnIdByStatus = (statusValue) => {
-    const target = normalizeStatusKey(statusValue);
-    const entry = Object.entries(columnMeta || {}).find(([colId, meta]) => {
-      const title = normalizeStatusKey(meta?.title || colId);
-      return title === target;
-    });
-    return entry?.[0] || "";
-  };
 
   useEffect(() => {
     if (task) {
@@ -94,14 +83,11 @@ const TaskModal = ({
         const match = String(task.dueDate).match(/^(\d{4}-\d{2}-\d{2})/);
         normalizedDueDate = match ? match[1] : "";
       }
-      const matchedStatusColumn =
-        task.columnId || getColumnIdByStatus(task.status || "");
-      const fallbackColumn = Object.keys(columnMeta || {})[0] || "";
-
+      
       setDetailForm({
         assignees: task.assignees || [],
         dueDate: normalizedDueDate,
-        status: matchedStatusColumn || fallbackColumn,
+        status: task.status || "",
         priority: task.priority || "",
         description: task.description || "",
       });
@@ -110,7 +96,7 @@ const TaskModal = ({
       setEditingCommentId(null);
       setEditingContent("");
     }
-  }, [task, columnMeta]);
+  }, [task]);
 
   useEffect(() => {
     fetchCommentsRef.current = onFetchComments;
@@ -727,7 +713,7 @@ const TaskModal = ({
                             {activeAssigneeLabel || t("unassigned") || "Unassigned"}
                           </span>
                         </div>
-                        <span className="text-gray-500 text-xs">▼</span>
+                        <span className="text-gray-500 text-xs">â–¼</span>
                       </button>
                       {assigneeMenuOpen && (
                         <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
@@ -812,7 +798,7 @@ const TaskModal = ({
                       className="w-full  px-3 py-2 text-sm  bg-white"
                       disabled={readOnly}
                     >
-                      {(Object.entries(columnMeta).length === 0 ? [["", { title: t("selectStatus") || "Select status" }]] : Object.entries(columnMeta)).map(([columnId, meta]) => (
+                      {Object.entries(columnMeta).map(([columnId, meta]) => (
                         <option key={columnId} value={columnId}>
                           {formatColumnName(meta?.title || columnId)}
                         </option>
@@ -852,3 +838,4 @@ const TaskModal = ({
 };
 
 export default TaskModal;
+
