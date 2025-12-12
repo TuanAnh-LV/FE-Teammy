@@ -17,6 +17,7 @@ export function PersonalCard({
   onInvite,
   onClickProfile,
   membership,
+  myGroupDetails,
 }) {
   const { t } = useTranslation();
   // Show status only when hasApplied is true
@@ -115,7 +116,23 @@ export function PersonalCard({
         {userRole === "leader" && (
           <div className="flex justify-end">
             {membership?.status !== "member" &&
-            membership?.status !== "student" ? (
+            membership?.status !== "student" &&
+            (() => {
+              // Kiểm tra xem nhóm đã full thành viên chưa
+              if (myGroupDetails) {
+                const currentMembers =
+                  myGroupDetails.currentMembers ||
+                  myGroupDetails.members?.length ||
+                  0;
+                const maxMembers =
+                  myGroupDetails.maxMembers || myGroupDetails.capacity || 0;
+                // Nếu nhóm đã full thành viên, ẩn nút invite
+                if (currentMembers >= maxMembers) {
+                  return false;
+                }
+              }
+              return true;
+            })() ? (
               post.hasApplied && inviteStatus ? (
                 <StatusChip status={inviteStatus} />
               ) : (
