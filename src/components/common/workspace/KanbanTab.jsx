@@ -18,6 +18,7 @@ export default function KanbanTab({
   setSelectedTask,
   createTask,
   deleteColumn,
+  moveColumn,
   handleDragOver,
   handleDragEnd,
   isColumnModalOpen,
@@ -36,7 +37,7 @@ export default function KanbanTab({
   if (kanbanLoading) {
     return (
       <div className="text-sm text-gray-500">
-        {t("loading") || "Loading..."}
+        {t?.("loading") || "Loading..."}
       </div>
     );
   }
@@ -44,7 +45,7 @@ export default function KanbanTab({
   if (kanbanError) {
     return (
       <div className="text-sm text-red-500">
-        {kanbanError || t("error") || "Something went wrong"}
+        {kanbanError || t?.("error") || "Something went wrong"}
       </div>
     );
   }
@@ -68,8 +69,6 @@ export default function KanbanTab({
               const statusForColumn =
                 normalizedTitleValue === "to_do" ? "todo" : normalizedTitleValue;
 
-              const allowQuickCreate = !readOnly && statusForColumn === "todo";
-
               return (
                 <Column
                   key={colId}
@@ -79,7 +78,7 @@ export default function KanbanTab({
                   columnMeta={columnMeta}
                   onOpen={setSelectedTask}
                   onCreate={
-                    allowQuickCreate && typeof createTask === "function"
+                    !readOnly && typeof createTask === "function"
                       ? (quickPayload) => {
                           createTask({
                             columnId: colId,
@@ -92,16 +91,21 @@ export default function KanbanTab({
                         }
                       : undefined
                   }
+                  onMoveColumn={
+                    !readOnly && moveColumn
+                      ? () => moveColumn(colId, meta)
+                      : undefined
+                  }
                   onDelete={
                     !readOnly && deleteColumn
                       ? () => {
                           Modal.confirm({
-                            title: t("deleteColumn") || "Delete Column",
+                            title: t?.("deleteColumn") || "Delete Column",
                             content:
-                              t("deleteColumnConfirm") ||
-                              `Delete column "${columnMeta[colId]?.title || colId}"?`,
-                            okText: t("ok") || "OK",
-                            cancelText: t("cancel") || "Cancel",
+                              t?.("deleteColumnConfirm") ||
+                              `${t?.("deleteColumn") || "Delete"} column "${columnMeta[colId]?.title || colId}"?`,
+                            okText: t?.("ok") || "OK",
+                            cancelText: t?.("cancel") || "Cancel",
                             onOk: () => deleteColumn(colId),
                           });
                         }
@@ -114,7 +118,7 @@ export default function KanbanTab({
         </div>
       ) : (
         <div className="mt-4 text-gray-500">
-          {t("noBoardData") || "No board data available."}
+          {t?.("noBoardData") || "No board data available."}
         </div>
       )}
     </DndContext>

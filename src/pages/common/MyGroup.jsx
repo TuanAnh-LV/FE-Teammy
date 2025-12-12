@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "../../hook/useTranslation";
 import { useAuth } from "../../context/AuthContext";
@@ -15,6 +15,7 @@ import { Plus, FolderKanban, ListTodo, Flag, BarChart3, FileText } from "lucide-
 import { Modal, Form, Input } from "antd";
 import TaskModal from "../../components/common/kanban/TaskModal";
 import useKanbanBoard from "../../hook/useKanbanBoard";
+import { filterColumns } from "../../utils/kanbanUtils";
 import TabSwitcher from "../../components/common/my-group/TabSwitcher";
 import OverviewSection from "../../components/common/my-group/OverviewSection";
 import MembersPanel from "../../components/common/my-group/MembersPanel";
@@ -24,6 +25,7 @@ import KanbanTab from "../../components/common/workspace/KanbanTab";
 import BacklogTab from "../../components/common/workspace/BacklogTab";
 import MilestonesTab from "../../components/common/workspace/MilestonesTab";
 import ReportsTab from "../../components/common/workspace/ReportsTab";
+import ListView from "../../components/common/workspace/ListView";
 
 export default function MyGroup() {
   const { id } = useParams();
@@ -53,6 +55,7 @@ export default function MyGroup() {
   const loadedGroupIdRef = useRef(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState("kanban");
+  const [listFilterStatus, setListFilterStatus] = useState("All");
 
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const [columnForm] = Form.useForm();
@@ -588,6 +591,7 @@ export default function MyGroup() {
 
   // Kanban Logic - Always load board data to show recent activity
   const {
+    columns,
     filteredColumns,
     columnMeta,
     groupMembers: kanbanMembers,
@@ -626,8 +630,54 @@ export default function MyGroup() {
     }
   }, [filteredColumns]);
 
+  const normalizeTitle = (value = "") =>
+    value.toLowerCase().replace(/\s+/g, "_");
   const tasks =
     board?.columns?.flatMap((col) => col.tasks || [])?.filter(Boolean) || [];
+  const sortedColumns = useMemo(
+    () =>
+      Object.entries(columnMeta || {}).sort(
+        (a, b) => (a[1]?.position || 0) - (b[1]?.position || 0)
+      ),
+    [columnMeta]
+  );
+  const firstColumnId = useMemo(
+    () => sortedColumns?.[0]?.[0] || Object.keys(columnMeta || {})[0] || null,
+    [sortedColumns, columnMeta]
+  );
+  const listFilteredColumns = useMemo(() => {
+    const ids = Object.keys(columns || {});
+    return filterColumns(columns || {}, "", listFilterStatus, "All", ids);
+  }, [columns, listFilterStatus]);
+  const flattenedTasks = useMemo(() => {
+    return Object.entries(listFilteredColumns || {}).flatMap(
+      ([colId, tasksInCol]) =>
+        (tasksInCol || []).map((task) => ({
+          ...task,
+          columnId: colId,
+          columnTitle: columnMeta?.[colId]?.title || colId,
+        }))
+    );
+  }, [listFilteredColumns, columnMeta]);
+  const statusOptions = useMemo(() => {
+    const map = new Map();
+    const addStatus = (raw) => {
+      if (!raw) return;
+      const key = normalizeTitle(raw);
+      const canonical = key === "to_do" ? "todo" : key;
+      if (!canonical) return;
+      if (!map.has(canonical)) {
+        map.set(canonical, canonical);
+      }
+    };
+    Object.entries(columnMeta || {}).forEach(([colId, meta]) => {
+      addStatus(meta?.title || colId);
+    });
+    Object.values(columns || {}).forEach((list) => {
+      (list || []).forEach((task) => addStatus(task.status));
+    });
+    return Array.from(map.values());
+  }, [columns, columnMeta]);
 
   const recentActivity = tasks
     .slice()
@@ -745,8 +795,54 @@ export default function MyGroup() {
   const hasKanbanData =
     filteredColumns && Object.keys(filteredColumns).length > 0;
 
-  const normalizeTitle = (value = "") =>
-    value.toLowerCase().replace(/\s+/g, "_");
+  const handleQuickCreateTask = () => {
+    if (!firstColumnId) return;
+    createTask({
+      columnId: firstColumnId,
+      title: "New Task",
+      description: "",
+      priority: "medium",
+      status: normalizeTitle(columnMeta?.[firstColumnId]?.title || "todo"),
+      dueDate: null,
+    });
+  };
+  const formatStatusLabel = (value = "") =>
+    value
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  const handleMoveColumn = (columnId, columnMetaData = {}) => {
+    let nextPosition = columnMetaData?.position ?? 0;
+    Modal.confirm({
+      title: t("moveColumn") || "Move column",
+      content: (
+        <div className="space-y-2">
+          <p className="text-sm text-gray-600">
+            {t("enterNewPosition") || "Enter new position (0 = first)."}
+          </p>
+          <input
+            type="number"
+            defaultValue={nextPosition}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            onChange={(e) => {
+              nextPosition = Number(e.target.value) || 0;
+            }}
+          />
+        </div>
+      ),
+      okText: t("ok") || "OK",
+      cancelText: t("cancel") || "Cancel",
+      onOk: async () => {
+        try {
+          await BoardService.updateColumn(id, columnId, {
+            position: nextPosition,
+          });
+          refetchBoard({ showLoading: false });
+        } catch (err) {
+
+        }
+      },
+    });
+  };
 
   if (loading) {
     return (
@@ -874,6 +970,18 @@ export default function MyGroup() {
                       (t("kanban") || "Kanban").slice(1)}
                   </button>
                   <button
+                    onClick={() => setActiveWorkspaceTab("list")}
+                    className={`flex items-center gap-2 px-4 py-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                      activeWorkspaceTab === "list"
+                        ? "text-blue-600 border-b-2 border-blue-600"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    <ListTodo className="w-4 h-4" />
+                    {(t("list") || "List").charAt(0).toUpperCase() +
+                      (t("list") || "List").slice(1)}
+                  </button>
+                  <button
                     onClick={() => setActiveWorkspaceTab("backlog")}
                     className={`flex items-center gap-2 px-4 py-2 font-medium text-sm whitespace-nowrap transition-colors ${
                       activeWorkspaceTab === "backlog"
@@ -912,25 +1020,60 @@ export default function MyGroup() {
                 </div>
 
                 {/* KANBAN SUB-TAB */}
-                {activeWorkspaceTab === "kanban" && (
-                  <KanbanTab
-                    kanbanLoading={kanbanLoading}
-                    kanbanError={kanbanError}
-                    hasKanbanData={hasKanbanData}
-                    filteredColumns={filteredColumns}
+                  {activeWorkspaceTab === "kanban" && (
+                    <KanbanTab
+                      kanbanLoading={kanbanLoading}
+                      kanbanError={kanbanError}
+                      hasKanbanData={hasKanbanData}
+                      filteredColumns={filteredColumns}
                     columnMeta={columnMeta}
                     setSelectedTask={setSelectedTask}
                     createTask={createTask}
                     deleteColumn={deleteColumn}
+                    moveColumn={handleMoveColumn}
                     handleDragOver={handleDragOver}
                     handleDragEnd={handleDragEnd}
                     isColumnModalOpen={isColumnModalOpen}
                     setIsColumnModalOpen={setIsColumnModalOpen}
-                    handleCreateColumn={handleCreateColumn}
-                    t={t}
-                    normalizeTitle={normalizeTitle}
-                  />
-                )}
+                      handleCreateColumn={handleCreateColumn}
+                      t={t}
+                      normalizeTitle={normalizeTitle}
+                    />
+                  )}
+
+                  {activeWorkspaceTab === "list" && (
+                    <div className="mt-2 space-y-3">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label className="text-sm text-gray-600">
+                          {t("status") || "Status"}
+                        </label>
+                        <select
+                          value={listFilterStatus}
+                          onChange={(e) => setListFilterStatus(e.target.value)}
+                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white"
+                        >
+                          <option value="All">
+                            {t("allStatuses") || "All statuses"}
+                          </option>
+                          {statusOptions.map((status) => (
+                            <option key={status} value={status}>
+                              {formatStatusLabel(status)}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="text-sm text-gray-500">
+                          {flattenedTasks.length} tasks
+                        </div>
+                      </div>
+                      <ListView
+                        tasks={flattenedTasks}
+                        columnMeta={columnMeta}
+                        onOpenTask={setSelectedTask}
+                        onCreateTask={handleQuickCreateTask}
+                        t={t}
+                      />
+                    </div>
+                  )}
 
                 {/* BACKLOG SUB-TAB */}
                 {activeWorkspaceTab === "backlog" && (
@@ -1001,6 +1144,7 @@ export default function MyGroup() {
       <TaskModal
         task={selectedTask}
         groupId={id}
+        columnMeta={columnMeta}
         members={kanbanMembers}
         groupDetail={group}
         onUpdateTask={updateTaskFields}

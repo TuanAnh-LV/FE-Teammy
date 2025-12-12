@@ -196,6 +196,7 @@ export function useKanbanBoard(groupId) {
   const [error, setError] = useState(null);
   const commentsLoadedRef = useRef(false);
   const dragProcessingRef = useRef(false);
+  const pendingMoveRef = useRef(null);
 
   const buildStateFromApi = (data) => {
     const colState = {};
@@ -358,6 +359,11 @@ export function useKanbanBoard(groupId) {
   const normalizeStatus = (value = "") =>
     value.toLowerCase().replace(/\s+/g, "_");
 
+  const getStatusByColumnId = (columnId) => {
+    if (!columnId) return "";
+    return normalizeStatus(columnMeta?.[columnId]?.title || columnId);
+  };
+
   const getColumnIdByStatus = (status) => {
     const target = normalizeStatus(status);
     const entry = Object.entries(columnMeta || {}).find(([id, meta]) => {
@@ -377,23 +383,36 @@ export function useKanbanBoard(groupId) {
 
   const handleDragEnd = async ({ active, over }) => {
     if (!over) return;
-    
-    // Prevent multiple simultaneous drag operations
-    if (dragProcessingRef.current) {
 
-      return;
-    }
-    
-    dragProcessingRef.current = true;
-    
     let newState = columns;
     const activeId = active.id;
     const overId = over.id;
 
     setColumns((prev) => {
       const ids = Object.keys(prev || {});
-      newState = moveTaskAcrossColumns(prev, activeId, overId, ids);
-      return newState;
+      const moved = moveTaskAcrossColumns(prev, activeId, overId, ids);
+      const dynamicIds = Object.keys(moved || {});
+      const toColCandidate =
+        findColumnOfTask(moved, overId, dynamicIds) ||
+        (dynamicIds.includes(overId)
+          ? overId
+          : findColumnOfTask(moved, activeId, dynamicIds));
+      const targetStatus = getStatusByColumnId(toColCandidate);
+
+      const nextState =
+        toColCandidate && targetStatus
+          ? {
+              ...moved,
+              [toColCandidate]: (moved[toColCandidate] || []).map((t) =>
+                t.id === activeId
+                  ? { ...t, status: targetStatus, columnId: toColCandidate }
+                  : t
+              ),
+            }
+          : moved;
+
+      newState = nextState;
+      return nextState;
     });
 
     const dynamicIds = Object.keys(newState || {});
@@ -404,38 +423,60 @@ export function useKanbanBoard(groupId) {
         : findColumnOfTask(newState, activeId, dynamicIds));
 
     if (!groupId || !toCol || !newState?.[toCol]) {
-      dragProcessingRef.current = false;
       return;
     }
 
+    const ids = newState[toCol].map((t) => t.id);
+    const index = ids.indexOf(activeId);
+    const prevTaskId = index > 0 ? ids[index - 1] : null;
+    const nextTaskId =
+      index >= 0 && index < ids.length - 1 ? ids[index + 1] : null;
+
+    const targetStatus = getStatusByColumnId(toCol);
+    const movePayload = {
+      taskId: activeId,
+      columnId: toCol,
+      prevTaskId,
+      nextTaskId,
+      targetStatus,
+    };
+
+    // Coalesce move requests: keep the latest while one is in-flight
+    if (dragProcessingRef.current) {
+      pendingMoveRef.current = movePayload;
+      return;
+    }
+    pendingMoveRef.current = null;
+    executeMove(movePayload);
+  };
+
+  const executeMove = async (payload) => {
+    if (!groupId || !payload?.taskId || !payload?.columnId) return;
+    dragProcessingRef.current = true;
     try {
-      const ids = newState[toCol].map((t) => t.id);
-      const index = ids.indexOf(activeId);
-      const prevTaskId = index > 0 ? ids[index - 1] : null;
-      const nextTaskId = index >= 0 && index < ids.length - 1 ? ids[index + 1] : null;
-      
-      // Get target column status from column name
-      const targetColumnName = columnMeta?.[toCol]?.title || toCol;
-      const targetStatus = normalizeStatus(targetColumnName);
-      
-      // Move task to new column
-      await BoardService.moveTask(groupId, activeId, {
-        columnId: toCol,
-        prevTaskId,
-        nextTaskId,
+      await BoardService.moveTask(groupId, payload.taskId, {
+        columnId: payload.columnId,
+        prevTaskId: payload.prevTaskId,
+        nextTaskId: payload.nextTaskId,
       });
-      
-      // Update task status to match the new column (without triggering moveTaskToColumn again)
-      if (targetStatus) {
-        await updateTaskFields(activeId, { status: targetStatus }, { skipMove: true });
+
+      if (payload.targetStatus) {
+        await updateTaskFields(
+          payload.taskId,
+          { status: payload.targetStatus },
+          { skipMove: true }
+        );
       }
     } catch (err) {
 
       fetchBoard();
     } finally {
-      setTimeout(() => {
-        dragProcessingRef.current = false;
-      }, 300);
+      dragProcessingRef.current = false;
+      const pending = pendingMoveRef.current;
+      pendingMoveRef.current = null;
+      if (pending) {
+        executeMove(pending);
+      }
     }
   };
 
@@ -793,4 +834,3 @@ export function useKanbanBoard(groupId) {
 }
 
 export default useKanbanBoard;
-
