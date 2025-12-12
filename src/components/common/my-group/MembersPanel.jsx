@@ -10,6 +10,7 @@ export default function MembersPanel({
   onInvite,
   onAssignRole,
   onKickMember,
+  onTransferLeader,
   currentUserEmail,
   t,
   showStats = false,
@@ -133,13 +134,15 @@ export default function MembersPanel({
     setOpenMenuId(null);
   };
 
-  const isLeader = (member) => {
-    const memberEmail = (member.email || "").toLowerCase();
-    const memberRole = (member.role || "").toLowerCase();
-    const currentEmail = (currentUserEmail || "").toLowerCase();
+  const isCurrentUserLeader = () => {
+    const currentMember = (groupMembers || []).find(
+      (m) => (m.email || "").toLowerCase() === (currentUserEmail || "").toLowerCase()
+    );
+    return (currentMember?.role || "").toLowerCase() === "leader";
+  };
 
-    // Current user is leader and this is not the leader themselves
-    return memberRole !== "leader" && currentEmail !== memberEmail;
+  const isMemberLeader = (member) => {
+    return (member.role || "").toLowerCase() === "leader";
   };
 
   // When we only need the contribution cards (members tab), skip the other blocks.
@@ -179,7 +182,18 @@ export default function MembersPanel({
                         >
                           {t("assignRole") || "Assign Role"}
                         </button>
-                        {group?.canEdit && isLeader(member) && (
+                        {isCurrentUserLeader() && !isMemberLeader(member) && (
+                          <button
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              onTransferLeader?.(member);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50"
+                          >
+                            {t("changeLeader") || "Change Leader"}
+                          </button>
+                        )}
+                        {group?.canEdit && !isMemberLeader(member) && (
                           <button
                             onClick={() => handleKickMember(member)}
                             className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
@@ -362,7 +376,19 @@ export default function MembersPanel({
                             >
                               {t("assignRole") || "Assign Role"}
                             </button>
-                            {group?.canEdit && isLeader(member) && (
+                            {isCurrentUserLeader() && !isMemberLeader(member) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  onTransferLeader?.(member);
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+                              >
+                                {t("changeLeader") || "Change Leader"}
+                              </button>
+                            )}
+                            {group?.canEdit && !isMemberLeader(member) && (
                               <button
                                 type="button"
                                 onClick={() => handleKickMember(member)}

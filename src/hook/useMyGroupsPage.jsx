@@ -7,11 +7,17 @@ import { MajorService } from "../services/major.service";
 import { BoardService } from "../services/board.service";
 import { SkillService } from "../services/skill.service";
 import { ReportService } from "../services/report.service";
+import { useInvitationRealtime } from "./useInvitationRealtime";
+import { useAuth } from "../context/AuthContext";
+import { useDispatch, useSelector } from "react-redux";
+import { updatePendingList } from "../app/invitationSlice";
 
 import { normalizeGroup, mapPendingRequest } from "../utils/group.utils";
 import { use } from "react";
 
 export const useMyGroupsPage = (t, navigate, userInfo) => {
+  const dispatch = useDispatch();
+  const { token } = useAuth();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("groups");
@@ -20,6 +26,81 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
   const [pendingLoading, setPendingLoading] = useState(false);
   const [invitations, setInvitations] = useState([]);
   const [invitationsLoading, setInvitationsLoading] = useState(false);
+
+  // Get real-time applications from Redux
+  const reduxApplications = useSelector((state) => state.invitation?.applications || []);
+
+  // Setup real-time connection
+  const { isConnected, joinGroupChannel, leaveGroupChannel } = useInvitationRealtime(
+    token,
+    userInfo?.userId || userInfo?.id,
+    {
+      onApplicationReceived: (payload) => {
+        console.log("[MyGroups] Received PendingUpdated:", payload);
+        
+        // Dispatch to Redux store
+        dispatch(updatePendingList(payload));
+        
+        // Show notification
+        const count = payload.candidates?.length || 0;
+        if (count > 0) {
+          notification.success({
+            message: t("newApplication") || "New Application",
+            description: `You have ${count} new application${count > 1 ? "s" : ""}`,
+            placement: "topRight",
+            duration: 4,
+          });
+        }
+        
+        // Refresh pending list for this group
+        if (payload.groupId) {
+          refreshPendingForGroup(payload.groupId);
+        }
+      },
+    }
+  );
+
+  // Join all leader groups' channels when tab is applications
+  useEffect(() => {
+    if (activeTab === "applications" && isConnected) {
+      const leaderGroups = groups.filter((g) => g.isLeader);
+      
+      console.log("[MyGroups] 🎯 Joining SignalR groups for leaders:", leaderGroups.map(g => g.id));
+      
+      // Join all leader groups
+      leaderGroups.forEach((group) => {
+        console.log(`[MyGroups] Attempting to join group: ${group.id}`);
+        joinGroupChannel(group.id);
+      });
+
+      // Cleanup: leave all groups when switching tab or unmounting
+      return () => {
+        console.log("[MyGroups] 👋 Leaving all groups");
+        leaderGroups.forEach((group) => {
+          leaveGroupChannel(group.id);
+        });
+      };
+    }
+  }, [activeTab, groups, isConnected]);
+
+  // Sync Redux applications to local state
+  useEffect(() => {
+    if (reduxApplications.length > 0) {
+      // Group applications by groupId
+      const grouped = {};
+      reduxApplications.forEach((app) => {
+        if (!grouped[app.groupId]) {
+          grouped[app.groupId] = [];
+        }
+        grouped[app.groupId].push(mapPendingRequest(app));
+      });
+      
+      setPendingByGroup((prev) => ({
+        ...prev,
+        ...grouped,
+      }));
+    }
+  }, [reduxApplications]);
 
   // Modal state
   const [open, setOpen] = useState(false);
@@ -178,10 +259,20 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
           });
           await fetchMyGroups();
         } catch (error) {
-
-          notification.error({
-            message: t("error") || "Failed to leave group.",
-          });
+          // Check if error is 409 Conflict (need to transfer leadership)
+          if (error?.response?.status === 409) {
+            notification.error({
+              message: t("cannotLeaveAsLeader") || "Cannot leave as leader",
+              description: t("transferLeadershipFirst") || "You must transfer leadership to another member before leaving the group. Please assign a new leader first.",
+              duration: 6,
+            });
+          } else {
+            notification.error({
+              message: t("error") || "Error",
+              description: error?.response?.data?.message || t("failedToLeaveGroup") || "Failed to leave group.",
+              duration: 4,
+            });
+          }
         }
       },
     });
@@ -377,6 +468,23 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     }
   };
 
+  // Refresh pending applications for a specific group
+  const refreshPendingForGroup = async (groupId) => {
+    try {
+      const res = await GroupService.getJoinRequests(groupId);
+      const list = Array.isArray(res?.data) ? res.data : [];
+      
+      const applications = list.filter(item => item.type === "application" || !item.type);
+      
+      setPendingByGroup((prev) => ({
+        ...prev,
+        [groupId]: applications.map(mapPendingRequest),
+      }));
+    } catch (error) {
+      console.error("Failed to refresh pending for group:", groupId, error);
+    }
+  };
+
   const fetchMyGroups = async () => {
     try {
       setLoading(true);
@@ -537,4 +645,3 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     getAllTasksFromBoard,
   };
 };
-

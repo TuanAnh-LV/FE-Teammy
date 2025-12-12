@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Plus, Search, Users, MessageSquare } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
 import CreatePostModal from "../../components/common/forum/CreatePostModal";
@@ -17,8 +17,11 @@ import { AIRecommendedGroups } from "../../components/common/forum/AIRecommended
 import { GroupCard } from "../../components/common/forum/GroupCard";
 import { PersonalCard } from "../../components/common/forum/PersonalCard";
 import { Pagination } from "../../components/common/forum/Pagination";
+import { useGroupInvitationSignalR } from "../../hook/useGroupInvitationSignalR";
+import { useAuth } from "../../context/AuthContext";
 
 const Forum = () => {
+  const { token, userInfo } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
@@ -65,6 +68,71 @@ const Forum = () => {
 
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyPost, setApplyPost] = useState(null);
+
+  // 🔥 REALTIME: Handle invitation events từ SignalR
+  const handleInvitationCreated = useCallback((payload) => {
+    // Chỉ xử lý event cho profile_post invitations
+    if (payload.type === "profile_post" && payload.postId) {
+      // Update trạng thái của post trong danh sách
+      const updatePostStatus = (posts) => 
+        posts.map((post) => 
+          post.id === payload.postId
+            ? { ...post, hasApplied: true, myApplicationStatus: "pending" }
+            : post
+        );
+
+      setAllPostsData((prev) => updatePostStatus(prev));
+      setPostsData((prev) => updatePostStatus(prev));
+      setAiSuggestedPosts((prev) =>
+        prev.map((s) => {
+          const profilePost = s.profilePost || {};
+          if (profilePost.id !== payload.postId) return s;
+          return {
+            ...s,
+            profilePost: {
+              ...profilePost,
+              hasApplied: true,
+              myApplicationStatus: "pending",
+            },
+          };
+        })
+      );
+    }
+  }, []);
+
+  const handleInvitationStatusChanged = useCallback((payload) => {
+    // Update status của invitation trong UI
+    if (payload.postId) {
+      const updatePostStatus = (posts) =>
+        posts.map((post) =>
+          post.id === payload.postId
+            ? { ...post, myApplicationStatus: payload.status }
+            : post
+        );
+
+      setAllPostsData((prev) => updatePostStatus(prev));
+      setPostsData((prev) => updatePostStatus(prev));
+      setAiSuggestedPosts((prev) =>
+        prev.map((s) => {
+          const profilePost = s.profilePost || {};
+          if (profilePost.id !== payload.postId) return s;
+          return {
+            ...s,
+            profilePost: {
+              ...profilePost,
+              myApplicationStatus: payload.status,
+            },
+          };
+        })
+      );
+    }
+  }, []);
+
+  // 🔥 Setup SignalR connection cho realtime updates
+  const { isConnected } = useGroupInvitationSignalR(token, userInfo?.userId, {
+    onInvitationCreated: handleInvitationCreated,
+    onInvitationStatusChanged: handleInvitationStatusChanged,
+  });
 
   /** 1) Lấy membership khi mount */
   useEffect(() => {

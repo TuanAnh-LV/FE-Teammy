@@ -64,6 +64,7 @@ export const API = {
       `/groups/${groupId}/members/${memberId}`,
     ASSIGN_ROLE: (groupId, memberId) =>
       `/groups/${groupId}/members/${memberId}/roles`,
+    TRANSFER_LEADER: (groupId) => `/groups/${groupId}/leader/transfer`,
     JOIN_REQUESTS: (groupId) => `/groups/${groupId}/join-requests`,
     PENDING_REQUESTS: (groupId) => `/groups/${groupId}/pending`,
     ACCEPT_JOIN: (groupId, requestId) =>
