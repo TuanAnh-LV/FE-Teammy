@@ -5,8 +5,14 @@ import { notification } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../../../hook/useTranslation";
 
-// Added optional onSelectTopic callback so parent can show invite mentor modal.
-const ProjectCard = ({ project, onSelectTopic, isAISuggestion = false }) => {
+const ProjectCard = ({
+  project,
+  onSelectTopic,
+  onViewDetail,
+  hasGroupTopic = false,
+  isAISuggestion = false,
+  membership = {},
+}) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
@@ -17,13 +23,13 @@ const ProjectCard = ({ project, onSelectTopic, isAISuggestion = false }) => {
 
   return (
     <div
-      className={`rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 p-6 flex flex-row gap-6 ${
+      className={`rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 p-6 flex flex-row gap-6 cursor-pointer ${
         isAISuggestion
           ? "bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 border-2 border-purple-300"
           : "bg-white border border-gray-100"
       }`}
+      onClick={() => onViewDetail && onViewDetail(project)}
     >
-      {/* Left section */}
       <div className="flex-1 flex flex-col gap-4">
         <div>
           <h3 className="font-semibold text-gray-900 text-lg leading-snug">
@@ -37,15 +43,44 @@ const ProjectCard = ({ project, onSelectTopic, isAISuggestion = false }) => {
             {project.domain}
           </span>
 
-          {(project.tags || []).map((tag) => (
-            <span
-              key={tag}
-              className="text-xs bg-gray-100 text-gray-700 font-medium px-2 py-1 rounded-md"
-            >
-              {tag}
-            </span>
-          ))}
+          {(project.tags || []).map((tag) => {
+            const normalized = (tag || "").toLowerCase();
+
+            const tagClasses =
+              normalized === "open"
+                ? "bg-green-100 text-green-700"
+                : normalized === "closed"
+                ? "bg-red-100 text-red-700"
+                : "bg-gray-100 text-gray-700";
+
+            return (
+              <span
+                key={tag}
+                className={`text-xs font-medium px-2 py-1 rounded-md ${tagClasses}`}
+              >
+                {tag}
+              </span>
+            );
+          })}
         </div>
+
+        {(project.topicSkills || []).length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {(project.topicSkills || []).slice(0, 10).map((skill, idx) => (
+              <span
+                key={idx}
+                className="text-xs bg-purple-50 text-purple-700 font-medium px-2 py-1 rounded-md border border-purple-200"
+              >
+                {skill}
+              </span>
+            ))}
+            {(project.topicSkills || []).length > 10 && (
+              <span className="text-xs text-gray-500 px-2 py-1">
+                +{(project.topicSkills || []).length - 10} more
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-6">
           {project.mentor && (
@@ -56,18 +91,10 @@ const ProjectCard = ({ project, onSelectTopic, isAISuggestion = false }) => {
               </span>
             </div>
           )}
-
-          <div className="text-sm text-gray-500 flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            {(project.members || []).length} {t("members")}
-          </div>
         </div>
-
-        {/* Attached Files + Reference Docs */}
         {((project.attachedFiles || []).length > 0 ||
           (project.referenceDocs || []).length > 0) && (
           <div className="text-sm text-gray-600 flex gap-6">
-            {/* Attached Files */}
             {(project.attachedFiles || []).length > 0 && (
               <div className="flex-1">
                 <div className="text-xs text-gray-500 mb-2">
@@ -90,7 +117,6 @@ const ProjectCard = ({ project, onSelectTopic, isAISuggestion = false }) => {
               </div>
             )}
 
-            {/* Reference Docs */}
             {(project.referenceDocs || []).length > 0 && (
               <div className="flex-1">
                 <div className="text-xs text-gray-500 mb-2">
@@ -109,96 +135,94 @@ const ProjectCard = ({ project, onSelectTopic, isAISuggestion = false }) => {
         )}
       </div>
 
-      {/* Right section - Button */}
       <div className="flex-shrink-0 w-40 flex flex-col justify-between">
-        {/* Date + AI Tag */}
         <div className="flex flex-col items-end gap-2">
-          <div className="text-xs text-gray-400 flex items-center gap-1">
-            <Sparkles className="w-4 h-4" /> {t("ai") || "AI"}
-          </div>
+          {isAISuggestion && (
+            <div className="text-xs text-gray-400 flex items-center gap-1">
+              <Sparkles className="w-4 h-4" /> {t("ai") || "AI"}
+            </div>
+          )}
           <div className="text-xs text-gray-500">{formattedDate}</div>
         </div>
+        {!hasGroupTopic && membership?.status === "leader" && (
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (project.status === "closed" || !project.topicId) return;
 
-        {/* Select Topic Button */}
-        <button
-          onClick={async () => {
-            if (project.status === "closed" || !project.topicId) return;
-
-            // Nếu có callback từ parent (hiện dùng để bật modal invite mentor) thì gọi và dừng tại đây.
-            if (typeof onSelectTopic === "function") {
-              onSelectTopic(project);
-              return;
-            }
-
-            // Fallback cũ: tự assign topic ngay.
-            try {
-              setLoading(true);
-
-              const myGroupsRes = await GroupService.getMyGroups();
-              const myGroups = myGroupsRes?.data || [];
-
-              if (!myGroups.length) {
-                notification.error({
-                  message: t("noGroupFound"),
-                  description: t("pleaseCreateOrJoinGroup"),
-                });
-                navigate("/my-group");
+              if (typeof onSelectTopic === "function") {
+                onSelectTopic(project);
                 return;
               }
 
-              const group = myGroups[0];
-              const groupId = group.id || group.groupId;
-              const currentMembers = group.currentMembers || 0;
-              const maxMembers = group.maxMembers || 0;
+              try {
+                setLoading(true);
 
-              if (currentMembers < maxMembers) {
-                notification.error({
-                  message: t("groupNotFull"),
-                  description: `${t(
-                    "groupMustBeFull"
-                  )} ${currentMembers}/${maxMembers} ${t("members")}.`,
+                const myGroupsRes = await GroupService.getMyGroups();
+                const myGroups = myGroupsRes?.data || [];
+
+                if (!myGroups.length) {
+                  notification.error({
+                    message: t("noGroupFound"),
+                    description: t("pleaseCreateOrJoinGroup"),
+                  });
+                  navigate("/my-group");
+                  return;
+                }
+
+                const group = myGroups[0];
+                const groupId = group.id || group.groupId;
+                const currentMembers = group.currentMembers || 0;
+                const maxMembers = group.maxMembers || 0;
+
+                if (currentMembers < maxMembers) {
+                  notification.error({
+                    message: t("groupNotFull"),
+                    description: `${t(
+                      "groupMustBeFull"
+                    )} ${currentMembers}/${maxMembers} ${t("Members")}.`,
+                  });
+                  return;
+                }
+
+                await GroupService.assignTopic(groupId, project.topicId);
+
+                notification.success({
+                  message: t("topicSelected"),
+                  description: `${t("successfullySelected")} "${
+                    project.title
+                  }" ${t("forYourGroup")}`,
                 });
-                return;
+
+                navigate(`/my-group`);
+              } catch (err) {
+                notification.error({
+                  message: t("failedToSelectTopic"),
+                  description:
+                    err?.response?.data?.message || t("pleaseTryAgain"),
+                });
+              } finally {
+                setLoading(false);
               }
-
-              await GroupService.assignTopic(groupId, project.topicId);
-
-              notification.success({
-                message: t("topicSelected"),
-                description: `${t("successfullySelected")} "${
-                  project.title
-                }" ${t("forYourGroup")}`,
-              });
-
-              navigate(`/my-group`);
-            } catch (err) {
-
-              notification.error({
-                message: getErrorMessage(err, t("failedToSelectTopic")),
-                description:
-                  err?.response?.data?.message || t("pleaseTryAgain"),
-              });
-            } finally {
-              setLoading(false);
-            }
-          }}
-          disabled={loading || project.status === "closed"}
-          className={`w-full text-sm font-semibold py-3 rounded-lg transition-colors ${
-            project.status === "closed"
-              ? "bg-gray-400 cursor-not-allowed text-gray-200"
-              : "bg-[#4264d7] hover:bg-[#3552b0] text-white"
-          }`}
-        >
-          {loading
-            ? t("selecting")
-            : project.status === "closed"
-            ? t("topicClosed")
-            : t("selectTopic")}
-        </button>
+            }}
+            disabled={loading || project.status === "closed"}
+            className={`w-full text-sm font-semibold py-3 rounded-lg transition-colors
+    ${
+      project.status === "closed"
+        ? "bg-gray-400 cursor-not-allowed text-gray-200"
+        : "!bg-[#FF7A00] hover:!opacity-90 !text-white !border-none cursor-pointer"
+    }`}
+          >
+            {loading
+              ? t("selecting")
+              : project.status === "closed"
+              ? t("topicClosed")
+              : t("selectTopic")}
+          </button>
+        )}{" "}
       </div>
     </div>
   );
 };
 
 export default ProjectCard;
-

@@ -53,7 +53,6 @@ const AdminDashboard = () => {
         setDashboardData(response.data);
       }
     } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
       notification.error({
         message: t("error"),
         description: "Failed to load dashboard statistics",

@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import FilterSidebar from "../../components/common/discover/FilterSidebar";
 import ProjectCard from "../../components/common/discover/ProjectCard";
+import TopicDetailModal from "../../components/common/discover/TopicDetailModal";
 import { useTranslation } from "../../hook/useTranslation";
 import { TopicService } from "../../services/topic.service";
 import { GroupService } from "../../services/group.service";
@@ -23,6 +24,7 @@ const Discover = () => {
   const [membership, setMembership] = useState({
     hasGroup: false,
     groupId: null,
+    status: null,
   });
   const [myGroupDetails, setMyGroupDetails] = useState(null);
   const [inviteState, setInviteState] = useState({
@@ -31,11 +33,14 @@ const Discover = () => {
     loading: false,
     message: "",
   });
+  const [detailModalState, setDetailModalState] = useState({
+    open: false,
+    topic: null,
+    loading: false,
+  });
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [filters, setFilters] = useState({
     major: "all",
-    difficulty: "all",
-    teamSize: "all",
     aiRecommended: false,
   });
 
@@ -49,9 +54,11 @@ const Discover = () => {
         if (mounted) {
           const groupId = res?.data?.groupId || null;
           const hasGroup = !!res?.data?.hasGroup;
+          const status = res?.data?.status || null;
           setMembership({
             hasGroup,
             groupId,
+            status,
           });
 
           if (groupId) {
@@ -64,7 +71,13 @@ const Discover = () => {
           }
         }
       } catch (err) {
-        console.error("Failed to fetch membership:", err);
+        notification.error({
+          message: t("failedToFetchMembership") || "Failed to fetch membership",
+          description:
+            err?.response?.data?.message ||
+            t("pleaseTryAgain") ||
+            "Please try again",
+        });
       }
     };
     fetchMembership();
@@ -149,9 +162,12 @@ const Discover = () => {
               createdAt: detail.createdAt,
               attachedFiles: detail.attachedFiles || [],
               referenceDocs: detail.referenceDocs || [],
+              registrationFile:
+                detail.registrationFile || item.registrationFile || null,
               score: item.score || 0,
               canTakeMore: item.canTakeMore,
               matchingSkills: item.matchingSkills || [],
+              topicSkills: item.topicSkills || detail.skills || [],
               isAISuggestion: true,
             };
           });
@@ -167,7 +183,6 @@ const Discover = () => {
           if (mounted) setAiSuggestedTopics([]);
         }
       } catch (err) {
-        console.error("Failed to fetch AI suggestions:", err);
         if (mounted) setAiSuggestedTopics([]);
       }
     };
@@ -210,6 +225,8 @@ const Discover = () => {
           createdAt: t.createdAt,
           attachedFiles: t.attachedFiles || [],
           referenceDocs: t.referenceDocs || [],
+          registrationFile: t.registrationFile || null,
+          topicSkills: t.skills || [],
         }));
         if (mounted) {
           setProjects(mapped);
@@ -238,14 +255,10 @@ const Discover = () => {
 
     filtered = filtered.filter((p) => !aiTopicIds.has(p.topicId));
 
-    // Filter by major
     if (filters.major !== "all") {
       filtered = filtered.filter(
         (p) => String(p.majorId) === String(filters.major)
       );
-    }
-
-    if (filters.aiRecommended) {
     }
 
     setFilteredProjects(filtered);
@@ -255,9 +268,40 @@ const Discover = () => {
     setFilters(newFilters);
   }, []);
 
+  const handleViewTopicDetail = useCallback(async (topic) => {
+    if (!topic?.topicId) return;
+
+    setDetailModalState({ open: true, topic, loading: true });
+
+    try {
+      // Fetch full topic details from API
+      const res = await TopicService.getTopicDetail(topic.topicId);
+      const fullTopic = res?.data || res;
+
+      if (fullTopic) {
+        // Merge with existing topic data to preserve AI-specific fields
+        const mergedTopic = {
+          ...topic,
+          ...fullTopic,
+          registrationFile:
+            fullTopic.registrationFile || topic.registrationFile,
+          topicSkills: fullTopic.skills || topic.topicSkills,
+          isAISuggestion: topic.isAISuggestion,
+          score: topic.score,
+          matchingSkills: topic.matchingSkills,
+        };
+
+        setDetailModalState({ open: true, topic: mergedTopic, loading: false });
+      } else {
+        setDetailModalState({ open: true, topic, loading: false });
+      }
+    } catch (err) {
+      setDetailModalState({ open: true, topic, loading: false });
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#f7fafc] pt-20 md:pt-24 pb-12">
-      {/*  Header section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 mb-6 md:mb-8">
         <h1 className="text-3xl md:text-4xl font-extrabold text-[#1a1a1a] mb-2">
           {t("findProjects")}
@@ -267,27 +311,13 @@ const Discover = () => {
         </p>
       </div>
 
-      {/* Main Layout */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[340px_1fr] gap-6 md:gap-8 px-4 sm:px-6 md:px-8">
-        {/* Sidebar - Hidden on mobile, shown on large screens */}
         <div className="hidden lg:block flex-shrink-0">
           <FilterSidebar onFilterChange={handleFilterChange} />
         </div>
 
-        {/* Main content */}
         <div className="flex flex-col gap-4 md:gap-6">
-          {/* Search */}
-          <div className="flex items-center">
-            <input
-              type="text"
-              placeholder={t("searchProjects")}
-              className="w-full px-4 py-2.5 md:py-2 text-sm md:text-base rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-          </div>
-
-          {/* Projects */}
           <div className="flex flex-col gap-4">
-            {/* AI Suggested Topics - Only show when user has group */}
             {membership.hasGroup && aiSuggestedTopics.length > 0 && (
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-4">
@@ -306,13 +336,11 @@ const Discover = () => {
                 <div className="flex flex-col gap-4">
                   {aiSuggestedTopics.map((project, i) => (
                     <div key={`ai-${i}`} className="relative">
-                      {/* AI Badge - Top Left */}
                       <div className="absolute -top-3 -left-3 flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold rounded-full shadow-lg z-10">
                         <Sparkles className="w-3.5 h-3.5 fill-white" />
                         AI Recommended
                       </div>
 
-                      {/* Match Score Badge - Top Right */}
                       <div className="absolute -top-3 -right-3 flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg z-10">
                         <svg
                           className="w-3.5 h-3.5 fill-white"
@@ -333,7 +361,15 @@ const Discover = () => {
                             message: "",
                           })
                         }
+                        onViewDetail={handleViewTopicDetail}
+                        hasGroupTopic={
+                          !!(
+                            myGroupDetails?.topicId ||
+                            myGroupDetails?.topic?.topicId
+                          )
+                        }
                         isAISuggestion={true}
+                        membership={membership}
                       />
                     </div>
                   ))}
@@ -341,10 +377,8 @@ const Discover = () => {
               </div>
             )}
 
-            {/* Regular Projects */}
             {filteredProjects.length > 0 ? (
               <>
-                {/* Only show header if AI suggestions are also displayed */}
                 {membership.hasGroup && aiSuggestedTopics.length > 0 && (
                   <div className="mt-8 mb-4">
                     <h3 className="text-lg md:text-xl font-bold text-gray-900">
@@ -369,6 +403,14 @@ const Discover = () => {
                         message: "",
                       })
                     }
+                    onViewDetail={handleViewTopicDetail}
+                    hasGroupTopic={
+                      !!(
+                        myGroupDetails?.topicId ||
+                        myGroupDetails?.topic?.topicId
+                      )
+                    }
+                    membership={membership}
                   />
                 ))}
               </>
@@ -401,6 +443,29 @@ const Discover = () => {
           </div>
         </div>
       </div>
+      <TopicDetailModal
+        isOpen={detailModalState.open}
+        onClose={() =>
+          setDetailModalState({ open: false, topic: null, loading: false })
+        }
+        topic={detailModalState.topic}
+        onSelectTopic={(p) => {
+          setDetailModalState({ open: false, topic: null, loading: false });
+          setInviteState({
+            open: true,
+            topic: p,
+            loading: false,
+            message: "",
+          });
+        }}
+        loading={inviteState.loading}
+        detailLoading={detailModalState.loading}
+        hasGroupTopic={
+          !!(myGroupDetails?.topicId || myGroupDetails?.topic?.topicId)
+        }
+        isAISuggestion={detailModalState.topic?.isAISuggestion}
+        membership={membership}
+      />
       <Modal
         open={inviteState.open}
         title={t("inviteMentor") || "Mời mentor"}
@@ -415,9 +480,29 @@ const Discover = () => {
         onOk={async () => {
           const { topic } = inviteState;
           if (!topic) return;
+
+          // Check if user is leader
+          const membershipRes = await AuthService.getMembership();
+          const userRole = membershipRes?.data?.status;
+
+          if (userRole !== "leader") {
+            notification.error({
+              message: t("notAuthorized") || "Not Authorized",
+              description:
+                t("onlyLeaderCanSelectTopic") ||
+                "Only group leader can select a topic for the group.",
+            });
+            setInviteState({
+              open: false,
+              topic: null,
+              loading: false,
+              message: "",
+            });
+            return;
+          }
+
           try {
             setInviteState((s) => ({ ...s, loading: true }));
-            // Get user's groups
             const myGroupsRes = await GroupService.getMyGroups();
             const myGroups = myGroupsRes?.data || [];
             if (!myGroups.length) {
@@ -430,10 +515,7 @@ const Discover = () => {
             const group = myGroups[0];
             const groupId = group.id || group.groupId;
 
-            // Step 1: Assign topic to group
             await GroupService.assignTopic(groupId, topic.topicId);
-
-            // Step 2: Get mentor ID from topic's mentors list (use first mentor)
             const mentorCandidate = (topic.mentorsRaw || [])[0];
             if (!mentorCandidate) {
               notification.warning({
@@ -451,8 +533,6 @@ const Discover = () => {
             }
 
             const mentorUserId = mentorCandidate.mentorId;
-
-            // Step 3: Send invite to mentor with message
             await GroupService.inviteMentor(groupId, {
               mentorUserId,
               topicId: topic.topicId || topic.id,
@@ -480,6 +560,19 @@ const Discover = () => {
             let errorTitle = t("failedToSelectTopic") || "Thất bại";
             let errorDesc = errorMessage || t("pleaseTryAgain");
 
+            if (statusCode === 403) {
+              errorTitle = t("notAuthorized") || "Không có quyền";
+              errorDesc =
+                t("onlyLeaderCanSelectTopic") ||
+                "Chỉ trưởng nhóm mới có thể chọn topic cho nhóm.";
+            } else if (statusCode === 409) {
+              errorTitle =
+                t("groupIsActive") ||
+                "Cannot change topic when group is active";
+              errorDesc =
+                t("groupActiveDescription") ||
+                "The group is currently active and cannot change topics. Please contact the mentor or administrator for assistance.";
+            }
             // Handle group must be full before inviting mentor
             if (
               normalizedMessage.includes("group must be full") ||

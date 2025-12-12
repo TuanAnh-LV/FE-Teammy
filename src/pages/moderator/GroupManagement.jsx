@@ -92,14 +92,14 @@ export default function GroupManagement() {
     };
   }, []);
 
-  const remindTopic = (record) => {
-    // TODO: call real API here
-    notification.info({
-      message:
-        t("topicReminderSent") ||
-        `Reminder sent for group "${record.groupName}".`,
-    });
-  };
+  // const remindTopic = (record) => {
+  //   // TODO: call real API here
+  //   notification.info({
+  //     message:
+  //       t("topicReminderSent") ||
+  //       `Reminder sent for group "${record.groupName}".`,
+  //   });
+  // };
 
   const columns = [
     {
@@ -169,7 +169,7 @@ export default function GroupManagement() {
       title: t("actions") || "Actions",
       key: "actions",
       render: (_, record) => {
-        const noTopic = record.topic === "Not Assigned";
+        // const noTopic = record.topic === "Not Assigned";
         return (
           <Space size="small">
             <Tooltip title={t("viewDetails") || "View details"}>
@@ -193,7 +193,7 @@ export default function GroupManagement() {
                 }}
               />
             </Tooltip>
-            <Tooltip
+            {/* <Tooltip
               title={
                 noTopic
                   ? t("sendTopicReminder") || "Send topic reminder"
@@ -206,7 +206,7 @@ export default function GroupManagement() {
                 disabled={!noTopic}
                 onClick={() => remindTopic(record)}
               />
-            </Tooltip>
+            </Tooltip> */}
           </Space>
         );
       },

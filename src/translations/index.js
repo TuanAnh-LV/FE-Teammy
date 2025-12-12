@@ -209,8 +209,8 @@
       "Manage your capstone project teams, track progress, and collaborate with teammates.",
     myGroupsProjectsCTA:
       "Create new groups or join existing ones to build amazing projects together.",
-    activeGroups: "active groups",
-    pendingApplications: "pending applications",
+    activeGroups: "Active groups",
+    pendingApplications: "Pending applications",
     mostRecentGroup: "Most recent group created",
     updating: "Updating",
 
@@ -846,7 +846,7 @@
     preparingProfile: "Preparing your profile...",
 
     // Audit Logs
-    searchByEmailAction: "Search by email, action...",
+    searchByEmailAction: "Search by email",
 
     // Smart Filters
     smartFilters: "Smart Filters",
@@ -1038,8 +1038,24 @@
   assignRoleFailed: "Failed to assign role",
   students: "Students",
   studentsWithoutGroup: "Students Without Group",
+  pleaseSelectAtLeast3Skills: "Please select at least 3 skills",
+  matchingSkills: "Matching Skills",
+  createdOn: "Created On",
+  registrationFile: "Registration File",
+  notAuthorized: "You are not authorized to access this resource.",
+  onlyLeaderCanSelectTopic: "Only the group leader can select a topic.",
+  openSource: "Open Source",
+  searchByTopicOrMentor: "Search by topic or mentor...",
   },
   VIE: {
+    searchByTopicOrMentor: "Tìm kiếm theo chủ đề hoặc giảng viên...",
+    openSource: "Mã Nguồn Mở",
+    notAuthorized: "Bạn không được phép truy cập tài nguyên này.",
+    onlyLeaderCanSelectTopic: "Chỉ trưởng nhóm mới có thể chọn chủ đề.",
+    registrationFile: "Tệp Đăng Ký",
+    createdOn: "Ngày Tạo",
+    matchingSkills: "Kỹ Năng Phù Hợp",
+    pleaseSelectAtLeast3Skills: "Vui lòng chọn ít nhất 3 kỹ năng",
     studentsWithoutGroup: "Sinh Viên Không Có Nhóm",
     students: "Sinh Viên",
     assignRoleFailed: "Gán vai trò thất bại",
@@ -1298,8 +1314,8 @@
     myGroupsProjectsSubtitle:
       "Quản lý nhóm, theo dõi tiến độ và cộng tác dễ dàng.",
     myGroupsProjectsCTA: "Tạo nhóm mới hoặc tham gia nhóm đang tuyển.",
-    activeGroups: "nhóm đang hoạt động",
-    pendingApplications: "đơn chờ duyệt",
+    activeGroups: "Nhóm đang hoạt động",
+    pendingApplications: "Đơn chờ duyệt",
     mostRecentGroup: "Nhóm tạo gần nhất",
     updating: "Đang cập nhật",
 
@@ -1923,7 +1939,7 @@
     preparingProfile: "Đang chuẩn bị hồ sơ...",
 
     // Audit Logs
-    searchByEmailAction: "Tìm theo email, hành động...",
+    searchByEmailAction: "Tìm theo email",
 
     // Topic Management
     smartFilters: "Bộ lọc thông minh",

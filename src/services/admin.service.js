@@ -126,5 +126,20 @@ export const AdminService = {
       url: API.ADMIN.MAJOR_STATS,
       isLoading,
     });
-  }
+  },
+  exportReport(payload, isLoading = true) {
+    return BaseService.post({
+      url: API.REPORT.EXPORT,
+      payload,
+      isLoading,
+      responseType: "blob", 
+    });
+  },
+    getReportOptions(params = {}, isLoading = true) {
+    return BaseService.get({
+      url: API.REPORT.OPTIONS,
+      params,
+      isLoading,
+    });
+  },
 };

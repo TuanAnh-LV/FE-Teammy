@@ -148,6 +148,8 @@ export const API = {
   },
   REPORT: {
     PROJECT: (groupId) => `/groups/${groupId}/tracking/reports/project`,
+    EXPORT: "/reports/export",
+     OPTIONS: "/reports/options",
   },
   CHAT: {
     CONVERSATIONS: "/chat/conversations",
