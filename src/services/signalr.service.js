@@ -29,6 +29,10 @@ class SignalRService {
       SessionPresenceChanged: new Set(),
       PresenceChanged: new Set(),
       TypingSession: new Set(),
+      // Group Invitation & Application Events
+      InvitationCreated: new Set(), // Nhận invitation mới (direct invite & profile-post invite)
+      InvitationStatusChanged: new Set(), // Status thay đổi (accepted/rejected)
+      PendingUpdated: new Set(), // Cập nhật danh sách pending (applications & invitations)
     };
     this.currentSessionId = null;
     this.joinedGroups = new Set();

@@ -17,7 +17,9 @@ import { useTranslation } from "../../hook/useTranslation";
 import { notification } from "antd";
 import NotificationDrawer from "./NotificationDrawer";
 import { InvitationService } from "../../services/invitation.service";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { useInvitationRealtime } from "../../hook/useInvitationRealtime";
+import { removeInvitation } from "../../app/invitationSlice";
 
 const Navbar = () => {
   const location = useLocation();
@@ -34,21 +36,43 @@ const Navbar = () => {
 
   const [notificationApi, contextHolder] = notification.useNotification();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
 
-  // Get realtime pending invitations from Redux store
+  // Get realtime pending invitations and applications from Redux store
   const reduxPendingInvitations = useSelector(
     (state) => state.invitation?.pendingInvitations || []
   );
+  const reduxApplications = useSelector(
+    (state) => state.invitation?.applications || []
+  );
+  const applicationCount = useSelector(
+    (state) => state.invitation?.applicationCount || 0
+  );
+
+  const getInviteKey = (inv = {}) => {
+    if (inv.postId && inv.candidateId)
+      return `${inv.postId}-${inv.candidateId}`;
+    if (inv.groupId && inv.candidateId)
+      return `${inv.groupId}-${inv.candidateId}`;
+    return inv.invitationId || inv.id || inv.candidateId || inv.groupId;
+  };
+
+  // Setup real-time connection
+  useInvitationRealtime(token, userInfo?.userId || userInfo?.id, {
+    onInvitationReceived: (inv) => {},
+    onApplicationReceived: (payload) => {},
+  });
   useEffect(() => {
     setUser(userInfo || null);
   }, [userInfo]);
 
-  // Auto update notifications when Redux realtime invitations change
+  // Debug: Log khi Redux state thay đổi
   useEffect(() => {
-    if (!reduxPendingInvitations || reduxPendingInvitations.length === 0) {
-      return;
-    }
+    console.log("[Navbar] Redux invitations updated:", reduxPendingInvitations);
+    console.log("[Navbar] Redux applications updated:", reduxApplications);
+  }, [reduxPendingInvitations, reduxApplications]);
 
+  useEffect(() => {
     const formatRelative = (iso) => {
       if (!iso) return "";
       const d = new Date(iso);
@@ -59,28 +83,55 @@ const Navbar = () => {
       return `${Math.floor(diff / 86400)} days ago`;
     };
 
-    // Update notifications with latest realtime invitations
-    const realtimeItems = reduxPendingInvitations.map((inv) => ({
-      id: inv.id || inv.invitationId,
-      type: "realtime",
-      title: getTranslation("groupInviteTitle", language) || "Group invitation",
-      message: `${
-        inv.invitedByName || getTranslation("someone", language) || "Someone"
-      } invited you to ${inv.groupName || "a group"}`,
-      time: formatRelative(inv.createdAt),
-      actions: ["reject", "accept"],
-    }));
+    const pendingInvites = (reduxPendingInvitations || []).filter(
+      (inv) => inv.status === "pending" || !inv.status
+    );
 
-    // Merge with existing notifications (avoid duplicates)
+    const realtimeItems = pendingInvites.map((inv) => {
+      const isProfilePostInvite =
+        inv.type === "profile-post" || inv.type === "post";
+      const inviteId = getInviteKey(inv);
+
+      const inviterName =
+        inv.invitedByName ||
+        inv.invitedBy ||
+        inv.leaderDisplayName ||
+        inv.leaderName ||
+        inv.senderName ||
+        getTranslation("someone", language) ||
+        "Someone";
+
+      const groupName = inv.groupName || inv.projectName || "the group";
+
+      return {
+        id: inviteId,
+        invitationId: inv.invitationId || inv.id,
+        type: isProfilePostInvite ? "post" : "realtime",
+        postId: inv.postId,
+        candidateId: inv.candidateId,
+        title:
+          getTranslation("groupInviteTitle", language) || "Group invitation",
+        message: isProfilePostInvite
+          ? `${inviterName} invited you from a profile post${
+              inv.postTitle ? `: ${inv.postTitle}` : ""
+            }`
+          : `${inviterName} invited you to ${groupName}`,
+        time: formatRelative(inv.createdAt),
+        actions: ["reject", "accept"],
+      };
+    });
+
     setNotifications((prev) => {
       const uniqueMap = new Map();
 
-      // Add realtime first (priority)
-      realtimeItems.forEach((item) => uniqueMap.set(item.id, item));
+      realtimeItems.forEach((item) => {
+        const key = getInviteKey(item) || item.id;
+        if (!key) return;
+        uniqueMap.set(key, item);
+      });
 
-      // Add existing (if not already in realtime)
       prev.forEach((item) => {
-        if (!uniqueMap.has(item.id)) {
+        if (item.type === "application") {
           uniqueMap.set(item.id, item);
         }
       });
@@ -118,7 +169,7 @@ const Navbar = () => {
 
         // Lời mời trực tiếp
         const directItems = directData.map((i) => ({
-          id: i.invitationId || i.id,
+          id: getInviteKey(i) || i.invitationId || i.id,
           type: "direct",
           title:
             getTranslation("groupInviteTitle", language) || "Group invitation",
@@ -134,7 +185,7 @@ const Navbar = () => {
 
         // Lời mời qua bài post
         const postItems = postData.map((p) => ({
-          id: `${p.postId}-${p.candidateId}`,
+          id: getInviteKey(p) || `${p.postId}-${p.candidateId}`,
           type: "post",
           postId: p.postId,
           candidateId: p.candidateId,
@@ -147,52 +198,101 @@ const Navbar = () => {
         }));
 
         // Realtime invitations từ Redux
-        const realtimeItems = reduxPendingInvitations.map((inv) => ({
-          id: inv.id || inv.invitationId,
-          type: "realtime",
-          title:
-            getTranslation("groupInviteTitle", language) || "Group invitation",
-          message: `${
-            inv.invitedByName ||
-            getTranslation("someone", language) ||
-            "Someone"
-          } invited you to ${inv.groupName || "a group"}`,
-          time: formatRelative(inv.createdAt),
-          actions: ["reject", "accept"],
-        }));
+        const realtimeItems = reduxPendingInvitations.map((inv) => {
+          const isProfilePostInvite =
+            inv.type === "profile-post" || inv.type === "post";
+          const inviteId = getInviteKey(inv);
 
-        // Gộp lại (realtime + API data, realtime thường là latest)
+          return {
+            id: inviteId,
+            type: isProfilePostInvite ? "post" : "realtime",
+            postId: inv.postId,
+            candidateId: inv.candidateId,
+            title:
+              getTranslation("groupInviteTitle", language) ||
+              "Group invitation",
+            message: isProfilePostInvite
+              ? `${
+                  inv.invitedByName ||
+                  getTranslation("someone", language) ||
+                  "Someone"
+                } invited you from a profile post${
+                  inv.postTitle ? `: ${inv.postTitle}` : ""
+                }`
+              : `${
+                  inv.invitedByName ||
+                  getTranslation("someone", language) ||
+                  "Someone"
+                } invited you to ${inv.groupName || "a group"}`,
+            time: formatRelative(inv.createdAt),
+            actions: ["reject", "accept"],
+          };
+        });
+
+        const applicationItems = reduxApplications
+          .filter((app) => app.status === "pending")
+          .map((app) => ({
+            id: `app-${app.id}`,
+            type: "application",
+            applicationId: app.id,
+            groupId: app.groupId,
+            title: t("newApplication") || "New Application",
+            message: `${app.userName || "A student"} applied to your group`,
+            name: app.userName,
+            avatarUrl: app.userAvatar,
+            time: formatRelative(app.appliedAt),
+            actions: [],
+          }));
+
         const allNotifications = [
           ...realtimeItems,
+          ...applicationItems,
           ...directItems,
           ...postItems,
         ];
 
-        // Deduplicate by ID
         const uniqueMap = new Map();
         allNotifications.forEach((n) => {
-          if (!uniqueMap.has(n.id)) {
-            uniqueMap.set(n.id, n);
+          const key = getInviteKey(n) || n.id;
+          if (!key) return;
+          if (!uniqueMap.has(key)) {
+            uniqueMap.set(key, n);
           }
         });
 
         setNotifications(Array.from(uniqueMap.values()));
       } catch (e) {
-        // If API fails, still show realtime data
-        const realtimeItems = reduxPendingInvitations.map((inv) => ({
-          id: inv.id || inv.invitationId,
-          type: "realtime",
-          title:
-            getTranslation("groupInviteTitle", language) || "Group invitation",
-          message: `${
-            inv.invitedByName ||
-            getTranslation("someone", language) ||
-            "Someone"
-          } invited you to ${inv.groupName || "a group"}`,
-          time: formatRelative(inv.createdAt),
-          actions: ["reject", "accept"],
-        }));
-        setNotifications(realtimeItems);
+        const fallbackRealtime = reduxPendingInvitations.map((inv) => {
+          const isProfilePostInvite =
+            inv.type === "profile-post" || inv.type === "post";
+          const inviteId = getInviteKey(inv);
+
+          return {
+            id: inviteId,
+            type: isProfilePostInvite ? "post" : "realtime",
+            postId: inv.postId,
+            candidateId: inv.candidateId,
+            title:
+              getTranslation("groupInviteTitle", language) ||
+              "Group invitation",
+            message: isProfilePostInvite
+              ? `${
+                  inv.invitedByName ||
+                  getTranslation("someone", language) ||
+                  "Someone"
+                } invited you from a profile post${
+                  inv.postTitle ? `: ${inv.postTitle}` : ""
+                }`
+              : `${
+                  inv.invitedByName ||
+                  getTranslation("someone", language) ||
+                  "Someone"
+                } invited you to ${inv.groupName || "a group"}`,
+            time: formatRelative(inv.createdAt),
+            actions: ["reject", "accept"],
+          };
+        });
+        setNotifications(fallbackRealtime);
       }
     };
 
@@ -558,7 +658,14 @@ const Navbar = () => {
               await InvitationService.accept(n.id);
             }
 
+            // Remove from local state
             setNotifications((prev) => prev.filter((x) => x.id !== n.id));
+
+            // Remove from Redux store
+            if (n.invitationId || n.id) {
+              dispatch(removeInvitation(n.invitationId || n.id));
+            }
+
             notificationApi.success({
               message: getTranslation("acceptSuccess", language) || "Accepted",
             });
@@ -580,7 +687,14 @@ const Navbar = () => {
               await InvitationService.decline(n.id);
             }
 
+            // Remove from local state
             setNotifications((prev) => prev.filter((x) => x.id !== n.id));
+
+            // Remove from Redux store
+            if (n.invitationId || n.id) {
+              dispatch(removeInvitation(n.invitationId || n.id));
+            }
+
             notificationApi.info({
               message: getTranslation("declineInfo", language) || "Declined",
             });
