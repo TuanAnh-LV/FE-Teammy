@@ -37,15 +37,23 @@ const Navbar = () => {
   const [notificationApi, contextHolder] = notification.useNotification();
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  
+
   // Get realtime pending invitations and applications from Redux store
-  const reduxPendingInvitations = useSelector((state) => state.invitation?.pendingInvitations || []);
-  const reduxApplications = useSelector((state) => state.invitation?.applications || []);
-  const applicationCount = useSelector((state) => state.invitation?.applicationCount || 0);
+  const reduxPendingInvitations = useSelector(
+    (state) => state.invitation?.pendingInvitations || []
+  );
+  const reduxApplications = useSelector(
+    (state) => state.invitation?.applications || []
+  );
+  const applicationCount = useSelector(
+    (state) => state.invitation?.applicationCount || 0
+  );
 
   const getInviteKey = (inv = {}) => {
-    if (inv.postId && inv.candidateId) return `${inv.postId}-${inv.candidateId}`;
-    if (inv.groupId && inv.candidateId) return `${inv.groupId}-${inv.candidateId}`;
+    if (inv.postId && inv.candidateId)
+      return `${inv.postId}-${inv.candidateId}`;
+    if (inv.groupId && inv.candidateId)
+      return `${inv.groupId}-${inv.candidateId}`;
     return inv.invitationId || inv.id || inv.candidateId || inv.groupId;
   };
 
@@ -69,12 +77,9 @@ const Navbar = () => {
       if (!iso) return "";
       const d = new Date(iso);
       const diff = Math.max(0, (Date.now() - d.getTime()) / 1000);
-      if (diff < 60)
-        return `${Math.floor(diff)} seconds ago`;
-      if (diff < 3600)
-        return `${Math.floor(diff / 60)} minutes ago`;
-      if (diff < 86400)
-        return `${Math.floor(diff / 3600)} hours ago`;
+      if (diff < 60) return `${Math.floor(diff)} seconds ago`;
+      if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
       return `${Math.floor(diff / 86400)} days ago`;
     };
 
@@ -86,16 +91,16 @@ const Navbar = () => {
       const isProfilePostInvite =
         inv.type === "profile-post" || inv.type === "post";
       const inviteId = getInviteKey(inv);
-      
-      const inviterName = 
-        inv.invitedByName || 
-        inv.invitedBy || 
+
+      const inviterName =
+        inv.invitedByName ||
+        inv.invitedBy ||
         inv.leaderDisplayName ||
         inv.leaderName ||
         inv.senderName ||
-        getTranslation("someone", language) || 
+        getTranslation("someone", language) ||
         "Someone";
-      
+
       const groupName = inv.groupName || inv.projectName || "the group";
 
       return {
@@ -107,7 +112,9 @@ const Navbar = () => {
         title:
           getTranslation("groupInviteTitle", language) || "Group invitation",
         message: isProfilePostInvite
-          ? `${inviterName} invited you from a profile post${inv.postTitle ? `: ${inv.postTitle}` : ""}`
+          ? `${inviterName} invited you from a profile post${
+              inv.postTitle ? `: ${inv.postTitle}` : ""
+            }`
           : `${inviterName} invited you to ${groupName}`,
         time: formatRelative(inv.createdAt),
         actions: ["reject", "accept"],
@@ -116,19 +123,19 @@ const Navbar = () => {
 
     setNotifications((prev) => {
       const uniqueMap = new Map();
-      
+
       realtimeItems.forEach((item) => {
         const key = getInviteKey(item) || item.id;
         if (!key) return;
         uniqueMap.set(key, item);
       });
-      
+
       prev.forEach((item) => {
         if (item.type === "application") {
           uniqueMap.set(item.id, item);
         }
       });
-      
+
       return Array.from(uniqueMap.values());
     });
   }, [reduxPendingInvitations, language]);
@@ -202,10 +209,21 @@ const Navbar = () => {
             postId: inv.postId,
             candidateId: inv.candidateId,
             title:
-              getTranslation("groupInviteTitle", language) || "Group invitation",
+              getTranslation("groupInviteTitle", language) ||
+              "Group invitation",
             message: isProfilePostInvite
-              ? `${inv.invitedByName || getTranslation("someone", language) || "Someone"} invited you from a profile post${inv.postTitle ? `: ${inv.postTitle}` : ""}`
-              : `${inv.invitedByName || getTranslation("someone", language) || "Someone"} invited you to ${inv.groupName || "a group"}`,
+              ? `${
+                  inv.invitedByName ||
+                  getTranslation("someone", language) ||
+                  "Someone"
+                } invited you from a profile post${
+                  inv.postTitle ? `: ${inv.postTitle}` : ""
+                }`
+              : `${
+                  inv.invitedByName ||
+                  getTranslation("someone", language) ||
+                  "Someone"
+                } invited you to ${inv.groupName || "a group"}`,
             time: formatRelative(inv.createdAt),
             actions: ["reject", "accept"],
           };
@@ -223,11 +241,16 @@ const Navbar = () => {
             name: app.userName,
             avatarUrl: app.userAvatar,
             time: formatRelative(app.appliedAt),
-            actions: [], 
+            actions: [],
           }));
 
-        const allNotifications = [...realtimeItems, ...applicationItems, ...directItems, ...postItems];
-        
+        const allNotifications = [
+          ...realtimeItems,
+          ...applicationItems,
+          ...directItems,
+          ...postItems,
+        ];
+
         const uniqueMap = new Map();
         allNotifications.forEach((n) => {
           const key = getInviteKey(n) || n.id;
@@ -236,7 +259,7 @@ const Navbar = () => {
             uniqueMap.set(key, n);
           }
         });
-        
+
         setNotifications(Array.from(uniqueMap.values()));
       } catch (e) {
         const fallbackRealtime = reduxPendingInvitations.map((inv) => {
@@ -250,10 +273,21 @@ const Navbar = () => {
             postId: inv.postId,
             candidateId: inv.candidateId,
             title:
-              getTranslation("groupInviteTitle", language) || "Group invitation",
+              getTranslation("groupInviteTitle", language) ||
+              "Group invitation",
             message: isProfilePostInvite
-              ? `${inv.invitedByName || getTranslation("someone", language) || "Someone"} invited you from a profile post${inv.postTitle ? `: ${inv.postTitle}` : ""}`
-              : `${inv.invitedByName || getTranslation("someone", language) || "Someone"} invited you to ${inv.groupName || "a group"}`,
+              ? `${
+                  inv.invitedByName ||
+                  getTranslation("someone", language) ||
+                  "Someone"
+                } invited you from a profile post${
+                  inv.postTitle ? `: ${inv.postTitle}` : ""
+                }`
+              : `${
+                  inv.invitedByName ||
+                  getTranslation("someone", language) ||
+                  "Someone"
+                } invited you to ${inv.groupName || "a group"}`,
             time: formatRelative(inv.createdAt),
             actions: ["reject", "accept"],
           };
@@ -357,7 +391,7 @@ const Navbar = () => {
           </div>
 
           {/* Search - Desktop only */}
-          <div className="!hidden xl:!flex !flex-1 !justify-center">
+          {/* <div className="!hidden xl:!flex !flex-1 !justify-center">
             <label className="!relative !w-full !max-w-xl">
               <Search className="!absolute !left-4 !top-1/2 !-translate-y-1/2 !w-4 !h-4 !text-gray-400" />
               <input
@@ -369,7 +403,7 @@ const Navbar = () => {
                 className="!w-full !rounded-full !border !border-blue-200 !py-2.5 !pl-11 !pr-4 !text-sm !text-gray-700 placeholder:!text-gray-400 focus:!outline-none focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-100"
               />
             </label>
-          </div>
+          </div> */}
 
           {/* Right side */}
           <div
@@ -626,12 +660,12 @@ const Navbar = () => {
 
             // Remove from local state
             setNotifications((prev) => prev.filter((x) => x.id !== n.id));
-            
+
             // Remove from Redux store
             if (n.invitationId || n.id) {
               dispatch(removeInvitation(n.invitationId || n.id));
             }
-            
+
             notificationApi.success({
               message: getTranslation("acceptSuccess", language) || "Accepted",
             });
@@ -655,12 +689,12 @@ const Navbar = () => {
 
             // Remove from local state
             setNotifications((prev) => prev.filter((x) => x.id !== n.id));
-            
+
             // Remove from Redux store
             if (n.invitationId || n.id) {
               dispatch(removeInvitation(n.invitationId || n.id));
             }
-            
+
             notificationApi.info({
               message: getTranslation("declineInfo", language) || "Declined",
             });

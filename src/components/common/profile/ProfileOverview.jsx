@@ -40,7 +40,7 @@ const ProfileOverview = ({ profile }) => {
         </div>
       ) : (
         <p className="text-sm text-gray-500">
-          Chưa có kỹ năng nào được cập nhật.
+          {t("noSkillsUpdated") || "No skills updated."}
         </p>
       )}
     </div>

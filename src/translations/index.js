@@ -1055,8 +1055,10 @@
   onlyLeaderCanSelectTopic: "Only the group leader can select a topic.",
   openSource: "Open Source",
   searchByTopicOrMentor: "Search by topic or mentor...",
+  noSkillsUpdated: "No skills were updated.",
   },
   VIE: {
+    noSkillsUpdated: "Không có kỹ năng nào được cập nhật.",
     searchByTopicOrMentor: "Tìm kiếm theo chủ đề hoặc giảng viên...",
     openSource: "Mã Nguồn Mở",
     notAuthorized: "Bạn không được phép truy cập tài nguyên này.",
