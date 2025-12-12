@@ -225,17 +225,19 @@ const Profile = () => {
               Posts
             </button>
 
-            {/* Settings */}
-            <button
-              onClick={() => setActiveTab("settings")}
-              className={`px-6 py-2 text-sm font-medium rounded-xl transition ${
-                activeTab === "settings"
-                  ? "bg-white text-gray-900 shadow-sm border-gray-200"
-                  : "bg-transparent text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Settings
-            </button>
+            {/* Settings - Only show for own profile */}
+            {isOwnProfile && (
+              <button
+                onClick={() => setActiveTab("settings")}
+                className={`px-6 py-2 text-sm font-medium rounded-xl transition ${
+                  activeTab === "settings"
+                    ? "bg-white text-gray-900 shadow-sm border-gray-200"
+                    : "bg-transparent text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Settings
+              </button>
+            )}
           </div>
         </div>
 
@@ -244,7 +246,7 @@ const Profile = () => {
           {activeTab === "overview" && <ProfileOverview profile={profile} />}
           {activeTab === "groups" && <ProfileGroups userId={profile.userId} />}
           {activeTab === "posts" && <ProfilePostsTab userId={profile.userId} />}
-          {activeTab === "settings" && (
+          {activeTab === "settings" && isOwnProfile && (
             <ProfileSettings profile={profile} onUpdate={handleUpdateProfile} />
           )}
         </div>

@@ -7,14 +7,14 @@ const ProfileGroups = ({ userId }) => {
 
   useEffect(() => {
     if (!userId) return;
-    
+
     const fetchGroups = async () => {
       try {
         setLoading(true);
         const response = await GroupService.getMyGroups(false);
         const data = response?.data || [];
         const normalizedGroups = Array.isArray(data) ? data : data?.items || [];
-        
+
         setGroups(
           normalizedGroups.map((g, idx) => ({
             id: g.id || g.groupId || idx,
@@ -25,7 +25,6 @@ const ProfileGroups = ({ userId }) => {
           }))
         );
       } catch (error) {
-
         setGroups([]);
       } finally {
         setLoading(false);
@@ -69,9 +68,9 @@ const ProfileGroups = ({ userId }) => {
                   <p className="text-sm text-gray-500">Role: {group.role}</p>
                 )}
               </div>
-              <button className="px-4 py-1.5 text-xs md:text-sm rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shadow-sm">
+              {/* <button className="px-4 py-1.5 text-xs md:text-sm rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shadow-sm">
                 View Details
-              </button>
+              </button> */}
             </div>
 
             <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-600 border border-blue-200">
@@ -98,4 +97,3 @@ const ProfileGroups = ({ userId }) => {
 };
 
 export default ProfileGroups;
-
