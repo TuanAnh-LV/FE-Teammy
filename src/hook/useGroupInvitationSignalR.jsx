@@ -108,15 +108,20 @@ export const useGroupInvitationSignalR = (token, userId, callbacks = {}) => {
         return;
       }
 
-      // If connection exists but token changed (after reload), close old one
-      if (globalConnection && globalConnection.state !== signalR.HubConnectionState.Disconnected) {
-        try {
-          globalConnection.stop();
-        } catch (e) {
-          console.error("[SignalR] Error stopping old connection:", e);
+      // Reuse existing active connection so we only have one hub connection per login
+      if (globalConnection) {
+        const state = globalConnection.state;
+        if (
+          state === signalR.HubConnectionState.Connected ||
+          state === signalR.HubConnectionState.Connecting ||
+          state === signalR.HubConnectionState.Reconnecting
+        ) {
+          notifyConnectionState(state);
+          return;
         }
+
+        // Clean up stale instance before rebuilding
         globalConnection = null;
-        notifyConnectionState(signalR.HubConnectionState.Disconnected);
       }
 
       // Already connecting, skip
@@ -133,6 +138,7 @@ export const useGroupInvitationSignalR = (token, userId, callbacks = {}) => {
       const conn = new signalR.HubConnectionBuilder()
         .withUrl(hubUrl, {
           accessTokenFactory: () => {
+            if (token) return token;
             // Get fresh token each time
             const freshToken = (() => {
               try {
@@ -167,9 +173,19 @@ export const useGroupInvitationSignalR = (token, userId, callbacks = {}) => {
         "UserOffline",
       ];
 
+      // WILDCARD: Lắng nghe TẤT CẢ events để debug
+      const originalOn = conn.on.bind(conn);
+      conn.on = function(eventName, callback) {
+        console.log(`[SignalR] 🎯 Registered listener for: ${eventName}`);
+        return originalOn(eventName, callback);
+      };
+
       eventNames.forEach((eventName) => {
         conn.off(eventName);
         conn.on(eventName, (data) => {
+          // Debug log for all events
+          console.log(`[SignalR] 🔔 Event received: ${eventName}`, data);
+          
           const listeners = getEventListenerSet(eventName);
           listeners.forEach((callback) => {
             try {
@@ -214,6 +230,8 @@ export const useGroupInvitationSignalR = (token, userId, callbacks = {}) => {
         globalConnection = conn;
         notifyConnectionState(signalR.HubConnectionState.Connected);
         isConnecting = false;
+        console.log("[SignalR] ✅ Connected successfully to /groupChatHub");
+        console.log("[SignalR] 📡 Listening for events:", eventNames);
       } catch (error) {
         console.error("[SignalR] Failed to connect via WebSockets:", error?.message || error);
         isConnecting = false;

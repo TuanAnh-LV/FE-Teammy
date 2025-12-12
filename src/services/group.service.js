@@ -136,5 +136,13 @@ export const GroupService = {
       isLoading: true,
     });
   },
+
+  transferLeader(groupId, newLeaderUserId) {
+    return BaseService.post({
+      url: API.GROUP.TRANSFER_LEADER(groupId),
+      payload: { newLeaderUserId },
+      isLoading: true,
+    });
+  },
 };
 
