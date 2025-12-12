@@ -34,9 +34,11 @@ const Navbar = () => {
 
   const [notificationApi, contextHolder] = notification.useNotification();
   const { t } = useTranslation();
-  
+
   // Get realtime pending invitations from Redux store
-  const reduxPendingInvitations = useSelector((state) => state.invitation?.pendingInvitations || []);
+  const reduxPendingInvitations = useSelector(
+    (state) => state.invitation?.pendingInvitations || []
+  );
   useEffect(() => {
     setUser(userInfo || null);
   }, [userInfo]);
@@ -51,12 +53,9 @@ const Navbar = () => {
       if (!iso) return "";
       const d = new Date(iso);
       const diff = Math.max(0, (Date.now() - d.getTime()) / 1000);
-      if (diff < 60)
-        return `${Math.floor(diff)} seconds ago`;
-      if (diff < 3600)
-        return `${Math.floor(diff / 60)} minutes ago`;
-      if (diff < 86400)
-        return `${Math.floor(diff / 3600)} hours ago`;
+      if (diff < 60) return `${Math.floor(diff)} seconds ago`;
+      if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
       return `${Math.floor(diff / 86400)} days ago`;
     };
 
@@ -64,9 +63,10 @@ const Navbar = () => {
     const realtimeItems = reduxPendingInvitations.map((inv) => ({
       id: inv.id || inv.invitationId,
       type: "realtime",
-      title:
-        getTranslation("groupInviteTitle", language) || "Group invitation",
-      message: `${inv.invitedByName || getTranslation("someone", language) || "Someone"} invited you to ${inv.groupName || "a group"}`,
+      title: getTranslation("groupInviteTitle", language) || "Group invitation",
+      message: `${
+        inv.invitedByName || getTranslation("someone", language) || "Someone"
+      } invited you to ${inv.groupName || "a group"}`,
       time: formatRelative(inv.createdAt),
       actions: ["reject", "accept"],
     }));
@@ -74,17 +74,17 @@ const Navbar = () => {
     // Merge with existing notifications (avoid duplicates)
     setNotifications((prev) => {
       const uniqueMap = new Map();
-      
+
       // Add realtime first (priority)
       realtimeItems.forEach((item) => uniqueMap.set(item.id, item));
-      
+
       // Add existing (if not already in realtime)
       prev.forEach((item) => {
         if (!uniqueMap.has(item.id)) {
           uniqueMap.set(item.id, item);
         }
       });
-      
+
       return Array.from(uniqueMap.values());
     });
   }, [reduxPendingInvitations, language]);
@@ -152,14 +152,22 @@ const Navbar = () => {
           type: "realtime",
           title:
             getTranslation("groupInviteTitle", language) || "Group invitation",
-          message: `${inv.invitedByName || getTranslation("someone", language) || "Someone"} invited you to ${inv.groupName || "a group"}`,
+          message: `${
+            inv.invitedByName ||
+            getTranslation("someone", language) ||
+            "Someone"
+          } invited you to ${inv.groupName || "a group"}`,
           time: formatRelative(inv.createdAt),
           actions: ["reject", "accept"],
         }));
 
         // Gộp lại (realtime + API data, realtime thường là latest)
-        const allNotifications = [...realtimeItems, ...directItems, ...postItems];
-        
+        const allNotifications = [
+          ...realtimeItems,
+          ...directItems,
+          ...postItems,
+        ];
+
         // Deduplicate by ID
         const uniqueMap = new Map();
         allNotifications.forEach((n) => {
@@ -167,7 +175,7 @@ const Navbar = () => {
             uniqueMap.set(n.id, n);
           }
         });
-        
+
         setNotifications(Array.from(uniqueMap.values()));
       } catch (e) {
         // If API fails, still show realtime data
@@ -176,7 +184,11 @@ const Navbar = () => {
           type: "realtime",
           title:
             getTranslation("groupInviteTitle", language) || "Group invitation",
-          message: `${inv.invitedByName || getTranslation("someone", language) || "Someone"} invited you to ${inv.groupName || "a group"}`,
+          message: `${
+            inv.invitedByName ||
+            getTranslation("someone", language) ||
+            "Someone"
+          } invited you to ${inv.groupName || "a group"}`,
           time: formatRelative(inv.createdAt),
           actions: ["reject", "accept"],
         }));
@@ -279,7 +291,7 @@ const Navbar = () => {
           </div>
 
           {/* Search - Desktop only */}
-          <div className="!hidden xl:!flex !flex-1 !justify-center">
+          {/* <div className="!hidden xl:!flex !flex-1 !justify-center">
             <label className="!relative !w-full !max-w-xl">
               <Search className="!absolute !left-4 !top-1/2 !-translate-y-1/2 !w-4 !h-4 !text-gray-400" />
               <input
@@ -291,7 +303,7 @@ const Navbar = () => {
                 className="!w-full !rounded-full !border !border-blue-200 !py-2.5 !pl-11 !pr-4 !text-sm !text-gray-700 placeholder:!text-gray-400 focus:!outline-none focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-100"
               />
             </label>
-          </div>
+          </div> */}
 
           {/* Right side */}
           <div
