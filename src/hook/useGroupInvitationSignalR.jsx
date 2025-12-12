@@ -1,11 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 import { DOMAIN_ADMIN } from "../consts/const";
 
 
 let globalConnection = null;
 let isConnecting = false;
+let globalConnectionState = signalR.HubConnectionState.Disconnected;
 const eventListeners = new Map();
+const connectionStateListeners = new Set();
 
 const getEventListenerSet = (eventName) => {
   if (!eventListeners.has(eventName)) {
@@ -14,10 +16,28 @@ const getEventListenerSet = (eventName) => {
   return eventListeners.get(eventName);
 };
 
+const notifyConnectionState = (state) => {
+  globalConnectionState = state;
+  connectionStateListeners.forEach((listener) => {
+    try {
+      listener(state);
+    } catch (error) {
+      console.error("[SignalR] Error notifying listener:", error);
+    }
+  });
+};
 
 export const useGroupInvitationSignalR = (token, userId, callbacks = {}) => {
   const reconnectTimeoutRef = useRef(null);
   const callbackKeyRef = useRef(`listener_${Math.random().toString(36).slice(2)}`);
+  const [connectionState, setConnectionState] = useState(globalConnectionState);
+
+  useEffect(() => {
+    connectionStateListeners.add(setConnectionState);
+    return () => {
+      connectionStateListeners.delete(setConnectionState);
+    };
+  }, []);
 
   useEffect(() => {
     const callbackKey = callbackKeyRef.current;
@@ -72,7 +92,7 @@ export const useGroupInvitationSignalR = (token, userId, callbacks = {}) => {
   useEffect(() => {
     const setupConnection = async () => {
       if (!token || !userId) {
-        console.log("[SignalR] No token/userId - disconnecting...");
+        notifyConnectionState(signalR.HubConnectionState.Disconnected);
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
           reconnectTimeoutRef.current = null;
@@ -80,7 +100,6 @@ export const useGroupInvitationSignalR = (token, userId, callbacks = {}) => {
         if (globalConnection?.state === signalR.HubConnectionState.Connected) {
           try {
             await globalConnection.stop();
-            console.log("[SignalR] Disconnected");
           } catch (error) {
             console.error("[SignalR] Error disconnecting:", error);
           }
@@ -89,91 +108,124 @@ export const useGroupInvitationSignalR = (token, userId, callbacks = {}) => {
         return;
       }
 
-      // Already connected or connecting
-      if (isConnecting || globalConnection?.state === signalR.HubConnectionState.Connected) {
-        console.log("[SignalR] Already connected/connecting, skipping...");
+      // If connection exists but token changed (after reload), close old one
+      if (globalConnection && globalConnection.state !== signalR.HubConnectionState.Disconnected) {
+        try {
+          globalConnection.stop();
+        } catch (e) {
+          console.error("[SignalR] Error stopping old connection:", e);
+        }
+        globalConnection = null;
+        notifyConnectionState(signalR.HubConnectionState.Disconnected);
+      }
+
+      // Already connecting, skip
+      if (isConnecting) {
         return;
       }
 
-      // Attempt to connect
+      // Attempt to connect (WebSockets with skipNegotiation as backend suggests)
       isConnecting = true;
-      try {
-        console.log("[SignalR] Attempting to connect...");
-        const base = DOMAIN_ADMIN || "";
-        const hubUrl = base.replace(/\/api\/?$/, "") + "/groupChatHub";
+      notifyConnectionState(signalR.HubConnectionState.Connecting);
+      const base = DOMAIN_ADMIN || "";
+      const hubUrl = base.replace(/\/api\/?$/, "") + "/groupChatHub";
 
-        const conn = new signalR.HubConnectionBuilder()
-          .withUrl(hubUrl, {
-            accessTokenFactory: () => token,
-            transport: signalR.HttpTransportType.LongPolling,
-            skipNegotiation: false,
-          })
-          .withAutomaticReconnect([0, 0, 3000, 5000, 10000, 30000])
-          .configureLogging(signalR.LogLevel.Information)
-          .build();
-
-        const eventNames = [
-          "InvitationCreated",
-          "InvitationStatusChanged",
-          "PendingUpdated",
-          "MemberRemoved",
-          "MemberRoleChanged",
-          "GroupUpdated",
-          "MemberJoined",
-        ];
-
-        eventNames.forEach((eventName) => {
-          conn.off(eventName);
-          conn.on(eventName, (data) => {
-            console.log(`[SignalR] Event received: ${eventName}`, data);
-            const listeners = getEventListenerSet(eventName);
-            listeners.forEach((callback) => {
+      const conn = new signalR.HubConnectionBuilder()
+        .withUrl(hubUrl, {
+          accessTokenFactory: () => {
+            // Get fresh token each time
+            const freshToken = (() => {
               try {
-                callback(data);
-              } catch (error) {
-                console.error(`[SignalR] Error in ${eventName} callback:`, error);
+                const raw = localStorage.getItem("account_admin");
+                if (raw) {
+                  const obj = JSON.parse(raw);
+                  return obj?.accessToken || obj?.access_token || null;
+                }
+                return localStorage.getItem("token");
+              } catch {
+                return null;
               }
-            });
+            })();
+            return freshToken || "";
+          },
+          transport: signalR.HttpTransportType.WebSockets,
+          skipNegotiation: true,
+        })
+        .withAutomaticReconnect([0, 0, 3000, 5000, 10000, 30000])
+        .configureLogging(signalR.LogLevel.Error)
+        .build();
+
+      const eventNames = [
+        "InvitationCreated",
+        "InvitationStatusChanged",
+        "PendingUpdated",
+        "MemberRemoved",
+        "MemberRoleChanged",
+        "GroupUpdated",
+        "MemberJoined",
+        "UserOnline",
+        "UserOffline",
+      ];
+
+      eventNames.forEach((eventName) => {
+        conn.off(eventName);
+        conn.on(eventName, (data) => {
+          const listeners = getEventListenerSet(eventName);
+          listeners.forEach((callback) => {
+            try {
+              callback(data);
+            } catch (error) {
+              console.error(`[SignalR] Error in ${eventName} callback:`, error);
+            }
           });
         });
+      });
 
-        conn.onclose(async () => {
-          console.log("[SignalR]  Connection closed");
-          isConnecting = false;
+      conn.onclose(async () => {
+        isConnecting = false;
+        notifyConnectionState(signalR.HubConnectionState.Disconnected);
+        
+        if (globalConnection === conn) {
           globalConnection = null;
+        }
 
-          if (token && userId) {
-            reconnectTimeoutRef.current = setTimeout(() => {
-              console.log("[SignalR] Attempting auto-reconnect...");
-              setupConnection();
-            }, 3000);
-          }
-        });
-
-        conn.onreconnecting((error) => {
-          console.log("[SignalR] Reconnecting...", error?.message);
-        });
-
-        conn.onreconnected((connectionId) => {
-          console.log("[SignalR] Reconnected:", connectionId);
-        });
-
-        // Start connection
-        await conn.start();
-        console.log("[SignalR] Connected successfully");
-        globalConnection = conn;
-        isConnecting = false;
-      } catch (error) {
-        console.error("[SignalR] Failed to connect:", error?.message);
-        isConnecting = false;
-
-        // Retry if still authenticated
         if (token && userId) {
+          if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
+          }
+          
           reconnectTimeoutRef.current = setTimeout(() => {
-            console.log("[SignalR] Retrying connection...");
             setupConnection();
           }, 3000);
         }
+      });
+
+      conn.onreconnecting((error) => {
+        if (error) console.error("[SignalR] Reconnecting due to error:", error?.message || error);
+        notifyConnectionState(signalR.HubConnectionState.Reconnecting);
+      });
+
+      conn.onreconnected(() => {
+        notifyConnectionState(signalR.HubConnectionState.Connected);
+      });
+
+      try {
+        await conn.start();
+        globalConnection = conn;
+        notifyConnectionState(signalR.HubConnectionState.Connected);
+        isConnecting = false;
+      } catch (error) {
+        console.error("[SignalR] Failed to connect via WebSockets:", error?.message || error);
+        isConnecting = false;
+        notifyConnectionState(signalR.HubConnectionState.Disconnected);
+
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+        }
+        
+        reconnectTimeoutRef.current = setTimeout(() => {
+          setupConnection();
+        }, 3000);
       }
     };
 
@@ -185,10 +237,11 @@ export const useGroupInvitationSignalR = (token, userId, callbacks = {}) => {
         reconnectTimeoutRef.current = null;
       }
     };
-  }, [token, userId]);
+  }, [token, userId]); // Re-connect when auth changes
 
   return {
-    isConnected: globalConnection?.state === signalR.HubConnectionState.Connected,
+    isConnected: connectionState === signalR.HubConnectionState.Connected,
+    state: connectionState,
     connection: globalConnection,
   };
 };

@@ -80,7 +80,6 @@ export function initials(name) {
     .toUpperCase();
 }
 
-/** Deterministic avatar URL based on email (DiceBear fallback) */
 export function avatarFromEmail(email = "", size = 96) {
   const trimmed = (email || "teammy").trim();
   const nameSeed = trimmed ? trimmed.split("@")[0] || trimmed : "teammy";
@@ -94,13 +93,7 @@ export function avatarFromEmail(email = "", size = 96) {
   return `https://ui-avatars.com/api/?name=${encodedName}&size=${normalizedSize}&background=${background}&color=ffffff&bold=true`;
 }
 
-/**
- * Extract error message from API error response
- * Handles various error response formats from backend
- * @param {Error} error - The error object from axios/fetch
- * @param {string} fallback - Optional fallback message
- * @returns {string} - The extracted error message
- */
+
 export function getErrorMessage(error, fallback = "An error occurred") {
   return (
     error?.response?.data?.message ||

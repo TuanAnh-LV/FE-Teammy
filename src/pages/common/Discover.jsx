@@ -15,6 +15,7 @@ import { AuthService } from "../../services/auth.service";
 import { AiService } from "../../services/ai.service";
 import { Modal, Input, notification } from "antd";
 import { Sparkles } from "lucide-react";
+import { getErrorMessage } from "../../utils/helpers";
 
 const Discover = () => {
   const { t } = useTranslation();
@@ -190,7 +191,6 @@ const Discover = () => {
     return () => {
       mounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [membership.groupId, myGroupDetails]);
 
   useEffect(() => {
@@ -244,7 +244,6 @@ const Discover = () => {
     return () => {
       mounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const aiTopicIds = useMemo(() => {
@@ -555,7 +554,8 @@ const Discover = () => {
             });
           } catch (err) {
             const statusCode = err?.response?.status;
-            const errorMessage = err?.response?.data?.message || "";
+            const errorMessage = getErrorMessage(err, "");
+            const normalizedMessage = (errorMessage || "").toLowerCase();
 
             let errorTitle = t("failedToSelectTopic") || "Thất bại";
             let errorDesc = errorMessage || t("pleaseTryAgain");
@@ -572,6 +572,47 @@ const Discover = () => {
               errorDesc =
                 t("groupActiveDescription") ||
                 "The group is currently active and cannot change topics. Please contact the mentor or administrator for assistance.";
+            }
+            // Handle group must be full before inviting mentor
+            if (
+              normalizedMessage.includes("group must be full") ||
+              normalizedMessage.includes("full before inviting mentor")
+            ) {
+              errorTitle =
+                t("groupMustBeFullBeforeInvite") ||
+                "Group must be full before inviting mentor";
+              errorDesc =
+                t("groupMustBeFullBeforeInviteDesc") ||
+                "Please fill your group to the required size before inviting a mentor.";
+            }
+
+            // Handle 409 Conflict - Group is active
+            if (statusCode === 409) {
+              if (normalizedMessage.includes("invite_pending_other_topic")) {
+                errorTitle =
+                  t("invitePendingOtherTopic") ||
+                  "Pending invite for another topic";
+                errorDesc =
+                  t("invitePendingOtherTopicDesc") ||
+                  "Your group already has another mentor invite pending for a different topic. Please resolve it before sending a new invite.";
+              } else if (
+                normalizedMessage.includes("group must be full") ||
+                normalizedMessage.includes("full before inviting mentor")
+              ) {
+                errorTitle =
+                  t("groupMustBeFullBeforeInvite") ||
+                  "Group must be full before inviting mentor";
+                errorDesc =
+                  t("groupMustBeFullBeforeInviteDesc") ||
+                  "Please fill your group to the required size before inviting a mentor.";
+              } else {
+                errorTitle =
+                  t("groupIsActive") ||
+                  "Cannot change topic when group is active";
+                errorDesc =
+                  t("groupActiveDescription") ||
+                  "The group is currently active and cannot change topics. Please contact the mentor or administrator for assistance.";
+              }
             }
 
             notification.error({
