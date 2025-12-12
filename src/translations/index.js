@@ -209,8 +209,8 @@
       "Manage your capstone project teams, track progress, and collaborate with teammates.",
     myGroupsProjectsCTA:
       "Create new groups or join existing ones to build amazing projects together.",
-    activeGroups: "active groups",
-    pendingApplications: "pending applications",
+    activeGroups: "Active groups",
+    pendingApplications: "Pending applications",
     mostRecentGroup: "Most recent group created",
     updating: "Updating",
 
@@ -666,6 +666,10 @@
     topicClosed: "Topic Closed",
     groupIsActive: "Cannot change topic when group is active",
     groupActiveDescription: "The group is currently active and cannot change topics. Please contact the mentor or administrator for assistance.",
+    groupMustBeFullBeforeInvite: "Group must be full before inviting mentor",
+    groupMustBeFullBeforeInviteDesc: "Please fill your group to the required size before inviting a mentor.",
+    invitePendingOtherTopic: "Pending invite for another topic",
+    invitePendingOtherTopicDesc: "Your group already has another mentor invite pending for a different topic. Please resolve it before sending a new invite.",
     inviteMentor: "Invite Mentor",
     sendingInviteForTopic: "Send mentor invitation for topic",
     enterMessage: "Enter message to mentor",
@@ -842,7 +846,7 @@
     preparingProfile: "Preparing your profile...",
 
     // Audit Logs
-    searchByEmailAction: "Search by email, action...",
+    searchByEmailAction: "Search by email",
 
     // Smart Filters
     smartFilters: "Smart Filters",
@@ -1034,8 +1038,24 @@
   assignRoleFailed: "Failed to assign role",
   students: "Students",
   studentsWithoutGroup: "Students Without Group",
+  pleaseSelectAtLeast3Skills: "Please select at least 3 skills",
+  matchingSkills: "Matching Skills",
+  createdOn: "Created On",
+  registrationFile: "Registration File",
+  notAuthorized: "You are not authorized to access this resource.",
+  onlyLeaderCanSelectTopic: "Only the group leader can select a topic.",
+  openSource: "Open Source",
+  searchByTopicOrMentor: "Search by topic or mentor...",
   },
   VIE: {
+    searchByTopicOrMentor: "Tìm kiếm theo chủ đề hoặc giảng viên...",
+    openSource: "Mã Nguồn Mở",
+    notAuthorized: "Bạn không được phép truy cập tài nguyên này.",
+    onlyLeaderCanSelectTopic: "Chỉ trưởng nhóm mới có thể chọn chủ đề.",
+    registrationFile: "Tệp Đăng Ký",
+    createdOn: "Ngày Tạo",
+    matchingSkills: "Kỹ Năng Phù Hợp",
+    pleaseSelectAtLeast3Skills: "Vui lòng chọn ít nhất 3 kỹ năng",
     studentsWithoutGroup: "Sinh Viên Không Có Nhóm",
     students: "Sinh Viên",
     assignRoleFailed: "Gán vai trò thất bại",
@@ -1294,8 +1314,8 @@
     myGroupsProjectsSubtitle:
       "Quản lý nhóm, theo dõi tiến độ và cộng tác dễ dàng.",
     myGroupsProjectsCTA: "Tạo nhóm mới hoặc tham gia nhóm đang tuyển.",
-    activeGroups: "nhóm đang hoạt động",
-    pendingApplications: "đơn chờ duyệt",
+    activeGroups: "Nhóm đang hoạt động",
+    pendingApplications: "Đơn chờ duyệt",
     mostRecentGroup: "Nhóm tạo gần nhất",
     updating: "Đang cập nhật",
 
@@ -1727,6 +1747,8 @@
     pleaseCreateOrJoinGroup: "Vui lòng tạo hoặc tham gia một nhóm trước.",
     groupNotFull: "Nhóm chưa đủ thành viên",
     groupMustBeFull: "Nhóm phải đủ thành viên để chọn chủ đề. Hiện tại:",
+    groupMustBeFullBeforeInvite: "Nhóm phải đủ thành viên trước khi mời mentor",
+    groupMustBeFullBeforeInviteDesc: "Vui lòng bổ sung thành viên cho đủ yêu cầu trước khi gửi lời mời mentor.",
     topicSelected: "Đã chọn chủ đề",
     successfullySelected: "Chọn thành công",
     forYourGroup: "cho nhóm của bạn.",
@@ -1735,6 +1757,8 @@
     topicClosed: "Chủ đề đã đóng",
     groupIsActive: "Không thể đổi chủ đề khi nhóm đang hoạt động",
     groupActiveDescription: "Nhóm đang hoạt động và không thể đổi chủ đề. Vui lòng liên hệ với mentor hoặc quản trị viên để được hỗ trợ.",
+    invitePendingOtherTopic: "Đang có lời mời mentor cho chủ đề khác",
+    invitePendingOtherTopicDesc: "Nhóm của bạn đang có một lời mời mentor khác chờ phê duyệt. Vui lòng xử lý hoặc chờ trong lúc trước khi gửi lời mời mới.",
     inviteMentor: "Mời Mentor",
     sendingInviteForTopic: "Gửi lời mời mentor cho chủ đề",
     enterMessage: "Nhập lời nhắn cho mentor",
@@ -1915,7 +1939,7 @@
     preparingProfile: "Đang chuẩn bị hồ sơ...",
 
     // Audit Logs
-    searchByEmailAction: "Tìm theo email, hành động...",
+    searchByEmailAction: "Tìm theo email",
 
     // Topic Management
     smartFilters: "Bộ lọc thông minh",

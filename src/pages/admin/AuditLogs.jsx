@@ -8,6 +8,7 @@ import {
   Tag,
   DatePicker,
   Tooltip,
+  notification,
 } from "antd";
 import {
   SearchOutlined,
@@ -37,31 +38,35 @@ const AuditLogs = () => {
     const fetchLogs = async () => {
       try {
         setLoading(true);
-        // có thể truyền limit, before... nếu cần
         const res = await AdminService.getActivityLogs({ limit: 200 }, false);
         const data = Array.isArray(res?.data) ? res.data : [];
 
         const mapped = data.map((item, index) => ({
           key: item.activityId || index,
-          // dùng raw createdAt, filter + sort đều dùng ISO này
           timestamp: item.createdAt,
           actor:
             item.actorEmail ||
             item.actorDisplayName ||
             item.actorId ||
             "Unknown",
-          action: item.action, // ví dụ: "GROUP_CREATED"
+          action: item.action,
           entity: item.entityType || "-",
           entityId: item.entityId || "-",
-          status: item.status || "", // ví dụ: "success"
+          status: item.status || "",
           platform: item.platform || "Unknown",
-          level: item.severity || "", // ví dụ: "info"
+          level: item.severity || "",
           description: item.message || "",
         }));
 
         setLogs(mapped);
       } catch (err) {
-        console.error("Failed to fetch activity logs", err);
+        notification.error({
+          message: t("failedToFetchLogs") || "Failed to fetch logs",
+          description:
+            err?.response?.data?.message ||
+            t("pleaseTryAgain") ||
+            "Please try again",
+        });
         setLogs([]);
       } finally {
         setLoading(false);
@@ -220,13 +225,6 @@ const AuditLogs = () => {
             System Logs
           </h1>
         </div>
-
-        <Button
-          icon={<UploadOutlined />}
-          className="!border-gray-300 hover:!border-orange-400  hover:!text-orange-400 transition-all !py-5"
-        >
-          <span className="hidden sm:inline">Export CSV</span>
-        </Button>
       </div>
 
       {/* Filters */}

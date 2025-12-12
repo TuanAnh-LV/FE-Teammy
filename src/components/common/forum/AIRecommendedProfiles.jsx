@@ -178,7 +178,8 @@ export function AIRecommendedProfiles({
               <div className="flex justify-end">
                 {profilePost.hasApplied && inviteStatus ? (
                   <StatusChip status={inviteStatus} />
-                ) : (
+                ) : membership?.status !== "member" &&
+                  membership?.status !== "student" ? (
                   <button
                     onClick={async () => {
                       if (postId && onInvite) {
@@ -193,7 +194,7 @@ export function AIRecommendedProfiles({
                     </span>
                     <span className="sm:hidden">{t("invite") || "Invite"}</span>
                   </button>
-                )}
+                ) : null}
               </div>
             </div>
           </div>

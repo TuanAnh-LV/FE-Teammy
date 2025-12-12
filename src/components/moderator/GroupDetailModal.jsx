@@ -30,7 +30,7 @@ export default function GroupDetailModal({ open, onClose, group }) {
   const mentor = group.mentor || null;
   const leader = group.leader || null;
   const members = group.members || [];
-
+  console.log("members", leader);
   const semester = group.semester || null;
 
   const currentMembers = group.currentMembers || members.length;
@@ -41,7 +41,11 @@ export default function GroupDetailModal({ open, onClose, group }) {
   // ----- Deadline Calculation -----
   const deadline = semester ? dayjs(semester.endDate) : null;
   const daysLeft = deadline ? deadline.diff(dayjs(), "day") : null;
-
+  const cleanAvatarUrl = (url) => {
+    if (!url) return undefined;
+    // nếu lỡ lưu dư dấu " ở đầu/cuối thì cắt đi
+    return url.replace(/^"+|"+$/g, "").trim();
+  };
   return (
     <Modal
       open={open}
@@ -164,8 +168,9 @@ export default function GroupDetailModal({ open, onClose, group }) {
             {leader?.displayName && (
               <div className="border rounded-xl p-4 shadow-sm flex flex-col items-center bg-blue-50">
                 <Avatar
-                  size={56}
-                  src={leader.avatarUrl ? leader.avatarUrl : <UserOutlined />}
+                  size={60}
+                  src={cleanAvatarUrl(leader.avatarUrl)}
+                  icon={!leader.avatarUrl && <UserOutlined />}
                   className="mb-3"
                 />
                 <div className="text-center font-medium text-sm">

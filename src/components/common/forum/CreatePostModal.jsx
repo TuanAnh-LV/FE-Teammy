@@ -74,7 +74,6 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           setAvailableSkills(response.data);
         }
       } catch (error) {
-
         setAvailableSkills([]);
       }
     };
@@ -262,6 +261,21 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
         <Form.Item
           label={t("requiredSkills") || "Required Skills"}
           name="skills"
+          rules={[
+            {
+              validator: (_, value) => {
+                if (!value || value.length < 3) {
+                  return Promise.reject(
+                    new Error(
+                      t("pleaseSelectAtLeast3Skills") ||
+                        "Please select at least 3 skills"
+                    )
+                  );
+                }
+                return Promise.resolve();
+              },
+            },
+          ]}
         >
           <div className="space-y-3">
             {/* Selected Skills */}
@@ -402,4 +416,3 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
 };
 
 export default CreatePostModal;
-

@@ -23,21 +23,18 @@ const Forum = () => {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
-  // membership state
   const [membership, setMembership] = useState({
     hasGroup: false,
     groupId: null,
     status: null, // 'leader' | 'member' | 'student' | null
   });
 
-  // Group details state
   const [myGroupDetails, setMyGroupDetails] = useState(null);
 
-  // derive role from membership.status
   const userRole = membership.status === "leader" ? "leader" : "individual";
 
   // UI state
-  const [activeTab, setActiveTab] = useState("groups"); // will be set by membership
+  const [activeTab, setActiveTab] = useState("groups");
   const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
   const [isCreatePersonalPostModalOpen, setIsCreatePersonalPostModalOpen] =
     useState(false);
@@ -58,9 +55,9 @@ const Forum = () => {
 
   // posts list
   const [postsData, setPostsData] = useState([]);
-  const [allPostsData, setAllPostsData] = useState([]); // Store all posts for stats
-  const [aiSuggestedPosts, setAiSuggestedPosts] = useState([]); // AI suggested posts for individuals
-  const [aiSuggestedGroupPosts, setAiSuggestedGroupPosts] = useState([]); // AI suggested posts for groups
+  const [allPostsData, setAllPostsData] = useState([]);
+  const [aiSuggestedPosts, setAiSuggestedPosts] = useState([]);
+  const [aiSuggestedGroupPosts, setAiSuggestedGroupPosts] = useState([]);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailGroupId, setDetailGroupId] = useState(null);
 
@@ -83,7 +80,6 @@ const Forum = () => {
         };
         setMembership(m);
 
-        // Fetch group details if user has group
         if (m.groupId) {
           try {
             const groupRes = await GroupService.getGroupDetail(m.groupId);
@@ -98,7 +94,6 @@ const Forum = () => {
     })();
   }, []);
 
-  /** 2) Fetch tất cả posts MỘT LẦN khi mount - dùng cho cả display và stats */
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -115,7 +110,6 @@ const Forum = () => {
         );
 
         if (mounted) {
-          // Lưu tất cả posts
           setAllPostsData([...groupArr, ...individualArr]);
         }
       } catch {
@@ -138,11 +132,6 @@ const Forum = () => {
 
   /** 4) Gọi AI suggestions khi chuyển sang tab individuals */
   useEffect(() => {
-    // Don't show AI suggestions if:
-    // 1. Not on individuals tab
-    // 2. User doesn't have a group
-    // 3. Group is full (members >= maxMembers)
-    // 4. Group has topic assigned
     if (activeTab !== "individuals" || !membership.groupId) {
       setAiSuggestedPosts([]);
       return;
@@ -150,7 +139,8 @@ const Forum = () => {
 
     // Check if group is active (full members and has topic)
     if (myGroupDetails) {
-      const currentMembers = myGroupDetails.members?.length || 0;
+      const currentMembers =
+        myGroupDetails.currentMembers || myGroupDetails.members?.length || 0;
       const maxMembers =
         myGroupDetails.maxMembers || myGroupDetails.capacity || 0;
       const hasTopic =
@@ -170,17 +160,6 @@ const Forum = () => {
           groupId: membership.groupId,
           limit: 10,
         });
-        console.log("AI profile suggestions response:", aiResponse);
-        console.log("AI profile suggestions data:", aiResponse.data);
-        console.log("AI profile suggestions data.data:", aiResponse.data?.data);
-        console.log(
-          "AI profile suggestions data.data[0]:",
-          aiResponse.data?.data?.[0]
-        );
-        console.log(
-          "AI profile suggestions data.data[0].profilePost:",
-          aiResponse.data?.data?.[0]?.profilePost
-        );
 
         // Check if response is successful
         if (!aiResponse || aiResponse.success === false || !aiResponse.data) {
@@ -196,7 +175,9 @@ const Forum = () => {
               item &&
               typeof item === "object" &&
               item.profilePost &&
-              item.profilePost.id
+              item.profilePost.id &&
+              (item.profilePost?.status || "").toString().toLowerCase() !==
+                "expired"
           );
         }
 
@@ -266,7 +247,11 @@ const Forum = () => {
         if (Array.isArray(aiResponse.data.data)) {
           suggestions = aiResponse.data.data.filter(
             (item) =>
-              item && typeof item === "object" && item.post && item.post.id
+              item &&
+              typeof item === "object" &&
+              item.post &&
+              item.post.id &&
+              (item.post?.status || "").toString().toLowerCase() !== "expired"
           );
         }
 
@@ -336,9 +321,9 @@ const Forum = () => {
   const filtered = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase();
     return (postsData || []).filter((item) => {
-      // Hide posts that are explicitly closed
-      if ((item?.status || "").toString().toLowerCase() === "closed")
-        return false;
+      // Hide posts that are explicitly closed or expired
+      const statusStr = (item?.status || "").toString().toLowerCase();
+      if (statusStr === "closed" || statusStr === "expired") return false;
 
       // Hide posts that are already shown in AI suggestions
       if (activeTab === "groups" && aiGroupPostIds.has(item.id)) {
@@ -567,21 +552,58 @@ const Forum = () => {
 
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center gap-3 w-full md:w-auto">
-                {userRole === "leader" ? (
-                  <button
-                    onClick={() => setIsCreatePostModalOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#FF7A00] px-3 md:px-4 py-2.5 text-xs md:text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 w-full md:w-auto justify-center"
-                    title={t("createRecruitPost") || "Create group post"}
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">
-                      {t("createRecruitPost") || "Create recruitment post"}
-                    </span>
-                    <span className="sm:hidden">
-                      {t("createRecruitPost") || "Create recruitment Post"}
-                    </span>
-                  </button>
-                ) : (
+                {userRole === "leader" &&
+                  (() => {
+                    // Only check if group details are loaded
+                    if (!myGroupDetails) {
+                      // If group details not loaded yet, show button
+                      return (
+                        <button
+                          onClick={() => setIsCreatePostModalOpen(true)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-[#FF7A00] px-3 md:px-4 py-2.5 text-xs md:text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 w-full md:w-auto justify-center"
+                          title={t("createRecruitPost") || "Create group post"}
+                        >
+                          <Plus className="h-4 w-4" />
+                          <span className="hidden sm:inline">
+                            {t("createRecruitPost") ||
+                              "Create recruitment post"}
+                          </span>
+                          <span className="sm:hidden">
+                            {t("createRecruitPost") ||
+                              "Create recruitment Post"}
+                          </span>
+                        </button>
+                      );
+                    }
+
+                    // Check if group is full
+                    const currentMembers =
+                      myGroupDetails.currentMembers ||
+                      myGroupDetails.members?.length ||
+                      0;
+                    const maxMembers =
+                      myGroupDetails.maxMembers || myGroupDetails.capacity || 0;
+                    const isGroupFull =
+                      maxMembers > 0 && currentMembers >= maxMembers;
+
+                    // Show button only if group is not full
+                    return !isGroupFull ? (
+                      <button
+                        onClick={() => setIsCreatePostModalOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-[#FF7A00] px-3 md:px-4 py-2.5 text-xs md:text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 w-full md:w-auto justify-center"
+                        title={t("createRecruitPost") || "Create group post"}
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden sm:inline">
+                          {t("createRecruitPost") || "Create recruitment post"}
+                        </span>
+                        <span className="sm:hidden">
+                          {t("createRecruitPost") || "Create recruitment Post"}
+                        </span>
+                      </button>
+                    ) : null;
+                  })()}
+                {userRole !== "leader" && !membership.hasGroup && (
                   <button
                     onClick={() => setIsCreatePersonalPostModalOpen(true)}
                     className="inline-flex items-center gap-2 rounded-xl bg-[#FF7A00] px-3 md:px-4 py-2.5 text-xs md:text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 w-full md:w-auto justify-center"
@@ -717,6 +739,7 @@ const Forum = () => {
                 userRole={userRole}
                 onInvite={onInvite}
                 onClickProfile={goProfile}
+                membership={membership}
               />
             ))}
 
