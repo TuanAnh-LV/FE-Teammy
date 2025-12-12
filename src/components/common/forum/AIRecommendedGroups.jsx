@@ -215,7 +215,7 @@ export function AIRecommendedGroups({
                 <Users className="h-4 w-4" />
                 {currentMembers > 0 && (
                   <span>
-                    {currentMembers}/{maxMembers} {t("members") || "Members"}
+                    {currentMembers}/{maxMembers} {t("Members") || "Members"}
                   </span>
                 )}
               </div>

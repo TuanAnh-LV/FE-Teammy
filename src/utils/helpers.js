@@ -15,6 +15,10 @@ export function timeAgoFrom(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
+  
+  // Handle future dates (negative diffSec) - treat as "just now"
+  if (diffSec < 0) return "just now";
+  
   const m = Math.floor(diffSec / 60);
   const h = Math.floor(m / 60);
   const day = Math.floor(h / 24);

@@ -255,7 +255,7 @@ const GroupDetailModal = ({
               {/* Members list */}
               <div className="mt-3">
                 <div className="mb-2 text-xs font-semibold text-gray-600">
-                  {(t("members") || "Members") + ` (${memberList.length})`}
+                  {(t("Members") || "Members") + ` (${memberList.length})`}
                 </div>
 
                 {memberList.length ? (

@@ -52,16 +52,24 @@ export function GroupCard({
                 )
               }
             >
-              <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm md:text-lg font-semibold shrink-0">
-                {(
-                  post.group?.leader?.displayName ||
-                  post.leader?.displayName ||
-                  post.group?.name ||
-                  "T"
-                )
-                  .slice(0, 1)
-                  .toUpperCase()}
-              </div>
+              {post.group?.leader?.avatarUrl || post.leader?.avatarUrl ? (
+                <img
+                  src={post.group?.leader?.avatarUrl || post.leader?.avatarUrl}
+                  alt="Avatar"
+                  className="h-7 w-7 md:h-8 md:w-8 rounded-full object-cover shrink-0"
+                />
+              ) : (
+                <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm md:text-lg font-semibold shrink-0">
+                  {(
+                    post.group?.leader?.displayName ||
+                    post.leader?.displayName ||
+                    post.group?.name ||
+                    "T"
+                  )
+                    .slice(0, 1)
+                    .toUpperCase()}
+                </div>
+              )}
               <span className="truncate">
                 {post.group?.leader?.displayName || post.leader?.displayName} •{" "}
                 {post.group?.leader?.role ||
@@ -150,7 +158,7 @@ export function GroupCard({
           {!!post.currentMembers && (
             <span>
               {post.currentMembers}/{post.group?.maxMembers}{" "}
-              {t("members") || "Members"}
+              {t("Members") || "Members"}
             </span>
           )}
         </div>
