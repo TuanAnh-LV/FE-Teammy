@@ -18,6 +18,7 @@ export function AIRecommendedProfiles({
   aiSuggestedPosts,
   membership,
   onInvite,
+  myGroupDetails,
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -115,7 +116,10 @@ export function AIRecommendedProfiles({
                 )}
                 <div
                   className="h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white"
-                  style={{ display: avatarUrl ? "none" : "flex", cursor: userId ? "pointer" : "default" }}
+                  style={{
+                    display: avatarUrl ? "none" : "flex",
+                    cursor: userId ? "pointer" : "default",
+                  }}
                   role={userId ? "button" : undefined}
                   onClick={() => userId && navigate(`/profile/${userId}`)}
                 >
@@ -179,7 +183,25 @@ export function AIRecommendedProfiles({
                 {profilePost.hasApplied && inviteStatus ? (
                   <StatusChip status={inviteStatus} />
                 ) : membership?.status !== "member" &&
-                  membership?.status !== "student" ? (
+                  membership?.status !== "student" &&
+                  (() => {
+                    // Kiểm tra xem nhóm đã full thành viên chưa
+                    if (myGroupDetails) {
+                      const currentMembers =
+                        myGroupDetails.currentMembers ||
+                        myGroupDetails.members?.length ||
+                        0;
+                      const maxMembers =
+                        myGroupDetails.maxMembers ||
+                        myGroupDetails.capacity ||
+                        0;
+                      // Nếu nhóm đã full thành viên, ẩn nút invite
+                      if (currentMembers >= maxMembers) {
+                        return false;
+                      }
+                    }
+                    return true;
+                  })() ? (
                   <button
                     onClick={async () => {
                       if (postId && onInvite) {

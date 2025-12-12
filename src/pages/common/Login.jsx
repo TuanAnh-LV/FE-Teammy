@@ -39,7 +39,7 @@ const Login = () => {
           navigate("/mentor/dashboard", { replace: true });
           break;
         case "moderator":
-          navigate("/moderator/dashboard", { replace: true });
+          navigate("/moderator/group", { replace: true });
           break;
         default:
           navigate("/", { replace: true });
@@ -81,7 +81,6 @@ const Login = () => {
           navigate("/");
       }
     } catch (error) {
-
       notification.error({
         message: t("signInFailed"),
         description: error?.message || t("pleaseTryAgain"),
@@ -163,4 +162,3 @@ const Login = () => {
 };
 
 export default Login;
-

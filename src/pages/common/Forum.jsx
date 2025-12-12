@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { Plus, Search, Users, MessageSquare } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
 import CreatePostModal from "../../components/common/forum/CreatePostModal";
@@ -74,8 +80,8 @@ const Forum = () => {
     // Chỉ xử lý event cho profile_post invitations
     if (payload.type === "profile_post" && payload.postId) {
       // Update trạng thái của post trong danh sách
-      const updatePostStatus = (posts) => 
-        posts.map((post) => 
+      const updatePostStatus = (posts) =>
+        posts.map((post) =>
           post.id === payload.postId
             ? { ...post, hasApplied: true, myApplicationStatus: "pending" }
             : post
@@ -273,10 +279,6 @@ const Forum = () => {
 
   /** 5) Gọi AI suggestions khi chuyển sang tab groups */
   useEffect(() => {
-    // Don't show AI suggestions if:
-    // 1. Not on groups tab
-    // 2. User doesn't have majorId
-    // 3. User already has group and it's active (full + has topic)
     if (activeTab !== "groups" || !savedUser?.majorId) {
       setAiSuggestedGroupPosts([]);
       return;
@@ -772,6 +774,7 @@ const Forum = () => {
               aiSuggestedPosts={aiSuggestedPosts}
               membership={membership}
               onInvite={onInvite}
+              myGroupDetails={myGroupDetails}
             />
           )}
 
@@ -808,6 +811,7 @@ const Forum = () => {
                 onInvite={onInvite}
                 onClickProfile={goProfile}
                 membership={membership}
+                myGroupDetails={myGroupDetails}
               />
             ))}
 
