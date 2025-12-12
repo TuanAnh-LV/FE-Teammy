@@ -1,6 +1,7 @@
 import React from "react";
 import { X, UserRound } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
+import { useNavigate } from "react-router-dom";
 
 export default function NotificationDrawer({
   open,
@@ -10,7 +11,17 @@ export default function NotificationDrawer({
   onReject,
 }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  
   if (!open) return null;
+
+  const handleNotificationClick = (notification) => {
+    // Nếu là application, redirect đến trang pending của group
+    if (notification.type === "application" && notification.groupId) {
+      navigate(`/my-groups?tab=applications&groupId=${notification.groupId}`);
+      onClose();
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50">
@@ -41,7 +52,10 @@ export default function NotificationDrawer({
             items.map((n) => (
               <div
                 key={n.id}
-                className="rounded-xl border border-gray-200 bg-white shadow-sm p-3"
+                className={`rounded-xl border border-gray-200 bg-white shadow-sm p-3 ${
+                  n.type === "application" ? "cursor-pointer hover:bg-gray-50" : ""
+                }`}
+                onClick={() => n.type === "application" && handleNotificationClick(n)}
               >
                 <div className="flex items-start gap-3">
                   {n.avatarUrl ? (
@@ -57,7 +71,7 @@ export default function NotificationDrawer({
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-gray-900">
                         {n.title || n.name || t("notifications") || "Notifications"}
                       </p>
                       {n.time && (
@@ -66,12 +80,22 @@ export default function NotificationDrawer({
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-700 mt-1">
+                    <p className="text-sm text-gray-700 mt-1 break-words">
                       {n.message || t("projectInviteMessage") || "You have a project invitation."}
                     </p>
 
+                    {/* View Details cho application */}
+                    {n.type === "application" && (
+                      <div className="mt-2">
+                        <span className="text-xs text-blue-600 font-medium">
+                          {t("clickToView") || "Click to view details"} →
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Accept/Reject actions cho invitations */}
                     {(n.actions?.includes("accept") || n.actions?.includes("reject")) && (
-                      <div className="flex items-center gap-2 mt-3">
+                      <div className="flex items-center gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
                         {n.actions?.includes("reject") && (
                           <button
                             onClick={() => onReject?.(n)}

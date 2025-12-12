@@ -11,20 +11,9 @@ export default function AssignRoleModal({
 }) {
   const [selectedRole, setSelectedRole] = useState("");
 
-  const roles = [
-    { value: "Leader", label: t("leader") || "Leader" },
-    { value: "Frontend", label: "Frontend" },
-    { value: "Backend", label: "Backend" },
-    { value: "Mobile", label: "Mobile" },
-    { value: "DevOps", label: "DevOps" },
-    { value: "QA", label: "QA/Tester" },
-    { value: "Designer", label: "Designer" },
-    { value: "Member", label: t("member") || "Member" },
-  ];
-
   useEffect(() => {
     if (member && isOpen) {
-      setSelectedRole(member.role || "Member");
+      setSelectedRole(member.role || "");
     }
   }, [member, isOpen]);
 
@@ -86,24 +75,21 @@ export default function AssignRoleModal({
 
         <div className="px-6 py-5">
           <label className="mb-2 block text-sm font-medium text-gray-700">
-            {t("selectRole") || "Select Role"}{" "}
+            {t("selectRole") || "Select a role"}{" "}
             <span className="text-red-500">*</span>
           </label>
-          <select
+          <input
+            type="text"
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value)}
+            placeholder={t("enterRole") || "Enter role (e.g., Frontend, Backend, Designer...)"}
             className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-4 ring-blue-100 transition"
             required
-          >
-            <option value="" disabled>
-              {t("chooseRole") || "Choose a role"}
-            </option>
-            {roles.map((role) => (
-              <option key={role.value} value={role.value}>
-                {role.label}
-              </option>
-            ))}
-          </select>
+            disabled={submitting}
+          />
+          <p className="mt-2 text-xs text-gray-500">
+            {t("roleHint") || "Examples: Frontend, Backend, Mobile, DevOps, QA/Tester, Designer, Leader, Member"}
+          </p>
         </div>
 
         <div className="flex items-center justify-end gap-3 border-t px-6 py-4">

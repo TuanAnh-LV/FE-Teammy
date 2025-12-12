@@ -1,16 +1,103 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useGroupInvitationSignalR } from "../../hook/useGroupInvitationSignalR";
 import { useDispatch } from "react-redux";
-import { addPendingInvitation, updateInvitationStatus, removeInvitation } from "../../app/invitationSlice";
+import {
+  addPendingInvitation,
+  updateInvitationStatus,
+  removeInvitation,
+  setPendingInvitations,
+} from "../../app/invitationSlice";
 import { notification } from "antd";
 import { useTranslation } from "../../hook/useTranslation";
+import { InvitationService } from "../../services/invitation.service";
 
 
 export default function RealtimeInvitationListener() {
   const { token, userInfo } = useAuth();
   const dispatch = useDispatch();
   const { t } = useTranslation();
+  const syncLockRef = useRef(false);
+
+  const normalizeInvitation = useCallback((invitation) => {
+    const normalizedId =
+      invitation.invitationId ||
+      invitation.id ||
+      (invitation.postId && invitation.candidateId
+        ? `${invitation.postId}-${invitation.candidateId}`
+        : undefined) ||
+      invitation.candidateId ||
+      invitation.groupId ||
+      `inv-${Date.now()}`;
+
+    // Extract inviter name from multiple possible fields
+    const inviterName = 
+      invitation.invitedByName || 
+      invitation.invitedBy || 
+      invitation.leaderDisplayName || 
+      invitation.leaderName ||
+      invitation.senderName ||
+      invitation.senderDisplayName ||
+      invitation.inviterName ||
+      invitation.inviterDisplayName;
+
+    return {
+      id: normalizedId,
+      invitationId: normalizedId,
+      groupId: invitation.groupId,
+      groupName: invitation.groupName,
+      postId: invitation.postId,
+      candidateId: invitation.candidateId,
+      postTitle: invitation.postTitle,
+      invitedBy: inviterName,
+      invitedByName: inviterName,
+      invitedByAvatar: invitation.invitedByAvatar || invitation.inviterAvatar,
+      type: invitation.type || (invitation.postId ? "profile-post" : "direct"),
+      status: invitation.status || "pending",
+      createdAt: invitation.createdAt || new Date().toISOString(),
+    };
+  }, []);
+
+  const syncPendingInvitations = useCallback(async () => {
+    if (syncLockRef.current) return;
+    if (!token) return;
+    syncLockRef.current = true;
+    try {
+      const [directRes, postRes] = await Promise.all([
+        InvitationService.list({ status: "pending" }, false),
+        InvitationService.getMyProfilePostInvitations({ status: "pending" }, false),
+      ]);
+
+      const directData = Array.isArray(directRes?.data) ? directRes.data : [];
+      const postData = Array.isArray(postRes?.data) ? postRes.data : [];
+
+      const normalizedDirect = directData.map((item) =>
+        normalizeInvitation({
+          ...item,
+          type: "direct",
+        })
+      );
+
+      const normalizedPost = postData.map((item) =>
+        normalizeInvitation({
+          ...item,
+          type: "profile-post",
+          postId: item.postId,
+          candidateId: item.candidateId,
+          postTitle: item.postTitle,
+          groupId: item.groupId,
+          groupName: item.groupName,
+          invitedByName: item.leaderDisplayName || item.invitedByName,
+        })
+      );
+
+      dispatch(setPendingInvitations([...normalizedDirect, ...normalizedPost]));
+    } catch (error) {
+      console.error("[Realtime] Failed to sync pending invitations:", error);
+    } finally {
+      syncLockRef.current = false;
+    }
+  }, [dispatch, normalizeInvitation, token]);
 
 
   /**
@@ -18,9 +105,11 @@ export default function RealtimeInvitationListener() {
    * Triggered when: invite member, invite in forum, or any new invitation
    */
   const handleInvitationCreated = useCallback((dto) => {
-    // Add to Redux state
-    dispatch(addPendingInvitation(dto));
-  }, [dispatch, t]);
+    const normalized = normalizeInvitation(dto);
+    dispatch(addPendingInvitation(normalized));
+    // Ensure store/UI consistent even if realtime payload misses some fields
+    syncPendingInvitations();
+  }, [dispatch, normalizeInvitation, syncPendingInvitations, t]);
 
 
   /**
@@ -34,61 +123,11 @@ export default function RealtimeInvitationListener() {
       status: dto.status,
     }));
     
-    // Show appropriate notification based on status
-    const statusMessages = {
-      accepted: {
-        title: t("notifications.invitationAccepted") || "Invitation Accepted",
-        description: "You have accepted the invitation successfully!",
-        type: "success",
-      },
-      declined: {
-        title: t("notifications.invitationDeclined") || "Invitation Declined",
-        description: "You have declined the invitation",
-        type: "info",
-      },
-      expired: {
-        title: t("notifications.invitationExpired") || "Invitation Expired",
-        description: "This invitation has expired",
-        type: "warning",
-      },
-      cancelled: {
-        title: t("notifications.invitationCancelled") || "Invitation Cancelled",
-        description: dto.message || "The invitation has been cancelled",
-        type: "info",
-      },
-    };
-    
-    const config = statusMessages[dto.status];
-    if (config) {
-      if (config.type === "success") {
-        notification.success({
-          message: config.title,
-          description: config.description,
-          duration: 3,
-          placement: "topRight",
-        });
-      } else if (config.type === "warning") {
-        notification.warning({
-          message: config.title,
-          description: config.description,
-          duration: 3,
-          placement: "topRight",
-        });
-      } else {
-        notification.info({
-          message: config.title,
-          description: config.description,
-          duration: 3,
-          placement: "topRight",
-        });
-      }
-    }
-    
     // Remove from pending list if not pending anymore
     if (dto.status !== "pending") {
       dispatch(removeInvitation(dto.invitationId || dto.id));
     }
-  }, [dispatch, t]);
+  }, [dispatch]);
 
   /**
    * Handle PendingUpdated Event
@@ -164,7 +203,7 @@ export default function RealtimeInvitationListener() {
   }, []);
 
   // Khởi tạo SignalR connection
-  useGroupInvitationSignalR(token, userInfo?.userId, {
+  const { isConnected } = useGroupInvitationSignalR(token, userInfo?.userId, {
     onInvitationCreated: handleInvitationCreated,
     onInvitationStatusChanged: handleInvitationStatusChanged,
     onPendingUpdated: handlePendingUpdated,
@@ -173,6 +212,11 @@ export default function RealtimeInvitationListener() {
     onGroupUpdated: handleGroupUpdated,
     onMemberJoined: handleMemberJoined,
   });
+
+  useEffect(() => {
+    if (!token || !userInfo?.userId || !isConnected) return;
+    syncPendingInvitations();
+  }, [isConnected, syncPendingInvitations, token, userInfo?.userId]);
 
   return null; 
 }

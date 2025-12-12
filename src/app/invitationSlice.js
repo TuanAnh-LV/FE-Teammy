@@ -7,6 +7,12 @@ const initialState = {
   applicationCount: 0,
 };
 
+const getInviteKey = (inv = {}) => {
+  if (inv.postId && inv.candidateId) return `${inv.postId}-${inv.candidateId}`;
+  if (inv.groupId && inv.candidateId) return `${inv.groupId}-${inv.candidateId}`;
+  return inv.invitationId || inv.id || inv.candidateId || inv.groupId;
+};
+
 const invitationSlice = createSlice({
   name: "invitation",
   initialState,
@@ -14,9 +20,11 @@ const invitationSlice = createSlice({
     // Thêm invitation mới từ realtime
     addPendingInvitation: (state, action) => {
       const invitation = action.payload;
-      const exists = state.pendingInvitations.find(
-        (inv) => inv.id === invitation.id
-      );
+      const newKey = getInviteKey(invitation);
+      const exists = state.pendingInvitations.find((inv) => {
+        const existingKey = getInviteKey(inv);
+        return existingKey && existingKey === newKey;
+      });
       if (!exists) {
         state.pendingInvitations.unshift(invitation);
         state.unreadCount += 1;
@@ -27,7 +35,7 @@ const invitationSlice = createSlice({
     updateInvitationStatus: (state, action) => {
       const { invitationId, status } = action.payload;
       const invitation = state.pendingInvitations.find(
-        (inv) => inv.id === invitationId
+        (inv) => inv.id === invitationId || inv.invitationId === invitationId
       );
       if (invitation) {
         invitation.status = status;
@@ -39,8 +47,16 @@ const invitationSlice = createSlice({
 
     // Set invitations từ API
     setPendingInvitations: (state, action) => {
-      state.pendingInvitations = action.payload;
-      state.unreadCount = action.payload.filter(
+      const uniqueMap = new Map();
+      action.payload.forEach((inv) => {
+        const key = getInviteKey(inv);
+        if (!key) return;
+        if (!uniqueMap.has(key)) {
+          uniqueMap.set(key, inv);
+        }
+      });
+      state.pendingInvitations = Array.from(uniqueMap.values());
+      state.unreadCount = state.pendingInvitations.filter(
         (inv) => inv.status === "pending"
       ).length;
     },
@@ -54,7 +70,7 @@ const invitationSlice = createSlice({
     removeInvitation: (state, action) => {
       const invitationId = action.payload;
       state.pendingInvitations = state.pendingInvitations.filter(
-        (inv) => inv.id !== invitationId
+        (inv) => inv.id !== invitationId && inv.invitationId !== invitationId
       );
     },
 
@@ -88,12 +104,58 @@ const invitationSlice = createSlice({
       }
     },
 
-    // Set applications từ API
+    // Set applications từ API (initial load)
     setApplications: (state, action) => {
       state.applications = action.payload;
       state.applicationCount = action.payload.filter(
         (app) => app.status === "pending"
       ).length;
+    },
+
+    // Batch update từ PendingUpdated event
+    updatePendingList: (state, action) => {
+      const { groupId, candidates } = action.payload;
+      
+      if (!candidates || !Array.isArray(candidates)) return;
+      
+      // Update hoặc thêm mới các candidates
+      candidates.forEach((candidate) => {
+        const existingIndex = state.applications.findIndex(
+          (app) => app.id === candidate.id
+        );
+        
+        const application = {
+          id: candidate.id,
+          groupId: groupId,
+          userId: candidate.userId,
+          userName: candidate.userName,
+          userEmail: candidate.userEmail,
+          userAvatar: candidate.userAvatar,
+          status: candidate.status || "pending",
+          appliedAt: candidate.appliedAt,
+          skills: candidate.skills || [],
+          major: candidate.major,
+        };
+        
+        if (existingIndex >= 0) {
+          // Update existing
+          const oldStatus = state.applications[existingIndex].status;
+          state.applications[existingIndex] = application;
+          
+          // Update count nếu status changed
+          if (oldStatus === "pending" && application.status !== "pending") {
+            state.applicationCount = Math.max(0, state.applicationCount - 1);
+          } else if (oldStatus !== "pending" && application.status === "pending") {
+            state.applicationCount += 1;
+          }
+        } else {
+          // Add new
+          state.applications.unshift(application);
+          if (application.status === "pending") {
+            state.applicationCount += 1;
+          }
+        }
+      });
     },
 
     // Remove application
@@ -120,6 +182,7 @@ export const {
   addApplication,
   updateApplicationStatus,
   setApplications,
+  updatePendingList,
   removeApplication,
   markApplicationsAsRead,
 } = invitationSlice.actions;

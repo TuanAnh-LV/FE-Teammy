@@ -549,6 +549,43 @@ export default function MyGroup() {
     }
   };
 
+  const handleTransferLeader = (member) => {
+    if (!group?.id || !member) return;
+
+    const memberId = member.id || member.userId || member.userID || member.memberId || member.accountId;
+    const memberName = member.name || member.displayName || member.email;
+
+    Modal.confirm({
+      title: t("confirmChangeLeader") || "Change Leader",
+      content: `${t("confirmChangeLeaderMessage") || "Are you sure you want to transfer leadership to"} ${memberName}?`,
+      okText: t("confirm") || "Confirm",
+      cancelText: t("cancel") || "Cancel",
+      okButtonProps: { type: "primary" },
+      onOk: async () => {
+        try {
+          await GroupService.transferLeader(group.id, memberId);
+          notification.success({
+            message: t("leadershipTransferred") || "Leadership transferred",
+            description: `${memberName} ${t("isNowTheLeader") || "is now the leader"}`,
+          });
+          
+          // Reload group details
+          try {
+            await fetchGroupDetail();
+          } catch (fetchError) {
+            // Ignore fetch error, just log it
+            console.error("Failed to refresh group details:", fetchError);
+          }
+        } catch (error) {
+          notification.error({
+            message: t("failedToTransferLeader") || "Failed to transfer leadership",
+            description: error?.response?.data?.message || error?.message || t("pleaseTryAgain") || "Please try again.",
+          });
+        }
+      },
+    });
+  };
+
   // Kanban Logic - Always load board data to show recent activity
   const {
     filteredColumns,
@@ -768,6 +805,7 @@ export default function MyGroup() {
                   onInvite={() => setShowModal(true)}
                   onAssignRole={handleAssignRole}
                   onKickMember={handleKickMember}
+                  onTransferLeader={handleTransferLeader}
                   currentUserEmail={userInfo?.email}
                   t={t}
                   showStats={false}
@@ -786,6 +824,7 @@ export default function MyGroup() {
                     onInvite={() => setShowModal(true)}
                     onAssignRole={handleAssignRole}
                     onKickMember={handleKickMember}
+                    onTransferLeader={handleTransferLeader}
                     currentUserEmail={userInfo?.email}
                     t={t}
                     showStats
