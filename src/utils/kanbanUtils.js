@@ -28,6 +28,7 @@ export function filterColumns(
   filterPriority,
   allColumnIds
 ) {
+  const normalize = (v = "") => v.toLowerCase().replace(/[\s_]+/g, "");
   const columnIds =
     allColumnIds && allColumnIds.length
       ? allColumnIds
@@ -38,7 +39,9 @@ export function filterColumns(
       task.title.toLowerCase().includes(search.toLowerCase()) ||
       task.description.toLowerCase().includes(search.toLowerCase());
     const matchStatus =
-      !filterStatus || filterStatus === "All" || task.status === filterStatus;
+      !filterStatus ||
+      filterStatus === "All" ||
+      normalize(task.status) === normalize(filterStatus);
     const matchPriority =
       !filterPriority ||
       filterPriority === "All" ||
