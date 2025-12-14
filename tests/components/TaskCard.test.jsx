@@ -1,5 +1,38 @@
+/**
+UTC01 N Render task info and open => Calls onOpen with task
+- Pre: task has title, description, priority, column meta
+- Condition: render TaskCard and click title
+- Confirmation: text visible; onOpen called with task object
+
+UTC02 B Missing due date and non-array comments => Shows fallback values
+- Pre: task dueDate null; comments not array
+- Condition: render TaskCard
+- Confirmation: due date shows "--"; comments count shows 0
+
+UTC03 B Many assignees => Shows initials and +X overflow
+- Pre: task assignees length > 3
+- Condition: render TaskCard
+- Confirmation: first initials shown; "+1" overflow badge shown
+
+UTC04 N Done column => Uses done status color
+- Pre: columnMeta done isDone true; task status done/columnId done
+- Condition: render TaskCard
+- Confirmation: status element has emerald class
+
+UTC05 B Status tone by position => Colors change by column order
+- Pre: columnMeta with multiple non-done columns and positions
+- Condition: render three TaskCards in different columns
+- Confirmation: first gray, second blue, third indigo classes
+
+UTC06 N Drag setup => useSortable called with task id
+- Pre: useSortable mocked
+- Condition: render TaskCard
+- Confirmation: useSortable called with { id: task.id }
+*/
+
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { jest } from "@jest/globals";
 import TaskCard from "../../src/components/common/kanban/TaskCard";
 
@@ -41,8 +74,12 @@ const columnMeta = {
   done: { title: "Done", position: 3, isDone: true },
 };
 
-describe("TaskCard", () => {
-  test("renders task info and calls onOpen when clicked", () => {
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
+describe("TaskCard Report5", () => {
+  test("UTC01 [N] Render task info and open => Calls onOpen with task", async () => {
     const onOpen = jest.fn();
     render(<TaskCard task={baseTask} onOpen={onOpen} columnMeta={columnMeta} />);
 
@@ -51,11 +88,11 @@ describe("TaskCard", () => {
     expect(screen.getByText("medium")).toBeInTheDocument();
     expect(screen.getByText("To Do")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("Sample Task"));
+    await userEvent.click(screen.getByText("Sample Task"));
     expect(onOpen).toHaveBeenCalledWith(baseTask);
   });
 
-  test("shows due date fallback and comments count", () => {
+  test("UTC02 [B] Missing due date and non-array comments => Shows fallback values", () => {
     render(
       <TaskCard
         task={{ ...baseTask, dueDate: null, comments: "not-array" }}
@@ -67,7 +104,7 @@ describe("TaskCard", () => {
     expect(screen.getByText("0")).toBeInTheDocument();
   });
 
-  test("shows assignees initials and +X when over limit", () => {
+  test("UTC03 [B] Many assignees => Shows initials and +X overflow", () => {
     const many = [
       { id: "u1", name: "Alice" },
       { id: "u2", name: "Bob" },
@@ -79,7 +116,7 @@ describe("TaskCard", () => {
     expect(screen.getByText("A")).toBeInTheDocument();
   });
 
-  test("uses done status class when column isDone is true", () => {
+  test("UTC04 [N] Done column => Uses done status color", () => {
     render(
       <TaskCard
         task={{ ...baseTask, status: "done", columnId: "done" }}
@@ -88,10 +125,10 @@ describe("TaskCard", () => {
       />
     );
     const status = screen.getByText("Done");
-    expect(status.className).toMatch(/emerald/);
+    expect(status.className).toMatch(/emerald/i);
   });
 
-  test("status color changes by position in non-done columns", () => {
+  test("UTC05 [B] Status tone by position => Colors change by column order", () => {
     const meta = {
       todo: { title: "To Do", position: 1, columnId: "todo" },
       doing: { title: "Doing", position: 2, columnId: "doing" },
@@ -108,14 +145,22 @@ describe("TaskCard", () => {
     );
 
     const [first, second, third] = screen.getAllByText(/To Do|Doing|Review/);
-    expect(first.className).toMatch(/gray/); // first column
-    expect(second.className).toMatch(/blue/); // second non-done
-    expect(third.className).toMatch(/indigo/); // later column
+    expect(first.className).toMatch(/gray/i);
+    expect(second.className).toMatch(/blue/i);
+    expect(third.className).toMatch(/indigo/i);
   });
 
-  test("useSortable called with task id", () => {
+  test("UTC06 [N] Drag setup => useSortable called with task id", () => {
     const { useSortable } = require("@dnd-kit/sortable");
     render(<TaskCard task={baseTask} onOpen={jest.fn()} columnMeta={columnMeta} />);
     expect(useSortable).toHaveBeenCalledWith({ id: baseTask.id });
   });
 });
+
+export const UT_REPORT_5_SUMMARY = {
+  functionName: "TaskCard",
+  totalTC: 6,
+  breakdown: { N: 3, B: 3, A: 0 },
+  notes:
+    "Covers rendering, missing due/comments boundary, overflow assignees, done column tone, position-based status tone, and dnd useSortable integration.",
+};

@@ -325,10 +325,8 @@ export default function BacklogTab({
   const visibleItems = useMemo(() => items || [], [items]);
 
   const renderOwnerAvatar = (ownerId) => {
-    const member = memberMap.get(String(ownerId));
-    if (!member) return null;
-    const name =
-      member.name || member.displayName || member.fullName || member.email || "";
+    const name = getOwnerName(ownerId);
+    if (!name || name === "--") return null;
     const initials = name
       .split(" ")
       .filter(Boolean)
@@ -505,6 +503,7 @@ export default function BacklogTab({
             <Input
               value={form.title}
               onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+              aria-label={t("title") || "Title"}
               placeholder={t("enterTitle") || "Enter title"}
             />
           </div>
@@ -516,6 +515,7 @@ export default function BacklogTab({
               value={form.priority}
               onChange={(value) => setForm((prev) => ({ ...prev, priority: value }))}
               options={priorityOptions}
+              aria-label={t("priority") || "Priority"}
               className="w-full"
             />
           </div>
@@ -527,6 +527,7 @@ export default function BacklogTab({
               value={form.category}
               onChange={(value) => setForm((prev) => ({ ...prev, category: value }))}
               options={categoryOptions}
+              aria-label={t("category") || "Category"}
               className="w-full"
             />
           </div>
@@ -538,6 +539,7 @@ export default function BacklogTab({
               className="w-full"
               min={0}
               value={form.storyPoints}
+              aria-label={t("storyPoints") || "Story Points"}
               onChange={(value) =>
                 setForm((prev) => ({ ...prev, storyPoints: Number(value) || 0 }))
               }
@@ -550,6 +552,7 @@ export default function BacklogTab({
             <DatePicker
               className="w-full"
               value={form.dueDate}
+              aria-label={t("dueDate") || "Due date"}
               onChange={(value) => setForm((prev) => ({ ...prev, dueDate: value }))}
             />
           </div>
@@ -561,6 +564,7 @@ export default function BacklogTab({
               allowClear
               value={form.ownerUserId || null}
               placeholder={t("selectOwner") || "Select owner"}
+              aria-label={t("owner") || "Owner"}
               onChange={(value) => setForm((prev) => ({ ...prev, ownerUserId: value }))}
               options={(groupMembers || []).map((m) => ({
                 value:
@@ -584,6 +588,7 @@ export default function BacklogTab({
                 value={form.status}
                 onChange={(value) => setForm((prev) => ({ ...prev, status: value }))}
                 options={statusOptions}
+                aria-label={t("status") || "Status"}
                 className="w-full"
               />
             </div>
@@ -595,6 +600,7 @@ export default function BacklogTab({
             <Input.TextArea
               rows={4}
               value={form.description}
+              aria-label={t("description") || "Description"}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, description: e.target.value }))
               }
@@ -607,4 +613,3 @@ export default function BacklogTab({
     </div>
   );
 }
-

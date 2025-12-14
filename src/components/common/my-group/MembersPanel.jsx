@@ -295,9 +295,9 @@ export default function MembersPanel({
           </div>
           <div className="mt-3 space-y-3">
             {groupMembers?.length ? (
-              groupMembers.map((member) => (
+              groupMembers.map((member, index) => (
                 <div
-                  key={member.id || member.email}
+                  key={member.id || member.email || `member-${index}`}
                   className="flex items-center justify-between border border-gray-200 rounded-xl px-3 py-3 bg-white shadow-sm relative"
                 >
                   <div
