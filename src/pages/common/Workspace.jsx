@@ -1,5 +1,5 @@
 // src/pages/Workspace.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -16,6 +16,8 @@ import useKanbanBoard from "../../hook/useKanbanBoard";
 import { useTranslation } from "../../hook/useTranslation";
 import { useLocation, useParams } from "react-router-dom";
 import { GroupService } from "../../services/group.service";
+import { BoardService } from "../../services/board.service";
+import ListView from "../../components/common/workspace/ListView";
 
 const Workspace = () => {
   const { id: routeGroupId } = useParams();
@@ -29,6 +31,9 @@ const Workspace = () => {
   const [resolvedGroupId, setResolvedGroupId] = useState(
     queryGroupId || routeGroupId || storedGroupId
   );
+  const [boardView, setBoardView] = useState(
+    searchParams.get("view") === "list" ? "list" : "kanban"
+  );
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -37,13 +42,22 @@ const Workspace = () => {
     })
   );
   const [activeTab, setActiveTab] = useState("overview");
+  const [listViewFilterStatus, setListViewFilterStatus] = useState("All");
+  const [listViewFilterPriority, setListViewFilterPriority] = useState("All");
 
   const {
+    columns,
     filteredColumns,
     columnMeta,
     groupMembers,
     selectedTask,
     setSelectedTask,
+    search,
+    setSearch,
+    filterStatus,
+    setFilterStatus,
+    filterPriority,
+    setFilterPriority,
     handleDragOver,
     handleDragEnd,
     createColumn,
@@ -65,6 +79,8 @@ const Workspace = () => {
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const [columnForm] = Form.useForm();
 
+  const normalizeTitle = (value = "") =>
+    value.toLowerCase().replace(/\s+/g, "_");
   const handleCreateColumn = () => {
     columnForm.validateFields().then((values) => {
       const payload = {
@@ -76,6 +92,128 @@ const Workspace = () => {
       columnForm.resetFields();
     });
   };
+  const handleQuickCreateTask = () => {
+    if (!firstColumnId) return;
+    createTask({
+      columnId: firstColumnId,
+      title: "New Task",
+      description: "",
+      priority: "medium",
+      status: normalizeTitle(columnMeta?.[firstColumnId]?.title || "todo"),
+      dueDate: null,
+    });
+  };
+  const handleMoveColumn = (columnId, columnMetaData = {}) => {
+    let nextPosition = columnMetaData?.position ?? 0;
+    Modal.confirm({
+      title: t("moveColumn") || "Move column",
+      content: (
+        <div className="space-y-2">
+          <p className="text-sm text-gray-600">
+            {t("enterNewPosition") || "Enter new position (0 = first)."}
+          </p>
+          <input
+            type="number"
+            defaultValue={nextPosition}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            onChange={(e) => {
+              nextPosition = Number(e.target.value) || 0;
+            }}
+          />
+        </div>
+      ),
+      okText: t("ok") || "OK",
+      cancelText: t("cancel") || "Cancel",
+      onOk: async () => {
+        try {
+          await BoardService.updateColumn(resolvedGroupId, columnId, {
+            position: nextPosition,
+          });
+          refetchBoard({ showLoading: false });
+        } catch (err) {
+
+        }
+      },
+    });
+  };
+  const handleSwitchView = (view) => {
+    setBoardView(view);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("view", view);
+      window.history.replaceState({}, "", url.toString());
+    } catch (err) {
+
+    }
+  };
+  const handleResetFilters = () => {
+    setSearch("");
+    setFilterPriority("All");
+    setFilterStatus("All");
+  };
+  const formatStatusLabel = (value = "") =>
+    value
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  const sortedColumns = useMemo(() => {
+    return Object.entries(columnMeta || {}).sort(
+      (a, b) => (a[1]?.position || 0) - (b[1]?.position || 0)
+    );
+  }, [columnMeta]);
+  const flattenedTasks = useMemo(() => {
+    return Object.entries(filteredColumns || {}).flatMap(
+      ([colId, tasksInCol]) =>
+        (tasksInCol || []).map((task) => ({
+          ...task,
+          columnId: colId,
+          columnTitle: columnMeta?.[colId]?.title || colId,
+        }))
+    );
+  }, [filteredColumns, columnMeta]);
+
+  const listViewFilteredTasks = useMemo(() => {
+    return flattenedTasks.filter((task) => {
+      const statusMatch =
+        listViewFilterStatus === "All" ||
+        (task.status || "").toLowerCase() === listViewFilterStatus.toLowerCase();
+      const priorityMatch =
+        listViewFilterPriority === "All" ||
+        (task.priority || "").toLowerCase() === listViewFilterPriority.toLowerCase();
+      return statusMatch && priorityMatch;
+    });
+  }, [flattenedTasks, listViewFilterStatus, listViewFilterPriority]);
+  const statusOptions = useMemo(() => {
+    const map = new Map();
+    const addStatus = (raw) => {
+      if (!raw) return;
+      const key = normalizeTitle(raw);
+      const canonical = key === "to_do" ? "todo" : key;
+      if (!canonical) return;
+      if (!map.has(canonical)) {
+        map.set(canonical, canonical);
+      }
+    };
+    Object.entries(columnMeta || {}).forEach(([colId, meta]) => {
+      addStatus(meta?.title || colId);
+    });
+    Object.values(columns || {}).forEach((list) => {
+      (list || []).forEach((task) => addStatus(task.status));
+    });
+    return Array.from(map.values());
+  }, [columns, columnMeta]);
+  const priorityOptions = useMemo(() => {
+    const set = new Set();
+    Object.values(columns || {}).forEach((list) => {
+      (list || []).forEach((task) => {
+        if (task.priority) set.add(task.priority.toLowerCase());
+      });
+    });
+    return Array.from(set);
+  }, [columns]);
+  const firstColumnId = useMemo(
+    () => sortedColumns?.[0]?.[0] || Object.keys(columnMeta || {})[0] || null,
+    [sortedColumns, columnMeta]
+  );
 
   // Fallback: if groupId missing, pick the first of my groups
   useEffect(() => {
@@ -116,10 +254,8 @@ const Workspace = () => {
   }
 
   const hasData = filteredColumns && Object.keys(filteredColumns).length > 0;
-  const normalizeTitle = (value = "") =>
-    value.toLowerCase().replace(/\s+/g, "_");
-  const flattenedTasks = Object.values(filteredColumns || {}).flat();
-  const recentActivity = flattenedTasks
+  const flattenedTasksForActivity = Object.values(filteredColumns || {}).flat();
+  const recentActivity = flattenedTasksForActivity
     .sort(
       (a, b) =>
         new Date(b.updatedAt || b.createdAt || 0) -
@@ -290,31 +426,126 @@ const Workspace = () => {
           {/* Workspace (Kanban) */}
           {activeTab === "workspace" && (
             <>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold text-gray-900">
-                  Kanban Board
-                </h3>
-                <button
-                  className="flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
-                  onClick={() => setIsColumnModalOpen(true)}
-                >
-                  <Plus className="w-5 h-5" />
-                  New Column
-                </button>
+              <div className="flex flex-col gap-3 mb-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      Workspace
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      Switch between Kanban and List to manage busy boards.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex bg-gray-100 rounded-full p-1 text-sm font-medium">
+                      <button
+                        type="button"
+                        className={`px-3 py-1 rounded-full transition ${
+                          boardView === "kanban"
+                            ? "bg-white shadow text-gray-900"
+                            : "text-gray-600 hover:text-gray-900"
+                        }`}
+                        onClick={() => handleSwitchView("kanban")}
+                      >
+                        Kanban
+                      </button>
+                      <button
+                        type="button"
+                        className={`px-3 py-1 rounded-full transition ${
+                          boardView === "list"
+                            ? "bg-white shadow text-gray-900"
+                            : "text-gray-600 hover:text-gray-900"
+                        }`}
+                        onClick={() => handleSwitchView("list")}
+                      >
+                        List
+                      </button>
+                    </div>
+                    {boardView === "kanban" ? (
+                      <button
+                        className="flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
+                        onClick={() => setIsColumnModalOpen(true)}
+                      >
+                        <Plus className="w-5 h-5" />
+                        New Column
+                      </button>
+                    ) : (
+                      <button
+                        className="flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50"
+                        onClick={handleQuickCreateTask}
+                        disabled={!firstColumnId}
+                      >
+                        <Plus className="w-5 h-5" />
+                        New Task
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative">
+                    <Input
+                      allowClear
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder={
+                        t("searchTasks") ||
+                        "Search tasks by title or description..."
+                      }
+                      className="!w-72"
+                    />
+                  </div>
+                  <select
+                    value={listViewFilterStatus}
+                    onChange={(e) => setListViewFilterStatus(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white"
+                  >
+                    <option value="All">
+                      {t("allStatuses") || "All statuses"}
+                    </option>
+                    {statusOptions.map((status) => (
+                      <option key={status} value={status}>
+                        {formatStatusLabel(status)}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={listViewFilterPriority}
+                    onChange={(e) => setListViewFilterPriority(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white"
+                  >
+                    <option value="All">
+                      {t("allPriorities") || "All priorities"}
+                    </option>
+                    {priorityOptions.map((priority) => (
+                      <option key={priority} value={priority}>
+                        {priority}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="text-sm text-blue-600 font-medium hover:underline"
+                    onClick={handleResetFilters}
+                  >
+                    {t("reset") || "Reset"}
+                  </button>
+                  <div className="text-sm text-gray-500">
+                    {flattenedTasks.length} tasks
+                  </div>
+                </div>
               </div>
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragOver={handleDragOver}
-                onDragEnd={handleDragEnd}
-              >
-                {hasData ? (
-                  <div className="mt-4 flex gap-6 overflow-x-auto pb-2">
-                    {Object.entries(columnMeta)
-                      .sort(
-                        (a, b) => (a[1]?.position || 0) - (b[1]?.position || 0)
-                      )
-                      .map(([colId, meta]) => {
+
+              {boardView === "kanban" ? (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragOver={handleDragOver}
+                  onDragEnd={handleDragEnd}
+                >
+                  {hasData ? (
+                    <div className="mt-4 flex gap-6 overflow-x-auto pb-2">
+                      {sortedColumns.map(([colId, meta]) => {
                         const normalizedTitleValue = normalizeTitle(
                           meta?.title || colId
                         );
@@ -322,7 +553,6 @@ const Workspace = () => {
                           normalizedTitleValue === "to_do"
                             ? "todo"
                             : normalizedTitleValue;
-                        const allowQuickCreate = statusForColumn === "todo";
                         return (
                           <Column
                             key={colId}
@@ -331,20 +561,56 @@ const Workspace = () => {
                             tasks={filteredColumns[colId] || []}
                             columnMeta={columnMeta}
                             onOpen={setSelectedTask}
-                            onCreate={
-                              allowQuickCreate
-                                ? (quickPayload) => {
-                                    createTask({
-                                      columnId: colId,
-                                      title: quickPayload?.title || "New Task",
-                                      description: "",
-                                      priority: "medium",
-                                      status: statusForColumn,
-                                      dueDate: null,
-                                    });
+                            onCreate={(quickPayload) => {
+                              createTask({
+                                columnId: colId,
+                                title: quickPayload?.title || "New Task",
+                                description: "",
+                                priority: "medium",
+                                status: statusForColumn,
+                                dueDate: null,
+                              });
+                            }}
+                            onMoveColumn={(targetId, columnMetaData) => {
+                              Modal.confirm({
+                                title: t("moveColumn") || "Move column",
+                                content: (
+                                  <div className="space-y-2">
+                                    <p className="text-sm text-gray-600">
+                                      {t("enterNewPosition") ||
+                                        "Enter new position (0 = first)."}
+                                    </p>
+                                    <input
+                                      type="number"
+                                      defaultValue={columnMetaData?.position || 0}
+                                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                      onChange={(e) => {
+                                        columnMetaData.nextPosition =
+                                          Number(e.target.value) || 0;
+                                      }}
+                                    />
+                                  </div>
+                                ),
+                                okText: t("ok") || "OK",
+                                cancelText: t("cancel") || "Cancel",
+                                onOk: async () => {
+                                  const nextPos =
+                                    columnMetaData?.nextPosition ??
+                                    columnMetaData?.position ??
+                                    0;
+                                  try {
+                                    await BoardService.updateColumn(
+                                      resolvedGroupId,
+                                      targetId,
+                                      { position: nextPos }
+                                    );
+                                    refetchBoard({ showLoading: false });
+                                  } catch (err) {
+
                                   }
-                                : undefined
-                            }
+                                },
+                              });
+                            }}
                             onDelete={() => {
                               Modal.confirm({
                                 title: "Delete Column",
@@ -359,13 +625,22 @@ const Workspace = () => {
                           />
                         );
                       })}
-                  </div>
-                ) : (
-                  <div className="mt-10 text-gray-500">
-                    No board data available.
-                  </div>
-                )}
-              </DndContext>
+                    </div>
+                  ) : (
+                    <div className="mt-10 text-gray-500">
+                      No board data available.
+                    </div>
+                  )}
+                </DndContext>
+              ) : (
+                <ListView
+                  tasks={listViewFilteredTasks}
+                  columnMeta={columnMeta}
+                  onOpenTask={setSelectedTask}
+                  onCreateTask={handleQuickCreateTask}
+                  t={t}
+                />
+              )}
             </>
           )}
 
@@ -466,9 +741,3 @@ const Workspace = () => {
 };
 
 export default Workspace;
-
-
-
-
-
-

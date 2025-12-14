@@ -39,6 +39,9 @@ const formatColumnName = (name) => {
     .join(" ");
 };
 
+const normalizeStatusKey = (value = "") =>
+  value.toLowerCase().replace(/[\s_]+/g, "");
+
 const TaskModal = ({
   task,
   members = [],
@@ -75,6 +78,14 @@ const TaskModal = ({
   const fileInputRef = useRef(null);
   const assigneeMenuRef = useRef(null);
   const fetchCommentsRef = useRef(onFetchComments);
+  const getColumnIdByStatus = (statusValue) => {
+    const target = normalizeStatusKey(statusValue);
+    const entry = Object.entries(columnMeta || {}).find(([colId, meta]) => {
+      const title = normalizeStatusKey(meta?.title || colId);
+      return title === target;
+    });
+    return entry?.[0] || "";
+  };
 
   useEffect(() => {
     if (task) {
@@ -83,11 +94,14 @@ const TaskModal = ({
         const match = String(task.dueDate).match(/^(\d{4}-\d{2}-\d{2})/);
         normalizedDueDate = match ? match[1] : "";
       }
-      
+      const matchedStatusColumn =
+        task.columnId || getColumnIdByStatus(task.status || "");
+      const fallbackColumn = Object.keys(columnMeta || {})[0] || "";
+
       setDetailForm({
         assignees: task.assignees || [],
         dueDate: normalizedDueDate,
-        status: task.status || "",
+        status: matchedStatusColumn || fallbackColumn,
         priority: task.priority || "",
         description: task.description || "",
       });
@@ -96,7 +110,7 @@ const TaskModal = ({
       setEditingCommentId(null);
       setEditingContent("");
     }
-  }, [task]);
+  }, [task, columnMeta]);
 
   useEffect(() => {
     fetchCommentsRef.current = onFetchComments;
@@ -798,7 +812,7 @@ const TaskModal = ({
                       className="w-full  px-3 py-2 text-sm  bg-white"
                       disabled={readOnly}
                     >
-                      {Object.entries(columnMeta).map(([columnId, meta]) => (
+                      {(Object.entries(columnMeta).length === 0 ? [["", { title: t("selectStatus") || "Select status" }]] : Object.entries(columnMeta)).map(([columnId, meta]) => (
                         <option key={columnId} value={columnId}>
                           {formatColumnName(meta?.title || columnId)}
                         </option>
@@ -838,4 +852,3 @@ const TaskModal = ({
 };
 
 export default TaskModal;
-
