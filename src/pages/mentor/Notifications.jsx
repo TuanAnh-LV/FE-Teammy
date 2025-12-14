@@ -16,9 +16,7 @@ const Notifications = () => {
     }));
   };
 
-  const handleSave = () => {
-
-  };
+  const handleSave = () => {};
 
   return (
     <div className="space-y-8">
@@ -57,7 +55,7 @@ const Notifications = () => {
         {/* Left: Quick Overview */}
         <Card
           className="shadow-sm border-gray-100 lg:col-span-1"
-          bodyStyle={{ padding: "20px" }}
+          style={{ padding: "20px" }}
         >
           <h3 className="font-semibold text-gray-800 mb-4">Quick Overview</h3>
 
@@ -89,7 +87,7 @@ const Notifications = () => {
           {/* 1. Application & Assignment */}
           <Card
             className="shadow-sm border-gray-100"
-            bodyStyle={{ padding: "20px" }}
+            style={{ padding: "20px" }}
           >
             <h3 className="font-semibold text-gray-800">
               Application & Assignment Notifications
@@ -123,7 +121,7 @@ const Notifications = () => {
           {/* 2. Task Events */}
           <Card
             className="shadow-sm border-gray-100"
-            bodyStyle={{ padding: "20px" }}
+            style={{ padding: "20px" }}
           >
             <h3 className="font-semibold text-gray-800">Task Events</h3>
             <p className="text-sm text-gray-500 mb-3">
@@ -155,7 +153,7 @@ const Notifications = () => {
           {/* 3. Deadlines & Reminders */}
           <Card
             className="shadow-sm border-gray-100"
-            bodyStyle={{ padding: "20px" }}
+            style={{ padding: "20px" }}
           >
             <h3 className="font-semibold text-gray-800">
               Deadlines & Reminders
@@ -189,7 +187,7 @@ const Notifications = () => {
           {/* 4. Weekly Digest */}
           <Card
             className="shadow-sm border-gray-100"
-            bodyStyle={{ padding: "20px" }}
+            style={{ padding: "20px" }}
           >
             <h3 className="font-semibold text-gray-800">Weekly Digest</h3>
             <p className="text-sm text-gray-500 mb-3">
@@ -224,4 +222,3 @@ const Notifications = () => {
 };
 
 export default Notifications;
-

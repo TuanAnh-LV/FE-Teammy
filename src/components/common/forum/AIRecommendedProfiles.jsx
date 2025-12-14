@@ -1,6 +1,5 @@
 import React from "react";
 import { Sparkles, Star, UserPlus } from "lucide-react";
-import { notification } from "antd";
 import { Chip, StatusChip } from "./Chip";
 import { PostService } from "../../../services/post.service";
 import { initials, timeAgoFrom } from "../../../utils/helpers";

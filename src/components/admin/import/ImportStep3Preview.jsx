@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Table, Button, Checkbox, Select, Tag, notification } from "antd";
+import { Table, Button, Tag, notification } from "antd";
 import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
@@ -8,11 +8,8 @@ import {
 import { AdminService } from "../../../services/admin.service";
 import { useTranslation } from "../../../hook/useTranslation";
 
-const { Option } = Select;
-
 export default function ImportStep3Preview({
-  rawData,
-  columnMap,
+  uploadedUsers, // ✅ data thật từ payload validate
   setMappedUsers,
   setCurrentStep,
   validationResult,
@@ -20,68 +17,51 @@ export default function ImportStep3Preview({
 }) {
   const { t } = useTranslation();
   const [previewData, setPreviewData] = useState([]);
-  const [sendEmail, setSendEmail] = useState(true);
-  const [importMode, setImportMode] = useState("create");
   const [importing, setImporting] = useState(false);
 
   useEffect(() => {
-    if (!validationResult || !validationResult.rows) {
-      return;
-    }
+    if (!validationResult?.rows) return;
 
     const mapped = validationResult.rows.map((row, i) => {
-      // Lấy data từ validation result
-      const rowData = {};
-      row.columns.forEach((col) => {
-        const fieldName =
-          col.column.charAt(0).toLowerCase() + col.column.slice(1);
-        rowData[col.column] = rawData[i]?.[columnMap[fieldName]] || "";
-      });
+      const idx = row.rowNumber ? row.rowNumber - 1 : i;
+      const u = uploadedUsers?.[idx] || {};
 
-      const email = rowData.Email || "";
-      const displayName = rowData.DisplayName || "";
-      const role = rowData.Role || "student";
-      const majorName = rowData.MajorName || "-";
-      const gender = rowData.Gender || "-";
-      const studentCode = rowData.StudentCode || "-";
+      const roleRaw = u.role || "student";
+      const role =
+        String(roleRaw).charAt(0).toUpperCase() + String(roleRaw).slice(1);
 
-      // Xác định status từ validation result
       let status = row.isValid ? "Valid" : "Error";
       const issues = [];
 
-      // Lấy error messages từ columns
-      row.columns.forEach((col) => {
+      row.columns?.forEach((col) => {
         if (!col.isValid && col.errorMessage) {
           issues.push(`${col.column}: ${col.errorMessage}`);
         }
       });
 
-      // Lấy general messages
-      if (row.messages && row.messages.length > 0) {
+      if (Array.isArray(row.messages) && row.messages.length) {
         issues.push(...row.messages);
       }
 
-      // Nếu có issues nhưng isValid = true, đó là warning
-      if (issues.length > 0 && row.isValid) {
-        status = "Warning";
-      }
+      if (issues.length > 0 && row.isValid) status = "Warning";
 
       return {
         key: i,
-        row: row.rowNumber,
-        email,
-        displayName,
-        role: String(role).charAt(0).toUpperCase() + String(role).slice(1),
-        majorName,
-        gender,
-        studentCode,
+        row: row.rowNumber ?? i + 1,
+        email: u.email || "",
+        displayName: u.displayName || "",
+        role,
+        majorName: u.majorName || "-",
+        gender: u.gender || "-",
+        studentCode: u.studentCode || "-",
         status,
         issues,
       };
     });
+
     setPreviewData(mapped);
-    if (setMappedUsers) setMappedUsers(mapped);
-  }, [validationResult, rawData, columnMap, setMappedUsers]);
+    setMappedUsers(mapped);
+  }, [validationResult, uploadedUsers, setMappedUsers]);
 
   const handleImport = async () => {
     if (!originalFile) {
@@ -103,7 +83,8 @@ export default function ImportStep3Preview({
             res.data.createdCount || previewData.length
           } users imported successfully`,
         });
-        setCurrentStep(3);
+
+        setCurrentStep(2); // ✅ Result step
       }
     } catch (err) {
       notification.error({
@@ -115,7 +96,6 @@ export default function ImportStep3Preview({
     }
   };
 
-  // Stats
   const validCount = previewData.filter((u) => u.status === "Valid").length;
   const warnCount = previewData.filter((u) => u.status === "Warning").length;
   const errorCount = previewData.filter((u) => u.status === "Error").length;
@@ -156,7 +136,7 @@ export default function ImportStep3Preview({
         title: "Issues",
         dataIndex: "issues",
         render: (issues) =>
-          issues.length ? (
+          issues?.length ? (
             <ul className="text-sm text-red-500 list-disc ml-4">
               {issues.map((i, idx) => (
                 <li key={idx}>{i}</li>
@@ -172,46 +152,13 @@ export default function ImportStep3Preview({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h2 className="text-2xl font-semibold text-gray-800 mb-1">
           Preview & Validate
         </h2>
-        <p className="text-gray-500">Review the data before importing. </p>
+        <p className="text-gray-500">Review the data before importing.</p>
       </div>
 
-      {/* Options */}
-      {/* <div className="flex items-start justify-between bg-gray-50 p-5 rounded-lg border border-gray-200">
-        <div className="flex flex-col gap-2">
-          <label className="font-medium text-gray-700">Import Mode</label>
-          <Select
-            value={importMode}
-            onChange={setImportMode}
-            style={{ width: 220 }}
-          >
-            <Option value="create">Create Only</Option>
-            <Option value="update">Update Existing</Option>
-            <Option value="both">Create or Update</Option>
-          </Select>
-          <span className="text-xs text-gray-400">
-            Only creates new users, skips existing emails
-          </span>
-        </div>
-
-        <div className="flex flex-col items-end">
-          <Checkbox
-            checked={sendEmail}
-            onChange={(e) => setSendEmail(e.target.checked)}
-          >
-            Send Welcome Emails
-          </Checkbox>
-          <span className="text-xs text-gray-400">
-            Send email notifications to new users
-          </span>
-        </div>
-      </div> */}
-
-      {/* Status Summary */}
       <div className="flex justify-end items-center gap-6 text-sm font-medium text-gray-600">
         <span className="flex items-center gap-1 text-green-600">
           <span className="w-2 h-2 rounded-full bg-green-500" /> {validCount}{" "}
@@ -227,7 +174,6 @@ export default function ImportStep3Preview({
         </span>
       </div>
 
-      {/* Table */}
       <Table
         columns={columns}
         dataSource={previewData}
@@ -236,13 +182,12 @@ export default function ImportStep3Preview({
         className="rounded-xl overflow-hidden"
       />
 
-      {/* Actions */}
       <div className="flex justify-between mt-6">
         <Button
-          onClick={() => setCurrentStep(1)}
+          onClick={() => setCurrentStep(0)}
           className="border-gray-300 hover:border-orange-400"
         >
-          {t("backToMapping") || "Back to Mapping"}
+          {t("Back") || "Back"}
         </Button>
 
         <Button

@@ -25,6 +25,7 @@ import {
 } from "@ant-design/icons";
 import { SemesterService } from "../../services/semester.service";
 import { useTranslation } from "../../hook/useTranslation";
+import SemesterDetailModal from "../../components/admin/SemesterDetailModal";
 import dayjs from "dayjs";
 
 const { Option } = Select;
@@ -35,8 +36,9 @@ const ManageSemesters = () => {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState(null);
-  const [modalMode, setModalMode] = useState("create"); // create | edit | view
+  const [modalMode, setModalMode] = useState("create"); // create | edit
   const [form] = Form.useForm();
   const [policyForm] = Form.useForm();
   const [filters, setFilters] = useState({
@@ -86,49 +88,8 @@ const ManageSemesters = () => {
   };
 
   const handleView = (record) => {
-    setModalMode("view");
     setSelectedSemester(record);
-    form.setFieldsValue({
-      season: record.season,
-      year: record.year,
-      startDate: record.startDate ? dayjs(record.startDate) : null,
-      endDate: record.endDate ? dayjs(record.endDate) : null,
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleActivate = async (record) => {
-    Modal.confirm({
-      title: t("activateSemester") || "Activate Semester",
-      content: `${
-        t("confirmActivate") || "Are you sure you want to activate"
-      } ${record.season} ${record.year}?`,
-      centered: true,
-      okText: t("confirm") || "Confirm",
-      cancelText: t("cancel") || "Cancel",
-      okButtonProps: {
-        className:
-          "!bg-[#FF7A00] !text-white !border-none !rounded-md !px-4 !py-2 hover:!opacity-90",
-      },
-      cancelButtonProps: {
-        className:
-          "!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all !py-2",
-      },
-      onOk: async () => {
-        try {
-          await SemesterService.activate(record.semesterId);
-          notification.success({
-            message:
-              t("semesterActivated") || "Semester activated successfully",
-          });
-          fetchSemesters();
-        } catch {
-          notification.error({
-            message: t("failedToActivate") || "Failed to activate semester",
-          });
-        }
-      },
-    });
+    setIsDetailModalOpen(true);
   };
 
   const handleManagePolicy = async (record) => {
@@ -171,8 +132,16 @@ const ManageSemesters = () => {
   };
 
   const handleSubmit = async () => {
+    let values;
     try {
-      const values = await form.validateFields();
+      values = await form.validateFields();
+    } catch (validationError) {
+      // Skip showing a global error when user input fails validation
+      if (validationError?.errorFields) return;
+      throw validationError;
+    }
+
+    try {
       const payload = {
         season: values.season,
         year: values.year,
@@ -208,32 +177,36 @@ const ManageSemesters = () => {
   };
 
   const handlePolicySubmit = async () => {
+    let values;
     try {
-      const values = await policyForm.validateFields();
+      values = await policyForm.validateFields();
+    } catch (validationError) {
+      if (validationError?.errorFields) return;
+      throw validationError;
+    }
 
+    try {
       const payload = {
-        req: {
-          teamSelfSelectStart: values.teamSelfSelectStart
-            ? values.teamSelfSelectStart.format("YYYY-MM-DD")
-            : null,
-          teamSelfSelectEnd: values.teamSelfSelectEnd
-            ? values.teamSelfSelectEnd.format("YYYY-MM-DD")
-            : null,
-          teamSuggestStart: values.teamSuggestStart
-            ? values.teamSuggestStart.format("YYYY-MM-DD")
-            : null,
-          topicSelfSelectStart: values.topicSelfSelectStart
-            ? values.topicSelfSelectStart.format("YYYY-MM-DD")
-            : null,
-          topicSelfSelectEnd: values.topicSelfSelectEnd
-            ? values.topicSelfSelectEnd.format("YYYY-MM-DD")
-            : null,
-          topicSuggestStart: values.topicSuggestStart
-            ? values.topicSuggestStart.format("YYYY-MM-DD")
-            : null,
-          desiredGroupSizeMin: values.desiredGroupSizeMin,
-          desiredGroupSizeMax: values.desiredGroupSizeMax,
-        },
+        teamSelfSelectStart: values.teamSelfSelectStart
+          ? values.teamSelfSelectStart.format("YYYY-MM-DD")
+          : null,
+        teamSelfSelectEnd: values.teamSelfSelectEnd
+          ? values.teamSelfSelectEnd.format("YYYY-MM-DD")
+          : null,
+        teamSuggestStart: values.teamSuggestStart
+          ? values.teamSuggestStart.format("YYYY-MM-DD")
+          : null,
+        topicSelfSelectStart: values.topicSelfSelectStart
+          ? values.topicSelfSelectStart.format("YYYY-MM-DD")
+          : null,
+        topicSelfSelectEnd: values.topicSelfSelectEnd
+          ? values.topicSelfSelectEnd.format("YYYY-MM-DD")
+          : null,
+        topicSuggestStart: values.topicSuggestStart
+          ? values.topicSuggestStart.format("YYYY-MM-DD")
+          : null,
+        desiredGroupSizeMin: values.desiredGroupSizeMin,
+        desiredGroupSizeMax: values.desiredGroupSizeMax,
       };
 
       await SemesterService.updatePolicy(selectedSemester.semesterId, payload);
@@ -329,16 +302,6 @@ const ManageSemesters = () => {
               onClick={() => handleManagePolicy(record)}
             />
           </Tooltip>
-          {!record.isActive && (
-            <Tooltip title={t("activate") || "Activate"}>
-              <Button
-                icon={<CheckCircleOutlined />}
-                shape="circle"
-                style={{ color: "#52c41a", borderColor: "#52c41a" }}
-                onClick={() => handleActivate(record)}
-              />
-            </Tooltip>
-          )}
         </Space>
       ),
     },
@@ -358,6 +321,16 @@ const ManageSemesters = () => {
 
     return statusMatch && seasonMatch && searchMatch;
   });
+
+  const disableStartDate = (current) =>
+    current && current.isBefore(dayjs(), "day");
+
+  const disableEndDate = (current) => {
+    if (!current) return false;
+    const startDate = form.getFieldValue("startDate");
+    if (!startDate) return current.isBefore(dayjs(), "day");
+    return current.isBefore(startDate, "day");
+  };
 
   return (
     <div className="space-y-4">
@@ -432,24 +405,20 @@ const ManageSemesters = () => {
         </Card>
       </div>
 
-      {/* Create/Edit/View Modal */}
+      {/* Create/Edit Modal */}
       <Modal
         title={
           modalMode === "create"
             ? t("createSemester") || "Create Semester"
-            : modalMode === "edit"
-            ? t("editSemester") || "Edit Semester"
-            : t("semesterDetails") || "Semester Details"
+            : t("editSemester") || "Edit Semester"
         }
         open={isModalOpen}
-        onOk={modalMode === "view" ? () => setIsModalOpen(false) : handleSubmit}
+        onOk={handleSubmit}
         onCancel={() => {
           setIsModalOpen(false);
           form.resetFields();
         }}
-        okText={
-          modalMode === "view" ? t("close") || "Close" : t("save") || "Save"
-        }
+        okText={t("save") || "Save"}
         cancelText={t("cancel") || "Cancel"}
         okButtonProps={{
           className: "!bg-[#FF7A00] hover:!opacity-90 !text-white !border-none",
@@ -460,12 +429,7 @@ const ManageSemesters = () => {
         }}
         width={600}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          className="mt-4"
-          disabled={modalMode === "view"}
-        >
+        <Form form={form} layout="vertical" className="mt-4">
           <Form.Item
             label={t("season") || "Season"}
             name="season"
@@ -489,7 +453,7 @@ const ManageSemesters = () => {
               },
             ]}
           >
-            <InputNumber min={2020} max={2100} style={{ width: "100%" }} />
+            <InputNumber style={{ width: "100%" }} />
           </Form.Item>
 
           <Form.Item
@@ -501,9 +465,27 @@ const ManageSemesters = () => {
                 message:
                   t("pleaseSelectStartDate") || "Please select start date",
               },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  if (value.isBefore(dayjs(), "day")) {
+                    return Promise.reject(
+                      new Error(
+                        t("startDateCannotBeInThePast") ||
+                          "Start date cannot be a past date"
+                      )
+                    );
+                  }
+                  return Promise.resolve();
+                },
+              },
             ]}
           >
-            <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
+            <DatePicker
+              style={{ width: "100%" }}
+              format="DD/MM/YYYY"
+              disabledDate={disableStartDate}
+            />
           </Form.Item>
 
           <Form.Item
@@ -514,9 +496,28 @@ const ManageSemesters = () => {
                 required: true,
                 message: t("pleaseSelectEndDate") || "Please select end date",
               },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  const startDate = form.getFieldValue("startDate");
+                  if (startDate && value.isBefore(startDate, "day")) {
+                    return Promise.reject(
+                      new Error(
+                        t("endDateCannotBeBeforeStartDate") ||
+                          "End date cannot be before start date"
+                      )
+                    );
+                  }
+                  return Promise.resolve();
+                },
+              },
             ]}
           >
-            <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
+            <DatePicker
+              style={{ width: "100%" }}
+              format="DD/MM/YYYY"
+              disabledDate={disableEndDate}
+            />
           </Form.Item>
         </Form>
       </Modal>
@@ -552,25 +553,52 @@ const ManageSemesters = () => {
             <Form.Item
               label={t("teamSelfSelectStart") || "Team Self-Select Start"}
               name="teamSelfSelectStart"
-              rules={[{ required: true, message: "Please select start date" }]}
+              rules={[
+                { required: true, message: "Please select start date" },
+                {
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve();
+                    if (value.isBefore(dayjs(), "day")) {
+                      return Promise.reject(
+                        new Error(
+                          t("startDateCannotBeInThePast") ||
+                            "Start date cannot be a past date"
+                        )
+                      );
+                    }
+                    return Promise.resolve();
+                  },
+                },
+              ]}
             >
-              <DatePicker
-                style={{ width: "100%" }}
-                showTime
-                format="YYYY-MM-DD HH:mm"
-              />
+              <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
             </Form.Item>
 
             <Form.Item
               label={t("teamSelfSelectEnd") || "Team Self-Select End"}
               name="teamSelfSelectEnd"
-              rules={[{ required: true, message: "Please select end date" }]}
+              rules={[
+                { required: true, message: "Please select end date" },
+                {
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve();
+                    const startDate = policyForm.getFieldValue(
+                      "teamSelfSelectStart"
+                    );
+                    if (startDate && value.isBefore(startDate, "day")) {
+                      return Promise.reject(
+                        new Error(
+                          t("endDateCannotBeBeforeStartDate") ||
+                            "End date cannot be before start date"
+                        )
+                      );
+                    }
+                    return Promise.resolve();
+                  },
+                },
+              ]}
             >
-              <DatePicker
-                style={{ width: "100%" }}
-                showTime
-                format="YYYY-MM-DD HH:mm"
-              />
+              <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
             </Form.Item>
           </div>
 
@@ -578,13 +606,25 @@ const ManageSemesters = () => {
           <Form.Item
             label={t("teamSuggestStart") || "Team Suggest Start"}
             name="teamSuggestStart"
-            rules={[{ required: true, message: "Please select date" }]}
+            rules={[
+              { required: true, message: "Please select date" },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  if (value.isBefore(dayjs(), "day")) {
+                    return Promise.reject(
+                      new Error(
+                        t("startDateCannotBeInThePast") ||
+                          "Start date cannot be a past date"
+                      )
+                    );
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
           >
-            <DatePicker
-              style={{ width: "100%" }}
-              showTime
-              format="YYYY-MM-DD HH:mm"
-            />
+            <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
           </Form.Item>
 
           {/* Topic self-select */}
@@ -592,25 +632,52 @@ const ManageSemesters = () => {
             <Form.Item
               label={t("topicSelfSelectStart") || "Topic Self-Select Start"}
               name="topicSelfSelectStart"
-              rules={[{ required: true, message: "Please select start date" }]}
+              rules={[
+                { required: true, message: "Please select start date" },
+                {
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve();
+                    if (value.isBefore(dayjs(), "day")) {
+                      return Promise.reject(
+                        new Error(
+                          t("startDateCannotBeInThePast") ||
+                            "Start date cannot be a past date"
+                        )
+                      );
+                    }
+                    return Promise.resolve();
+                  },
+                },
+              ]}
             >
-              <DatePicker
-                style={{ width: "100%" }}
-                showTime
-                format="YYYY-MM-DD HH:mm"
-              />
+              <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
             </Form.Item>
 
             <Form.Item
               label={t("topicSelfSelectEnd") || "Topic Self-Select End"}
               name="topicSelfSelectEnd"
-              rules={[{ required: true, message: "Please select end date" }]}
+              rules={[
+                { required: true, message: "Please select end date" },
+                {
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve();
+                    const startDate = policyForm.getFieldValue(
+                      "topicSelfSelectStart"
+                    );
+                    if (startDate && value.isBefore(startDate, "day")) {
+                      return Promise.reject(
+                        new Error(
+                          t("endDateCannotBeBeforeStartDate") ||
+                            "End date cannot be before start date"
+                        )
+                      );
+                    }
+                    return Promise.resolve();
+                  },
+                },
+              ]}
             >
-              <DatePicker
-                style={{ width: "100%" }}
-                showTime
-                format="YYYY-MM-DD HH:mm"
-              />
+              <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
             </Form.Item>
           </div>
 
@@ -618,13 +685,25 @@ const ManageSemesters = () => {
           <Form.Item
             label={t("topicSuggestStart") || "Topic Suggest Start"}
             name="topicSuggestStart"
-            rules={[{ required: true, message: "Please select date" }]}
+            rules={[
+              { required: true, message: "Please select date" },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  if (value.isBefore(dayjs(), "day")) {
+                    return Promise.reject(
+                      new Error(
+                        t("startDateCannotBeInThePast") ||
+                          "Start date cannot be a past date"
+                      )
+                    );
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
           >
-            <DatePicker
-              style={{ width: "100%" }}
-              showTime
-              format="YYYY-MM-DD HH:mm"
-            />
+            <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
           </Form.Item>
 
           {/* Group size */}
@@ -647,6 +726,16 @@ const ManageSemesters = () => {
           </div>
         </Form>
       </Modal>
+
+      {/* Detail Modal */}
+      <SemesterDetailModal
+        open={isDetailModalOpen}
+        semesterId={selectedSemester?.semesterId}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedSemester(null);
+        }}
+      />
     </div>
   );
 };

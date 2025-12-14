@@ -39,33 +39,32 @@ export default function MentorDashboard() {
     try {
       setLoading(true);
 
-
       const res = await GroupService.getMyGroups();
       const groups = Array.isArray(res?.data) ? res.data : [];
 
       let totalFeedbackCount = 0;
-      
+
       // Fetch progress, board data and calculate feedback for each group
       const groupsWithProgress = await Promise.all(
         groups.map(async (g) => {
           try {
-
             const [reportRes, boardRes] = await Promise.all([
               ReportService.getProjectReport(g.id),
-              BoardService.getBoard(g.id)
+              BoardService.getBoard(g.id),
             ]);
-            
+
             const progress = reportRes?.data?.project?.completionPercent ?? 0;
             const boardData = boardRes?.data;
-            
+
             // Get all tasks from board
-            const tasks = boardData?.columns?.flatMap((col) => col.tasks || [])?.filter(Boolean) || [];
+            const tasks =
+              boardData?.columns
+                ?.flatMap((col) => col.tasks || [])
+                ?.filter(Boolean) || [];
 
             if (tasks.length > 0) {
-
-
             }
-            
+
             // Recent activity logic (like MyGroup.jsx)
             const recentActivity = tasks
               .slice()
@@ -75,45 +74,41 @@ export default function MentorDashboard() {
                   new Date(a.updatedAt || a.createdAt || 0)
               )
               .slice(0, 1)[0]; // Get most recent task
-            
+
             // Count mentor's comments across all tasks by loading comments from API
             let mentorCommentCount = 0;
             if (tasks.length > 0) {
               try {
-
-
-                const commentPromises = tasks.map(task => 
+                const commentPromises = tasks.map((task) =>
                   BoardService.getTaskComments(g.id, task.taskId, false)
-                    .then(res => {
-
+                    .then((res) => {
                       return { taskId: task.taskId, comments: res?.data || [] };
                     })
-                    .catch(err => {
-
+                    .catch((err) => {
                       return { taskId: task.taskId, comments: [] };
                     })
                 );
-                
+
                 const commentResults = await Promise.all(commentPromises);
-                
+
                 if (userInfo?.userId) {
-                  commentResults.forEach(result => {
-                    const comments = Array.isArray(result.comments) ? result.comments : [];
-                    const mentorComments = comments.filter(comment => comment.userId === userInfo.userId);
+                  commentResults.forEach((result) => {
+                    const comments = Array.isArray(result.comments)
+                      ? result.comments
+                      : [];
+                    const mentorComments = comments.filter(
+                      (comment) => comment.userId === userInfo.userId
+                    );
 
                     mentorCommentCount += mentorComments.length;
                   });
-
                 } else {
-
                 }
-              } catch (err) {
-
-              }
+              } catch {}
             }
-            
+
             totalFeedbackCount += mentorCommentCount;
-            
+
             return {
               id: g.id,
               name: g.name || "Nhóm không tên",
@@ -121,15 +116,14 @@ export default function MentorDashboard() {
               members: g.currentMembers || 0,
               progress: progress,
               status: progress >= 50 ? "on_track" : "need_attention",
-              lastUpdate: recentActivity?.updatedAt 
+              lastUpdate: recentActivity?.updatedAt
                 ? new Date(recentActivity.updatedAt).toLocaleDateString("vi-VN")
-                : g.updatedAt 
-                ? new Date(g.updatedAt).toLocaleDateString("vi-VN") 
+                : g.updatedAt
+                ? new Date(g.updatedAt).toLocaleDateString("vi-VN")
                 : "N/A",
               recentActivity: recentActivity?.title || "Chưa có hoạt động",
             };
-          } catch (err) {
-
+          } catch {
             return {
               id: g.id,
               name: g.name || "Nhóm không tên",
@@ -137,30 +131,38 @@ export default function MentorDashboard() {
               members: g.currentMembers || 0,
               progress: 0,
               status: "need_attention",
-              lastUpdate: g.updatedAt ? new Date(g.updatedAt).toLocaleDateString("vi-VN") : "N/A",
+              lastUpdate: g.updatedAt
+                ? new Date(g.updatedAt).toLocaleDateString("vi-VN")
+                : "N/A",
               recentActivity: "Chưa có hoạt động",
             };
           }
         })
       );
-      
+
       setMentoringGroups(groupsWithProgress);
-      
+
       // Calculate stats
       const totalGroups = groupsWithProgress.length;
-      const needAttention = groupsWithProgress.filter(g => g.status === "need_attention").length;
-      const avgProgress = totalGroups > 0 
-        ? Math.round(groupsWithProgress.reduce((sum, g) => sum + g.progress, 0) / totalGroups)
-        : 0;
-      
+      const needAttention = groupsWithProgress.filter(
+        (g) => g.status === "need_attention"
+      ).length;
+      const avgProgress =
+        totalGroups > 0
+          ? Math.round(
+              groupsWithProgress.reduce((sum, g) => sum + g.progress, 0) /
+                totalGroups
+            )
+          : 0;
+
       setStats({
         totalGroups,
         needAttention,
         avgProgress,
         feedbackCount: totalFeedbackCount,
       });
-    } catch (error) {
-
+    } catch {
+      // Handle error if needed
     } finally {
       setLoading(false);
     }
@@ -172,17 +174,14 @@ export default function MentorDashboard() {
   };
 
   return (
-    <div className="space-y-6 space-x-8 bg-gray-50 min-h-screen">
+    <div className="space-y-6 space-x-8 min-h-screen">
       {/* HEADER */}
       <div className="flex justify-between items-start md:items-center flex-col md:flex-row">
         <div>
-          <h1 className="t  t-2xl sm:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-green-400 bg-clip-text text-transparent">
-            Mentor Dashboard
+          <h1 className="t-2xl sm:text-3xl lg:text-4xl font-extrabold">
+            {t("mentorDashboard")}
           </h1>
-          <p className="text-gray-600 mt-1">
-            Manage your mentorships, monitor progress, and support your student
-            teams.
-          </p>
+          <p className="text-gray-600 mt-1">{t("manageMentorships")}</p>
         </div>
       </div>
 
@@ -206,7 +205,7 @@ export default function MentorDashboard() {
               <Clock className="w-6 h-6 text-amber-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Cần xem xét</p>
+              <p className="text-sm text-gray-500"> {t("needAttention")}</p>
               <h2 className="text-2xl font-semibold">{stats.needAttention}</h2>
             </div>
           </div>
@@ -230,7 +229,7 @@ export default function MentorDashboard() {
               <MessageSquare className="w-6 h-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Phản hồi đã gửi</p>
+              <p className="text-sm text-gray-500">{t("feedbackSent")}</p>
               <h2 className="text-2xl font-semibold">{stats.feedbackCount}</h2>
             </div>
           </div>
@@ -256,7 +255,7 @@ export default function MentorDashboard() {
                 className="
                !px-4 !py-1.5 !rounded-md !font-medium !text-gray-700 !bg-transparent !border-none hover:!bg-orange-500 hover:!text-white transition-all duration-200 !flex !items-center !gap-2 "
               >
-                Xem tất cả
+                {t("viewAll")}
                 <span className="text-lg leading-none">→</span>
               </Button>
             }
@@ -273,73 +272,75 @@ export default function MentorDashboard() {
               </div>
             ) : (
               mentoringGroups.map((group) => {
-              const s = statusMap[group.status];
+                const s = statusMap[group.status];
 
-              return (
-                <div key={group.id} className="mb-5">
-                  <Card className="border border-gray-200 rounded-xl shadow-sm">
-                    {/* Header */}
-                    <div className="flex justify-between items-start mb-3">
+                return (
+                  <div key={group.id} className="mb-5">
+                    <Card className="border border-gray-200 rounded-xl shadow-sm">
+                      {/* Header */}
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-semibold text-gray-900 text-base">
+                            {group.name}
+                          </h3>
+                          <p className="text-sm text-gray-500">{group.topic}</p>
+                        </div>
+
+                        <Tag
+                          color={s.color}
+                          className="text-xs !rounded-full px-3 py-1"
+                        >
+                          {s.text}
+                        </Tag>
+                      </div>
+
+                      {/* Progress */}
                       <div>
-                        <h3 className="font-semibold text-gray-900 text-base">
-                          {group.name}
-                        </h3>
-                        <p className="text-sm text-gray-500">{group.topic}</p>
+                        <div className="flex justify-between text-sm mb-1 text-gray-600">
+                          <span>{t("progress")}</span>
+                          <span className="font-semibold">
+                            {group.progress}%
+                          </span>
+                        </div>
+
+                        <Progress
+                          percent={group.progress}
+                          strokeColor={
+                            group.progress >= 90
+                              ? "#10b981"
+                              : group.progress >= 50
+                              ? "#3b82f6"
+                              : "#f59e0b"
+                          }
+                          showInfo={false}
+                        />
                       </div>
 
-                      <Tag
-                        color={s.color}
-                        className="text-xs !rounded-full px-3 py-1"
-                      >
-                        {s.text}
-                      </Tag>
-                    </div>
-
-                    {/* Progress */}
-                    <div>
-                      <div className="flex justify-between text-sm mb-1 text-gray-600">
-                        <span>Tiến độ</span>
-                        <span className="font-semibold">{group.progress}%</span>
+                      {/* Info */}
+                      <div className="flex gap-4 text-xs text-gray-500 my-3">
+                        <div className="flex gap-1 items-center">
+                          <Users className="w-3.5 h-3.5" />
+                          {group.members} {t("students")}
+                        </div>
+                        <div className="flex gap-1 items-center">
+                          <FileText className="w-3.5 h-3.5" />
+                          {group.lastUpdate}
+                        </div>
                       </div>
 
-                      <Progress
-                        percent={group.progress}
-                        strokeColor={
-                          group.progress >= 90
-                            ? "#10b981"
-                            : group.progress >= 50
-                            ? "#3b82f6"
-                            : "#f59e0b"
-                        }
-                        showInfo={false}
-                      />
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex gap-4 text-xs text-gray-500 my-3">
-                      <div className="flex gap-1 items-center">
-                        <Users className="w-3.5 h-3.5" />
-                        {group.members} sinh viên
+                      {/* Recent activity */}
+                      <div className="pt-3 mt-2 border-t border-gray-200">
+                        <p className="text-xs text-gray-500 mb-1">
+                          {t("recentUpdate")}:
+                        </p>
+                        <p className="text-sm text-gray-700">
+                          {group.recentActivity}
+                        </p>
                       </div>
-                      <div className="flex gap-1 items-center">
-                        <FileText className="w-3.5 h-3.5" />
-                        {group.lastUpdate}
-                      </div>
-                    </div>
-
-                    {/* Recent activity */}
-                    <div className="pt-3 mt-2 border-t border-gray-200">
-                      <p className="text-xs text-gray-500 mb-1">
-                        Cập nhật gần nhất:
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        {group.recentActivity}
-                      </p>
-                    </div>
-                  </Card>
-                </div>
-              );
-            })
+                    </Card>
+                  </div>
+                );
+              })
             )}
           </Card>
         </div>
@@ -349,11 +350,11 @@ export default function MentorDashboard() {
           <Card
             title={
               <span className="font-semibold text-gray-800 text-lg">
-                Thao tác nhanh
+                {t("quickActions")}
               </span>
             }
             className="rounded-2xl shadow-sm"
-            bodyStyle={{ padding: "20px" }}
+            style={{ padding: "20px" }}
           >
             <div className="space-y-3">
               {/* Item 1 */}
@@ -367,7 +368,7 @@ export default function MentorDashboard() {
               >
                 <Target className="w-5 h-5 text-gray-700" />
                 <span className="text-gray-800 font-medium text-sm">
-                  Tìm nhóm mới
+                  {t("findNewGroups")}
                 </span>
               </button>
 
@@ -381,7 +382,7 @@ export default function MentorDashboard() {
               >
                 <MessageSquare className="w-5 h-5 text-gray-700" />
                 <span className="text-gray-800 font-medium text-sm">
-                  Tin nhắn
+                  {t("messages")}
                 </span>
               </button>
 
@@ -395,7 +396,7 @@ export default function MentorDashboard() {
               >
                 <Bookmark className="w-5 h-5 text-gray-700" />
                 <span className="text-gray-800 font-medium text-sm">
-                  Đánh giá nhóm
+                  {t("groupReviews")}
                 </span>
               </button>
             </div>
@@ -405,4 +406,3 @@ export default function MentorDashboard() {
     </div>
   );
 }
-

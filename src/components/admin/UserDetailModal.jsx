@@ -36,10 +36,8 @@ export default function UserDetailModal({ open, onClose, user, loading }) {
       footer={null}
       centered
       width={600}
-      bodyStyle={{
+      style={{
         padding: "28px 36px",
-        borderRadius: "1rem",
-        backgroundColor: "#f9fafb",
       }}
       title={
         <div className="flex items-center gap-4">

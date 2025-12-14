@@ -54,7 +54,7 @@ export default function GroupDetailModal({ open, onClose, group }) {
       width={1000}
       centered
       title={null}
-      bodyStyle={{ padding: 0, borderRadius: 14 }}
+      style={{ padding: 0, borderRadius: 14 }}
       className="rounded-xl"
     >
       <div className="p-5 sm:p-6">

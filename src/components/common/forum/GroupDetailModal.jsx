@@ -69,7 +69,6 @@ const GroupDetailModal = ({
         setLoading(true);
         const res = await PostService.getRecruitmentPostDetail(groupId);
         if (!mounted) return;
-        // Store the entire post object, not just the nested group
         setGroup(res?.data || res);
       } catch {
         setGroup(null);
@@ -82,7 +81,6 @@ const GroupDetailModal = ({
     };
   }, [isOpen, groupId]);
 
-  // Title ưu tiên tên nhóm, fallback dùng key "groupDetail"
   const title = useMemo(
     () =>
       group?.group?.name || group?.title || t("groupDetail") || "Group Detail",
@@ -120,7 +118,6 @@ const GroupDetailModal = ({
           </div>
         ) : (
           <div className="space-y-5">
-            {/* Summary */}
             <div className="rounded-xl border border-gray-200 p-4">
               <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-800">
                 {t("description") || "Description"}
@@ -134,7 +131,6 @@ const GroupDetailModal = ({
               </div>
             </div>
 
-            {/* Major, Position, Skills */}
             <div className="rounded-xl border border-gray-200 p-4">
               <div className="space-y-2">
                 <Row label={t("major") || "Major"}>
@@ -165,9 +161,7 @@ const GroupDetailModal = ({
               </div>
             </div>
 
-            {/* Group info + Members */}
             <div className="rounded-xl border border-gray-200 bg-white p-4">
-              {/* Header: group name */}
               <div className="mb-2 flex items-center gap-2">
                 <Users className="h-4 w-4 text-gray-700" />
                 <span className="text-sm font-semibold text-gray-800">
@@ -175,9 +169,7 @@ const GroupDetailModal = ({
                 </span>
               </div>
 
-              {/* Group basic info */}
               <div className="mb-3 space-y-1 text-xs text-gray-500">
-                {/* Status + members summary */}
                 <div className="flex flex-wrap gap-2">
                   {(group.group?.status || group.status) && (
                     <span className="inline-flex items-center rounded-full border border-gray-200 px-2 py-[2px] text-[11px]">
@@ -210,7 +202,6 @@ const GroupDetailModal = ({
                   )}
                 </div>
 
-                {/* Description của group */}
                 <p className="mt-1 text-xs text-gray-500">
                   {group.group?.description ||
                     group.description ||
@@ -224,7 +215,6 @@ const GroupDetailModal = ({
                     {t("mentor") || "Mentor"}
                   </div>
                   <div className="flex items-center gap-3">
-                    {/* Avatar mentor */}
                     {mentor.avatarUrl ? (
                       <img
                         src={mentor.avatarUrl}
@@ -237,7 +227,6 @@ const GroupDetailModal = ({
                       </div>
                     )}
 
-                    {/* Name + email */}
                     <div className="flex flex-col min-w-0">
                       <span className="text-sm font-medium text-gray-800 break-all">
                         {mentor.displayName || "Unknown"}
@@ -252,7 +241,6 @@ const GroupDetailModal = ({
                 </div>
               )}
 
-              {/* Members list */}
               <div className="mt-3">
                 <div className="mb-2 text-xs font-semibold text-gray-600">
                   {(t("Members") || "Members") + ` (${memberList.length})`}
@@ -265,9 +253,7 @@ const GroupDetailModal = ({
                         key={m.userId || m.id || idx}
                         className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2"
                       >
-                        {/* Avatar + text */}
                         <div className="flex items-center gap-3 min-w-0">
-                          {/* Avatar */}
                           {m.avatarUrl ? (
                             <img
                               src={m.avatarUrl}
@@ -280,7 +266,6 @@ const GroupDetailModal = ({
                             </div>
                           )}
 
-                          {/* Name + email */}
                           <div className="flex flex-col min-w-0">
                             <span className="font-medium text-gray-800 break-all">
                               {m.displayName || m.name || "Unknown"}
@@ -293,7 +278,6 @@ const GroupDetailModal = ({
                           </div>
                         </div>
 
-                        {/* Badge Leader */}
                         {(m.isLeader ||
                           m.role === "leader" ||
                           m.assignedRole === "leader") && (
@@ -312,7 +296,6 @@ const GroupDetailModal = ({
               </div>
             </div>
 
-            {/* Apply Button */}
             {!loading &&
               group &&
               onApply &&

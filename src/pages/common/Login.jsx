@@ -39,7 +39,7 @@ const Login = () => {
           navigate("/mentor/dashboard", { replace: true });
           break;
         case "moderator":
-          navigate("/moderator/group", { replace: true });
+          navigate("/moderator/dashboard", { replace: true });
           break;
         default:
           navigate("/", { replace: true });

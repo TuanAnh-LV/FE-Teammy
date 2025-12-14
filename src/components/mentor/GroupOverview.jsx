@@ -6,7 +6,6 @@ import {
   PieChartOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { GroupService } from "../../services/group.service";
 import { BoardService } from "../../services/board.service";
 import { ReportService } from "../../services/report.service";
 import { useTranslation } from "../../hook/useTranslation";
@@ -27,16 +26,17 @@ export default function GroupOverview({ groupId, groupDetail }) {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch progress from tracking reports API
       const [reportResponse, boardResponse] = await Promise.all([
         ReportService.getProjectReport(groupId),
-        BoardService.getBoard(groupId)
+        BoardService.getBoard(groupId),
       ]);
 
-      const completionPercent = reportResponse?.data?.project?.completionPercent ?? 0;
+      const completionPercent =
+        reportResponse?.data?.project?.completionPercent ?? 0;
       const board = boardResponse?.data || null;
-      
+
       setProgress(completionPercent);
       setBoardData(board);
 
@@ -50,7 +50,7 @@ export default function GroupOverview({ groupId, groupDetail }) {
         });
       }
       if (groupDetail?.members && Array.isArray(groupDetail.members)) {
-        groupDetail.members.forEach(member => {
+        groupDetail.members.forEach((member) => {
           allMembers.push({
             ...member,
             fullName: member.displayName,
@@ -60,10 +60,12 @@ export default function GroupOverview({ groupId, groupDetail }) {
       }
 
       // Calculate member contributions
-      const membersWithContribution = calculateMemberContributions(allMembers, board);
+      const membersWithContribution = calculateMemberContributions(
+        allMembers,
+        board
+      );
       setMembers(membersWithContribution);
     } catch (error) {
-
       setMembers([]);
       setProgress(0);
     } finally {
@@ -72,39 +74,51 @@ export default function GroupOverview({ groupId, groupDetail }) {
   };
 
   const calculateMemberContributions = (membersList, board) => {
-    if (!board || !board.columns) return membersList.map(m => ({ ...m, contribution: 0, status: "Idle" }));
+    if (!board || !board.columns)
+      return membersList.map((m) => ({
+        ...m,
+        contribution: 0,
+        status: "Idle",
+      }));
 
     // Count tasks assigned to each member
     const memberTaskCount = {};
     let totalTasks = 0;
 
     // Flatten all tasks from all columns
-    const allTasks = Object.values(board.columns).flatMap(column => 
-      Array.isArray(column.tasks) ? column.tasks : Object.values(column.tasks || {})
+    const allTasks = Object.values(board.columns).flatMap((column) =>
+      Array.isArray(column.tasks)
+        ? column.tasks
+        : Object.values(column.tasks || {})
     );
 
-    allTasks.forEach(task => {
+    allTasks.forEach((task) => {
       if (!task) return;
       totalTasks++;
-      
+
       // Check assignees array
       if (task.assignees && Array.isArray(task.assignees)) {
-        task.assignees.forEach(assignee => {
+        task.assignees.forEach((assignee) => {
           // assignee might be an ID string or an object with userId
-          const assigneeId = typeof assignee === 'string' ? assignee : assignee?.userId || assignee?.id;
+          const assigneeId =
+            typeof assignee === "string"
+              ? assignee
+              : assignee?.userId || assignee?.id;
           if (assigneeId) {
-            memberTaskCount[assigneeId] = (memberTaskCount[assigneeId] || 0) + 1;
+            memberTaskCount[assigneeId] =
+              (memberTaskCount[assigneeId] || 0) + 1;
           }
         });
       }
     });
 
     // Calculate contribution percentage
-    return membersList.map(member => {
+    return membersList.map((member) => {
       const taskCount = memberTaskCount[member.userId] || 0;
-      const contribution = totalTasks > 0 ? Math.round((taskCount / totalTasks) * 100) : 0;
+      const contribution =
+        totalTasks > 0 ? Math.round((taskCount / totalTasks) * 100) : 0;
       const status = contribution > 0 ? "Active" : "Idle";
-      
+
       return {
         ...member,
         contribution,
@@ -123,7 +137,7 @@ export default function GroupOverview({ groupId, groupDetail }) {
 
   // currentMembers already includes leader, so don't add 1
   const totalMembers = groupDetail?.currentMembers || 0;
-  
+
   // Determine status based on progress (same logic as MyGroups)
   let status = "On track";
   if (progress < 30) status = "At risk";
@@ -195,7 +209,13 @@ export default function GroupOverview({ groupId, groupDetail }) {
               className="!mb-1"
             />
             <Tag
-              color={group.status === "At risk" ? "volcano" : group.status === "Behind" ? "orange" : "green"}
+              color={
+                group.status === "At risk"
+                  ? "volcano"
+                  : group.status === "Behind"
+                  ? "orange"
+                  : "green"
+              }
               className="!mt-1 !rounded-md"
             >
               {group.status}
@@ -242,7 +262,9 @@ export default function GroupOverview({ groupId, groupDetail }) {
               <List.Item>
                 <Avatar icon={<UserOutlined />} src={m.avatar} />
                 <div className="ml-3 flex-1">
-                  <p className="font-medium text-gray-700">{m.fullName || m.name}</p>
+                  <p className="font-medium text-gray-700">
+                    {m.fullName || m.name}
+                  </p>
                   <Progress
                     percent={m.contribution}
                     strokeColor={m.status === "Active" ? "#3182ED" : "#D1D5DB"}
@@ -257,22 +279,27 @@ export default function GroupOverview({ groupId, groupDetail }) {
 
         {/* Recent Activity */}
         <Card className="!rounded-2xl !border !border-gray-100 !shadow-sm">
-          <h3 className="text-gray-800 font-semibold mb-3">
-            Recent Activity
-          </h3>
+          <h3 className="text-gray-800 font-semibold mb-3">Recent Activity</h3>
           {boardData && boardData.columns ? (
             <List
-              dataSource={
-                Object.values(boardData.columns)
-                  .flatMap(col => col.tasks || [])
-                  .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
-                  .slice(0, 4)
-              }
+              dataSource={Object.values(boardData.columns)
+                .flatMap((col) => col.tasks || [])
+                .sort(
+                  (a, b) =>
+                    new Date(b.updatedAt || b.createdAt || 0) -
+                    new Date(a.updatedAt || a.createdAt || 0)
+                )
+                .slice(0, 4)}
               renderItem={(task) => {
-                const assigneeName = task.assignees?.[0]?.displayName || task.assignee?.displayName || "Unassigned";
+                const assigneeName =
+                  task.assignees?.[0]?.displayName ||
+                  task.assignee?.displayName ||
+                  "Unassigned";
                 const taskDate = task.updatedAt || task.createdAt;
-                const relativeTime = taskDate ? getRelativeTime(taskDate, t) : "";
-                
+                const relativeTime = taskDate
+                  ? getRelativeTime(taskDate, t)
+                  : "";
+
                 return (
                   <List.Item>
                     <div className="flex items-start gap-2 w-full">
@@ -291,7 +318,9 @@ export default function GroupOverview({ groupId, groupDetail }) {
               }}
             />
           ) : (
-            <p className="text-sm text-gray-500 italic">Chưa có hoạt động gần đây</p>
+            <p className="text-sm text-gray-500 italic">
+              Chưa có hoạt động gần đây
+            </p>
           )}
         </Card>
       </div>
@@ -314,4 +343,3 @@ function getRelativeTime(dateString, t) {
   if (diffDays < 7) return `${diffDays} ${t("daysAgo") || "ngày trước"}`;
   return date.toLocaleDateString("vi-VN");
 }
-

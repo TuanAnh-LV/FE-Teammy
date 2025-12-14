@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Modal, Form, Input, Select, notification } from "antd";
 import { TopicService } from "../../services/topic.service";
 import { MajorService } from "../../services/major.service";
@@ -14,53 +14,96 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
   const [majors, setMajors] = useState([]);
   const [semesters, setSemesters] = useState([]);
 
+  const activeSemester = useMemo(
+    () => semesters.find((s) => s.isActive),
+    [semesters]
+  );
+
   useEffect(() => {
-    if (open) {
-      const fetchMetadata = async () => {
-        try {
-          const [majorsRes, semestersRes] = await Promise.all([
-            MajorService.getMajors(),
-            SemesterService.list(),
-          ]);
-          setMajors(majorsRes?.data || []);
-          setSemesters(semestersRes?.data || []);
-        } catch {
-          notification.error({
-            message: t("failedLoadMetadata") || "Failed to load metadata",
-          });
+    if (!open) return;
+
+    const fetchMetadata = async () => {
+      try {
+        const [majorsRes, semestersRes] = await Promise.all([
+          MajorService.getMajors(),
+          SemesterService.list(),
+        ]);
+
+        const majorsData = majorsRes?.data || [];
+        const semestersData = semestersRes?.data || [];
+
+        setMajors(majorsData);
+        setSemesters(semestersData);
+
+        // ✅ auto set active semester nếu chưa chọn
+        const current = form.getFieldValue("semesterId");
+        const active = semestersData.find((s) => s.isActive);
+        if (!current && active?.semesterId) {
+          form.setFieldsValue({ semesterId: active.semesterId });
         }
-      };
-      fetchMetadata();
-    }
+      } catch {
+        notification.error({
+          message: t("failedLoadMetadata") || "Failed to load metadata",
+        });
+      }
+    };
+
+    fetchMetadata();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+
+      // ✅ chặn tạo topic vào kỳ chưa active (an toàn)
+      const selectedSemester = semesters.find(
+        (s) => s.semesterId === values.semesterId
+      );
+
+      if (!selectedSemester?.isActive) {
+        notification.error({
+          message: t("semesterNotActive") || "Semester is not active",
+          description:
+            t("onlyActiveSemesterAllowed") ||
+            "You can only create topics for the active semester. Please activate this semester first.",
+        });
+        return;
+      }
+
       setSubmitting(true);
 
       const payload = {
         ...values,
         mentorEmails: values.mentorEmails
-          ? values.mentorEmails.split(",").map((e) => e.trim())
+          ? values.mentorEmails
+              .split(/[,;|\n]+/g)
+              .map((e) => e.trim())
+              .filter(Boolean)
           : [],
       };
 
       await TopicService.createTopic(payload);
+
       notification.success({
         message: t("topicCreated") || "Topic created successfully",
       });
+
       form.resetFields();
-      onSuccess();
-      onClose();
-    } catch (err) {
-      if (err.errorFields) {
-        // Form validation error
-        return;
+
+      // set lại active semester sau reset cho tiện
+      if (activeSemester?.semesterId) {
+        form.setFieldsValue({ semesterId: activeSemester.semesterId });
       }
+
+      onSuccess?.();
+      onClose?.();
+    } catch (err) {
+      if (err?.errorFields) return;
+
       notification.error({
         message: t("failedCreateTopic") || "Failed to create topic",
-        description: err?.response?.data?.message || err.message,
+        description: err?.response?.data?.message || err?.message,
       });
     } finally {
       setSubmitting(false);
@@ -69,7 +112,11 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
 
   const handleCancel = () => {
     form.resetFields();
-    onClose();
+    // set lại active semester sau reset cho tiện
+    if (activeSemester?.semesterId) {
+      form.setFieldsValue({ semesterId: activeSemester.semesterId });
+    }
+    onClose?.();
   };
 
   return (
@@ -86,6 +133,7 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
       okButtonProps={{
         className:
           "!bg-[#FF7A00] !text-white !border-none !rounded-md !px-4 !py-2 hover:!opacity-90",
+        disabled: !activeSemester, // nếu chưa load được semester active thì disable tạo
       }}
       cancelButtonProps={{
         className:
@@ -153,12 +201,25 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
               },
             ]}
           >
-            <Select placeholder={t("selectSemester") || "Select semester"}>
-              {semesters.map((sem) => (
-                <Option key={sem.semesterId} value={sem.semesterId}>
-                  {sem.season} {sem.year}
-                </Option>
-              ))}
+            <Select
+              placeholder={t("selectSemester") || "Select semester"}
+              // nếu chỉ muốn cho chọn active: có thể set disabled luôn nếu chỉ có 1 active
+            >
+              {semesters.map((sem) => {
+                const label = `${sem.season} ${sem.year}${
+                  sem.isActive ? "" : " (Inactive)"
+                }`;
+
+                return (
+                  <Option
+                    key={sem.semesterId}
+                    value={sem.semesterId}
+                    disabled={!sem.isActive} // ✅ disable kỳ chưa active
+                  >
+                    {label}
+                  </Option>
+                );
+              })}
             </Select>
           </Form.Item>
         </div>

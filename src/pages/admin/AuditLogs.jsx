@@ -10,11 +10,7 @@ import {
   Tooltip,
   notification,
 } from "antd";
-import {
-  SearchOutlined,
-  UploadOutlined,
-  InfoCircleOutlined,
-} from "@ant-design/icons";
+import { SearchOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { useTranslation } from "../../hook/useTranslation";
 import { AdminService } from "../../services/admin.service";
 
@@ -33,7 +29,6 @@ const AuditLogs = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ================== CALL API ==================
   useEffect(() => {
     const fetchLogs = async () => {
       try {
@@ -76,7 +71,6 @@ const AuditLogs = () => {
     fetchLogs();
   }, []);
 
-  // ================== COLOR CONFIG ==================
   const actionColors = {
     GROUP_CREATED: "green",
     USER_SUSPENDED: "red",
@@ -90,13 +84,6 @@ const AuditLogs = () => {
     pending: "blue",
   };
 
-  const levelColors = {
-    info: "blue",
-    warning: "orange",
-    critical: "red",
-  };
-
-  // helper format
   const formatIsoToDisplay = (iso) => {
     if (!iso) return "";
     const d = new Date(iso);
@@ -109,7 +96,6 @@ const AuditLogs = () => {
   const upperFirst = (s) =>
     s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 
-  // ================== TABLE COLUMNS ==================
   const columns = [
     {
       title: "Timestamp",
@@ -166,22 +152,6 @@ const AuditLogs = () => {
       ),
     },
     {
-      title: "Platform",
-      dataIndex: "platform",
-      key: "platform",
-      render: (p) => <Tag color="purple">{p || "-"}</Tag>,
-    },
-    {
-      title: "Severity",
-      dataIndex: "level",
-      key: "level",
-      render: (level) => (
-        <Tag color={levelColors[level?.toLowerCase()] || "blue"}>
-          {upperFirst(level)}
-        </Tag>
-      ),
-    },
-    {
       title: "Details",
       key: "details",
       render: (_, record) => (
@@ -196,7 +166,6 @@ const AuditLogs = () => {
     },
   ];
 
-  // ================== FILTER CLIENT SIDE ==================
   const filteredLogs = logs.filter((log) => {
     const searchText = filters.search.toLowerCase();
 
@@ -210,8 +179,15 @@ const AuditLogs = () => {
 
     const dateMatch =
       !filters.dateRange ||
-      (new Date(log.timestamp) >= filters.dateRange[0].toDate() &&
-        new Date(log.timestamp) <= filters.dateRange[1].toDate());
+      (filters.dateRange[0] &&
+        filters.dateRange[1] &&
+        (() => {
+          const [start, end] = filters.dateRange;
+          const startTs = start.startOf("day").valueOf();
+          const endTs = end.endOf("day").valueOf();
+          const logTs = new Date(log.timestamp).getTime();
+          return logTs >= startTs && logTs <= endTs;
+        })());
 
     return searchMatch && actionMatch && dateMatch;
   });
@@ -222,7 +198,7 @@ const AuditLogs = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
-            System Logs
+            {t("systemLogs") || "System Logs"}
           </h1>
         </div>
       </div>
@@ -230,7 +206,7 @@ const AuditLogs = () => {
       {/* Filters */}
       <Card
         className="shadow-sm border-gray-100 rounded-lg"
-        bodyStyle={{ padding: "20px 24px" }}
+        style={{ padding: "20px 24px" }}
       >
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <Input
@@ -246,11 +222,25 @@ const AuditLogs = () => {
             onChange={(v) => setFilters({ ...filters, action: v })}
             className="w-full"
           >
-            <Option value="All Action">All Action</Option>
-            <Option value="GROUP_CREATED">GROUP_CREATED</Option>
-            <Option value="USER_SUSPENDED">USER_SUSPENDED</Option>
-            <Option value="POST_HIDDEN">POST_HIDDEN</Option>
-            <Option value="SETTINGS_UPDATED">SETTINGS_UPDATED</Option>
+            <Option value="All Action">{t("allAction") || "All Action"}</Option>
+            <Option value="GROUP_CREATED">
+              {t("groupCreated") || "GROUP CREATED"}
+            </Option>
+            <Option value="GROUP_MEMBER_JOINED">
+              {t("groupMemberJoined") || "GROUP MEMBER JOINED"}
+            </Option>
+            <Option value="GROUP_MEMBER_INVITED">
+              {t("groupMemberInvited") || "GROUP MEMBER INVITED"}
+            </Option>
+            <Option value="GROUP_MEMBER_LEFT">
+              {t("groupMemberLeft") || "GROUP MEMBER LEFT"}
+            </Option>
+            <Option value="GROUP_MEMBER_REMOVED">
+              {t("groupMemberRemoved") || "GROUP MEMBER REMOVED"}
+            </Option>
+            <Option value="GROUP_LEADER_CHANGED">
+              {t("groupLeaderChanged") || "GROUP LEADER CHANGED"}
+            </Option>
           </Select>
           <RangePicker
             onChange={(range) => setFilters({ ...filters, dateRange: range })}

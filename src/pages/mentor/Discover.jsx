@@ -37,49 +37,52 @@ const Discover = () => {
   const fetchAvailableGroups = async () => {
     try {
       setLoading(true);
-      
+
       const myGroupsRes = await GroupService.getMyGroups();
       const myGroups = Array.isArray(myGroupsRes?.data) ? myGroupsRes.data : [];
-      
+
       const withProgressAndActivities = await Promise.all(
         myGroups.map(async (g) => {
           try {
             const [reportRes, boardRes] = await Promise.all([
               ReportService.getProjectReport(g.id),
-              BoardService.getBoard(g.id)
+              BoardService.getBoard(g.id),
             ]);
-            
+
             const progress = reportRes?.data?.project?.completionPercent ?? 0;
             const boardData = boardRes?.data;
-            
+
             const activities = [];
             if (boardData && boardData.columns) {
-              const allTasks = boardData.columns.flatMap(col => col.tasks || []);
+              const allTasks = boardData.columns.flatMap(
+                (col) => col.tasks || []
+              );
               const sortedTasks = allTasks
-                .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+                .sort(
+                  (a, b) =>
+                    new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+                )
                 .slice(0, 3);
-              
-              sortedTasks.forEach(task => {
+
+              sortedTasks.forEach((task) => {
                 activities.push({
-                  type: 'task',
+                  type: "task",
                   title: task.title || t("newTask") || "Task mới",
                   user: task.assignee?.displayName || t("member") || "Member",
                   time: task.createdAt,
                 });
               });
             }
-            
-            return { ...g, calculatedProgress: progress, activities };
-          } catch (err) {
 
+            return { ...g, calculatedProgress: progress, activities };
+          } catch {
             return { ...g, calculatedProgress: 0, activities: [] };
           }
         })
       );
 
       setGroups(withProgressAndActivities);
-    } catch (error) {
-
+    } catch {
       setGroups([]);
     } finally {
       setLoading(false);
@@ -91,8 +94,7 @@ const Discover = () => {
       const res = await InvitationService.list();
       const data = Array.isArray(res?.data) ? res.data : [];
       setInvitations(data);
-    } catch (error) {
-
+    } catch {
       setInvitations([]);
     }
   };
@@ -104,11 +106,10 @@ const Discover = () => {
       setAcceptModalVisible(true);
       setInvitations((prev) => prev.filter((x) => x.id !== invitation.id));
       fetchAvailableGroups();
-    } catch (error) {
-
+    } catch {
       notificationApi.error({
-        message: "Chấp nhận lời mời thất bại",
-        description: "Vui lòng thử lại sau.",
+        message: t("acceptInvitationFailed") || "Chấp nhận lời mời thất bại",
+        description: t("pleaseTryAgainLater") || "Vui lòng thử lại sau.",
       });
     }
   };
@@ -118,23 +119,22 @@ const Discover = () => {
       await InvitationService.decline(invitation.invitationId || invitation.id);
       setInvitations((prev) => prev.filter((x) => x.id !== invitation.id));
       notificationApi.info({
-        message: "Đã từ chối lời mời",
+        message: t("invitationRejected") || "Đã từ chối lời mời",
       });
-    } catch (error) {
-
+    } catch {
       notificationApi.error({
-        message: "Từ chối lời mời thất bại",
-        description: "Vui lòng thử lại sau.",
+        message: t("rejectInvitationFailed") || "Từ chối lời mời thất bại",
+        description: t("pleaseTryAgainLater") || "Vui lòng thử lại sau.",
       });
     }
   };
 
   const normalizeGroup = (g) => {
-    const topicTitle = g.topic?.title || "Chưa có topic";
+    const topicTitle = g.topic?.title || t("noTopic") || "Chưa có topic";
     const semesterEnd = g.semester?.endDate
       ? new Date(g.semester.endDate).toLocaleDateString("vi-VN")
       : "N/A";
-    
+
     const skills = Array.isArray(g.skills) ? g.skills : [];
     const displaySkills = skills.slice(0, 3);
     if (skills.length > 3) {
@@ -143,15 +143,16 @@ const Discover = () => {
 
     return {
       id: g.id,
-      name: g.name || "Nhóm không tên",
+      name: g.name || t("unnamedGroup") || "Nhóm không tên",
       topic: topicTitle,
-      description: g.description || "Chưa có mô tả.",
+      description: g.description || t("noDescription") || "Chưa có mô tả.",
       members: g.currentMembers || 0,
       maxMembers: g.maxMembers || 5,
       progress: g.calculatedProgress || 0,
       deadline: semesterEnd,
       skills: displaySkills,
-      expertiseNeeded: g.major?.majorName || "Chưa xác định",
+      expertiseNeeded:
+        g.major?.majorName || t("noExpertiseNeeded") || "Chưa xác định",
       activities: g.activities || [],
       status: g.status || "active",
     };
@@ -175,10 +176,11 @@ const Discover = () => {
 
   const normalizedGroups = groups.map(normalizeGroup);
 
-  const filteredGroups = normalizedGroups.filter((g) =>
-    g.name.toLowerCase().includes(searchText.toLowerCase()) ||
-    g.topic.toLowerCase().includes(searchText.toLowerCase()) ||
-    g.expertiseNeeded.toLowerCase().includes(searchText.toLowerCase())
+  const filteredGroups = normalizedGroups.filter(
+    (g) =>
+      g.name.toLowerCase().includes(searchText.toLowerCase()) ||
+      g.topic.toLowerCase().includes(searchText.toLowerCase()) ||
+      g.expertiseNeeded.toLowerCase().includes(searchText.toLowerCase())
   );
 
   const filteredInvitations = invitations.filter((inv) => {
@@ -188,20 +190,25 @@ const Discover = () => {
     return true;
   });
 
-  const pendingCount = invitations.filter(inv => inv.status === "pending").length;
-  const acceptedCount = invitations.filter(inv => inv.status === "accepted").length;
+  const pendingCount = invitations.filter(
+    (inv) => inv.status === "pending"
+  ).length;
+  const acceptedCount = invitations.filter(
+    (inv) => inv.status === "accepted"
+  ).length;
 
   return (
-    <div className="space-y-6 bg-gray-50 min-h-screen">
+    <div className="space-y-6 min-h-screen">
       {contextHolder}
-      
+
       {/* Header Section */}
       <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-green-400 bg-clip-text text-transparent">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-clip-text text-black">
           {t("groupsBeingMentored")}
         </h1>
         <p className="text-gray-600">
-          Quản lý và theo dõi các nhóm dự án bạn đang hướng dẫn. Hỗ trợ sinh viên thực hiện capstone project thành công.
+          {t("manageAndTrackGroups") ||
+            "Quản lý và theo dõi các nhóm dự án bạn đang hướng dẫn. Hỗ trợ sinh viên thực hiện capstone project thành công."}
         </p>
       </div>
 
@@ -214,7 +221,7 @@ const Discover = () => {
               {t("mentoringInvitations")}
             </h2>
           </div>
-          
+
           {/* Tabs */}
           <div className="flex items-center gap-2 mb-4 border-b border-gray-200">
             <button
@@ -262,20 +269,35 @@ const Discover = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold text-gray-900">
-                        {inv.groupName || "Nhóm"}
+                        {inv.groupName || t("groupUnnamed") || "Nhóm không tên"}
                       </h3>
-                      <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${
-                        inv.status === "accepted"
-                          ? "bg-green-50 text-green-600 border border-green-200"
-                          : inv.status === "pending"
-                          ? "bg-yellow-50 text-yellow-600 border border-yellow-200"
-                          : "bg-gray-50 text-gray-600 border border-gray-200"
-                      }`}>
-                        {inv.status === "accepted" ? "Đã chấp nhận" : inv.status === "pending" ? "Đang chờ" : inv.status}
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${
+                          inv.status === t("accepted")
+                            ? "bg-green-50 text-green-600 border border-green-200"
+                            : inv.status === t("pending")
+                            ? "bg-yellow-50 text-yellow-600 border border-yellow-200"
+                            : "bg-gray-50 text-gray-600 border border-gray-200"
+                        }`}
+                      >
+                        {inv.status === t("accepted")
+                          ? "Đã chấp nhận"
+                          : inv.status === t("pending")
+                          ? "Đang chờ"
+                          : inv.status}
                       </span>
                     </div>
                     <p className="text-sm text-gray-600">
-                      <span className="font-medium">{inv.invitedByName || "Người gửi"}</span> mời bạn hướng dẫn nhóm cho đề tài <span className="font-medium">{inv.topicTitle || "chưa xác định"}</span>
+                      <span className="font-medium">
+                        {inv.invitedByName || t("invitedBy") || "Người mời"}
+                      </span>{" "}
+                      {t("invitedYouToMentorGroup") ||
+                        "mời bạn hướng dẫn nhóm cho đề tài"}{" "}
+                      <span className="font-medium">
+                        {inv.topicTitle ||
+                          t("topicUndefined") ||
+                          "chưa xác định"}
+                      </span>
                     </p>
                     {inv.createdAt && (
                       <p className="text-xs text-gray-500 mt-1">
@@ -291,7 +313,7 @@ const Discover = () => {
                         className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition"
                       >
                         <Check className="w-4 h-4" />
-                        <span>Chấp nhận</span>
+                        <span>{t("accept") || "Chấp nhận"}</span>
                       </button>
                       <button
                         type="button"
@@ -299,7 +321,7 @@ const Discover = () => {
                         className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium transition"
                       >
                         <X className="w-4 h-4" />
-                        <span>Từ chối</span>
+                        <span>{t("reject") || "Từ chối"}</span>
                       </button>
                     </div>
                   )}
@@ -319,7 +341,9 @@ const Discover = () => {
             <input
               type="text"
               className="w-full bg-transparent outline-none text-sm"
-              placeholder="Tìm kiếm theo tên, topic hoặc từ khóa..."
+              placeholder={
+                t("searchGroups") || "Tìm kiếm theo tên, topic hoặc từ khóa..."
+              }
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
             />
@@ -338,12 +362,15 @@ const Discover = () => {
         <div className="flex items-center gap-4 mt-4 text-sm text-gray-600">
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
-            <span>{normalizedGroups.length} {t("groupsBeingMentored")}</span>
+            <span>
+              {normalizedGroups.length} {t("groupsBeingMentored")}
+            </span>
           </div>
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
             <span>
-              {normalizedGroups.reduce((sum, g) => sum + g.members, 0)} {t("sinh_vien") || "sinh viên"}
+              {normalizedGroups.reduce((sum, g) => sum + g.members, 0)}{" "}
+              {t("sinh_vien") || "sinh viên"}
             </span>
           </div>
         </div>
@@ -357,113 +384,120 @@ const Discover = () => {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredGroups.map((group) => (
-          <div
-            key={group.id}
-            className="border border-gray-200 rounded-2xl bg-white hover:shadow-lg transition-all p-5 flex flex-col gap-3"
-          >
-            {/* Header */}
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 text-base mb-1">
-                  {group.name}
-                </h3>
-                <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-600 border border-blue-200">
-                  {group.topic}
-                </span>
-              </div>
-
-              <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-600 border border-green-200 capitalize">
-                {group.status}
-              </span>
-            </div>
-
-            {/* Description */}
-            <p className="text-sm text-gray-600">
-              {group.description}
-            </p>
-
-            {/* Progress */}
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-xs text-gray-500">{t("projectProgress")}</span>
-                <span className="text-sm font-semibold text-gray-700">
-                  {group.progress}%
-                </span>
-              </div>
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-blue-500 rounded-full transition-all"
-                  style={{ width: `${group.progress}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Info */}
-            <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
-              <div className="flex items-center gap-1">
-                <Users className="w-3.5 h-3.5" />
-                <span>{group.members}/{group.maxMembers} {t("thanh_vien") || "thành viên"}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" />
-                <span>{group.deadline}</span>
-              </div>
-            </div>
-
-            {/* Skills */}
-            <div className="flex flex-wrap gap-2">
-              {group.skills.map((skill, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1 bg-white text-gray-700 text-xs rounded-full border border-gray-200 shadow-sm"
-                >
-                  {skill}
-                </span>
-              ))}
-            </div>
-
-            {/* Recent Activity */}
-            <div className="border-t border-gray-100 pt-3 mt-2">
-              <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                Hoạt động gần đây
-              </p>
-              {group.activities.length > 0 ? (
-                <div className="space-y-2">
-                  {group.activities.map((activity, idx) => (
-                    <div key={idx} className="flex items-start gap-2">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-800 font-medium line-clamp-1">
-                          {activity.title}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {activity.user} • {getRelativeTime(activity.time)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-gray-500 italic">Chưa có hoạt động gần đây</p>
-              )}
-            </div>
-
-            {/* Expertise Needed */}
-            <div className="border-t border-gray-100 pt-3 mt-2 text-xs text-gray-500">
-              <span>Tìm kiếm mentor chuyên ngành:</span>
-              <p className="font-medium text-gray-700 mt-0.5">
-                {group.expertiseNeeded}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => navigate(`/mentor/my-groups/${group.id}`)}
-              className="mt-3 inline-flex items-center justify-center gap-2 w-full rounded-lg bg-[#4264D7] hover:bg-[#3451b8] text-white text-sm font-medium py-2.5 shadow-sm transition"
+            <div
+              key={group.id}
+              className="border border-gray-200 rounded-2xl bg-white hover:shadow-lg transition-all p-5 flex flex-col gap-3"
             >
-              <span>{t("viewGroupDetails")}</span>
-            </button>
-          </div>
+              {/* Header */}
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 text-base mb-1">
+                    {group.name}
+                  </h3>
+                  <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-600 border border-blue-200">
+                    {group.topic}
+                  </span>
+                </div>
+
+                <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-600 border border-green-200 capitalize">
+                  {group.status}
+                </span>
+              </div>
+
+              {/* Description */}
+              <p className="text-sm text-gray-600">{group.description}</p>
+
+              {/* Progress */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs text-gray-500">
+                    {t("projectProgress")}
+                  </span>
+                  <span className="text-sm font-semibold text-gray-700">
+                    {group.progress}%
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 rounded-full transition-all"
+                    style={{ width: `${group.progress}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+                <div className="flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5" />
+                  <span>
+                    {group.members}/{group.maxMembers}{" "}
+                    {t("thanh_vien") || "thành viên"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>{group.deadline}</span>
+                </div>
+              </div>
+
+              {/* Skills */}
+              <div className="flex flex-wrap gap-2">
+                {group.skills.map((skill, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-1 bg-white text-gray-700 text-xs rounded-full border border-gray-200 shadow-sm"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+
+              {/* Recent Activity */}
+              <div className="border-t border-gray-100 pt-3 mt-2">
+                <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                  {t("recentActivity") || "Hoạt động gần đây"}
+                </p>
+                {group.activities.length > 0 ? (
+                  <div className="space-y-2">
+                    {group.activities.map((activity, idx) => (
+                      <div key={idx} className="flex items-start gap-2">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-gray-800 font-medium line-clamp-1">
+                            {activity.title}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {activity.user} • {getRelativeTime(activity.time)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-500 italic">
+                    {t("noRecentActivity") || "Chưa có hoạt động gần đây"}
+                  </p>
+                )}
+              </div>
+
+              {/* Expertise Needed */}
+              <div className="border-t border-gray-100 pt-3 mt-2 text-xs text-gray-500">
+                <span>
+                  {t("expertiseNeeded") || "Tìm kiếm mentor chuyên ngành:"}
+                </span>
+                <p className="font-medium text-gray-700 mt-0.5">
+                  {group.expertiseNeeded}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => navigate(`/mentor/my-groups/${group.id}`)}
+                className="mt-3 inline-flex items-center justify-center gap-2 w-full rounded-lg bg-[#4264D7] hover:bg-[#3451b8] text-white text-sm font-medium py-2.5 shadow-sm transition"
+              >
+                <span>{t("viewGroupDetails")}</span>
+              </button>
+            </div>
           ))}
         </div>
       )}
@@ -494,17 +528,19 @@ const Discover = () => {
             </svg>
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            Chấp nhận thành công!
+            {t("acceptSuccess") || "Chấp nhận thành công!"}
           </h3>
           <p className="text-gray-600 mb-6">
-            Bạn đã chấp nhận lời mời hướng dẫn nhóm <span className="font-semibold">{acceptedGroupName}</span>
+            {t("acceptSuccessMessage") ||
+              `Bạn đã chấp nhận lời mời hướng dẫn nhóm `}
+            <span className="font-semibold">{acceptedGroupName}</span>
           </p>
           <button
             type="button"
             onClick={() => setAcceptModalVisible(false)}
             className="w-full rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 transition"
           >
-            Đóng
+            {t("close") || "Đóng"}
           </button>
         </div>
       </Modal>
@@ -513,4 +549,3 @@ const Discover = () => {
 };
 
 export default Discover;
-

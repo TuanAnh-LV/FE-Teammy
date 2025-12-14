@@ -63,15 +63,21 @@ export default function MyGroups() {
 
     return {
       id: g.id,
-      name: g.name || "Nhóm không tên",
-      topic: g.topic?.title || "Chưa có topic",
+      name: g.name || t("unnamedGroup") || "Nhóm không tên",
+      topic: g.topic?.title || t("noTopic") || "Chưa có topic",
       topicDescription:
-        g.topic?.description || g.description || "Chưa có mô tả.",
-      description: g.description || "Chưa có mô tả.",
+        g.topic?.description ||
+        g.description ||
+        t("noDescription") ||
+        "Chưa có mô tả.",
+      description: g.description || t("noDescription") || "Chưa có mô tả.",
       members: g.currentMembers || 0,
       maxMembers: g.maxMembers || 5,
       progress: g.calculatedProgress || 0,
-      status: g.calculatedProgress >= 60 ? "Đúng tiến độ" : "Cần theo dõi",
+      status:
+        g.calculatedProgress >= 60
+          ? t("onTrack") || "Đúng tiến độ"
+          : t("needAttention") || "Cần theo dõi",
       memberAvatars: allMembers.slice(0, 4).map((m) => ({
         name: m.displayName || "User",
         avatarUrl: m.avatarUrl,
@@ -88,8 +94,12 @@ export default function MyGroups() {
 
   const stats = {
     total: normalized.length,
-    ontrack: normalized.filter((g) => g.status === "Đúng tiến độ").length,
-    need: normalized.filter((g) => g.status !== "Đúng tiến độ").length,
+    ontrack: normalized.filter(
+      (g) => g.status === (t("onTrack") || "Đúng tiến độ")
+    ).length,
+    need: normalized.filter(
+      (g) => g.status !== (t("onTrack") || "Đúng tiến độ")
+    ).length,
     avg:
       normalized.length > 0
         ? Math.round(
@@ -100,17 +110,22 @@ export default function MyGroups() {
 
   const filtered = normalized.filter((g) => {
     const match = g.name.toLowerCase().includes(searchQuery.toLowerCase());
-    if (filter === "ontrack") return match && g.status === "Đúng tiến độ";
-    if (filter === "need") return match && g.status !== "Đúng tiến độ";
+    if (filter === "ontrack")
+      return match && g.status === (t("onTrack") || "Đúng tiến độ");
+    if (filter === "need")
+      return match && g.status !== (t("onTrack") || "Đúng tiến độ");
     return match;
   });
 
   return (
     <div className="min-h-screen pb-20">
       <div className="max-w-8xl mx-auto">
-        <h1 className="text-4xl font-extrabold text-blue-600">My Groups</h1>
+        <h1 className="text-4xl font-extrabold text-black">
+          {t("myGroups") || "My Groups"}
+        </h1>
         <p className="text-gray-600 mt-1">
-          Quản lý và theo dõi các nhóm dự án bạn đang hướng dẫn
+          {t("manageAndTrackGroups") ||
+            "Quản lý và theo dõi các nhóm dự án bạn đang hướng dẫn"}
         </p>
 
         {/* SEARCH */}
@@ -118,7 +133,7 @@ export default function MyGroups() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Tìm kiếm nhóm..."
+            placeholder={t("searchGroups") || "Tìm kiếm nhóm..."}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-[#F9FAFB] border border-gray-300 rounded-md px-3 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -143,7 +158,9 @@ export default function MyGroups() {
           {/* NEED ATTENTION */}
           <div className="rounded-xl border border-gray-300 bg-white shadow-sm p-6">
             <p className="text-2xl font-bold text-orange-500">{stats.need}</p>
-            <p className="text-sm text-gray-500 mt-2">Cần theo dõi</p>
+            <p className="text-sm text-gray-500 mt-2">
+              {t("needAttention") || "Cần theo dõi"}
+            </p>
           </div>
 
           {/* AVG PROGRESS */}
@@ -166,7 +183,7 @@ export default function MyGroups() {
               }
             `}
           >
-            Tất cả ({stats.total})
+            {t("all") || "Tất cả"} ({stats.total})
           </button>
 
           <button
@@ -180,7 +197,7 @@ export default function MyGroups() {
               }
             `}
           >
-            Đúng tiến độ ({stats.ontrack})
+            {t("onTrack") || "Đúng tiến độ"} ({stats.ontrack})
           </button>
 
           <button
@@ -194,7 +211,7 @@ export default function MyGroups() {
               }
             `}
           >
-            Cần theo dõi ({stats.need})
+            {t("needAttention") || "Cần theo dõi"} ({stats.need})
           </button>
         </div>
       </div>
@@ -202,7 +219,7 @@ export default function MyGroups() {
       {/* ---------------------------------- */}
       {/* GROUP LIST */}
       {/* ---------------------------------- */}
-      <div className="w-full px-8 mt-8 space-y-8">
+      <div className="w-full mt-8 ">
         {loading ? (
           <div className="flex justify-center py-20">
             <Spin size="large" />
@@ -267,7 +284,7 @@ export default function MyGroups() {
                     ))}
 
                     <span className="text-gray-600 text-sm ml-1">
-                      {g.members} thành viên
+                      {g.members} {t("members") || "thành viên"}
                     </span>
                   </div>
                 </div>
@@ -277,17 +294,22 @@ export default function MyGroups() {
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2 text-gray-600">
                       <BookOpen className="w-4 h-4 text-gray-400" />
-                      <span>Chuyên ngành: {g.major}</span>
+                      <span>
+                        {t("major") || "Chuyên ngành"}: {g.major}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-600">
                       <Target className="w-4 h-4 text-gray-400" />
-                      <span>Deadline: {g.deadline}</span>
+                      <span>
+                        {t("deadline") || "Deadline"}: {g.deadline}
+                      </span>
                     </div>
                     {g.semester && (
                       <div className="flex items-center gap-2 text-gray-600">
                         <Calendar className="w-4 h-4 text-gray-400" />
                         <span>
-                          Học kỳ: {g.semester.season} {g.semester.year}
+                          {t("semester") || "Học kỳ"}: {g.semester.season}{" "}
+                          {g.semester.year}
                         </span>
                       </div>
                     )}
@@ -295,7 +317,9 @@ export default function MyGroups() {
 
                   {g.skills && g.skills.length > 0 && (
                     <div className="p-4 bg-gray-50 rounded-xl flex-1">
-                      <p className="text-xs text-gray-500 mb-2">Kỹ năng:</p>
+                      <p className="text-xs text-gray-500 mb-2">
+                        {t("skills") || "Kỹ năng:"}
+                      </p>
                       <div className="flex flex-wrap gap-1.5">
                         {g.skills.map((skill, idx) => (
                           <span
@@ -316,7 +340,7 @@ export default function MyGroups() {
                       onClick={() => navigate(`/mentor/my-groups/${g.id}`)}
                       icon={<span className="mr-1">👁</span>}
                     >
-                      Xem chi tiết
+                      {t("viewDetails") || "Xem chi tiết"}
                     </Button>
 
                     <Button
