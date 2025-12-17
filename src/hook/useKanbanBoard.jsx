@@ -708,7 +708,6 @@ export function useKanbanBoard(groupId) {
     
     const taskIds = [];
     
-    // Get task IDs from current columns state
     Object.values(columns).forEach((tasks) => {
       if (Array.isArray(tasks)) {
         tasks.forEach((task) => {
@@ -719,7 +718,6 @@ export function useKanbanBoard(groupId) {
       }
     });
     
-    // Load comments for all tasks in parallel (only once)
     if (taskIds.length > 0) {
       try {
         await Promise.all(

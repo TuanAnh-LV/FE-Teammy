@@ -1,13 +1,24 @@
 /**
+ * MODULE: Home Page (Common)
+ * FEATURE: Landing page with hero section and profile completion
+ * 
+ * TEST REQUIREMENTS:
+ * TR-HOME-001: System shall display hero section for new users
+ * TR-HOME-002: System shall display features section
+ * TR-HOME-003: System shall prompt incomplete profiles to complete information
+ * TR-HOME-004: System shall handle profile completion workflow
+ * TR-HOME-005: System shall redirect authenticated users appropriately
+ * 
  * Test Code: FE-TM-Page-Home
  * Test Name: Home Page Test
- * Description: Test Home page component with hero, features, and profile completion
  * Author: Test Suite
  * Date: 2024
+ * Compliance: Follows MessagesPage.test.jsx standards
  */
 
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router-dom";
 import Home from "../../src/pages/common/Home";
 import { useAuth } from "../../src/context/AuthContext";
@@ -59,24 +70,20 @@ describe("Home Page", () => {
     );
   };
 
-  /**
-   * Test Case UTC01
-   * Type: Normal
-   * Description: Renders home page with hero and features sections
-   */
-  it("UTC01 - should render hero and features sections", () => {
+  test("UTC01 [N] Initial page render => Shows hero and features sections", () => {
+    // Pre-condition: User visits home page
     renderHome();
 
+    // Positive assertions
     expect(screen.getByTestId("hero-section")).toBeInTheDocument();
     expect(screen.getByTestId("features-section")).toBeInTheDocument();
+    
+    // Negative assertions
+    expect(screen.queryByTestId("complete-profile-modal")).not.toBeInTheDocument();
   });
 
-  /**
-   * Test Case UTC02
-   * Type: Normal
-   * Description: Shows profile completion modal for incomplete student profile
-   */
-  it("UTC02 - should show complete profile modal for students with incomplete profile", async () => {
+  test("UTC02 [N] Student with incomplete profile => Shows completion modal", async () => {
+    // Pre-condition: Student hasn't completed skills
     renderHome({
       userInfo: {
         id: "user-1",
@@ -86,17 +93,17 @@ describe("Home Page", () => {
       role: "student",
     });
 
+    // Positive assertions - Modal appears
     await waitFor(() => {
       expect(screen.getByTestId("complete-profile-modal")).toBeInTheDocument();
     });
+    
+    // Negative assertions - Page still renders
+    expect(screen.getByTestId("hero-section")).toBeInTheDocument();
   });
 
-  /**
-   * Test Case UTC03
-   * Type: Normal
-   * Description: Does not show modal for completed profile
-   */
-  it("UTC03 - should not show modal for completed profile", () => {
+  test("UTC03 [B] Student with completed profile => No modal shown", () => {
+    // Pre-condition: Student has completed profile
     renderHome({
       userInfo: {
         id: "user-1",
@@ -106,77 +113,38 @@ describe("Home Page", () => {
       role: "student",
     });
 
-    expect(
-      screen.queryByTestId("complete-profile-modal")
-    ).not.toBeInTheDocument();
+    // Positive assertions
+    expect(screen.getByTestId("hero-section")).toBeInTheDocument();
+    
+    // Negative assertions - Modal should not appear
+    expect(screen.queryByTestId("complete-profile-modal")).not.toBeInTheDocument();
   });
 
-  /**
-   * Test Case UTC04
-   * Type: Normal
-   * Description: Does not show modal for admin users
-   */
-  it("UTC04 - should not show modal for admin users", () => {
+  test.each([
+    ["admin"],
+    ["moderator"],
+    ["mentor"],
+  ])("UTC04 [N] Non-student role %s => No modal shown", (role) => {
+    // Pre-condition: Non-student user with incomplete profile
     renderHome({
       userInfo: {
-        id: "admin-1",
-        name: "Admin User",
+        id: "user-1",
+        name: `${role} User`,
         skillsCompleted: false,
       },
-      role: "admin",
+      role,
     });
 
-    expect(
-      screen.queryByTestId("complete-profile-modal")
-    ).not.toBeInTheDocument();
+    // Positive assertions - Page renders normally
+    expect(screen.getByTestId("hero-section")).toBeInTheDocument();
+    
+    // Negative assertions - No modal for non-students
+    expect(screen.queryByTestId("complete-profile-modal")).not.toBeInTheDocument();
   });
 
-  /**
-   * Test Case UTC05
-   * Type: Normal
-   * Description: Does not show modal for moderator users
-   */
-  it("UTC05 - should not show modal for moderator users", () => {
-    renderHome({
-      userInfo: {
-        id: "mod-1",
-        name: "Moderator User",
-        skillsCompleted: false,
-      },
-      role: "moderator",
-    });
-
-    expect(
-      screen.queryByTestId("complete-profile-modal")
-    ).not.toBeInTheDocument();
-  });
-
-  /**
-   * Test Case UTC06
-   * Type: Normal
-   * Description: Does not show modal for mentor users
-   */
-  it("UTC06 - should not show modal for mentor users", () => {
-    renderHome({
-      userInfo: {
-        id: "mentor-1",
-        name: "Mentor User",
-        skillsCompleted: false,
-      },
-      role: "mentor",
-    });
-
-    expect(
-      screen.queryByTestId("complete-profile-modal")
-    ).not.toBeInTheDocument();
-  });
-
-  /**
-   * Test Case UTC07
-   * Type: Normal
-   * Description: Handles profile completion
-   */
-  it("UTC07 - should handle profile completion", async () => {
+  test("UTC05 [N] Click Complete in modal => Updates user profile state", async () => {
+    // Pre-condition: Student with incomplete profile
+    const user = userEvent.setup();
     renderHome({
       userInfo: {
         id: "user-1",
@@ -190,22 +158,24 @@ describe("Home Page", () => {
       expect(screen.getByTestId("complete-profile-modal")).toBeInTheDocument();
     });
 
+    // Action: Click complete button
     const completeButton = screen.getByText("Complete");
-    completeButton.click();
+    await user.click(completeButton);
 
+    // Positive assertions - State updated
     expect(mockSetUserInfo).toHaveBeenCalledWith(
       expect.objectContaining({
         skillsCompleted: true,
       })
     );
+    
+    // Negative assertions
+    expect(mockSetUserInfo).toHaveBeenCalledTimes(1);
   });
 
-  /**
-   * Test Case UTC08
-   * Type: Normal
-   * Description: Handles modal close
-   */
-  it("UTC08 - should close modal when close button clicked", async () => {
+  test("UTC06 [N] Click Close in modal => Modal disappears", async () => {
+    // Pre-condition: Student with incomplete profile
+    const user = userEvent.setup();
     renderHome({
       userInfo: {
         id: "user-1",
@@ -219,39 +189,35 @@ describe("Home Page", () => {
       expect(screen.getByTestId("complete-profile-modal")).toBeInTheDocument();
     });
 
+    // Action: Click close button
     const closeButton = screen.getByText("Close");
-    closeButton.click();
+    await user.click(closeButton);
 
+    // Positive assertions - Modal closes
     await waitFor(() => {
-      expect(
-        screen.queryByTestId("complete-profile-modal")
-      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId("complete-profile-modal")).not.toBeInTheDocument();
     });
+    
+    // Negative assertions - No state update
+    expect(mockSetUserInfo).not.toHaveBeenCalled();
   });
 
-  /**
-   * Test Case UTC09
-   * Type: Boundary
-   * Description: Handles null userInfo
-   */
-  it("UTC09 - should handle null userInfo gracefully", () => {
+  test("UTC07 [B] Null userInfo => Renders page without modal", () => {
+    // Pre-condition: User not logged in
     renderHome({
       userInfo: null,
       role: "student",
     });
 
+    // Positive assertions - Page renders
     expect(screen.getByTestId("hero-section")).toBeInTheDocument();
-    expect(
-      screen.queryByTestId("complete-profile-modal")
-    ).not.toBeInTheDocument();
+    
+    // Negative assertions - No modal shown
+    expect(screen.queryByTestId("complete-profile-modal")).not.toBeInTheDocument();
   });
 
-  /**
-   * Test Case UTC10
-   * Type: Normal
-   * Description: Handles case-insensitive role check
-   */
-  it("UTC10 - should handle uppercase role names", () => {
+  test("UTC08 [B] Uppercase role name => Handles case-insensitively", () => {
+    // Pre-condition: Role in uppercase
     renderHome({
       userInfo: {
         id: "admin-1",
@@ -261,8 +227,48 @@ describe("Home Page", () => {
       role: "ADMIN",
     });
 
-    expect(
-      screen.queryByTestId("complete-profile-modal")
-    ).not.toBeInTheDocument();
+    // Positive assertions - Page renders
+    expect(screen.getByTestId("hero-section")).toBeInTheDocument();
+    
+    // Negative assertions - No modal for uppercase ADMIN
+    expect(screen.queryByTestId("complete-profile-modal")).not.toBeInTheDocument();
+  });
+
+  test("UTC09 [B] skillsCompleted undefined => No modal shown", () => {
+    // Pre-condition: skillsCompleted field missing (undefined !== false)
+    renderHome({
+      userInfo: {
+        id: "user-1",
+        name: "Student User",
+        // skillsCompleted is undefined
+      },
+      role: "student",
+    });
+
+    // Positive assertions - Page renders normally
+    expect(screen.getByTestId("hero-section")).toBeInTheDocument();
+    
+    // Negative assertions - No modal (undefined !== false)
+    expect(screen.queryByTestId("complete-profile-modal")).not.toBeInTheDocument();
+  });
+
+  test("UTC10 [B] Empty role string => Shows modal for non-staff role", async () => {
+    // Pre-condition: Role is empty string (not in staff list)
+    renderHome({
+      userInfo: {
+        id: "user-1",
+        name: "User",
+        skillsCompleted: false,
+      },
+      role: "",
+    });
+
+    // Positive assertions - Modal appears (empty role not staff)
+    await waitFor(() => {
+      expect(screen.getByTestId("complete-profile-modal")).toBeInTheDocument();
+    });
+    
+    // Negative assertions - Page still renders
+    expect(screen.getByTestId("hero-section")).toBeInTheDocument();
   });
 });
