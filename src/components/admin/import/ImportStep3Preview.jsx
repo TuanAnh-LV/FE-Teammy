@@ -9,7 +9,7 @@ import { AdminService } from "../../../services/admin.service";
 import { useTranslation } from "../../../hook/useTranslation";
 
 export default function ImportStep3Preview({
-  uploadedUsers, // ✅ data thật từ payload validate
+  uploadedUsers,
   setMappedUsers,
   setCurrentStep,
   validationResult,
@@ -84,7 +84,7 @@ export default function ImportStep3Preview({
           } users imported successfully`,
         });
 
-        setCurrentStep(2); // ✅ Result step
+        setCurrentStep(2);
       }
     } catch (err) {
       notification.error({
@@ -96,44 +96,57 @@ export default function ImportStep3Preview({
     }
   };
 
-  const validCount = previewData.filter((u) => u.status === "Valid").length;
-  const warnCount = previewData.filter((u) => u.status === "Warning").length;
-  const errorCount = previewData.filter((u) => u.status === "Error").length;
-
+  const validCount = previewData.filter((u) => u.status === t("valid")).length;
+  const warnCount = previewData.filter((u) => u.status === t("warning")).length;
+  const errorCount = previewData.filter((u) => u.status === t("error")).length;
+  const ROLE_TAG = {
+    student: { color: "blue" },
+    mentor: { color: "green" },
+    admin: { color: "red" },
+    moderator: { color: "purple" },
+  };
   const columns = useMemo(
     () => [
-      { title: "Row", dataIndex: "row", width: 60 },
-      { title: "Email", dataIndex: "email" },
-      { title: "Display Name", dataIndex: "displayName" },
-      { title: "Role", dataIndex: "role" },
-      { title: "Major", dataIndex: "majorName" },
-      { title: "Gender", dataIndex: "gender" },
-      { title: "Student Code", dataIndex: "studentCode" },
+      { title: t("row") || "Row", dataIndex: "row", width: 60 },
+      { title: t("email") || "Email", dataIndex: "email" },
+      { title: t("displayName") || "Display Name", dataIndex: "displayName" },
       {
-        title: "Status",
+        title: t("role") || "Role",
+        dataIndex: "role",
+        render: (role) => {
+          const key = String(role || "").toLowerCase();
+          const cfg = ROLE_TAG[key] || { color: "default" };
+          return <Tag color={cfg.color}>{role}</Tag>;
+        },
+      },
+      { title: t("major") || "Major", dataIndex: "majorName" },
+      { title: t("gender") || "Gender", dataIndex: "gender" },
+      { title: t("studentCode") || "Student Code", dataIndex: "studentCode" },
+      {
+        title: t("status") || "Status",
         dataIndex: "status",
         render: (status) => {
-          if (status === "Valid")
+          if (status === t("valid"))
             return (
               <Tag icon={<CheckCircleOutlined />} color="success">
-                Valid
+                {t("valid")}
               </Tag>
             );
-          if (status === "Warning")
+          if (status === t("warning"))
             return (
               <Tag icon={<ExclamationCircleOutlined />} color="warning">
-                Warning
+                {t("warning")}
               </Tag>
             );
           return (
             <Tag icon={<CloseCircleOutlined />} color="error">
-              Error
+              {t("error")}
             </Tag>
           );
         },
       },
       {
-        title: "Issues",
+        title: t("issues") || "Issues",
         dataIndex: "issues",
         render: (issues) =>
           issues?.length ? (
@@ -154,23 +167,26 @@ export default function ImportStep3Preview({
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold text-gray-800 mb-1">
-          Preview & Validate
+          {t("previewValidate") || "Preview & Validate"}
         </h2>
-        <p className="text-gray-500">Review the data before importing.</p>
+        <p className="text-gray-500">
+          {t("reviewDataBeforeImporting") ||
+            "Review the data before importing."}
+        </p>
       </div>
 
       <div className="flex justify-end items-center gap-6 text-sm font-medium text-gray-600">
         <span className="flex items-center gap-1 text-green-600">
           <span className="w-2 h-2 rounded-full bg-green-500" /> {validCount}{" "}
-          Valid
+          {t("valid") || "Valid"}
         </span>
         <span className="flex items-center gap-1 text-yellow-600">
           <span className="w-2 h-2 rounded-full bg-yellow-400" /> {warnCount}{" "}
-          Warnings
+          {t("warning") || "Warnings"}
         </span>
         <span className="flex items-center gap-1 text-red-600">
           <span className="w-2 h-2 rounded-full bg-red-500" /> {errorCount}{" "}
-          Errors
+          {t("error") || "Errors"}
         </span>
       </div>
 

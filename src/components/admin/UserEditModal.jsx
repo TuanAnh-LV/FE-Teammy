@@ -25,13 +25,11 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
   useEffect(() => {
     if (open && user) {
       const initial = { ...user };
-      // prefer displayName for API
       initial.displayName =
         user?.displayName ?? user?.name ?? initial.displayName;
-      const majorId = user?.raw?.majorId ?? user?.majorId ?? user?.major;
-      if (majorId) initial.majorId = majorId;
+      const majorId = user?.raw?.majorId ?? user?.majorId;
+      if (majorId != null) initial.majorId = majorId;
 
-      // Set isActive from server data
       if (user?.raw?.isActive !== undefined) {
         initial.isActive = user.raw.isActive;
       } else if (user?.isActive !== undefined) {
@@ -57,8 +55,7 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
         if (mounted) setMajors(list);
 
         if (mounted && open && user) {
-          const currentMajor =
-            user?.raw?.majorId ?? user?.majorId ?? user?.major;
+          const currentMajor = user?.raw?.majorId ?? user?.majorId;
           if (!currentMajor && user?.major) {
             const found = list.find(
               (m) =>
@@ -72,7 +69,7 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
               });
           }
         }
-      } catch (e) {
+      } catch {
         // ignore errors
       } finally {
         if (mounted) setMajorsLoading(false);
@@ -91,7 +88,6 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
       setSubmitting(true);
       const id = user?.raw?.userId || user?.key || user?.id;
 
-      // Send values directly with isActive boolean
       const serverPayload = {
         ...values,
       };
@@ -103,7 +99,6 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
           message: t("userUpdatedSuccess") || "User updated successfully",
         });
 
-        // Use form values if server doesn't return isActive
         const latestIsActive =
           payload?.isActive !== undefined ? payload.isActive : values.isActive;
 
@@ -112,7 +107,6 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
           ...values,
           raw: payload,
           name: values.displayName ?? payload?.displayName ?? user?.name,
-          // Map server response fields correctly
           displayName: payload?.displayName ?? values.displayName,
           email: payload?.email ?? values.email,
           phone: payload?.phone ?? values.phone,
@@ -121,13 +115,11 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
           studentCode: payload?.studentCode ?? values.studentCode,
         };
 
-        // Keep UI-friendly major value (name) while backend receives majorId
         try {
           const sel = majors.find((m) => (m.majorId ?? m.id) == values.majorId);
           if (sel) {
             updated.major = sel.majorName ?? sel.name ?? updated.major;
           } else if (payload && payload.majorId) {
-            // Try to find major name from majorId in response
             const foundMajor = majors.find(
               (m) => (m.majorId ?? m.id) == payload.majorId
             );
@@ -142,12 +134,10 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
         onSave?.(updated);
         onClose();
       } catch (err) {
-        // Xử lý lỗi từ backend
         const errorMessage =
           err?.response?.data?.message || err?.response?.data || "";
         const normalizedError = String(errorMessage).toLowerCase();
 
-        // Kiểm tra lỗi trùng email
         if (normalizedError.includes("email already exists")) {
           form.setFields([
             {
@@ -158,7 +148,6 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
           return;
         }
 
-        // Kiểm tra lỗi trùng student code
         if (normalizedError.includes("studentcode already exists")) {
           form.setFields([
             {
@@ -171,7 +160,6 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
           return;
         }
 
-        // Lỗi chung
         notification.error({
           message: t("userUpdateFailed") || "Failed to update user",
           description:
@@ -180,7 +168,6 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
       }
     } catch (err) {
       if (err?.errorFields) {
-        // validation errors - ignore
         return;
       }
     } finally {
@@ -220,7 +207,6 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
       }
     >
       <Form layout="vertical" form={form}>
-        {/* Hàng 1: Display Name + Email */}
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
@@ -264,7 +250,6 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
           </Col>
         </Row>
 
-        {/* Hàng 2: Phone + Role */}
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
@@ -288,14 +273,12 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
             <Form.Item label={t("status") || "Status"} name="isActive">
               <Select>
                 <Option value={true}>{t("active") || "Active"}</Option>
-                <Option value={false}>Suspended</Option>
+                <Option value={false}>{t("suspended") || "Suspended"}</Option>
               </Select>
             </Form.Item>
           </Col>
         </Row>
 
-        {/* Hàng 3: Major + Status */}
-        {/* Hàng 3: Major + Student Code (nếu role = Student) */}
         <Form.Item noStyle shouldUpdate={(prev, cur) => prev.role !== cur.role}>
           {({ getFieldValue }) => {
             const isStudent = getFieldValue("role") === "Student";

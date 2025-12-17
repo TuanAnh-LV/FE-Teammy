@@ -35,7 +35,6 @@ export default function ImportStep2Mapping({
       setValidating(true);
       setColumnMap(mapping);
 
-      // Map raw data theo column mapping
       const mappedData = rawData.map((row) => ({
         email: row[mapping.email] || "",
         displayName: row[mapping.displayName] || "",
@@ -45,7 +44,6 @@ export default function ImportStep2Mapping({
         studentCode: row[mapping.studentCode] || "",
       }));
 
-      // Gọi API validate
       const res = await AdminService.validateImportUsers(mappedData, true);
 
       if (res?.data) {

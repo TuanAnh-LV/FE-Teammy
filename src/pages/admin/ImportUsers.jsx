@@ -15,19 +15,11 @@ import { useTranslation } from "../../hook/useTranslation";
 
 const ImportUsers = () => {
   const [currentStep, setCurrentStep] = useState(0);
-
-  // chỉ để debug/hiển thị nếu cần
   const [rawData, setRawData] = useState([]);
-
-  // ✅ dữ liệu đã map (payload gửi validate) -> dùng để render Preview
   const [uploadedUsers, setUploadedUsers] = useState([]);
-
-  // dữ liệu preview (có status/issues) -> dùng cho step Result đếm số dòng
   const [mappedUsers, setMappedUsers] = useState([]);
-
   const [validationResult, setValidationResult] = useState(null);
   const [originalFile, setOriginalFile] = useState(null);
-
   const { t } = useTranslation();
   const navigate = useNavigate();
 

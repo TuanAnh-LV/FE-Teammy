@@ -2,8 +2,10 @@ import React from "react";
 import { Result, Button } from "antd";
 import { CheckCircleTwoTone } from "@ant-design/icons";
 import { useTranslation } from "../../../hook/useTranslation";
-export default function ImportStep4Result({ mappedUsers, setCurrentStep }) {
+import { useNavigate } from "react-router-dom";
+export default function ImportStep4Result({ mappedUsers }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col items-center justify-center text-center py-20">
       <CheckCircleTwoTone
@@ -20,9 +22,9 @@ export default function ImportStep4Result({ mappedUsers, setCurrentStep }) {
       <Button
         size="large"
         className="!bg-[#FF7A00] !text-white !border-none !rounded-md !px-6 !py-2 hover:!opacity-90"
-        onClick={() => setCurrentStep(0)}
+        onClick={() => navigate("/admin/users")}
       >
-        {t("backToUpload") || "Back to Upload"}
+        {t("backToUsers") || "Back to Users"}
       </Button>
     </div>
   );

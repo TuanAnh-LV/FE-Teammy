@@ -1,4 +1,3 @@
-// src/pages/moderator/GroupManagement.jsx
 import React, { useEffect, useState } from "react";
 import {
   Card,
@@ -29,8 +28,6 @@ export default function GroupManagement() {
 
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState(null);
-
-  // rows loaded from API
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -93,7 +90,6 @@ export default function GroupManagement() {
   }, []);
 
   const remindTopic = (record) => {
-    // TODO: call real API here
     notification.info({
       message:
         t("topicReminderSent") ||
@@ -227,18 +223,12 @@ export default function GroupManagement() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
           {t("groupManagement") || "Group Management"}
         </h1>
       </div>
-
-      {/* Filters */}
-      <Card
-        className="shadow-sm border-gray-100 rounded-lg"
-        style={{ padding: "20px 24px" }}
-      >
+      <Card className="shadow-sm border-gray-100 rounded-lg">
         <div className="flex flex-col sm:flex-row gap-3 justify-between">
           <Input
             prefix={<SearchOutlined className="text-gray-400" />}
@@ -256,7 +246,6 @@ export default function GroupManagement() {
               className="w-60"
             >
               <Option value="All Major">{t("allMajor") || "All Major"}</Option>
-
               {majorList.map((m) => (
                 <Option key={m.majorId} value={m.majorName}>
                   {m.majorName}
@@ -289,7 +278,6 @@ export default function GroupManagement() {
         />
       </Card>
 
-      {/* Detail Modal (UI giống ảnh) */}
       <GroupDetailModal
         open={open}
         onClose={() => setOpen(false)}

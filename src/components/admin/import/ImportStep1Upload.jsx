@@ -10,7 +10,7 @@ export default function ImportStep1Upload({
   setCurrentStep,
   setOriginalFile,
   setValidationResult,
-  setUploadedUsers, // ✅ add
+  setUploadedUsers,
 }) {
   const { t } = useTranslation();
 
@@ -32,7 +32,6 @@ export default function ImportStep1Upload({
 
       const mappedUsers = mapRawDataToUsers(parsed);
 
-      // ✅ lưu lại payload đã map để Preview hiển thị
       setUploadedUsers(mappedUsers);
 
       const res = await AdminService.validateImportUsers(mappedUsers, true);
@@ -52,7 +51,7 @@ export default function ImportStep1Upload({
         description:
           err?.response?.data?.message || err.message || "Please try again",
       });
-      throw err; // ✅ để customRequest biết fail
+      throw err;
     }
   };
 

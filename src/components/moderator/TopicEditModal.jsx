@@ -68,7 +68,6 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
       onClose();
     } catch (err) {
       if (err.errorFields) {
-        // Form validation error
         return;
       }
       notification.error({
@@ -87,6 +86,7 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
 
   return (
     <Modal
+      centered
       title={t("editTopic") || "Edit Topic"}
       open={open}
       onOk={handleSubmit}
@@ -94,7 +94,15 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
       confirmLoading={submitting}
       okText={t("save") || "Save"}
       cancelText={t("cancel") || "Cancel"}
-      width={700}
+      width="min(700px, 92vw)"
+      styles={{
+        content: { padding: 20, borderRadius: 14 },
+        body: {
+          padding: 10,
+          maxHeight: "calc(100vh - 140px)",
+          overflowY: "auto",
+        },
+      }}
       destroyOnClose
       okButtonProps={{
         className:
@@ -167,8 +175,8 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
 
         <Form.Item label={t("status") || "Status"} name="status">
           <Select>
-            <Option value="open">Open</Option>
-            <Option value="closed">Closed</Option>
+            <Option value="open">{t("open") || "Open"}</Option>
+            <Option value="closed">{t("closed") || "Closed"}</Option>
           </Select>
         </Form.Item>
 

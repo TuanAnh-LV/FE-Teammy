@@ -107,12 +107,12 @@ export const getRoleMenus = (role, language = "EN") => {
         path: "/moderator/ai-assistant",
         icon: <BulbOutlined />,
       },
-      // {
-      //   key: "notifications",
-      //   label: getTranslation("notifications", language),
-      //   path: "/moderator/notifications",
-      //   icon: <BellOutlined />,
-      // },
+      {
+        key: "notifications",
+        label: getTranslation("notifications", language),
+        path: "/moderator/notifications",
+        icon: <BellOutlined />,
+      },
     ],
     student: [
       {

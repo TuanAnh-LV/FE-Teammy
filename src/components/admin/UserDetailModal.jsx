@@ -16,7 +16,6 @@ export default function UserDetailModal({ open, onClose, user, loading }) {
   const colorMap = {
     Active: "green",
     Suspended: "red",
-    Inactive: "default",
   };
 
   const infoRow = (icon, label, value) => (

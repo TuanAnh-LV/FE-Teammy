@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+﻿import React, { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "../../hook/useTranslation";
 import { useNavigate } from "react-router-dom";
 import {
@@ -40,27 +40,22 @@ const TopicManagement = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentTopic, setCurrentTopic] = useState(null);
+  const [currentTopicId, setCurrentTopicId] = useState(null);
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [groups, setGroups] = useState([]);
   const navigate = useNavigate();
 
   const fetchTopicsList = async () => {
     setLoading(true);
     try {
-      // Fetch topics
       const res = await TopicService.getTopics();
       const payload = res?.data ?? res;
       const list = Array.isArray(payload) ? payload : payload?.data ?? [];
 
-      // Fetch groups để map với topics
       const groupRes = await GroupService.getListGroup();
       const groupList = Array.isArray(groupRes?.data) ? groupRes.data : [];
-      setGroups(groupList);
 
-      // Map topics với groups
       const mapped = (list || []).map((t, idx) => {
-        // Tìm group đã chọn topic này
         const assignedGroup = groupList.find(
           (g) => g.topic?.topicId === t.topicId
         );
@@ -79,7 +74,9 @@ const TopicManagement = () => {
           createdAt: t.createdAt ? t.createdAt.slice(0, 10) : "",
           status: (t.status || "open").toLowerCase(),
           groupName: assignedGroup?.name || t.pendingGroupName || "",
-          hasGroup: !!assignedGroup || t.status === "closed",
+          hasGroup:
+            !!assignedGroup ||
+            String(t.status || "").toLowerCase() === "closed",
           raw: t,
         };
       });
@@ -130,7 +127,6 @@ const TopicManagement = () => {
   };
 
   const handleDelete = (record) => {
-    // Kiểm tra nếu topic đã được chọn bởi nhóm
     if (record.hasGroup) {
       notification.warning({
         message: t("cannotDeleteTopic") || "Cannot Delete Topic",
@@ -163,7 +159,6 @@ const TopicManagement = () => {
           notification.success({
             message: t("topicDeleted") || "Topic deleted successfully",
           });
-          // Refresh list
           fetchTopicsList();
         } catch {
           notification.error({
@@ -236,7 +231,8 @@ const TopicManagement = () => {
               type="text"
               icon={<EyeOutlined />}
               onClick={() => {
-                setCurrentTopic(record);
+                setCurrentTopic(record.raw);
+                setCurrentTopicId(record.key);
                 setIsModalVisible(true);
               }}
             />
@@ -260,7 +256,6 @@ const TopicManagement = () => {
               type="text"
               danger
               icon={<DeleteOutlined />}
-              disabled={record.hasGroup}
               onClick={() => handleDelete(record)}
               className={
                 record.hasGroup ? "!cursor-not-allowed !opacity-50" : ""
@@ -274,7 +269,6 @@ const TopicManagement = () => {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
           {t("topicManagement") || "Topic Management"}
@@ -301,12 +295,8 @@ const TopicManagement = () => {
         </Space>
       </div>
 
-      {/* Layout: Table */}
       <div className="grid grid-cols-1  gap-6">
-        <Card
-          className="xl:col-span-3 shadow-sm border-gray-100 rounded-lg"
-          style={{ padding: "20px 24px" }}
-        >
+        <Card className="xl:col-span-3 shadow-sm border-gray-100 rounded-lg">
           <div className="flex flex-col sm:flex-row justify-between gap-3 mb-4">
             <Input
               prefix={<SearchOutlined className="text-gray-400" />}
@@ -361,12 +351,11 @@ const TopicManagement = () => {
         topic={currentTopic}
         onSuccess={fetchTopicsList}
       />
-
       <TopicDetailModal
         open={isModalVisible}
         onClose={() => setIsModalVisible(false)}
         topicDetails={currentTopic}
-        topicId={currentTopic?.key}
+        topicId={currentTopicId}
       />
     </div>
   );

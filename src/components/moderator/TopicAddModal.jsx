@@ -34,8 +34,6 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
 
         setMajors(majorsData);
         setSemesters(semestersData);
-
-        // ✅ auto set active semester nếu chưa chọn
         const current = form.getFieldValue("semesterId");
         const active = semestersData.find((s) => s.isActive);
         if (!current && active?.semesterId) {
@@ -56,7 +54,6 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
     try {
       const values = await form.validateFields();
 
-      // ✅ chặn tạo topic vào kỳ chưa active (an toàn)
       const selectedSemester = semesters.find(
         (s) => s.semesterId === values.semesterId
       );
@@ -91,7 +88,6 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
 
       form.resetFields();
 
-      // set lại active semester sau reset cho tiện
       if (activeSemester?.semesterId) {
         form.setFieldsValue({ semesterId: activeSemester.semesterId });
       }
@@ -112,7 +108,6 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
 
   const handleCancel = () => {
     form.resetFields();
-    // set lại active semester sau reset cho tiện
     if (activeSemester?.semesterId) {
       form.setFieldsValue({ semesterId: activeSemester.semesterId });
     }
@@ -121,6 +116,7 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
 
   return (
     <Modal
+      centered
       title={t("createTopic") || "Create Topic"}
       open={open}
       onOk={handleSubmit}
@@ -128,12 +124,20 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
       confirmLoading={submitting}
       okText={t("create") || "Create"}
       cancelText={t("cancel") || "Cancel"}
-      width={700}
+      width="min(1000px, 92vw)"
+      styles={{
+        content: { padding: 20, borderRadius: 14 },
+        body: {
+          padding: 10,
+          maxHeight: "calc(100vh - 140px)",
+          overflowY: "auto",
+        },
+      }}
       destroyOnClose
       okButtonProps={{
         className:
           "!bg-[#FF7A00] !text-white !border-none !rounded-md !px-4 !py-2 hover:!opacity-90",
-        disabled: !activeSemester, // nếu chưa load được semester active thì disable tạo
+        disabled: !activeSemester,
       }}
       cancelButtonProps={{
         className:
