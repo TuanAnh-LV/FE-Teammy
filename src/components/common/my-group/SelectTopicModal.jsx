@@ -17,32 +17,39 @@ export default function SelectTopicModal({
   const [selectedTopicId, setSelectedTopicId] = useState(currentTopicId || "");
 
   useEffect(() => {
+    let isMounted = true;
+    
+    const loadTopicsAsync = async () => {
+      if (!open) return;
+      
+      try {   
+        if (isMounted) setLoading(true);
+        const res = await TopicService.getTopics();
+        const topicList = res?.data?.data || res?.data || [];
+        const validTopics = Array.isArray(topicList) ? topicList : [];
+        const openTopics = validTopics.filter(
+          (topic) =>
+            String(topic?.status || topic?.topicStatus || topic?.state || "").toLowerCase() ===
+            "open"
+        );
+
+        if (isMounted) setTopics(openTopics);
+      } catch (err) {
+        if (isMounted) setTopics([]);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
     if (open) {
-      loadTopics();
+      loadTopicsAsync();
       setSelectedTopicId(currentTopicId || "");
     }
+    
+    return () => {
+      isMounted = false;
+    };
   }, [open, currentTopicId]);
-
-  const loadTopics = async () => {
-    try {   
-      setLoading(true);
-      const res = await TopicService.getTopics();
-      const topicList = res?.data?.data || res?.data || [];
-      const validTopics = Array.isArray(topicList) ? topicList : [];
-      const openTopics = validTopics.filter(
-        (topic) =>
-          String(topic?.status || topic?.topicStatus || topic?.state || "").toLowerCase() ===
-          "open"
-      );
-
-      setTopics(openTopics);
-    } catch (err) {
-
-      setTopics([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredTopics = topics.filter((topic) => {
     // Filter out topics without mentor

@@ -75,11 +75,8 @@ const Forum = () => {
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyPost, setApplyPost] = useState(null);
 
-  // 🔥 REALTIME: Handle invitation events từ SignalR
   const handleInvitationCreated = useCallback((payload) => {
-    // Chỉ xử lý event cho profile_post invitations
     if (payload.type === "profile_post" && payload.postId) {
-      // Update trạng thái của post trong danh sách
       const updatePostStatus = (posts) =>
         posts.map((post) =>
           post.id === payload.postId
@@ -107,7 +104,6 @@ const Forum = () => {
   }, []);
 
   const handleInvitationStatusChanged = useCallback((payload) => {
-    // Update status của invitation trong UI
     if (payload.postId) {
       const updatePostStatus = (posts) =>
         posts.map((post) =>
@@ -134,7 +130,6 @@ const Forum = () => {
     }
   }, []);
 
-  // 🔥 Setup SignalR connection cho realtime updates
   const { isConnected } = useGroupInvitationSignalR(token, userInfo?.userId, {
     onInvitationCreated: handleInvitationCreated,
     onInvitationStatusChanged: handleInvitationStatusChanged,

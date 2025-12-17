@@ -5,7 +5,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { Calendar, MessageSquare } from "lucide-react";
 import {
   priorityStyles,
-  statusStyles,
   initials,
 } from "../../../utils/kanbanHelpers";
 
@@ -68,22 +67,20 @@ const TaskCard = ({ task, onOpen, columnMeta = {} }) => {
     const currentPosition = column?.position || 0;
     const totalColumns = allColumns.length;
     
-    // First column (typically "To Do") - gray
     if (currentPosition === 1 || currentPosition === allColumns[0]?.position) {
       return "bg-gray-100 text-gray-700";
     }
     
-    // Middle columns - blue shades based on position
-    // Second column -> lighter blue, closer to done -> darker blue
+
     const nonDoneColumns = allColumns.filter(col => !col.isDone);
     const positionInNonDone = nonDoneColumns.findIndex(col => col.columnId === task.columnId);
     
     if (positionInNonDone === 0) {
-      return "bg-gray-100 text-gray-700"; // First non-done column
+      return "bg-gray-100 text-gray-700";
     } else if (positionInNonDone === 1) {
-      return "bg-blue-100 text-blue-700"; // Second non-done column
+      return "bg-blue-100 text-blue-700"; 
     } else {
-      return "bg-indigo-100 text-indigo-700"; // Other columns
+      return "bg-indigo-100 text-indigo-700";
     }
   };
   const statusClass = getStatusClass();
