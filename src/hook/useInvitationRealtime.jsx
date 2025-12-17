@@ -8,13 +8,7 @@ import {
   updateApplicationStatus,
 } from "../app/invitationSlice";
 
-/**
- * Handle real-time SignalR events for invitations and applications.
- * Events from backend:
- * - InvitationCreated: direct and profile-post invites
- * - InvitationStatusChanged: invitation accepted/rejected/revoked
- * - PendingUpdated: refresh pending applications list
- */
+
 export const useInvitationRealtime = (token, userId, options = {}) => {
   const dispatch = useDispatch();
   const {
@@ -23,9 +17,7 @@ export const useInvitationRealtime = (token, userId, options = {}) => {
     onStatusChanged,
   } = options;
 
-  /**
-   * When a new invitation arrives (direct invite or profile-post invite)
-   */
+
   const handleInvitationCreated = useCallback(
     (invitation) => {
       console.log("[Realtime] InvitationCreated received:", invitation);
@@ -67,10 +59,7 @@ export const useInvitationRealtime = (token, userId, options = {}) => {
     [dispatch, onInvitationReceived]
   );
 
-  /**
-   * When invitation status is updated (accept/reject/revoke)
-   * Payload sample: { invitationId, status, updatedAt }
-   */
+
   const handleInvitationStatusChanged = useCallback(
     (payload) => {
       console.log("[Realtime] InvitationStatusChanged:", payload);
@@ -97,9 +86,7 @@ export const useInvitationRealtime = (token, userId, options = {}) => {
     [dispatch, onStatusChanged]
   );
 
-  /**
-   * When the pending applications list is updated (PendingUpdated)
-   */
+
   const handlePendingUpdated = useCallback(
     (payload) => {
       console.log("[Realtime] PendingUpdated received:", payload);

@@ -1,9 +1,19 @@
 /**
+ * MODULE: Authentication (Common)
+ * FEATURE: User login with Google OAuth
+ * 
+ * TEST REQUIREMENTS:
+ * TR-AUTH-001: System shall provide Google authentication
+ * TR-AUTH-002: System shall handle successful login and token storage
+ * TR-AUTH-003: System shall redirect users based on role after login
+ * TR-AUTH-004: System shall handle authentication errors
+ * TR-AUTH-005: System shall display loading state during authentication
+ * 
  * Test Code: FE-TM-Page-Login
  * Test Name: Login Page Test
- * Description: Test Login page with Google authentication
  * Author: Test Suite
  * Date: 2024
+ * Compliance: Follows MessagesPage.test.jsx standards
  */
 
 import React from "react";
@@ -24,17 +34,17 @@ jest.mock("react-router-dom", () => ({
 jest.mock("../../src/hook/useTranslation");
 jest.mock("firebase/auth");
 
+jest.mock("../../src/config/firebase.config", () => ({
+  auth: {},
+  provider: {},
+}));
+
 jest.mock("antd", () => ({
   ...jest.requireActual("antd"),
   notification: {
     success: jest.fn(),
     error: jest.fn(),
   },
-}));
-
-jest.mock("../../src/config/firebase.config", () => ({
-  auth: {},
-  provider: {},
 }));
 
 describe("Login Page", () => {
@@ -44,6 +54,12 @@ describe("Login Page", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Mock Firebase signInWithPopup
+    signInWithPopup.mockResolvedValue({
+      user: { getIdToken: jest.fn().mockResolvedValue("mock-token") }
+    });
+    
     useNavigate.mockReturnValue(mockNavigate);
     useTranslation.mockReturnValue({
       t: (key) => key,
@@ -72,283 +88,172 @@ describe("Login Page", () => {
     );
   };
 
-  /**
-   * Test Case UTC01
-   * Type: Normal
-   * Description: Renders login page with Google sign-in button
-   */
-  it("UTC01 - should render login page with Google button", () => {
+  test("UTC01 [N] Initial page render => Shows branding and Google button", () => {
+    // Pre-condition: User not authenticated
     renderLogin();
 
+    // Positive assertions
     expect(screen.getByText("Teammy")).toBeInTheDocument();
     expect(screen.getByText(/Continue with Google/i)).toBeInTheDocument();
+    
+    // Negative assertions
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  /**
-   * Test Case UTC02
-   * Type: Normal
-   * Description: Handles successful Google login for student
-   */
-  it("UTC02 - should handle successful Google login for student", async () => {
-    const mockUser = {
-      getIdToken: jest.fn().mockResolvedValue("mock-id-token"),
-    };
-    signInWithPopup.mockResolvedValue({ user: mockUser });
+  test("UTC02 [N] Click Google login as student => Navigates to home", async () => {
+    // Pre-condition: Mock successful auth
     mockLoginGoogle.mockResolvedValue({ role: "student" });
 
     renderLogin();
 
+    // Action: Click Google button
     const googleButton = screen.getByText(/Continue with Google/i);
-    
     await act(async () => {
       googleButton.click();
     });
 
+    // Positive assertions - UI result
     await waitFor(() => {
-      expect(signInWithPopup).toHaveBeenCalled();
-      expect(mockLoginGoogle).toHaveBeenCalledWith("mock-id-token");
       expect(notification.success).toHaveBeenCalledWith({
         message: "signedInWithGoogle",
       });
       expect(mockNavigate).toHaveBeenCalledWith("/");
     });
+    
+    // Negative assertions
+    expect(notification.error).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalledWith("/admin/dashboard");
   });
 
-  /**
-   * Test Case UTC03
-   * Type: Normal
-   * Description: Handles successful Google login for admin
-   */
-  it("UTC03 - should navigate to admin dashboard for admin role", async () => {
-    const mockUser = {
-      getIdToken: jest.fn().mockResolvedValue("mock-id-token"),
-    };
-    signInWithPopup.mockResolvedValue({ user: mockUser });
-    mockLoginGoogle.mockResolvedValue({ role: "admin" });
+  test.each([
+    ["admin", "/admin/dashboard"],
+    ["mentor", "/mentor/dashboard"],
+    ["moderator", "/moderator/dashboard"],
+  ])("UTC03 [N] Login as %s role => Navigates to %s", async (role, expectedRoute) => {
+    // Pre-condition: Mock successful auth with specific role
+    mockLoginGoogle.mockResolvedValue({ role });
 
     renderLogin();
 
+    // Action: Click Google button
     const googleButton = screen.getByText(/Continue with Google/i);
-    
     await act(async () => {
       googleButton.click();
     });
 
+    // Positive assertions
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("/admin/dashboard");
+      expect(mockNavigate).toHaveBeenCalledWith(expectedRoute);
+      expect(notification.success).toHaveBeenCalled();
     });
+    
+    // Negative assertions
+    expect(notification.error).not.toHaveBeenCalled();
   });
 
-  /**
-   * Test Case UTC04
-   * Type: Normal
-   * Description: Handles successful Google login for mentor
-   */
-  it("UTC04 - should navigate to mentor dashboard for mentor role", async () => {
-    const mockUser = {
-      getIdToken: jest.fn().mockResolvedValue("mock-id-token"),
-    };
-    signInWithPopup.mockResolvedValue({ user: mockUser });
-    mockLoginGoogle.mockResolvedValue({ role: "mentor" });
+  test.each([
+    ["student", "/"],
+    ["admin", "/admin/dashboard"],
+    ["mentor", "/mentor/dashboard"],
+    ["moderator", "/moderator/group"],
+  ])("UTC04 [N] Already authenticated as %s => Auto redirects to %s", (role, expectedRoute) => {
+    // Pre-condition: User already has token
+    renderLogin({
+      token: "existing-token",
+      userInfo: { role },
+      role,
+    });
+
+    // Positive assertions - Should redirect immediately
+    expect(mockNavigate).toHaveBeenCalledWith(expectedRoute, { replace: true });
+    
+    // Negative assertions - No login button click needed
+    expect(mockLoginGoogle).not.toHaveBeenCalled();
+  });
+
+  test("UTC05 [A] Google login fails => Shows error notification", async () => {
+    // Pre-condition: Mock auth failure
+    mockLoginGoogle.mockRejectedValue(new Error("Auth failed"));
 
     renderLogin();
 
+    // Action: Click Google button
     const googleButton = screen.getByText(/Continue with Google/i);
-    
     await act(async () => {
       googleButton.click();
     });
 
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("/mentor/dashboard");
-    });
-  });
-
-  /**
-   * Test Case UTC05
-   * Type: Normal
-   * Description: Handles successful Google login for moderator
-   */
-  it("UTC05 - should navigate to moderator dashboard for moderator role", async () => {
-    const mockUser = {
-      getIdToken: jest.fn().mockResolvedValue("mock-id-token"),
-    };
-    signInWithPopup.mockResolvedValue({ user: mockUser });
-    mockLoginGoogle.mockResolvedValue({ role: "moderator" });
-
-    renderLogin();
-
-    const googleButton = screen.getByText(/Continue with Google/i);
-    
-    await act(async () => {
-      googleButton.click();
-    });
-
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("/moderator/dashboard");
-    });
-  });
-
-  /**
-   * Test Case UTC06
-   * Type: Normal
-   * Description: Redirects authenticated student to home
-   */
-  it("UTC06 - should redirect authenticated student to home", () => {
-    renderLogin({
-      token: "existing-token",
-      userInfo: { role: "student" },
-      role: "student",
-    });
-
-    expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
-  });
-
-  /**
-   * Test Case UTC07
-   * Type: Normal
-   * Description: Redirects authenticated admin to admin dashboard
-   */
-  it("UTC07 - should redirect authenticated admin to dashboard", () => {
-    renderLogin({
-      token: "existing-token",
-      userInfo: { role: "admin" },
-      role: "admin",
-    });
-
-    expect(mockNavigate).toHaveBeenCalledWith("/admin/dashboard", { replace: true });
-  });
-
-  /**
-   * Test Case UTC08
-   * Type: Normal
-   * Description: Redirects authenticated mentor to mentor dashboard
-   */
-  it("UTC08 - should redirect authenticated mentor to dashboard", () => {
-    renderLogin({
-      token: "existing-token",
-      userInfo: { role: "mentor" },
-      role: "mentor",
-    });
-
-    expect(mockNavigate).toHaveBeenCalledWith("/mentor/dashboard", { replace: true });
-  });
-
-  /**
-   * Test Case UTC09
-   * Type: Normal
-   * Description: Redirects authenticated moderator to moderator group page
-   */
-  it("UTC09 - should redirect authenticated moderator to group page", () => {
-    renderLogin({
-      token: "existing-token",
-      userInfo: { role: "moderator" },
-      role: "moderator",
-    });
-
-    expect(mockNavigate).toHaveBeenCalledWith("/moderator/group", { replace: true });
-  });
-
-  /**
-   * Test Case UTC10
-   * Type: Abnormal
-   * Description: Handles Google login error
-   */
-  it("UTC10 - should handle Google login error", async () => {
-    signInWithPopup.mockRejectedValue(new Error("Auth failed"));
-
-    renderLogin();
-
-    const googleButton = screen.getByText(/Continue with Google/i);
-    
-    await act(async () => {
-      googleButton.click();
-    });
-
+    // Positive assertions - Error handling
     await waitFor(() => {
       expect(notification.error).toHaveBeenCalledWith({
         message: "signInFailed",
         description: "Auth failed",
       });
     });
+    
+    // Negative assertions
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(notification.success).not.toHaveBeenCalled();
   });
 
-  /**
-   * Test Case UTC11
-   * Type: Normal
-   * Description: Handles role with ROLE_ prefix
-   */
-  it("UTC11 - should handle role with ROLE_ prefix", async () => {
-    const mockUser = {
-      getIdToken: jest.fn().mockResolvedValue("mock-id-token"),
-    };
-    signInWithPopup.mockResolvedValue({ user: mockUser });
+  test("UTC06 [N] Login with ROLE_ prefix => Navigates correctly", async () => {
+    // Pre-condition: Backend returns role with ROLE_ prefix
     mockLoginGoogle.mockResolvedValue({ role: "ROLE_ADMIN" });
 
     renderLogin();
 
+    // Action: Click Google button
     const googleButton = screen.getByText(/Continue with Google/i);
-    
     await act(async () => {
       googleButton.click();
     });
 
+    // Positive assertions - Should handle prefix
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith("/admin/dashboard");
     });
+    
+    // Negative assertions
+    expect(notification.error).not.toHaveBeenCalled();
   });
 
-  /**
-   * Test Case UTC12
-   * Type: Normal
-   * Description: Handles role as array
-   */
-  it("UTC12 - should handle role as array", async () => {
-    const mockUser = {
-      getIdToken: jest.fn().mockResolvedValue("mock-id-token"),
-    };
-    signInWithPopup.mockResolvedValue({ user: mockUser });
+  test("UTC07 [N] Login with role array => Uses first role", async () => {
+    // Pre-condition: Backend returns multiple roles
     mockLoginGoogle.mockResolvedValue({ role: ["mentor", "admin"] });
 
     renderLogin();
 
+    // Action: Click Google button
     const googleButton = screen.getByText(/Continue with Google/i);
-    
     await act(async () => {
       googleButton.click();
     });
 
+    // Positive assertions - Should use first role
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith("/mentor/dashboard");
     });
+    
+    // Negative assertions
+    expect(mockNavigate).not.toHaveBeenCalledWith("/admin/dashboard");
   });
 
-  /**
-   * Test Case UTC13
-   * Type: Boundary
-   * Description: Tests that login button is disabled during loading
-   */
-  it("UTC13 - should prevent multiple login attempts", async () => {
-    const mockUser = {
-      getIdToken: jest.fn().mockResolvedValue("mock-id-token"),
-    };
-    
-    // Make signInWithPopup slow to ensure loading state is visible
-    signInWithPopup.mockImplementation(() => 
-      new Promise(resolve => setTimeout(() => resolve({ user: mockUser }), 100))
+  test("UTC08 [B] Click login during loading => Button disabled prevents duplicate", async () => {
+    // Pre-condition: Make login slow to test loading state
+    mockLoginGoogle.mockImplementation(
+      () => new Promise(resolve => setTimeout(() => resolve({ role: "student" }), 100))
     );
-    mockLoginGoogle.mockResolvedValue({ role: "student" });
 
     renderLogin();
 
     const googleButton = screen.getByText(/Continue with Google/i);
     
-    // First click
+    // Action: Click button
     await act(async () => {
       googleButton.click();
     });
 
-    // Check button is now disabled and text changed
+    // Positive assertions - Loading state
     await waitFor(() => {
       expect(screen.getByText(/Signing in.../i)).toBeInTheDocument();
     });
@@ -361,35 +266,34 @@ describe("Login Page", () => {
       expect(mockNavigate).toHaveBeenCalled();
     });
 
-    // Should only be called once
-    expect(signInWithPopup).toHaveBeenCalledTimes(1);
+    // Negative assertions - Should prevent multiple calls
+    expect(mockLoginGoogle).toHaveBeenCalledTimes(1);
   });
 
-  /**
-   * Test Case UTC14
-   * Type: Normal
-   * Description: Displays campus selector
-   */
-  it("UTC14 - should display campus selection", () => {
+  test("UTC09 [N] Render campus selector => Shows FU-Hòa Lạc option", () => {
+    // Pre-condition: User on login page
     renderLogin();
 
+    // Positive assertions - Campus selector visible
     const selectElement = screen.getByRole('combobox');
     expect(selectElement).toBeInTheDocument();
-    // Check that FU-Hòa Lạc option exists
     expect(screen.getByText(/FU-Hòa Lạc/i)).toBeInTheDocument();
+    
+    // Negative assertions
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  /**
-   * Test Case UTC15
-   * Type: Normal
-   * Description: Redirects with replace flag when already authenticated
-   */
-  it("UTC15 - should use replace navigation for authenticated users", () => {
+  test("UTC10 [B] Authenticated with role array format => Redirects correctly", () => {
+    // Pre-condition: User has token with role array
     renderLogin({
       token: "token",
       role: ["ROLE_STUDENT"],
     });
 
+    // Positive assertions - Should redirect with replace
     expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
+    
+    // Negative assertions
+    expect(mockLoginGoogle).not.toHaveBeenCalled();
   });
 });

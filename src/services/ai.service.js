@@ -2,7 +2,6 @@ import { BaseService } from "../config/basic.service";
 import { API } from "../consts/path.api";
 
 export const AiService = {
-  // Get recruitment post suggestions
   getRecruitmentPostSuggestions(payload) {
     return BaseService.post({
       url: API.AI.RECRUITMENT_POST_SUGGESTIONS,
@@ -11,7 +10,6 @@ export const AiService = {
     });
   },
 
-  // Get topic suggestions
   getTopicSuggestions(payload) {
     return BaseService.post({
       url: API.AI.TOPIC_SUGGESTIONS,
@@ -20,7 +18,6 @@ export const AiService = {
     });
   },
 
-  // Get profile post suggestions
   getProfilePostSuggestions(payload) {
     return BaseService.post({
       url: API.AI.PROFILE_POST_SUGGESTIONS,
@@ -29,7 +26,6 @@ export const AiService = {
     });
   },
 
-  // Auto assign teams
   autoAssignTeams(payload) {
     return BaseService.post({
       url: API.AI.AUTO_ASSIGN_TEAMS,
@@ -38,7 +34,6 @@ export const AiService = {
     });
   },
 
-  // Auto assign topic
   autoAssignTopic(payload) {
     return BaseService.post({
       url: API.AI.AUTO_ASSIGN_TOPIC,
@@ -47,7 +42,6 @@ export const AiService = {
     });
   },
 
-  // Get AI summary
   getSummary(params) {
     return BaseService.get({
       url: API.AI.SUMMARY,
@@ -56,7 +50,6 @@ export const AiService = {
     });
   },
 
-  // Get AI options
   getOptions(params) {
     return BaseService.get({
       url: API.AI.OPTIONS,
@@ -65,7 +58,6 @@ export const AiService = {
     });
   },
 
-  // Auto resolve
   autoResolve(payload) {
     return BaseService.post({
       url: API.AI.AUTO_RESOLVE,
