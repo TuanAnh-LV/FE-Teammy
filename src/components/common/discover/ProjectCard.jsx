@@ -13,6 +13,7 @@ const ProjectCard = ({
   isAISuggestion = false,
   membership = {},
   myGroupDetails = null,
+  allProjects = [],
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -26,13 +27,25 @@ const ProjectCard = ({
   ).toLowerCase();
   const isOpen = status === "open";
 
-  // Check if group is full
-  const currentMembers = myGroupDetails?.currentMembers || 0;
-  const maxMembers = myGroupDetails?.maxMembers || 0;
-  const isGroupFull = currentMembers >= maxMembers && maxMembers > 0;
+  const myGroupId =
+    membership?.groupId || myGroupDetails?.groupId || myGroupDetails?.id;
+  const topicGroups = project.groups || project.detail?.groups || [];
+  const myGroupInTopic = topicGroups.find((g) => g.groupId === myGroupId);
+  const hasPendingInvitation = myGroupInTopic?.status === "pending_invitation";
 
-  // Can only select if: open and group full
-  const canSelectTopic = isOpen && isGroupFull;
+  const groupHasAnyPending = allProjects.some((p) => {
+    if (p.topicId === project.topicId) return false;
+    const groups = p.groups || p.detail?.groups || [];
+    return groups.some(
+      (g) => g.groupId === myGroupId && g.status === "pending_invitation"
+    );
+  });
+
+  const otherGroupsSelecting = topicGroups.filter(
+    (g) => g.groupId !== myGroupId && g.status === "pending_invitation"
+  );
+  console.log("otherGroupsSelecting", otherGroupsSelecting);
+  const canSelectTopic = isOpen && !hasPendingInvitation && !groupHasAnyPending;
 
   return (
     <div
@@ -95,12 +108,26 @@ const ProjectCard = ({
           </div>
         )}
 
-        <div className="flex items-center gap-6">
+        <div className="flex flex-col gap-2">
           {project.mentor && (
             <div className="text-sm text-gray-600">
               {t("mentor")}:{" "}
               <span className="font-medium text-gray-800">
                 {project.mentor}
+              </span>
+            </div>
+          )}
+          {otherGroupsSelecting.length > 0 && (
+            <div className="flex items-center gap-2 text-xs text-amber-600">
+              <Users className="w-3.5 h-3.5" />
+              <span>
+                {otherGroupsSelecting.length === 1
+                  ? `${otherGroupsSelecting[0].groupName} ${
+                      t("isSelectingTopic") || "is selecting this topic"
+                    }`
+                  : `${otherGroupsSelecting.length} ${
+                      t("groupsSelecting") || "groups are selecting this topic"
+                    }`}
               </span>
             </div>
           )}
@@ -157,62 +184,82 @@ const ProjectCard = ({
           )}
           <div className="text-xs text-gray-500">{formattedDate}</div>
         </div>
-        {!hasGroupTopic &&
-          membership?.status === "leader" &&
-          canSelectTopic && (
-            <button
-              onClick={async (e) => {
-                e.stopPropagation();
-                if (!project.topicId) return;
-                if (typeof onSelectTopic === "function") {
-                  onSelectTopic(project);
-                  return;
+        {!hasGroupTopic && membership?.status === "leader" && (
+          <>
+            {hasPendingInvitation ? (
+              <button
+                disabled
+                className="w-full text-sm font-semibold py-3 rounded-lg transition-colors !bg-amber-100 !text-amber-700 !border !border-amber-300 cursor-not-allowed"
+              >
+                {t("pendingInvitation") || "Pending Invitation"}
+              </button>
+            ) : groupHasAnyPending ? (
+              <button
+                disabled
+                className="w-full text-xs font-medium py-3 rounded-lg transition-colors !bg-gray-100 !text-gray-500 !border !border-gray-300 cursor-not-allowed"
+                title={
+                  t("alreadyHasPendingTopic") ||
+                  "You have a pending invitation for another topic"
                 }
-
-                try {
-                  setLoading(true);
-
-                  const myGroupsRes = await GroupService.getMyGroups();
-                  const myGroups = myGroupsRes?.data || [];
-
-                  if (!myGroups.length) {
-                    notification.error({
-                      message: t("noGroupFound"),
-                      description: t("pleaseCreateOrJoinGroup"),
-                    });
-                    navigate("/my-group");
+              >
+                {t("hasPendingInvitation") || "Pending for Another Topic"}
+              </button>
+            ) : canSelectTopic ? (
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (!project.topicId) return;
+                  if (typeof onSelectTopic === "function") {
+                    onSelectTopic(project);
                     return;
                   }
 
-                  const group = myGroups[0];
-                  const groupId = group.id || group.groupId;
+                  try {
+                    setLoading(true);
 
-                  await GroupService.assignTopic(groupId, project.topicId);
+                    const myGroupsRes = await GroupService.getMyGroups();
+                    const myGroups = myGroupsRes?.data || [];
 
-                  notification.success({
-                    message: t("topicSelected"),
-                    description: `${t("successfullySelected")} "${
-                      project.title
-                    }" ${t("forYourGroup")}`,
-                  });
+                    if (!myGroups.length) {
+                      notification.error({
+                        message: t("noGroupFound"),
+                        description: t("pleaseCreateOrJoinGroup"),
+                      });
+                      navigate("/my-group");
+                      return;
+                    }
 
-                  navigate(`/my-group`);
-                } catch (err) {
-                  notification.error({
-                    message: t("failedToSelectTopic"),
-                    description:
-                      err?.response?.data?.message || t("pleaseTryAgain"),
-                  });
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              disabled={loading}
-              className="w-full text-sm font-semibold py-3 rounded-lg transition-colors !bg-[#FF7A00] hover:!opacity-90 !text-white !border-none cursor-pointer"
-            >
-              {loading ? t("selecting") : t("selectTopic")}
-            </button>
-          )}{" "}
+                    const group = myGroups[0];
+                    const groupId = group.id || group.groupId;
+
+                    await GroupService.assignTopic(groupId, project.topicId);
+
+                    notification.success({
+                      message: t("topicSelected"),
+                      description: `${t("successfullySelected")} "${
+                        project.title
+                      }" ${t("forYourGroup")}`,
+                    });
+
+                    navigate(`/my-group`);
+                  } catch (err) {
+                    notification.error({
+                      message: t("failedToSelectTopic"),
+                      description:
+                        err?.response?.data?.message || t("pleaseTryAgain"),
+                    });
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                className="w-full text-sm font-semibold py-3 rounded-lg transition-colors !bg-[#FF7A00] hover:!opacity-90 !text-white !border-none cursor-pointer"
+              >
+                {loading ? t("selecting") : t("selectTopic")}
+              </button>
+            ) : null}
+          </>
+        )}{" "}
       </div>
     </div>
   );
