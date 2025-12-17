@@ -1,4 +1,3 @@
-// src/hooks/useMyGroupsPage.js
 import { useEffect, useMemo, useRef, useState } from "react";
 import { notification, Modal } from "antd";
 import { GroupService } from "../services/group.service";
@@ -13,7 +12,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { updatePendingList } from "../app/invitationSlice";
 
 import { normalizeGroup, mapPendingRequest } from "../utils/group.utils";
-import { use } from "react";
 
 export const useMyGroupsPage = (t, navigate, userInfo) => {
   const dispatch = useDispatch();
@@ -27,10 +25,8 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
   const [invitations, setInvitations] = useState([]);
   const [invitationsLoading, setInvitationsLoading] = useState(false);
 
-  // Get real-time applications from Redux
   const reduxApplications = useSelector((state) => state.invitation?.applications || []);
 
-  // Setup real-time connection
   const { isConnected, joinGroupChannel, leaveGroupChannel } = useInvitationRealtime(
     token,
     userInfo?.userId || userInfo?.id,
@@ -38,10 +34,8 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       onApplicationReceived: (payload) => {
         console.log("[MyGroups] Received PendingUpdated:", payload);
         
-        // Dispatch to Redux store
         dispatch(updatePendingList(payload));
         
-        // Show notification
         const count = payload.candidates?.length || 0;
         if (count > 0) {
           notification.success({
@@ -52,7 +46,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
           });
         }
         
-        // Refresh pending list for this group
         if (payload.groupId) {
           refreshPendingForGroup(payload.groupId);
         }
@@ -60,7 +53,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     }
   );
 
-  // Join all leader groups' channels when tab is applications
   useEffect(() => {
     if (activeTab === "applications" && isConnected) {
       const leaderGroups = groups.filter((g) => g.isLeader);
