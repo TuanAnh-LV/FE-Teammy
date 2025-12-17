@@ -68,8 +68,40 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
         // lỗi validate form – bỏ qua
         return;
       }
+
+      // Xử lý lỗi từ backend
+      const errorMessage =
+        err?.response?.data?.message || err?.response?.data || "";
+      const normalizedError = String(errorMessage).toLowerCase();
+
+      // Kiểm tra lỗi trùng email
+      if (normalizedError.includes("email already exists")) {
+        form.setFields([
+          {
+            name: "email",
+            errors: [t("emailAlreadyExists") || "Email already exists."],
+          },
+        ]);
+        return;
+      }
+
+      // Kiểm tra lỗi trùng student code
+      if (normalizedError.includes("studentcode already exists")) {
+        form.setFields([
+          {
+            name: "studentCode",
+            errors: [
+              t("studentCodeAlreadyExists") || "StudentCode already exists.",
+            ],
+          },
+        ]);
+        return;
+      }
+
+      // Lỗi chung
       notification.error({
         message: t("addUserFailed") || "Failed to create user",
+        description: errorMessage || t("pleaseTryAgain") || "Please try again",
       });
     } finally {
       setSubmitting(false);
@@ -150,13 +182,6 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
 
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item label={t("phone") || "Phone"} name="phone">
-              <Input
-                placeholder={t("enterPhonePlaceholder") || "Enter phone number"}
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
             <Form.Item
               label={t("role") || "Role"}
               name="role"
@@ -172,6 +197,26 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
                 <Option value="Mentor">Mentor</Option>
                 <Option value="Student">Student</Option>
               </Select>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              label={t("studentCode") || "Student Code"}
+              name="studentCode"
+              rules={[
+                {
+                  required: true,
+                  message:
+                    t("pleaseEnterStudentCode") || "Please enter student code",
+                },
+              ]}
+            >
+              <Input
+                placeholder={
+                  t("enterStudentCodePlaceholder") ||
+                  "Enter student code (if Student)"
+                }
+              />
             </Form.Item>
           </Col>
         </Row>
@@ -199,22 +244,6 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
               </Select>
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item
-              label={t("studentCode") || "Student Code"}
-              name="studentCode"
-            >
-              <Input
-                placeholder={
-                  t("enterStudentCodePlaceholder") ||
-                  "Enter student code (if Student)"
-                }
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               label={t("status") || "Status"}

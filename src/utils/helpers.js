@@ -1,6 +1,3 @@
-// src/utils/helpers.js
-
-/** Mồi cho nhiều shape response khác nhau của axios */
 export function toArraySafe(res) {
   if (Array.isArray(res)) return res;
   if (Array.isArray(res?.data)) return res.data;
@@ -10,13 +7,12 @@ export function toArraySafe(res) {
   return [];
 }
 
-/** Hiển thị "x minutes ago" từ ISO string */
+
 export function timeAgoFrom(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
-  
-  // Handle future dates (negative diffSec) - treat as "just now"
+ 
   if (diffSec < 0) return "just now";
   
   const m = Math.floor(diffSec / 60);
@@ -33,7 +29,7 @@ export function timeAgoFrom(iso) {
   return `${diffSec} second${diffSec !== 1 ? "s" : ""} ago`;
 }
 
-/** positions từ API có thể là snake/camel hoặc CSV -> mảng */
+
 export function toArrayPositions(obj) {
   const raw = obj?.position_needed ?? obj?.positionNeeded ?? "";
   return String(raw)
@@ -42,34 +38,32 @@ export function toArrayPositions(obj) {
     .filter(Boolean);
 }
 export function toArraySkills(obj) {
-  // Lấy skills từ obj hoặc obj.user
+
   const raw = obj?.skills ?? obj?.skill ?? obj?.user?.skills ?? "";
   
-  // Nếu đã là array, return luôn
+
   if (Array.isArray(raw)) return raw.filter(Boolean);
   
-  // Nếu là string
+
   const str = String(raw).trim();
   if (!str) return [];
   
-  // Thử parse JSON array (case: "[\"css\", \"bootstrap\"]")
+
   if (str.startsWith("[") && str.endsWith("]")) {
     try {
       const parsed = JSON.parse(str);
       if (Array.isArray(parsed)) return parsed.filter(Boolean);
     } catch {
-      // Nếu parse lỗi, fallback sang split CSV
+      // Ignore JSON parse error
     }
   }
   
-  // Fallback: split bằng dấu phẩy (CSV)
   return str
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
 }
 
-/** Lấy 2 chữ cái đầu tên (avatar text) */
 export function initials(name) {
   return (name || "")
     .trim()

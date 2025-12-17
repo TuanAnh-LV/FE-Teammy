@@ -19,7 +19,6 @@ import {
   EditOutlined,
   StopOutlined,
 } from "@ant-design/icons";
-const { Option } = Select;
 import UserDetailModal from "../../components/admin/UserDetailModal";
 import UserAddModal from "../../components/admin/UserAddModal";
 import UserEditModal from "../../components/admin/UserEditModal";
@@ -27,8 +26,8 @@ import { AdminService } from "../../services/admin.service";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../../hook/useTranslation";
 import { MajorService } from "../../services/major.service";
+const { Option } = Select;
 const ManageUsers = () => {
-  // users will be loaded from API
   const [filters, setFilters] = useState({
     role: "All Roles",
     status: "All Status",
@@ -50,15 +49,12 @@ const ManageUsers = () => {
   const handleView = async (user) => {
     setSelectedUser(user);
     setIsModalOpen(true);
-    // Fetch full user details from API
     setDetailLoading(true);
     try {
       const id = user.raw?.userId || user.key;
       const res = await AdminService.detailUser(id);
       const payload = res?.data ?? res;
       const fullUser = Array.isArray(payload) ? payload[0] : payload;
-
-      // Map API response to component shape
       const enriched = {
         ...user,
         displayName: fullUser?.displayName || user.name,
@@ -71,7 +67,7 @@ const ManageUsers = () => {
         raw: fullUser,
       };
       setSelectedUser(enriched);
-    } catch (err) {
+    } catch {
       notification.error({
         message: t("failedLoadUserDetails") || "Failed to load user details",
       });
@@ -98,12 +94,10 @@ const ManageUsers = () => {
   const handleBan = (user) => {
     Modal.confirm({
       title:
-        (t("confirmBanTitle") &&
-          t("confirmBanTitle").replace("{name}", user.displayName)) ||
+        t("confirmBanTitle").replace("{name}", user.displayName) ||
         `Ban ${user.displayName}?`,
       content:
-        (t("confirmBanContent") &&
-          t("confirmBanContent").replace("{name}", user.displayName)) ||
+        t("confirmBanContent").replace("{name}", user.displayName) ||
         `Are you sure you want to ban ${user.displayName}? This action can be undone later.`,
       centered: true,
       okText: t("confirmBanOk") || "Confirm Ban",
@@ -134,7 +128,7 @@ const ManageUsers = () => {
                 )) ||
               `${user.displayName || user.name} has been banned.`,
           });
-        } catch (err) {
+        } catch {
           notification.error({
             message:
               (t("userBanFailed") &&
@@ -155,7 +149,6 @@ const ManageUsers = () => {
       setLoading(true);
       try {
         const res = await AdminService.getListUsers();
-        // API may return array directly or inside res.data
         const payload = res?.data ?? res;
         const list = Array.isArray(payload) ? payload : payload?.data ?? [];
 
@@ -175,11 +168,12 @@ const ManageUsers = () => {
           displayName: u.displayName || u.name || "",
           majorId: u.majorId || null,
           isActive: Boolean(u.isActive),
+          status: u.isActive ? "Active" : "Suspended",
           raw: u,
         }));
 
         if (mounted) setUserList(mapped);
-      } catch (err) {
+      } catch {
         notification.error({
           message: t("failedLoadUsers") || "Failed to load users",
         });
@@ -200,7 +194,7 @@ const ManageUsers = () => {
         const payload = res?.data ?? res;
 
         setMajorList(payload || []);
-      } catch (err) {
+      } catch {
         notification.error({
           message: t("failedLoadMajors") || "Failed to load majors",
         });
@@ -230,16 +224,15 @@ const ManageUsers = () => {
       dataIndex: "role",
       key: "role",
       render: (role) => {
-        const key = String(role).toLowerCase(); // "admin"
-        const label =
-          {
-            admin: t("admin") || "Admin",
-            mentor: t("mentor") || "Mentor",
-            moderator: t("moderator") || "Moderator",
-            student: t("student") || "Student",
-          }[key] || role;
-
-        return <Tag color="blue">{label}</Tag>;
+        const key = String(role).toLowerCase();
+        const map = {
+          admin: { color: "red", label: t("admin") || "Admin" },
+          mentor: { color: "green", label: t("mentor") || "Mentor" },
+          moderator: { color: "purple", label: t("moderator") || "Moderator" },
+          student: { color: "blue", label: t("student") || "Student" },
+        };
+        const info = map[key] || { color: "default", label: role };
+        return <Tag color={info.color}>{info.label}</Tag>;
       },
     },
     {

@@ -85,7 +85,7 @@ export default function ModeratorNotifications() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card
           className="shadow-sm border-gray-100 rounded-lg"
-          bodyStyle={{ padding: 16 }}
+          style={{ padding: 16 }}
         >
           <div className="flex items-center justify-between">
             <Space>
@@ -101,7 +101,7 @@ export default function ModeratorNotifications() {
 
         <Card
           className="shadow-sm border-gray-100 rounded-lg"
-          bodyStyle={{ padding: 16 }}
+          style={{ padding: 16 }}
         >
           <div className="flex items-center justify-between">
             <Space>
@@ -117,7 +117,7 @@ export default function ModeratorNotifications() {
 
         <Card
           className="shadow-sm border-gray-100 rounded-lg"
-          bodyStyle={{ padding: 16 }}
+          style={{ padding: 16 }}
         >
           <div className="flex items-center justify-between">
             <Space>
@@ -135,8 +135,10 @@ export default function ModeratorNotifications() {
         {/* Compose */}
         <Card
           className="xl:col-span-2 shadow-sm border-gray-100 rounded-lg"
-          bodyStyle={{ padding: 20 }}
-          title={<span className="font-semibold">{t("composeNotification")}</span>}
+          style={{ padding: 20 }}
+          title={
+            <span className="font-semibold">{t("composeNotification")}</span>
+          }
         >
           {/* Filters */}
           <div className="flex flex-col gap-3">
@@ -235,7 +237,7 @@ export default function ModeratorNotifications() {
         {/* Settings */}
         <Card
           className="shadow-sm border-gray-100 rounded-lg"
-          bodyStyle={{ padding: 20 }}
+          style={{ padding: 20 }}
           title={<span className="font-semibold">{t("settings")}</span>}
         >
           <div className="flex items-center justify-between">

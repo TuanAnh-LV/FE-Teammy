@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Form, Input, Select, Row, Col, notification } from "antd";
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
+  Row,
+  Col,
+  notification,
+  Button,
+} from "antd";
 import { AdminService } from "../../services/admin.service";
 import { MajorService } from "../../services/major.service";
 import { useTranslation } from "../../hook/useTranslation";
@@ -11,17 +20,16 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
   const [majors, setMajors] = useState([]);
   const [majorsLoading, setMajorsLoading] = useState(false);
   const { t } = useTranslation();
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (open && user) {
       const initial = { ...user };
-      // prefer displayName for API
       initial.displayName =
         user?.displayName ?? user?.name ?? initial.displayName;
-      const majorId = user?.raw?.majorId ?? user?.majorId ?? user?.major;
-      if (majorId) initial.majorId = majorId;
+      const majorId = user?.raw?.majorId ?? user?.majorId;
+      if (majorId != null) initial.majorId = majorId;
 
-      // Set isActive from server data
       if (user?.raw?.isActive !== undefined) {
         initial.isActive = user.raw.isActive;
       } else if (user?.isActive !== undefined) {
@@ -47,8 +55,7 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
         if (mounted) setMajors(list);
 
         if (mounted && open && user) {
-          const currentMajor =
-            user?.raw?.majorId ?? user?.majorId ?? user?.major;
+          const currentMajor = user?.raw?.majorId ?? user?.majorId;
           if (!currentMajor && user?.major) {
             const found = list.find(
               (m) =>
@@ -62,8 +69,8 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
               });
           }
         }
-      } catch (e) {
-
+      } catch {
+        // ignore errors
       } finally {
         if (mounted) setMajorsLoading(false);
       }
@@ -78,9 +85,9 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+      setSubmitting(true);
       const id = user?.raw?.userId || user?.key || user?.id;
 
-      // Send values directly with isActive boolean
       const serverPayload = {
         ...values,
       };
@@ -92,7 +99,6 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
           message: t("userUpdatedSuccess") || "User updated successfully",
         });
 
-        // Use form values if server doesn't return isActive
         const latestIsActive =
           payload?.isActive !== undefined ? payload.isActive : values.isActive;
 
@@ -101,7 +107,6 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
           ...values,
           raw: payload,
           name: values.displayName ?? payload?.displayName ?? user?.name,
-          // Map server response fields correctly
           displayName: payload?.displayName ?? values.displayName,
           email: payload?.email ?? values.email,
           phone: payload?.phone ?? values.phone,
@@ -110,13 +115,11 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
           studentCode: payload?.studentCode ?? values.studentCode,
         };
 
-        // Keep UI-friendly major value (name) while backend receives majorId
         try {
           const sel = majors.find((m) => (m.majorId ?? m.id) == values.majorId);
           if (sel) {
             updated.major = sel.majorName ?? sel.name ?? updated.major;
           } else if (payload && payload.majorId) {
-            // Try to find major name from majorId in response
             const foundMajor = majors.find(
               (m) => (m.majorId ?? m.id) == payload.majorId
             );
@@ -131,13 +134,44 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
         onSave?.(updated);
         onClose();
       } catch (err) {
+        const errorMessage =
+          err?.response?.data?.message || err?.response?.data || "";
+        const normalizedError = String(errorMessage).toLowerCase();
+
+        if (normalizedError.includes("email already exists")) {
+          form.setFields([
+            {
+              name: "email",
+              errors: [t("emailAlreadyExists") || "Email already exists."],
+            },
+          ]);
+          return;
+        }
+
+        if (normalizedError.includes("studentcode already exists")) {
+          form.setFields([
+            {
+              name: "studentCode",
+              errors: [
+                t("studentCodeAlreadyExists") || "StudentCode already exists.",
+              ],
+            },
+          ]);
+          return;
+        }
 
         notification.error({
           message: t("userUpdateFailed") || "Failed to update user",
+          description:
+            errorMessage || t("pleaseTryAgain") || "Please try again",
         });
       }
-    } catch {
-      // validation errors - ignore
+    } catch (err) {
+      if (err?.errorFields) {
+        return;
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -154,25 +188,25 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
       }
       footer={
         <div className="flex justify-end gap-3">
-          <button
-            type="button"
+          <Button
             onClick={onClose}
-            className="border border-gray-300 text-gray-700 bg-white rounded-md px-3 py-2"
+            disabled={submitting}
+            className="!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all"
           >
             {t("cancel") || "Cancel"}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            type="primary"
+            loading={submitting}
             onClick={handleSubmit}
-            className="bg-[#FF7A00] text-white border-none rounded-md px-3 py-2 hover:opacity-90"
+            className="!bg-[#FF7A00] hover:!opacity-90"
           >
             {t("saveChanges") || t("save") || "Save Changes"}
-          </button>
+          </Button>
         </div>
       }
     >
       <Form layout="vertical" form={form}>
-        {/* Hàng 1: Display Name + Email */}
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
@@ -216,16 +250,7 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
           </Col>
         </Row>
 
-        {/* Hàng 2: Phone + Role */}
         <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item label={t("phone") || "Phone"} name="phone">
-              <Input
-                placeholder={t("enterPhonePlaceholder") || "Enter phone number"}
-              />
-            </Form.Item>
-          </Col>
-
           <Col span={12}>
             <Form.Item
               label={t("role") || "Role"}
@@ -244,65 +269,85 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
               </Select>
             </Form.Item>
           </Col>
-        </Row>
-
-        {/* Hàng 3: Major + Status */}
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item label={t("major") || "Major"} name="majorId">
-              <Select
-                placeholder={t("enterMajorPlaceholder") || "Select major"}
-                loading={majorsLoading}
-                showSearch
-                optionFilterProp="children"
-                filterOption={(input, option) =>
-                  (option?.children || "")
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
-              >
-                {majors.map((m) => (
-                  <Option key={m.majorId ?? m.id} value={m.majorId ?? m.id}>
-                    {m.majorName || m.name}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </Col>
-
           <Col span={12}>
             <Form.Item label={t("status") || "Status"} name="isActive">
               <Select>
                 <Option value={true}>{t("active") || "Active"}</Option>
-                <Option value={false}>Suspended</Option>
+                <Option value={false}>{t("suspended") || "Suspended"}</Option>
               </Select>
             </Form.Item>
           </Col>
         </Row>
 
-        {/* Student Code: only when role = Student */}
         <Form.Item noStyle shouldUpdate={(prev, cur) => prev.role !== cur.role}>
-          {({ getFieldValue }) =>
-            getFieldValue("role") === "Student" ? (
+          {({ getFieldValue }) => {
+            const isStudent = getFieldValue("role") === "Student";
+
+            return (
               <Row gutter={16}>
-                <Col span={12}>
+                <Col span={isStudent ? 12 : 24}>
                   <Form.Item
-                    label={t("studentCode") || "Student Code"}
-                    name="studentCode"
+                    label={t("major") || "Major"}
+                    name="majorId"
+                    rules={[
+                      {
+                        required: true,
+                        message: t("pleaseEnterMajor") || "Please enter major",
+                      },
+                    ]}
                   >
-                    <Input
-                      placeholder={
-                        t("enterStudentCodePlaceholder") || "Enter student code"
-                      }
-                    />
+                    <Select
+                      placeholder={t("enterMajorPlaceholder") || "Select major"}
+                      loading={majorsLoading}
+                      showSearch
+                      optionFilterProp="children"
+                      filterOption={(input, option) => {
+                        const label = String(option?.children ?? "");
+                        return label
+                          .toLowerCase()
+                          .includes(input.toLowerCase());
+                      }}
+                    >
+                      {majors.map((m) => (
+                        <Option
+                          key={m.majorId ?? m.id}
+                          value={m.majorId ?? m.id}
+                        >
+                          {m.majorName || m.name}
+                        </Option>
+                      ))}
+                    </Select>
                   </Form.Item>
                 </Col>
+
+                {isStudent && (
+                  <Col span={12}>
+                    <Form.Item
+                      label={t("studentCode") || "Student Code"}
+                      name="studentCode"
+                      rules={[
+                        {
+                          required: true,
+                          message:
+                            t("pleaseEnterStudentCode") ||
+                            "Please enter student code",
+                        },
+                      ]}
+                    >
+                      <Input
+                        placeholder={
+                          t("enterStudentCodePlaceholder") ||
+                          "Enter student code"
+                        }
+                      />
+                    </Form.Item>
+                  </Col>
+                )}
               </Row>
-            ) : null
-          }
+            );
+          }}
         </Form.Item>
       </Form>
     </Modal>
   );
 }
-

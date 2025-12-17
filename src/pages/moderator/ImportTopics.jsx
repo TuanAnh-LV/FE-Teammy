@@ -2,14 +2,12 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Steps, Button } from "antd";
 import {
   UploadOutlined,
-  SwapOutlined,
   EyeOutlined,
   CheckCircleOutlined,
   ArrowLeftOutlined,
 } from "@ant-design/icons";
 
 import ImportStep1UploadTopic from "../../components/moderator/import/ImportStep1UploadTopic";
-import ImportStep2MappingTopic from "../../components/moderator/import/ImportStep2MappingTopic";
 import ImportStep3PreviewTopic from "../../components/moderator/import/ImportStep3PreviewTopic";
 import ImportStep4ResultTopic from "../../components/moderator/import/ImportStep4ResultTopic";
 import { useTranslation } from "../../hook/useTranslation";
@@ -18,10 +16,19 @@ import { useNavigate } from "react-router-dom";
 const ImportTopics = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  // Flow mới: 0 Upload -> 1 Review -> 2 Result
   const [currentStep, setCurrentStep] = useState(0);
+
+  // giữ rawData nếu bạn muốn debug số dòng parse được
   const [rawData, setRawData] = useState([]);
+
+  // ✅ payload đã map (dữ liệu gửi validate) để Preview hiển thị
+  const [uploadedTopics, setUploadedTopics] = useState([]);
+
+  // ✅ previewData (có status/issues) để Result đếm số topic
   const [mappedTopics, setMappedTopics] = useState([]);
-  const [columnMap, setColumnMap] = useState({});
+
   const [validationResult, setValidationResult] = useState(null);
   const [originalFile, setOriginalFile] = useState(null);
 
@@ -38,20 +45,10 @@ const ImportTopics = () => {
         content: (
           <ImportStep1UploadTopic
             setRawData={setRawData}
+            setUploadedTopics={setUploadedTopics}
+            setValidationResult={setValidationResult}
             setCurrentStep={setCurrentStep}
             setOriginalFile={setOriginalFile}
-          />
-        ),
-      },
-      {
-        title: t("mapColumns") || "Map Columns",
-        icon: <SwapOutlined />,
-        content: (
-          <ImportStep2MappingTopic
-            rawData={rawData}
-            setColumnMap={setColumnMap}
-            setCurrentStep={setCurrentStep}
-            setValidationResult={setValidationResult}
           />
         ),
       },
@@ -60,8 +57,7 @@ const ImportTopics = () => {
         icon: <EyeOutlined />,
         content: (
           <ImportStep3PreviewTopic
-            rawData={rawData}
-            columnMap={columnMap}
+            uploadedTopics={uploadedTopics}
             setMappedTopics={handleSetMappedTopics}
             setCurrentStep={setCurrentStep}
             validationResult={validationResult}
@@ -81,13 +77,13 @@ const ImportTopics = () => {
       },
     ],
     [
+      t,
       rawData,
-      columnMap,
-      mappedTopics,
-      handleSetMappedTopics,
+      uploadedTopics,
       validationResult,
       originalFile,
-      t,
+      mappedTopics,
+      handleSetMappedTopics,
     ]
   );
 

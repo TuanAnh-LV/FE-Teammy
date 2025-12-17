@@ -9,31 +9,50 @@ export default function ImportStep1Upload({
   setRawData,
   setCurrentStep,
   setOriginalFile,
+  setValidationResult,
+  setUploadedUsers,
 }) {
   const { t } = useTranslation();
+
+  const mapRawDataToUsers = (rawData) =>
+    rawData.map((row) => ({
+      email: row.Email || "",
+      displayName: row.DisplayName || "",
+      role: row.Role || "student",
+      majorName: row.MajorName || "",
+      gender: row.Gender || "",
+      studentCode: row.StudentCode || "",
+    }));
+
   const handleFile = async (file) => {
     try {
       const parsed = await parseFile(file);
       setRawData(parsed);
       setOriginalFile(file);
-      setCurrentStep(1);
 
-      const rowsFoundText = (t("rowsFound") || "{count} rows found").replace(
-        "{count}",
-        parsed.length
-      );
+      const mappedUsers = mapRawDataToUsers(parsed);
+
+      setUploadedUsers(mappedUsers);
+
+      const res = await AdminService.validateImportUsers(mappedUsers, true);
+      setValidationResult(res.data);
 
       notification.success({
-        message: t("fileUploadedSuccess") || "File uploaded successfully",
-        description: rowsFoundText,
+        message: t("fileValidated") || "File validated successfully",
+        description: `${res.data.summary?.validRows || 0}/${
+          res.data.summary?.totalRows || 0
+        } valid rows`,
       });
+
+      setCurrentStep(1);
     } catch (err) {
       notification.error({
         message: t("fileUploadFailed") || "Failed to upload file",
-        description: err.message || "Please try again",
+        description:
+          err?.response?.data?.message || err.message || "Please try again",
       });
+      throw err;
     }
-    return false;
   };
 
   const parseFile = (file) =>
@@ -59,7 +78,6 @@ export default function ImportStep1Upload({
 
   const handleDownloadTemplate = async () => {
     try {
-      // Download template from API
       const res = await AdminService.downloadUsersTemplate(true);
       if (res && res.data) {
         const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -74,8 +92,7 @@ export default function ImportStep1Upload({
           message: t("templateDownloaded") || "Template downloaded",
         });
       }
-    } catch (err) {
-      // Fallback: generate template locally
+    } catch {
       const template = [
         {
           Email: "alex@example.com",
@@ -100,12 +117,18 @@ export default function ImportStep1Upload({
 
   return (
     <div className="flex flex-col items-center w-full text-center mt-6">
-      {/* Upload Box */}
       <Upload.Dragger
         multiple={false}
         accept=".xlsx,.xls,.csv"
         showUploadList={false}
-        customRequest={({ file }) => handleFile(file)}
+        customRequest={async ({ file, onSuccess, onError }) => {
+          try {
+            await handleFile(file);
+            onSuccess?.("ok");
+          } catch (e) {
+            onError?.(e);
+          }
+        }}
         className="w-full max-w-3xl border-2 border-dashed border-gray-300 bg-white rounded-xl py-14 hover:border-orange-400 transition-all"
       >
         <CloudUploadOutlined className="text-5xl text-gray-400 mb-4" />
@@ -133,7 +156,6 @@ export default function ImportStep1Upload({
         </Button>
       </Upload.Dragger>
 
-      {/* Download Template */}
       <Button
         icon={<DownloadOutlined />}
         className="!mt-8 !px-5 !py-2 !border-gray-300 hover:!border-orange-400 hover:!text-orange-500"

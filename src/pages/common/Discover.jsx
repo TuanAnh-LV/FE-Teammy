@@ -46,6 +46,32 @@ const Discover = () => {
 
   const aiSuggestionsFetchedRef = useRef(null);
 
+  // Function to refetch group data
+  const refetchGroupData = useCallback(async () => {
+    try {
+      const res = await AuthService.getMembership();
+      const groupId = res?.data?.groupId || null;
+      const hasGroup = !!res?.data?.hasGroup;
+      const status = res?.data?.status || null;
+      setMembership({
+        hasGroup,
+        groupId,
+        status,
+      });
+
+      if (groupId) {
+        try {
+          const groupRes = await GroupService.getGroupDetail(groupId);
+          setMyGroupDetails(groupRes?.data || null);
+        } catch {
+          setMyGroupDetails(null);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to refetch group data:", err);
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
     const fetchMembership = async () => {
@@ -94,10 +120,12 @@ const Discover = () => {
     }
 
     const hasTopicId =
-      myGroupDetails?.topicId && myGroupDetails.topicId.trim() !== "";
+      myGroupDetails?.topicId != null &&
+      String(myGroupDetails.topicId).trim() !== "";
+
     const hasTopicObject =
-      myGroupDetails?.topic?.topicId &&
-      myGroupDetails.topic.topicId.trim() !== "";
+      myGroupDetails?.topic?.topicId != null &&
+      String(myGroupDetails.topic.topicId).trim() !== "";
 
     if (hasTopicId || hasTopicObject) {
       setAiSuggestedTopics([]);
@@ -131,46 +159,54 @@ const Discover = () => {
           : [];
 
         if (mounted && suggestions.length > 0) {
-          const mapped = suggestions.map((item) => {
-            const detail = item.detail || {};
-            const mentors = Array.isArray(detail.mentors) ? detail.mentors : [];
+          const mapped = suggestions
+            .filter((item) => {
+              const detail = item.detail || {};
+              const status = (detail.status || "open").toLowerCase();
+              return status !== "closed"; // Loại bỏ các topic closed
+            })
+            .map((item) => {
+              const detail = item.detail || {};
+              const mentors = Array.isArray(detail.mentors)
+                ? detail.mentors
+                : [];
 
-            return {
-              topicId: item.topicId || detail.topicId,
-              title: item.title || detail.title || "Untitled",
-              description: item.description || detail.description || "",
-              domain: detail.majorName || "General",
-              majorId: detail.majorId,
-              status: detail.status || "open",
-              tags: [detail.status || "open"],
-              mentor:
-                mentors.length > 0
-                  ? mentors
-                      .map((m) => m.mentorName || m.name || m.mentorEmail)
-                      .join(", ")
-                  : detail.createdByName || "",
+              return {
+                topicId: item.topicId || detail.topicId,
+                title: item.title || detail.title || "Untitled",
+                description: item.description || detail.description || "",
+                domain: detail.majorName || "General",
+                majorId: detail.majorId,
+                status: detail.status || "open",
+                tags: [detail.status || "open"],
+                mentor:
+                  mentors.length > 0
+                    ? mentors
+                        .map((m) => m.mentorName || m.name || m.mentorEmail)
+                        .join(", ")
+                    : detail.createdByName || "",
 
-              mentorsRaw: mentors,
+                mentorsRaw: mentors,
 
-              progress: 0,
-              members: mentors.map((m) =>
-                (m.mentorName || m.name || "M")
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-              ),
-              createdAt: detail.createdAt,
-              attachedFiles: detail.attachedFiles || [],
-              referenceDocs: detail.referenceDocs || [],
-              registrationFile:
-                detail.registrationFile || item.registrationFile || null,
-              score: item.score || 0,
-              canTakeMore: item.canTakeMore,
-              matchingSkills: item.matchingSkills || [],
-              topicSkills: item.topicSkills || detail.skills || [],
-              isAISuggestion: true,
-            };
-          });
+                progress: 0,
+                members: mentors.map((m) =>
+                  (m.mentorName || m.name || "M")
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                ),
+                createdAt: detail.createdAt,
+                attachedFiles: detail.attachedFiles || [],
+                referenceDocs: detail.referenceDocs || [],
+                registrationFile:
+                  detail.registrationFile || item.registrationFile || null,
+                score: item.score || 0,
+                canTakeMore: item.canTakeMore,
+                matchingSkills: item.matchingSkills || [],
+                topicSkills: item.topicSkills || detail.skills || [],
+                isAISuggestion: true,
+              };
+            });
           setAiSuggestedTopics(mapped);
           aiSuggestionsFetchedRef.current = membership.groupId;
           notification.info({
@@ -199,35 +235,45 @@ const Discover = () => {
       try {
         const res = await TopicService.getTopics();
         const payload = res?.data ?? res;
-        const list = Array.isArray(payload) ? payload : payload?.data ?? [];
-        const mapped = (list || []).map((t) => ({
-          topicId: t.topicId || t.id,
-          title: t.title || t.topicName || "Untitled",
-          description: t.description || "",
-          domain: t.majorName || "General",
-          majorId: t.majorId,
-          status: t.status || "open",
-          tags: [t.status || "open"],
-          mentor:
-            (t.mentors &&
-              t.mentors[0] &&
-              (t.mentors[0].mentorName || t.mentors[0].name)) ||
-            t.createdByName ||
-            "",
-          mentorsRaw: t.mentors || [],
-          progress: 0,
-          members: (t.mentors || []).map((m) =>
-            (m.mentorName || m.name || "M")
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-          ),
-          createdAt: t.createdAt,
-          attachedFiles: t.attachedFiles || [],
-          referenceDocs: t.referenceDocs || [],
-          registrationFile: t.registrationFile || null,
-          topicSkills: t.skills || [],
-        }));
+        const list =
+          (Array.isArray(payload) && payload) ||
+          (Array.isArray(payload?.data) && payload.data) ||
+          (Array.isArray(payload?.data?.data) && payload.data.data) ||
+          [];
+        const mapped = (list || [])
+          .filter((t) => {
+            const status = (t.status || "open").toLowerCase();
+            return status !== "closed"; // Loại bỏ các topic closed
+          })
+          .map((t) => ({
+            ...t,
+            topicId: t.topicId || t.id,
+            title: t.title || t.topicName || "Untitled",
+            description: t.description || "",
+            domain: t.majorName || "General",
+            majorId: t.majorId,
+            status: t.status || "open",
+            tags: [t.status || "open"],
+            mentor:
+              (t.mentors &&
+                t.mentors[0] &&
+                (t.mentors[0].mentorName || t.mentors[0].name)) ||
+              t.createdByName ||
+              "",
+            mentorsRaw: t.mentors || [],
+            progress: 0,
+            members: (t.mentors || []).map((m) =>
+              (m.mentorName || m.name || "M")
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+            ),
+            createdAt: t.createdAt,
+            attachedFiles: t.attachedFiles || [],
+            referenceDocs: t.referenceDocs || [],
+            registrationFile: t.registrationFile || null,
+            topicSkills: t.skills || [],
+          }));
         if (mounted) {
           setProjects(mapped);
           setFilteredProjects(mapped);
@@ -299,6 +345,25 @@ const Discover = () => {
       setDetailModalState({ open: true, topic, loading: false });
     }
   }, []);
+  const openInviteModal = useCallback(
+    (p) => {
+      if (!p) return;
+      const st = String(p.status || p.tags?.[0] || "").toLowerCase();
+
+      if (st !== "open") {
+        notification.warning({
+          message: t("topicNotOpen") || "Topic không ở trạng thái Open",
+          description:
+            t("onlyOpenTopicSelectable") ||
+            "Chỉ có thể chọn topic trạng thái Open.",
+        });
+        return;
+      }
+
+      setInviteState({ open: true, topic: p, loading: false, message: "" });
+    },
+    [t]
+  );
 
   return (
     <div className="min-h-screen bg-[#f7fafc] pt-20 md:pt-24 pb-12">
@@ -334,8 +399,8 @@ const Discover = () => {
                     "Topics matched to your group's interests and skills"}
                 </p>
                 <div className="flex flex-col gap-4">
-                  {aiSuggestedTopics.map((project, i) => (
-                    <div key={`ai-${i}`} className="relative">
+                  {aiSuggestedTopics.map((project) => (
+                    <div key={project.topicId} className="relative">
                       <div className="absolute -top-3 -left-3 flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold rounded-full shadow-lg z-10">
                         <Sparkles className="w-3.5 h-3.5 fill-white" />
                         AI Recommended
@@ -353,14 +418,7 @@ const Discover = () => {
 
                       <ProjectCard
                         project={project}
-                        onSelectTopic={(p) =>
-                          setInviteState({
-                            open: true,
-                            topic: p,
-                            loading: false,
-                            message: "",
-                          })
-                        }
+                        onSelectTopic={openInviteModal}
                         onViewDetail={handleViewTopicDetail}
                         hasGroupTopic={
                           !!(
@@ -370,6 +428,7 @@ const Discover = () => {
                         }
                         isAISuggestion={true}
                         membership={membership}
+                        myGroupDetails={myGroupDetails}
                       />
                     </div>
                   ))}
@@ -391,18 +450,11 @@ const Discover = () => {
                   </div>
                 )}
 
-                {filteredProjects.map((project, i) => (
+                {filteredProjects.map((project) => (
                   <ProjectCard
-                    key={i}
+                    key={project.topicId}
                     project={project}
-                    onSelectTopic={(p) =>
-                      setInviteState({
-                        open: true,
-                        topic: p,
-                        loading: false,
-                        message: "",
-                      })
-                    }
+                    onSelectTopic={openInviteModal}
                     onViewDetail={handleViewTopicDetail}
                     hasGroupTopic={
                       !!(
@@ -411,6 +463,7 @@ const Discover = () => {
                       )
                     }
                     membership={membership}
+                    myGroupDetails={myGroupDetails}
                   />
                 ))}
               </>
@@ -449,14 +502,9 @@ const Discover = () => {
           setDetailModalState({ open: false, topic: null, loading: false })
         }
         topic={detailModalState.topic}
-        onSelectTopic={(p) => {
+        onSelectTopic={(topic) => {
           setDetailModalState({ open: false, topic: null, loading: false });
-          setInviteState({
-            open: true,
-            topic: p,
-            loading: false,
-            message: "",
-          });
+          openInviteModal(topic);
         }}
         loading={inviteState.loading}
         detailLoading={detailModalState.loading}
@@ -481,26 +529,6 @@ const Discover = () => {
           const { topic } = inviteState;
           if (!topic) return;
 
-          // Check if user is leader
-          const membershipRes = await AuthService.getMembership();
-          const userRole = membershipRes?.data?.status;
-
-          if (userRole !== "leader") {
-            notification.error({
-              message: t("notAuthorized") || "Not Authorized",
-              description:
-                t("onlyLeaderCanSelectTopic") ||
-                "Only group leader can select a topic for the group.",
-            });
-            setInviteState({
-              open: false,
-              topic: null,
-              loading: false,
-              message: "",
-            });
-            return;
-          }
-
           try {
             setInviteState((s) => ({ ...s, loading: true }));
             const myGroupsRes = await GroupService.getMyGroups();
@@ -514,7 +542,18 @@ const Discover = () => {
             }
             const group = myGroups[0];
             const groupId = group.id || group.groupId;
+            const currentMembers = group.currentMembers || 0;
+            const maxMembers = group.maxMembers || 0;
 
+            if (currentMembers < maxMembers) {
+              notification.error({
+                message: t("groupNotFull") || "Group chưa đủ người",
+                description: `${
+                  t("groupMustBeFull") || "Group phải đủ"
+                } ${currentMembers}/${maxMembers}.`,
+              });
+              return;
+            }
             await GroupService.assignTopic(groupId, topic.topicId);
             const mentorCandidate = (topic.mentorsRaw || [])[0];
             if (!mentorCandidate) {
@@ -546,6 +585,10 @@ const Discover = () => {
                 ` "${topic.title}" ` +
                 (t("andSentMentorInvite") || "và đã gửi thư mời cho mentor"),
             });
+
+            // Refetch group data to update UI without refresh
+            await refetchGroupData();
+
             setInviteState({
               open: false,
               topic: null,
@@ -560,34 +603,33 @@ const Discover = () => {
             let errorTitle = t("failedToSelectTopic") || "Thất bại";
             let errorDesc = errorMessage || t("pleaseTryAgain");
 
+            // Check if invitation already exists
+            if (
+              normalizedMessage.includes("invite existed") ||
+              normalizedMessage.includes("invitation already exists") ||
+              normalizedMessage.includes("already invited")
+            ) {
+              notification.warning({
+                message: t("invitationAlreadyExists") || "Lời mời đã tồn tại",
+                description:
+                  t("invitationAlreadyExistsDesc") ||
+                  "Nhóm của bạn đã gửi lời mời cho mentor này rồi. Vui lòng chờ mentor phản hồi hoặc liên hệ mentor để gửi lại lời mời.",
+              });
+              setInviteState({
+                open: false,
+                topic: null,
+                loading: false,
+                message: "",
+              });
+              return;
+            }
+
             if (statusCode === 403) {
               errorTitle = t("notAuthorized") || "Không có quyền";
               errorDesc =
                 t("onlyLeaderCanSelectTopic") ||
                 "Chỉ trưởng nhóm mới có thể chọn topic cho nhóm.";
             } else if (statusCode === 409) {
-              errorTitle =
-                t("groupIsActive") ||
-                "Cannot change topic when group is active";
-              errorDesc =
-                t("groupActiveDescription") ||
-                "The group is currently active and cannot change topics. Please contact the mentor or administrator for assistance.";
-            }
-            // Handle group must be full before inviting mentor
-            if (
-              normalizedMessage.includes("group must be full") ||
-              normalizedMessage.includes("full before inviting mentor")
-            ) {
-              errorTitle =
-                t("groupMustBeFullBeforeInvite") ||
-                "Group must be full before inviting mentor";
-              errorDesc =
-                t("groupMustBeFullBeforeInviteDesc") ||
-                "Please fill your group to the required size before inviting a mentor.";
-            }
-
-            // Handle 409 Conflict - Group is active
-            if (statusCode === 409) {
               if (normalizedMessage.includes("invite_pending_other_topic")) {
                 errorTitle =
                   t("invitePendingOtherTopic") ||
@@ -613,20 +655,29 @@ const Discover = () => {
                   t("groupActiveDescription") ||
                   "The group is currently active and cannot change topics. Please contact the mentor or administrator for assistance.";
               }
+            } else if (
+              normalizedMessage.includes("group must be full") ||
+              normalizedMessage.includes("full before inviting mentor")
+            ) {
+              errorTitle =
+                t("groupMustBeFullBeforeInvite") ||
+                "Group must be full before inviting mentor";
+              errorDesc =
+                t("groupMustBeFullBeforeInviteDesc") ||
+                "Please fill your group to the required size before inviting a mentor.";
             }
 
             notification.error({
               message: errorTitle,
               description: errorDesc,
             });
+          } finally {
             setInviteState({
               open: false,
               topic: null,
               loading: false,
               message: "",
             });
-          } finally {
-            setInviteState((s) => ({ ...s, loading: false }));
           }
         }}
         okButtonProps={{

@@ -63,10 +63,19 @@ const ApplyModal = ({ open, onClose, post, onSubmit }) => {
         </div>
       }
       footer={[
-        <Button key="cancel" onClick={onClose}>
+        <Button
+          key="cancel"
+          onClick={onClose}
+          className="!border-gray-300 hover:!border-orange-400  hover:!text-orange-400 transition-all !py-5"
+        >
           {t("cancel") || "Cancel"}
         </Button>,
-        <Button key="ok" type="primary" onClick={handleOk}>
+        <Button
+          key="ok"
+          type="primary"
+          onClick={handleOk}
+          className="!bg-[#FF7A00] hover:!opacity-90"
+        >
           {t("submit") || "Submit"}
         </Button>,
       ]}
