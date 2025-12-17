@@ -83,12 +83,12 @@ export const getRoleMenus = (role, language = "EN") => {
       },
     ],
     moderator: [
-      // {
-      //   key: "dashboard",
-      //   label: getTranslation("dashboard", language),
-      //   path: "/moderator/dashboard",
-      //   icon: <HomeOutlined />,
-      // },
+      {
+        key: "dashboard",
+        label: getTranslation("dashboard", language),
+        path: "/moderator/dashboard",
+        icon: <HomeOutlined />,
+      },
       {
         key: "group",
         label: getTranslation("groupManagement", language),
@@ -107,12 +107,12 @@ export const getRoleMenus = (role, language = "EN") => {
         path: "/moderator/ai-assistant",
         icon: <BulbOutlined />,
       },
-      // {
-      //   key: "notifications",
-      //   label: getTranslation("notifications", language),
-      //   path: "/moderator/notifications",
-      //   icon: <BellOutlined />,
-      // },
+      {
+        key: "notifications",
+        label: getTranslation("notifications", language),
+        path: "/moderator/notifications",
+        icon: <BellOutlined />,
+      },
     ],
     student: [
       {

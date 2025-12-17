@@ -21,10 +21,17 @@ const TopicDetailModal = ({
   hasGroupTopic = false,
   isAISuggestion = false,
   membership = {},
+  myGroupDetails = null,
 }) => {
   const { t } = useTranslation();
 
   if (!topic) return null;
+
+  // Check if group is full
+  const currentMembers = myGroupDetails?.currentMembers || 0;
+  const maxMembers = myGroupDetails?.maxMembers || 0;
+  const isGroupFull = currentMembers >= maxMembers && maxMembers > 0;
+  const canSelectTopic = topic.status === "open" && isGroupFull;
 
   const formattedDate = topic.createdAt
     ? new Date(topic.createdAt).toLocaleDateString("en-US", {
@@ -93,15 +100,33 @@ const TopicDetailModal = ({
               <span className="inline-flex items-center px-3 py-1.5 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg">
                 {topic.domain}
               </span>
-              <span
-                className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg ${
-                  topic.status === "open"
-                    ? "bg-green-50 text-green-700"
-                    : "bg-gray-100 text-gray-700"
-                }`}
-              >
-                {topic.status === "open" ? "Open" : "Closed"}
-              </span>
+              {(() => {
+                const status = (topic.status || "").toLowerCase();
+
+                const statusUI = {
+                  open: {
+                    label: t("open") || "Open",
+                    cls: "bg-green-50 text-green-700 border border-green-200",
+                    icon: null,
+                  },
+                  closed: {
+                    label: t("closed") || "Closed",
+                    cls: "bg-gray-100 text-gray-700 border border-gray-200",
+                    icon: null,
+                  },
+                };
+
+                const ui = statusUI[status] || statusUI.closed;
+
+                return (
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg ${ui.cls}`}
+                  >
+                    {ui.icon}
+                    {ui.label}
+                  </span>
+                );
+              })()}
             </div>
 
             {/* Description */}
@@ -284,26 +309,20 @@ const TopicDetailModal = ({
             >
               {t("close") || "Close"}
             </button>
-            {!hasGroupTopic && membership?.status === "leader" && (
-              <button
-                onClick={() => {
-                  onSelectTopic(topic);
-                  onClose();
-                }}
-                disabled={loading || topic.status === "closed"}
-                className={`flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all ${
-                  topic.status === "closed"
-                    ? "bg-gray-400 cursor-not-allowed text-gray-200"
-                    : "bg-[#FF7A00] hover:!opacity-90 text-white border-none"
-                }`}
-              >
-                {loading
-                  ? t("selecting")
-                  : topic.status === "closed"
-                  ? t("topicClosed")
-                  : t("selectTopic")}
-              </button>
-            )}
+            {!hasGroupTopic &&
+              membership?.status === "leader" &&
+              canSelectTopic && (
+                <button
+                  onClick={() => {
+                    onSelectTopic(topic);
+                    onClose();
+                  }}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all bg-[#FF7A00] hover:!opacity-90 text-white border-none"
+                >
+                  {loading ? t("selecting") : t("selectTopic")}
+                </button>
+              )}
           </div>
         </div>
       )}

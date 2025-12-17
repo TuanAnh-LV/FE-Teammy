@@ -12,6 +12,7 @@ const ProjectCard = ({
   hasGroupTopic = false,
   isAISuggestion = false,
   membership = {},
+  myGroupDetails = null,
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -20,6 +21,18 @@ const ProjectCard = ({
   const formattedDate = project.createdAt
     ? new Date(project.createdAt).toLocaleDateString()
     : "";
+  const status = String(
+    project.status || project.tags?.[0] || ""
+  ).toLowerCase();
+  const isOpen = status === "open";
+
+  // Check if group is full
+  const currentMembers = myGroupDetails?.currentMembers || 0;
+  const maxMembers = myGroupDetails?.maxMembers || 0;
+  const isGroupFull = currentMembers >= maxMembers && maxMembers > 0;
+
+  // Can only select if: open and group full
+  const canSelectTopic = isOpen && isGroupFull;
 
   return (
     <div
@@ -144,82 +157,62 @@ const ProjectCard = ({
           )}
           <div className="text-xs text-gray-500">{formattedDate}</div>
         </div>
-        {!hasGroupTopic && membership?.status === "leader" && (
-          <button
-            onClick={async (e) => {
-              e.stopPropagation();
-              if (project.status === "closed" || !project.topicId) return;
-
-              if (typeof onSelectTopic === "function") {
-                onSelectTopic(project);
-                return;
-              }
-
-              try {
-                setLoading(true);
-
-                const myGroupsRes = await GroupService.getMyGroups();
-                const myGroups = myGroupsRes?.data || [];
-
-                if (!myGroups.length) {
-                  notification.error({
-                    message: t("noGroupFound"),
-                    description: t("pleaseCreateOrJoinGroup"),
-                  });
-                  navigate("/my-group");
+        {!hasGroupTopic &&
+          membership?.status === "leader" &&
+          canSelectTopic && (
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (!project.topicId) return;
+                if (typeof onSelectTopic === "function") {
+                  onSelectTopic(project);
                   return;
                 }
 
-                const group = myGroups[0];
-                const groupId = group.id || group.groupId;
-                const currentMembers = group.currentMembers || 0;
-                const maxMembers = group.maxMembers || 0;
+                try {
+                  setLoading(true);
 
-                if (currentMembers < maxMembers) {
-                  notification.error({
-                    message: t("groupNotFull"),
-                    description: `${t(
-                      "groupMustBeFull"
-                    )} ${currentMembers}/${maxMembers} ${t("Members")}.`,
+                  const myGroupsRes = await GroupService.getMyGroups();
+                  const myGroups = myGroupsRes?.data || [];
+
+                  if (!myGroups.length) {
+                    notification.error({
+                      message: t("noGroupFound"),
+                      description: t("pleaseCreateOrJoinGroup"),
+                    });
+                    navigate("/my-group");
+                    return;
+                  }
+
+                  const group = myGroups[0];
+                  const groupId = group.id || group.groupId;
+
+                  await GroupService.assignTopic(groupId, project.topicId);
+
+                  notification.success({
+                    message: t("topicSelected"),
+                    description: `${t("successfullySelected")} "${
+                      project.title
+                    }" ${t("forYourGroup")}`,
                   });
-                  return;
+
+                  navigate(`/my-group`);
+                } catch (err) {
+                  notification.error({
+                    message: t("failedToSelectTopic"),
+                    description:
+                      err?.response?.data?.message || t("pleaseTryAgain"),
+                  });
+                } finally {
+                  setLoading(false);
                 }
-
-                await GroupService.assignTopic(groupId, project.topicId);
-
-                notification.success({
-                  message: t("topicSelected"),
-                  description: `${t("successfullySelected")} "${
-                    project.title
-                  }" ${t("forYourGroup")}`,
-                });
-
-                navigate(`/my-group`);
-              } catch (err) {
-                notification.error({
-                  message: t("failedToSelectTopic"),
-                  description:
-                    err?.response?.data?.message || t("pleaseTryAgain"),
-                });
-              } finally {
-                setLoading(false);
-              }
-            }}
-            disabled={loading || project.status === "closed"}
-            className={`w-full text-sm font-semibold py-3 rounded-lg transition-colors
-    ${
-      project.status === "closed"
-        ? "bg-gray-400 cursor-not-allowed text-gray-200"
-        : "!bg-[#FF7A00] hover:!opacity-90 !text-white !border-none cursor-pointer"
-    }`}
-          >
-            {loading
-              ? t("selecting")
-              : project.status === "closed"
-              ? t("topicClosed")
-              : t("selectTopic")}
-          </button>
-        )}{" "}
+              }}
+              disabled={loading}
+              className="w-full text-sm font-semibold py-3 rounded-lg transition-colors !bg-[#FF7A00] hover:!opacity-90 !text-white !border-none cursor-pointer"
+            >
+              {loading ? t("selecting") : t("selectTopic")}
+            </button>
+          )}{" "}
       </div>
     </div>
   );

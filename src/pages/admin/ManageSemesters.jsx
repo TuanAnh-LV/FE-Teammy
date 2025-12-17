@@ -1,17 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Table,
   Button,
   Space,
   Card,
-  Modal,
   notification,
   Tag,
   Form,
   Input,
-  DatePicker,
-  Switch,
-  InputNumber,
   Select,
   Tooltip,
 } from "antd";
@@ -19,12 +15,14 @@ import {
   PlusOutlined,
   EditOutlined,
   EyeOutlined,
-  CheckCircleOutlined,
   SettingOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
 import { SemesterService } from "../../services/semester.service";
 import { useTranslation } from "../../hook/useTranslation";
+import SemesterDetailModal from "../../components/admin/SemesterDetailModal";
+import SemesterFormModal from "../../components/admin/SemesterFormModal";
+import SemesterPolicyModal from "../../components/admin/SemesterPolicyModal";
 import dayjs from "dayjs";
 
 const { Option } = Select;
@@ -35,8 +33,9 @@ const ManageSemesters = () => {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState(null);
-  const [modalMode, setModalMode] = useState("create"); // create | edit | view
+  const [modalMode, setModalMode] = useState("create");
   const [form] = Form.useForm();
   const [policyForm] = Form.useForm();
   const [filters, setFilters] = useState({
@@ -44,7 +43,9 @@ const ManageSemesters = () => {
     status: "All Status",
     season: "All Seasons",
   });
-
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [savingSemester, setSavingSemester] = useState(false);
+  const [savingPolicy, setSavingPolicy] = useState(false);
   useEffect(() => {
     fetchSemesters();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -85,59 +86,31 @@ const ManageSemesters = () => {
     setIsModalOpen(true);
   };
 
-  const handleView = (record) => {
-    setModalMode("view");
-    setSelectedSemester(record);
-    form.setFieldsValue({
-      season: record.season,
-      year: record.year,
-      startDate: record.startDate ? dayjs(record.startDate) : null,
-      endDate: record.endDate ? dayjs(record.endDate) : null,
-    });
-    setIsModalOpen(true);
+  const handleView = async (record) => {
+    setIsDetailModalOpen(true);
+    setDetailLoading(true);
+    try {
+      const res = await SemesterService.detail(record.semesterId);
+      setSelectedSemester(res?.data ?? record);
+    } catch {
+      setSelectedSemester(record);
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
-  const handleActivate = async (record) => {
-    Modal.confirm({
-      title: t("activateSemester") || "Activate Semester",
-      content: `${
-        t("confirmActivate") || "Are you sure you want to activate"
-      } ${record.season} ${record.year}?`,
-      centered: true,
-      okText: t("confirm") || "Confirm",
-      cancelText: t("cancel") || "Cancel",
-      okButtonProps: {
-        className:
-          "!bg-[#FF7A00] !text-white !border-none !rounded-md !px-4 !py-2 hover:!opacity-90",
-      },
-      cancelButtonProps: {
-        className:
-          "!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all !py-2",
-      },
-      onOk: async () => {
-        try {
-          await SemesterService.activate(record.semesterId);
-          notification.success({
-            message:
-              t("semesterActivated") || "Semester activated successfully",
-          });
-          fetchSemesters();
-        } catch {
-          notification.error({
-            message: t("failedToActivate") || "Failed to activate semester",
-          });
-        }
-      },
-    });
-  };
+  const handleCloseDetail = useCallback(() => {
+    setIsDetailModalOpen(false);
+    setSelectedSemester(null);
+  }, []);
 
   const handleManagePolicy = async (record) => {
     setSelectedSemester(record);
     try {
       const response = await SemesterService.detail(record.semesterId);
-      const data = response?.data || {};
+      const data = response?.data || record;
+      setSelectedSemester(data);
       const policy = data.policy || {};
-
       policyForm.setFieldsValue({
         teamSelfSelectStart: policy.teamSelfSelectStart
           ? dayjs(policy.teamSelfSelectStart)
@@ -171,8 +144,36 @@ const ManageSemesters = () => {
   };
 
   const handleSubmit = async () => {
+    let values;
     try {
-      const values = await form.validateFields();
+      values = await form.validateFields();
+    } catch (validationError) {
+      if (validationError?.errorFields) return;
+      throw validationError;
+    }
+    const season = values.season;
+    const year = values.year;
+
+    const isDuplicate = semesters.some((s) => {
+      const sameSeason =
+        (s.season || "").toLowerCase() === (season || "").toLowerCase();
+      const sameYear = Number(s.year) === Number(year);
+
+      const notSelf =
+        modalMode !== "edit" || s.semesterId !== selectedSemester?.semesterId;
+
+      return sameSeason && sameYear && notSelf;
+    });
+
+    if (isDuplicate) {
+      notification.error({
+        message: "Duplicate semester",
+        description: `Semester ${season} ${year} already exists.`,
+      });
+      return;
+    }
+    setSavingSemester(true);
+    try {
       const payload = {
         season: values.season,
         year: values.year,
@@ -204,36 +205,42 @@ const ManageSemesters = () => {
         message: t("error") || "Error",
         description: t("failedToSaveSemester") || "Failed to save semester",
       });
+    } finally {
+      setSavingSemester(false);
     }
   };
 
   const handlePolicySubmit = async () => {
+    let values;
     try {
-      const values = await policyForm.validateFields();
-
+      values = await policyForm.validateFields();
+    } catch (validationError) {
+      if (validationError?.errorFields) return;
+      throw validationError;
+    }
+    setSavingPolicy(true);
+    try {
       const payload = {
-        req: {
-          teamSelfSelectStart: values.teamSelfSelectStart
-            ? values.teamSelfSelectStart.format("YYYY-MM-DD")
-            : null,
-          teamSelfSelectEnd: values.teamSelfSelectEnd
-            ? values.teamSelfSelectEnd.format("YYYY-MM-DD")
-            : null,
-          teamSuggestStart: values.teamSuggestStart
-            ? values.teamSuggestStart.format("YYYY-MM-DD")
-            : null,
-          topicSelfSelectStart: values.topicSelfSelectStart
-            ? values.topicSelfSelectStart.format("YYYY-MM-DD")
-            : null,
-          topicSelfSelectEnd: values.topicSelfSelectEnd
-            ? values.topicSelfSelectEnd.format("YYYY-MM-DD")
-            : null,
-          topicSuggestStart: values.topicSuggestStart
-            ? values.topicSuggestStart.format("YYYY-MM-DD")
-            : null,
-          desiredGroupSizeMin: values.desiredGroupSizeMin,
-          desiredGroupSizeMax: values.desiredGroupSizeMax,
-        },
+        teamSelfSelectStart: values.teamSelfSelectStart
+          ? values.teamSelfSelectStart.format("YYYY-MM-DD")
+          : null,
+        teamSelfSelectEnd: values.teamSelfSelectEnd
+          ? values.teamSelfSelectEnd.format("YYYY-MM-DD")
+          : null,
+        teamSuggestStart: values.teamSuggestStart
+          ? values.teamSuggestStart.format("YYYY-MM-DD")
+          : null,
+        topicSelfSelectStart: values.topicSelfSelectStart
+          ? values.topicSelfSelectStart.format("YYYY-MM-DD")
+          : null,
+        topicSelfSelectEnd: values.topicSelfSelectEnd
+          ? values.topicSelfSelectEnd.format("YYYY-MM-DD")
+          : null,
+        topicSuggestStart: values.topicSuggestStart
+          ? values.topicSuggestStart.format("YYYY-MM-DD")
+          : null,
+        desiredGroupSizeMin: values.desiredGroupSizeMin,
+        desiredGroupSizeMax: values.desiredGroupSizeMax,
       };
 
       await SemesterService.updatePolicy(selectedSemester.semesterId, payload);
@@ -244,11 +251,14 @@ const ManageSemesters = () => {
       });
       setIsPolicyModalOpen(false);
       policyForm.resetFields();
+      fetchSemesters();
     } catch {
       notification.error({
         message: t("error") || "Error",
         description: t("failedToUpdatePolicy") || "Failed to update policy",
       });
+    } finally {
+      setSavingPolicy(false);
     }
   };
 
@@ -329,16 +339,6 @@ const ManageSemesters = () => {
               onClick={() => handleManagePolicy(record)}
             />
           </Tooltip>
-          {!record.isActive && (
-            <Tooltip title={t("activate") || "Activate"}>
-              <Button
-                icon={<CheckCircleOutlined />}
-                shape="circle"
-                style={{ color: "#52c41a", borderColor: "#52c41a" }}
-                onClick={() => handleActivate(record)}
-              />
-            </Tooltip>
-          )}
         </Space>
       ),
     },
@@ -359,9 +359,25 @@ const ManageSemesters = () => {
     return statusMatch && seasonMatch && searchMatch;
   });
 
+  const disableStartDate = (current) => {
+    if (!current) return false;
+    const year = form.getFieldValue("year");
+    if (year && current.year() !== year) return true;
+    return current.isBefore(dayjs(), "day");
+  };
+
+  const disableEndDate = (current) => {
+    if (!current) return false;
+    const year = form.getFieldValue("year");
+    if (year && current.year() !== year) return true;
+
+    const startDate = form.getFieldValue("startDate");
+    if (startDate) return current.isBefore(startDate, "day");
+    return current.isBefore(dayjs(), "day");
+  };
+
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
@@ -382,7 +398,6 @@ const ManageSemesters = () => {
       </div>
 
       <div className="flex flex-col gap-6">
-        {/* Filters & Table */}
         <Card
           className="shadow-sm border-gray-100"
           styles={{ body: { padding: "20px 24px" } }}
@@ -412,7 +427,9 @@ const ManageSemesters = () => {
               onChange={(v) => setFilters({ ...filters, season: v })}
               className="w-full"
             >
-              <Option value="All Seasons">All Seasons</Option>
+              <Option value="All Seasons">
+                {t("allSeasons") || "All Seasons"}
+              </Option>
               <Option value="Fall">Fall</Option>
               <Option value="Spring">Spring</Option>
               <Option value="Summer">Summer</Option>
@@ -432,221 +449,39 @@ const ManageSemesters = () => {
         </Card>
       </div>
 
-      {/* Create/Edit/View Modal */}
-      <Modal
-        title={
-          modalMode === "create"
-            ? t("createSemester") || "Create Semester"
-            : modalMode === "edit"
-            ? t("editSemester") || "Edit Semester"
-            : t("semesterDetails") || "Semester Details"
-        }
+      <SemesterFormModal
         open={isModalOpen}
-        onOk={modalMode === "view" ? () => setIsModalOpen(false) : handleSubmit}
+        mode={modalMode}
+        form={form}
+        onSubmit={handleSubmit}
+        okLoading={savingSemester}
         onCancel={() => {
           setIsModalOpen(false);
           form.resetFields();
         }}
-        okText={
-          modalMode === "view" ? t("close") || "Close" : t("save") || "Save"
-        }
-        cancelText={t("cancel") || "Cancel"}
-        okButtonProps={{
-          className: "!bg-[#FF7A00] hover:!opacity-90 !text-white !border-none",
-        }}
-        cancelButtonProps={{
-          className:
-            "!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all",
-        }}
-        width={600}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          className="mt-4"
-          disabled={modalMode === "view"}
-        >
-          <Form.Item
-            label={t("season") || "Season"}
-            name="season"
-            rules={[
-              {
-                required: true,
-                message: t("pleaseSelectSeason") || "Please select season",
-              },
-            ]}
-          >
-            <Input placeholder="Fall, Spring, Summer" />
-          </Form.Item>
+        disableStartDate={disableStartDate}
+        disableEndDate={disableEndDate}
+        existingSemesters={semesters}
+        currentSemesterId={selectedSemester?.semesterId}
+      />
 
-          <Form.Item
-            label={t("year") || "Year"}
-            name="year"
-            rules={[
-              {
-                required: true,
-                message: t("pleaseEnterYear") || "Please enter year",
-              },
-            ]}
-          >
-            <InputNumber min={2020} max={2100} style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item
-            label={t("startDate") || "Start Date"}
-            name="startDate"
-            rules={[
-              {
-                required: true,
-                message:
-                  t("pleaseSelectStartDate") || "Please select start date",
-              },
-            ]}
-          >
-            <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
-          </Form.Item>
-
-          <Form.Item
-            label={t("endDate") || "End Date"}
-            name="endDate"
-            rules={[
-              {
-                required: true,
-                message: t("pleaseSelectEndDate") || "Please select end date",
-              },
-            ]}
-          >
-            <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* Policy Modal */}
-      <Modal
-        title={
-          <div className="flex items-center gap-2">
-            <SettingOutlined />
-            <span>{t("semesterPolicy") || "Semester Policy"}</span>
-          </div>
-        }
+      <SemesterPolicyModal
         open={isPolicyModalOpen}
-        onOk={handlePolicySubmit}
+        form={policyForm}
+        onSubmit={handlePolicySubmit}
+        okLoading={savingPolicy}
         onCancel={() => {
           setIsPolicyModalOpen(false);
           policyForm.resetFields();
         }}
-        okText={t("save") || "Save"}
-        cancelText={t("cancel") || "Cancel"}
-        okButtonProps={{
-          className: "!bg-[#FF7A00] hover:!opacity-90 !text-white !border-none",
-        }}
-        cancelButtonProps={{
-          className:
-            "!border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all",
-        }}
-        width={700}
-      >
-        <Form form={policyForm} layout="vertical" className="mt-4">
-          {/* Team self-select */}
-          <div className="grid grid-cols-2 gap-4">
-            <Form.Item
-              label={t("teamSelfSelectStart") || "Team Self-Select Start"}
-              name="teamSelfSelectStart"
-              rules={[{ required: true, message: "Please select start date" }]}
-            >
-              <DatePicker
-                style={{ width: "100%" }}
-                showTime
-                format="YYYY-MM-DD HH:mm"
-              />
-            </Form.Item>
+      />
 
-            <Form.Item
-              label={t("teamSelfSelectEnd") || "Team Self-Select End"}
-              name="teamSelfSelectEnd"
-              rules={[{ required: true, message: "Please select end date" }]}
-            >
-              <DatePicker
-                style={{ width: "100%" }}
-                showTime
-                format="YYYY-MM-DD HH:mm"
-              />
-            </Form.Item>
-          </div>
-
-          {/* Team suggest start */}
-          <Form.Item
-            label={t("teamSuggestStart") || "Team Suggest Start"}
-            name="teamSuggestStart"
-            rules={[{ required: true, message: "Please select date" }]}
-          >
-            <DatePicker
-              style={{ width: "100%" }}
-              showTime
-              format="YYYY-MM-DD HH:mm"
-            />
-          </Form.Item>
-
-          {/* Topic self-select */}
-          <div className="grid grid-cols-2 gap-4">
-            <Form.Item
-              label={t("topicSelfSelectStart") || "Topic Self-Select Start"}
-              name="topicSelfSelectStart"
-              rules={[{ required: true, message: "Please select start date" }]}
-            >
-              <DatePicker
-                style={{ width: "100%" }}
-                showTime
-                format="YYYY-MM-DD HH:mm"
-              />
-            </Form.Item>
-
-            <Form.Item
-              label={t("topicSelfSelectEnd") || "Topic Self-Select End"}
-              name="topicSelfSelectEnd"
-              rules={[{ required: true, message: "Please select end date" }]}
-            >
-              <DatePicker
-                style={{ width: "100%" }}
-                showTime
-                format="YYYY-MM-DD HH:mm"
-              />
-            </Form.Item>
-          </div>
-
-          {/* Topic suggest start */}
-          <Form.Item
-            label={t("topicSuggestStart") || "Topic Suggest Start"}
-            name="topicSuggestStart"
-            rules={[{ required: true, message: "Please select date" }]}
-          >
-            <DatePicker
-              style={{ width: "100%" }}
-              showTime
-              format="YYYY-MM-DD HH:mm"
-            />
-          </Form.Item>
-
-          {/* Group size */}
-          <div className="grid grid-cols-2 gap-4">
-            <Form.Item
-              label={t("desiredGroupSizeMin") || "Desired Group Size Min"}
-              name="desiredGroupSizeMin"
-              rules={[{ required: true, message: "Please enter min size" }]}
-            >
-              <InputNumber min={1} max={20} style={{ width: "100%" }} />
-            </Form.Item>
-
-            <Form.Item
-              label={t("desiredGroupSizeMax") || "Desired Group Size Max"}
-              name="desiredGroupSizeMax"
-              rules={[{ required: true, message: "Please enter max size" }]}
-            >
-              <InputNumber min={1} max={50} style={{ width: "100%" }} />
-            </Form.Item>
-          </div>
-        </Form>
-      </Modal>
+      <SemesterDetailModal
+        open={isDetailModalOpen}
+        semester={selectedSemester}
+        loading={detailLoading}
+        onClose={handleCloseDetail}
+      />
     </div>
   );
 };

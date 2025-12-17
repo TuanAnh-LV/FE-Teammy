@@ -6,8 +6,6 @@ import {
   UserOutlined,
   ApartmentOutlined,
   CalendarOutlined,
-  DownloadOutlined,
-  GithubOutlined,
   LinkOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -29,7 +27,6 @@ const InfoCard = ({ icon, label, value, muted }) => (
 const formatDate = (d) => {
   if (!d) return "-";
   try {
-    // giữ nguyên chuỗi nếu đã là yyyy-mm-dd
     return new Date(d).toLocaleDateString(undefined, {
       year: "numeric",
       month: "short",
@@ -70,7 +67,6 @@ export default function TopicDetailModal({
           message:
             t("failedLoadTopicDetails") || "Failed to load topic details",
         });
-        // Fallback to passed data on error
         if (mounted) setDetailData(topicDetails);
       } finally {
         if (mounted) setLoading(false);
@@ -84,8 +80,6 @@ export default function TopicDetailModal({
   }, [open, topicId, topicDetails]);
 
   if (!detailData) return null;
-  console.log("Detail Data:", detailData);
-  // Support both old and new field names
   const title = detailData.topicName || detailData.title || "-";
   const mentor =
     Array.isArray(detailData.mentors) && detailData.mentors.length
@@ -97,9 +91,37 @@ export default function TopicDetailModal({
   const created = detailData.createdAt || detailData.date || null;
   const description = detailData.description || detailData.desc || "-";
   const source = detailData.source || "-";
+  const formatSeason = (s) => {
+    if (!s) return "";
+    const map = { SPRING: "Spring", SUMMER: "Summer", FALL: "Fall" };
+    const key = String(s).toUpperCase();
+    return (
+      map[key] ||
+      String(s).charAt(0).toUpperCase() + String(s).slice(1).toLowerCase()
+    );
+  };
 
-  // Determine assigned state: prefer explicit group, else status field
-  // Status từ API: "open" | "closed"
+  const semesterLabel =
+    detailData.semesterSeason && detailData.semesterYear
+      ? `${formatSeason(detailData.semesterSeason)} ${detailData.semesterYear}`
+      : null;
+
+  const semesterTag = semesterLabel ? (
+    <Tag
+      icon={<CalendarOutlined />}
+      color="geekblue"
+      className="px-3 py-1 rounded-full"
+    >
+      {semesterLabel}
+    </Tag>
+  ) : null;
+
+  const groupLabel =
+    Array.isArray(detailData.groups) && detailData.groups.length
+      ? detailData.groups
+          .map((g) => g.groupName || g.name || g.groupId)
+          .join(", ")
+      : "-";
   const rawStatus = detailData.status || "open";
   const normalizedStatus = String(rawStatus).toLowerCase();
   const isOpen = normalizedStatus === "open";
@@ -119,38 +141,37 @@ export default function TopicDetailModal({
       centered
       open={open}
       onCancel={onClose}
+      footer={null}
       title={null}
       destroyOnClose
       maskClosable
-      width={760}
-      style={{ padding: 0, overflow: "hidden" }}
+      width="min(1000px, 92vw)"
+      styles={{
+        content: { padding: 0, borderRadius: 14 },
+        body: {
+          padding: 0,
+          maxHeight: "calc(100vh - 120px)",
+          overflowY: "auto",
+        },
+      }}
       className="rounded-2xl"
-      footer={[
-        <Button
-          key="close"
-          onClick={onClose}
-          className="
-          !border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all"
-        >
-          {t("close") || "Close"}
-        </Button>,
-      ]}
     >
       <Spin spinning={loading}>
         <div className="p-5 sm:p-6">
-          {/* Header */}
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2 text-gray-500 text-xs uppercase tracking-wide">
                 <BookOutlined /> {t("topic") || "Topic"}
               </div>
               <h2 className="text-2xl font-bold leading-tight mt-1">{title}</h2>
-              <div className="mt-2">{statusTag}</div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {statusTag}
+                {semesterTag}
+              </div>
             </div>
           </div>
 
-          {/* Info grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-5">
             <InfoCard
               icon={<UserOutlined />}
               label={t("mentor") || "Mentor"}
@@ -169,9 +190,14 @@ export default function TopicDetailModal({
               value={formatDate(created)}
               muted={!created}
             />
+            <InfoCard
+              icon={<ApartmentOutlined />}
+              label={t("group") || "Group"}
+              value={groupLabel}
+              muted={groupLabel === "-"}
+            />
           </div>
 
-          {/* Description (hidden in table, visible here) */}
           <div className="mt-6">
             <div className="text-sm text-gray-500 font-medium mb-2">
               {t("description") || "Description"}
@@ -181,7 +207,6 @@ export default function TopicDetailModal({
 
           <Divider className="!my-6" />
 
-          {/* Resources */}
           <div>
             <div className="text-sm text-gray-500 font-medium mb-3">
               {t("resources") || "Resources"}

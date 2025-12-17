@@ -2,34 +2,31 @@ import React, { useState, useCallback, useMemo } from "react";
 import { Steps, Button } from "antd";
 import {
   UploadOutlined,
-  SwapOutlined,
   EyeOutlined,
   CheckCircleOutlined,
   ArrowLeftOutlined,
 } from "@ant-design/icons";
 
 import ImportStep1Upload from "../../components/admin/import/ImportStep1Upload";
-import ImportStep2Mapping from "../../components/admin/import/ImportStep2Mapping";
 import ImportStep3Preview from "../../components/admin/import/ImportStep3Preview";
 import ImportStep4Result from "../../components/admin/import/ImportStep4Result";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../../hook/useTranslation";
+
 const ImportUsers = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [rawData, setRawData] = useState([]);
+  const [uploadedUsers, setUploadedUsers] = useState([]);
   const [mappedUsers, setMappedUsers] = useState([]);
-  const [columnMap, setColumnMap] = useState({});
   const [validationResult, setValidationResult] = useState(null);
   const [originalFile, setOriginalFile] = useState(null);
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
-  // Wrap setMappedUsers in useCallback to provide stable reference
   const handleSetMappedUsers = useCallback((users) => {
     setMappedUsers(users);
   }, []);
-  const navigate = useNavigate();
 
-  // Memoize steps array to prevent infinite loops
   const steps = useMemo(
     () => [
       {
@@ -38,20 +35,10 @@ const ImportUsers = () => {
         content: (
           <ImportStep1Upload
             setRawData={setRawData}
-            setCurrentStep={setCurrentStep}
-            setOriginalFile={setOriginalFile}
-          />
-        ),
-      },
-      {
-        title: t("mapColumns") || "Map Columns",
-        icon: <SwapOutlined />,
-        content: (
-          <ImportStep2Mapping
-            rawData={rawData}
-            setColumnMap={setColumnMap}
-            setCurrentStep={setCurrentStep}
+            setUploadedUsers={setUploadedUsers}
             setValidationResult={setValidationResult}
+            setOriginalFile={setOriginalFile}
+            setCurrentStep={setCurrentStep}
           />
         ),
       },
@@ -60,11 +47,10 @@ const ImportUsers = () => {
         icon: <EyeOutlined />,
         content: (
           <ImportStep3Preview
-            rawData={rawData}
-            columnMap={columnMap}
+            uploadedUsers={uploadedUsers}
+            validationResult={validationResult}
             setMappedUsers={handleSetMappedUsers}
             setCurrentStep={setCurrentStep}
-            validationResult={validationResult}
             originalFile={originalFile}
           />
         ),
@@ -82,11 +68,11 @@ const ImportUsers = () => {
     ],
     [
       rawData,
-      columnMap,
-      mappedUsers,
-      handleSetMappedUsers,
+      uploadedUsers,
       validationResult,
+      mappedUsers,
       originalFile,
+      handleSetMappedUsers,
     ]
   );
 

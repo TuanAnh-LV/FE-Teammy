@@ -35,14 +35,18 @@ const Reports = () => {
         // semesters
         const semesterRes = await SemesterService.list();
         const semesterList = semesterRes?.data || semesterRes || [];
-        setSemesters(semesterList);
+        const activeSemesters = semesterList.filter((s) => s.isActive);
+        const visibleSemesters =
+          activeSemesters.length > 0 ? activeSemesters : semesterList;
+        setSemesters(visibleSemesters);
 
         // set default nếu có dữ liệu
         if (majorList.length && !filters.majorId) {
-          filters.majorId = majorList[0].id;
+          filters.majorId = majorList[0].majorId || majorList[0].id;
         }
-        if (semesterList.length && !filters.semesterId) {
-          filters.semesterId = semesterList[0].id;
+        if (visibleSemesters.length && !filters.semesterId) {
+          filters.semesterId =
+            visibleSemesters[0].semesterId || visibleSemesters[0].id;
         }
         setFilters({ ...filters });
       } catch (err) {
@@ -142,11 +146,11 @@ const Reports = () => {
   const desiredMin = selectedSemester?.policy?.desiredGroupSizeMin;
   const desiredMax = selectedSemester?.policy?.desiredGroupSizeMax;
 
-  // Nếu muốn có “average group size” thì:
-  const averageGroupSize =
-    desiredMin && desiredMax
-      ? ((desiredMin + desiredMax) / 2).toFixed(1) // ví dụ 4–6 => 5.0
-      : null;
+  // // Nếu muốn có “average group size” thì:
+  // const averageGroupSize =
+  //   desiredMin && desiredMax
+  //     ? ((desiredMin + desiredMax) / 2).toFixed(1) // ví dụ 4–6 => 5.0
+  //     : null;
 
   const columns = [
     {
@@ -196,7 +200,7 @@ const Reports = () => {
       <div className="flex flex-col gap-6">
         <Card
           className="shadow-sm border-gray-100 rounded-lg"
-          bodyStyle={{ padding: "20px 24px" }}
+          style={{ padding: "20px 24px" }}
         >
           <h3 className="font-semibold text-gray-800 mb-3">
             {t("reportFilters")}
@@ -280,7 +284,7 @@ const Reports = () => {
         {/* Report Summary */}
         <Card
           className="shadow-sm border-gray-100 rounded-lg mt-2"
-          bodyStyle={{ padding: "20px 24px" }}
+          style={{ padding: "20px 24px" }}
         >
           <h3 className="font-semibold text-gray-800 mb-3">
             {t("reportSummary")}

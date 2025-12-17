@@ -52,7 +52,7 @@ const AdminDashboard = () => {
       if (response?.data) {
         setDashboardData(response.data);
       }
-    } catch (error) {
+    } catch {
       notification.error({
         message: t("error"),
         description: "Failed to load dashboard statistics",
@@ -154,7 +154,7 @@ const AdminDashboard = () => {
           <Card
             key={i}
             className="shadow-sm border-gray-100 hover:shadow-md transition-all"
-            bodyStyle={{ padding: "20px" }}
+            style={{ padding: "20px" }}
           >
             <div className="flex justify-between items-start">
               <div>
@@ -177,7 +177,7 @@ const AdminDashboard = () => {
         <Card
           title={t("majorsDistribution") || "Majors Distribution"}
           className="shadow-sm border-gray-100"
-          bodyStyle={{ padding: "20px" }}
+          style={{ padding: "20px" }}
         >
           <p className="text-gray-500 text-sm mb-3">
             {t("studentDistributionMajors") ||

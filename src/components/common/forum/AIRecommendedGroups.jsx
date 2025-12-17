@@ -48,14 +48,19 @@ export function AIRecommendedGroups({
         const description = post.description || "";
         const status = post.status || "open";
         const matchScore = suggestion.scorePercent || 0;
-
+        const avatarUrl = group.leader?.avatarUrl || null;
         // Members info
         const currentMembers = post.currentMembers || 0;
         const maxMembers = group.maxMembers || 0;
 
-        // Position - convert to array for consistency
+        // Position - convert to array and split by comma for consistency
         const positionNeeded = post.position_needed || "";
-        const positions = positionNeeded ? [positionNeeded] : [];
+        const positions = positionNeeded
+          ? positionNeeded
+              .split(",")
+              .map((p) => p.trim())
+              .filter(Boolean)
+          : [];
 
         // Skills - use matchingSkills from suggestion or skills from post
         const skills = suggestion.matchingSkills || post.skills || [];
@@ -112,7 +117,15 @@ export function AIRecommendedGroups({
                   {leaderName ? (
                     <div className="flex items-center gap-2">
                       <div className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm md:text-lg font-semibold shrink-0">
-                        {leaderName.slice(0, 1).toUpperCase()}
+                        {avatarUrl ? (
+                          <img
+                            src={avatarUrl}
+                            alt={leaderName}
+                            className="h-full w-full rounded-full object-cover"
+                          />
+                        ) : (
+                          leaderName.slice(0, 1).toUpperCase()
+                        )}
                       </div>
                       <span className="truncate">
                         {leaderName} • {leader.role || t("leader") || "Leader"}

@@ -128,7 +128,7 @@ const routes = [
       {
         element: <DashboardLayout role="moderator" />,
         children: [
-          { index: true, element: <GroupManagement /> },
+          { index: true, element: <Dashboard /> },
           { path: "dashboard", element: <Dashboard /> },
           { path: "group", element: <GroupManagement /> },
           { path: "topic", element: <TopicManagement /> },

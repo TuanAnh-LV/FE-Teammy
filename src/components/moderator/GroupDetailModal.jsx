@@ -14,7 +14,6 @@ export default function GroupDetailModal({ open, onClose, group }) {
   const { t } = useTranslation();
   if (!group) return null;
 
-  // ----- Extract fields -----
   const groupName = group.groupName || group.name || "";
   const groupStatus = (group.status || "active").toUpperCase();
   const statusColor =
@@ -30,20 +29,14 @@ export default function GroupDetailModal({ open, onClose, group }) {
   const mentor = group.mentor || null;
   const leader = group.leader || null;
   const members = group.members || [];
-  console.log("members", leader);
   const semester = group.semester || null;
-
   const currentMembers = group.currentMembers || members.length;
   const maxMembers = group.maxMembers || 5;
-
   const description = group.description || "No description available.";
-
-  // ----- Deadline Calculation -----
   const deadline = semester ? dayjs(semester.endDate) : null;
   const daysLeft = deadline ? deadline.diff(dayjs(), "day") : null;
   const cleanAvatarUrl = (url) => {
     if (!url) return undefined;
-    // nếu lỡ lưu dư dấu " ở đầu/cuối thì cắt đi
     return url.replace(/^"+|"+$/g, "").trim();
   };
   return (
@@ -51,14 +44,20 @@ export default function GroupDetailModal({ open, onClose, group }) {
       open={open}
       onCancel={onClose}
       footer={null}
-      width={1000}
       centered
       title={null}
-      bodyStyle={{ padding: 0, borderRadius: 14 }}
+      width="min(1000px, 92vw)"
+      styles={{
+        content: { padding: 20, borderRadius: 14 },
+        body: {
+          padding: 20,
+          maxHeight: "calc(100vh - 120px)",
+          overflowY: "auto",
+        },
+      }}
       className="rounded-xl"
     >
       <div className="p-5 sm:p-6">
-        {/* Header */}
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-2xl font-bold">{groupName}</h2>
@@ -78,8 +77,6 @@ export default function GroupDetailModal({ open, onClose, group }) {
             </div>
           </div>
         </div>
-
-        {/* Description */}
         <div className="mt-4 p-4 border rounded-xl bg-gray-50">
           <h3 className="font-semibold text-gray-600 mb-1 flex items-center gap-2">
             <InfoCircleOutlined /> {t("description") || "Description"}
@@ -89,9 +86,7 @@ export default function GroupDetailModal({ open, onClose, group }) {
 
         <Divider className="!my-6" />
 
-        {/* Topic + Mentor + Major */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Topic */}
           <div className="border rounded-xl shadow-sm">
             <div className="flex items-center gap-3 px-4 py-3 border-b">
               <BookOutlined className="text-blue-500 text-lg" />
@@ -102,7 +97,6 @@ export default function GroupDetailModal({ open, onClose, group }) {
             </div>
           </div>
 
-          {/* Mentor */}
           <div className="border rounded-xl shadow-sm">
             <div className="flex items-center gap-3 px-4 py-3 border-b">
               <UserOutlined className="text-blue-500 text-lg" />
@@ -119,7 +113,6 @@ export default function GroupDetailModal({ open, onClose, group }) {
             </div>
           </div>
 
-          {/* Major */}
           <div className="border rounded-xl p-4 shadow-sm">
             <div className="flex items-center gap-3 mb-1">
               <SafetyCertificateOutlined className="text-blue-500 text-lg" />
@@ -127,8 +120,6 @@ export default function GroupDetailModal({ open, onClose, group }) {
             </div>
             <p className="font-medium">{majorName}</p>
           </div>
-
-          {/* Semester */}
           <div className="border rounded-xl p-4 shadow-sm">
             <div className="flex items-center gap-3 mb-1">
               <CalendarOutlined className="text-blue-500 text-lg" />
@@ -153,8 +144,6 @@ export default function GroupDetailModal({ open, onClose, group }) {
         </div>
 
         <Divider className="!my-6" />
-
-        {/* Members */}
         <div>
           <div className="flex items-center gap-2 mb-3">
             <TeamOutlined className="text-blue-500" />
@@ -164,7 +153,6 @@ export default function GroupDetailModal({ open, onClose, group }) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Leader */}
             {leader?.displayName && (
               <div className="border rounded-xl p-4 shadow-sm flex flex-col items-center bg-blue-50">
                 <Avatar
@@ -181,7 +169,6 @@ export default function GroupDetailModal({ open, onClose, group }) {
               </div>
             )}
 
-            {/* Members List */}
             {members.map((m) => (
               <div
                 key={m.userId}

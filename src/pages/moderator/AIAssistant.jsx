@@ -7,18 +7,23 @@ import {
   Tag,
   Divider,
   notification,
-  Switch,
+  Tooltip,
 } from "antd";
 import {
   ThunderboltOutlined,
-  SendOutlined,
   UsergroupAddOutlined,
   CheckOutlined,
   BookOutlined,
 } from "@ant-design/icons";
 import { useTranslation } from "../../hook/useTranslation";
 import { AiService } from "../../services/ai.service";
-
+const normalizeSkillTags = (skillTags) => {
+  const arr = Array.isArray(skillTags) ? skillTags : [];
+  return arr
+    .flatMap((s) => String(s || "").split(","))
+    .map((s) => s.trim())
+    .filter(Boolean);
+};
 const { Option } = Select;
 
 export default function AIAssistantModerator() {
@@ -36,13 +41,11 @@ export default function AIAssistantModerator() {
     "{count}",
     analysisResults.length
   );
-  // Fetch AI options on component mount
   useEffect(() => {
     fetchAiOptions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch AI options data
   const fetchAiOptions = async () => {
     try {
       setLoading(true);
@@ -52,14 +55,12 @@ export default function AIAssistantModerator() {
         pageSize: 20,
       });
 
-      // Check response structure
       const data = response?.data?.data || response?.data;
       const isSuccess = response?.data?.success ?? response?.status === 200;
 
       if (isSuccess && data) {
         setAiOptionsData(data);
 
-        // Fetch summary for counts
         const summaryResponse = await AiService.getSummary();
 
         const summaryData =
@@ -76,7 +77,6 @@ export default function AIAssistantModerator() {
           setSummary(counts);
         }
 
-        // Set initial analysis results based on current mode
         updateAnalysisResults(mode, data);
       }
     } catch (error) {
@@ -91,7 +91,6 @@ export default function AIAssistantModerator() {
     }
   };
 
-  // Update analysis results based on mode
   const updateAnalysisResults = (selectedMode, data) => {
     if (!data) {
       return;
@@ -103,7 +102,6 @@ export default function AIAssistantModerator() {
         id: `missingTopics-${index + 1}`,
         group: item.name,
         groupId: item.groupId,
-        // lưu code, không dịch ở đây
         status: ["noTopic"],
         suggestions: {
           topics: item.suggestions || [],
@@ -165,7 +163,6 @@ export default function AIAssistantModerator() {
     setAnalysisResults(results);
   };
 
-  // Extract confidence score from reason string
   const extractConfidenceFromReason = (reason) => {
     if (!reason) return 0;
     const match = reason.match(/Điểm AI (\d+)/);
@@ -177,7 +174,6 @@ export default function AIAssistantModerator() {
       setLoading(true);
 
       if (mode === "groupsAndMembers") {
-        // Gọi auto-assign teams
         await AiService.autoAssignTeams({
           semesterId: aiOptionsData?.semesterId || null,
           majorId: null,
@@ -192,7 +188,6 @@ export default function AIAssistantModerator() {
           placement: "topRight",
         });
       } else if (mode === "missingTopics") {
-        // Gọi auto-assign topic
         await AiService.autoAssignTopic({
           groupId: null,
           majorId: null,
@@ -208,7 +203,6 @@ export default function AIAssistantModerator() {
         });
       }
 
-      // Sau khi BE xử lý xong thì load lại dữ liệu để UI cập nhật
       await fetchAiOptions();
     } catch (error) {
       console.error("Run analysis failed:", error);
@@ -222,7 +216,6 @@ export default function AIAssistantModerator() {
     }
   };
 
-  // Run AI auto-assign
   const runAIAutoAssign = async () => {
     try {
       setLoading(true);
@@ -240,7 +233,6 @@ export default function AIAssistantModerator() {
         placement: "topRight",
       });
 
-      // Refresh lại options + summary
       await fetchAiOptions();
     } catch (error) {
       console.error("Failed to run AI auto-resolve:", error);
@@ -257,11 +249,9 @@ export default function AIAssistantModerator() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <ThunderboltOutlined className="text-blue-600" />
             {t("aiAssistant") || "AI Assistant"}
           </h1>
           <p className="text-gray-500 mt-2">
@@ -460,6 +450,45 @@ export default function AIAssistantModerator() {
                             );
                           })}
                         </div>
+                        {item.studentId && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {!!item.primaryRole && (
+                              <Tag
+                                color="geekblue"
+                                className="rounded-full px-3 py-1 font-medium"
+                              >
+                                {t("role") || "Role"}: {item.primaryRole}
+                              </Tag>
+                            )}
+
+                            {(() => {
+                              const skills = normalizeSkillTags(item.skillTags);
+                              const show = skills.slice(0, 8);
+                              const more = skills.length - show.length;
+
+                              return (
+                                <>
+                                  {show.map((sk) => (
+                                    <Tag
+                                      key={`${item.id}-skill-${sk}`}
+                                      className="rounded-full px-3 py-1"
+                                    >
+                                      {sk}
+                                    </Tag>
+                                  ))}
+
+                                  {more > 0 && (
+                                    <Tooltip title={skills.join(", ")}>
+                                      <Tag className="rounded-full px-3 py-1">
+                                        +{more}
+                                      </Tag>
+                                    </Tooltip>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </div>
+                        )}
                       </div>
                     </div>
 

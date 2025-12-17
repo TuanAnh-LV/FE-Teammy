@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+﻿import React, { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "../../hook/useTranslation";
 import { useNavigate } from "react-router-dom";
 import {
@@ -26,6 +26,7 @@ import TopicDetailModal from "../../components/moderator/TopicDetailModal";
 import TopicAddModal from "../../components/moderator/TopicAddModal";
 import TopicEditModal from "../../components/moderator/TopicEditModal";
 import { TopicService } from "../../services/topic.service";
+import { GroupService } from "../../services/group.service";
 const { Option } = Select;
 
 const TopicManagement = () => {
@@ -39,6 +40,7 @@ const TopicManagement = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentTopic, setCurrentTopic] = useState(null);
+  const [currentTopicId, setCurrentTopicId] = useState(null);
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -50,21 +52,34 @@ const TopicManagement = () => {
       const payload = res?.data ?? res;
       const list = Array.isArray(payload) ? payload : payload?.data ?? [];
 
-      const mapped = (list || []).map((t, idx) => ({
-        key: t.topicId || idx,
-        topicName: t.title || "",
-        description: t.description || "",
-        mentorName:
-          (t.mentors && t.mentors.length > 0
-            ? t.mentors.map((m) => m.mentorName).join(", ")
-            : "") ||
-          t.createdByName ||
-          "",
-        majorName: t.majorName || "",
-        createdAt: t.createdAt ? t.createdAt.slice(0, 10) : "",
-        status: (t.status || "open").toLowerCase(),
-        raw: t,
-      }));
+      const groupRes = await GroupService.getListGroup();
+      const groupList = Array.isArray(groupRes?.data) ? groupRes.data : [];
+
+      const mapped = (list || []).map((t, idx) => {
+        const assignedGroup = groupList.find(
+          (g) => g.topic?.topicId === t.topicId
+        );
+
+        return {
+          key: t.topicId || idx,
+          topicName: t.title || "",
+          description: t.description || "",
+          mentorName:
+            (t.mentors && t.mentors.length > 0
+              ? t.mentors.map((m) => m.mentorName).join(", ")
+              : "") ||
+            t.createdByName ||
+            "",
+          majorName: t.majorName || "",
+          createdAt: t.createdAt ? t.createdAt.slice(0, 10) : "",
+          status: (t.status || "open").toLowerCase(),
+          groupName: assignedGroup?.name || t.pendingGroupName || "",
+          hasGroup:
+            !!assignedGroup ||
+            String(t.status || "").toLowerCase() === "closed",
+          raw: t,
+        };
+      });
 
       setTopics(mapped);
     } catch {
@@ -112,6 +127,16 @@ const TopicManagement = () => {
   };
 
   const handleDelete = (record) => {
+    if (record.hasGroup) {
+      notification.warning({
+        message: t("cannotDeleteTopic") || "Cannot Delete Topic",
+        description:
+          t("topicAlreadyAssigned") ||
+          `This topic has been assigned to group "${record.groupName}" and cannot be deleted.`,
+      });
+      return;
+    }
+
     Modal.confirm({
       title: t("confirmDelete") || "Delete Topic",
       content: `${
@@ -134,8 +159,7 @@ const TopicManagement = () => {
           notification.success({
             message: t("topicDeleted") || "Topic deleted successfully",
           });
-          // Refresh list
-          setTopics((prev) => prev.filter((t) => t.key !== record.key));
+          fetchTopicsList();
         } catch {
           notification.error({
             message: t("failedDeleteTopic") || "Failed to delete topic",
@@ -155,6 +179,19 @@ const TopicManagement = () => {
           {text}
         </span>
       ),
+    },
+    {
+      title: t("assignedGroup") || "Assigned Group",
+      dataIndex: "groupName",
+      key: "groupName",
+      render: (groupName) =>
+        groupName ? (
+          <span className="text-blue-600 font-medium">{groupName}</span>
+        ) : (
+          <span className="text-gray-400 italic">
+            {t("notAssigned") || "Not assigned"}
+          </span>
+        ),
     },
     {
       title: t("mentor") || "Mentor",
@@ -194,7 +231,8 @@ const TopicManagement = () => {
               type="text"
               icon={<EyeOutlined />}
               onClick={() => {
-                setCurrentTopic(record);
+                setCurrentTopic(record.raw);
+                setCurrentTopicId(record.key);
                 setIsModalVisible(true);
               }}
             />
@@ -206,12 +244,22 @@ const TopicManagement = () => {
               onClick={() => handleEdit(record)}
             />
           </Tooltip>
-          <Tooltip title={t("delete") || "Delete"}>
+          <Tooltip
+            title={
+              record.hasGroup
+                ? t("cannotDeleteAssignedTopic") ||
+                  "Cannot delete assigned topic"
+                : t("delete") || "Delete"
+            }
+          >
             <Button
               type="text"
               danger
               icon={<DeleteOutlined />}
               onClick={() => handleDelete(record)}
+              className={
+                record.hasGroup ? "!cursor-not-allowed !opacity-50" : ""
+              }
             />
           </Tooltip>
         </Space>
@@ -221,7 +269,6 @@ const TopicManagement = () => {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
           {t("topicManagement") || "Topic Management"}
@@ -248,12 +295,8 @@ const TopicManagement = () => {
         </Space>
       </div>
 
-      {/* Layout: Table */}
       <div className="grid grid-cols-1  gap-6">
-        <Card
-          className="xl:col-span-3 shadow-sm border-gray-100 rounded-lg"
-          bodyStyle={{ padding: "20px 24px" }}
-        >
+        <Card className="xl:col-span-3 shadow-sm border-gray-100 rounded-lg">
           <div className="flex flex-col sm:flex-row justify-between gap-3 mb-4">
             <Input
               prefix={<SearchOutlined className="text-gray-400" />}
@@ -308,12 +351,11 @@ const TopicManagement = () => {
         topic={currentTopic}
         onSuccess={fetchTopicsList}
       />
-
       <TopicDetailModal
         open={isModalVisible}
         onClose={() => setIsModalVisible(false)}
         topicDetails={currentTopic}
-        topicId={currentTopic?.key}
+        topicId={currentTopicId}
       />
     </div>
   );

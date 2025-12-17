@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Table, Button, Select, Tag, notification } from "antd";
+import { Table, Button, Tag, notification } from "antd";
 import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
@@ -8,11 +8,8 @@ import {
 import { TopicService } from "../../../services/topic.service";
 import { useTranslation } from "../../../hook/useTranslation";
 
-const { Option } = Select;
-
 export default function ImportStep3PreviewTopic({
-  rawData,
-  columnMap,
+  uploadedTopics,
   setMappedTopics,
   setCurrentStep,
   validationResult,
@@ -23,63 +20,62 @@ export default function ImportStep3PreviewTopic({
   const [importing, setImporting] = useState(false);
 
   useEffect(() => {
-    if (!validationResult || !validationResult.rows) {
-      return;
-    }
+    if (!validationResult?.rows) return;
 
     const mapped = validationResult.rows.map((row, i) => {
-      // Lấy data từ validation result
-      const rowData = {};
-      row.columns.forEach((col) => {
-        const fieldName =
-          col.column.charAt(0).toLowerCase() + col.column.slice(1);
-        rowData[col.column] = rawData[i]?.[columnMap[fieldName]] || "";
-      });
+      const idx = row.rowNumber ? row.rowNumber - 1 : i;
+      const u = uploadedTopics?.[idx] || {};
 
-      const title = rowData.Title || "";
-      const description = rowData.Description || "";
-      const majorName = rowData.MajorName || "-";
-      const semesterCode = rowData.SemesterCode || "-";
-      const mentorEmails = rowData.MentorEmails || "-";
-      const status = rowData.Status || "open";
+      // nếu sau này BE trả row.data thì ưu tiên dùng
+      const data = row.data || u;
 
-      // Xác định status từ validation result
+      const title = data.title || "";
+      const semesterCode = data.semesterCode || "-";
+      const majorName = data.majorName || "-";
+      const statusRaw = data.status || "open";
+      const status = String(statusRaw).toLowerCase();
+
+      const mentorEmailsArr = Array.isArray(data.mentorEmails)
+        ? data.mentorEmails
+        : data.mentorEmails
+        ? [String(data.mentorEmails)]
+        : [];
+
+      const mentorEmails = mentorEmailsArr.length
+        ? mentorEmailsArr.join(", ")
+        : "-";
+
       let statusLabel = row.isValid ? "Valid" : "Error";
       const issues = [];
 
-      // Lấy error messages từ columns
-      row.columns.forEach((col) => {
+      row.columns?.forEach((col) => {
         if (!col.isValid && col.errorMessage) {
           issues.push(`${col.column}: ${col.errorMessage}`);
         }
       });
 
-      // Lấy general messages
-      if (row.messages && row.messages.length > 0) {
+      if (Array.isArray(row.messages) && row.messages.length > 0) {
         issues.push(...row.messages);
       }
 
-      // Nếu có issues nhưng isValid = true, đó là warning
-      if (issues.length > 0 && row.isValid) {
-        statusLabel = "Warning";
-      }
+      if (issues.length > 0 && row.isValid) statusLabel = "Warning";
 
       return {
         key: i,
-        row: row.rowNumber,
+        row: row.rowNumber ?? i + 1,
         title,
-        description,
-        majorName,
         semesterCode,
+        majorName,
         mentorEmails,
         status,
         statusLabel,
         issues,
       };
     });
+
     setPreviewData(mapped);
-    if (setMappedTopics) setMappedTopics(mapped);
-  }, [validationResult, rawData, columnMap, setMappedTopics]);
+    setMappedTopics?.(mapped);
+  }, [validationResult, uploadedTopics, setMappedTopics]);
 
   const handleImport = async () => {
     if (!originalFile) {
@@ -101,7 +97,9 @@ export default function ImportStep3PreviewTopic({
             res.data.createdCount || previewData.length
           } topics imported successfully`,
         });
-        setCurrentStep(3);
+
+        // Flow mới: Result = step 2
+        setCurrentStep(2);
       }
     } catch (err) {
       notification.error({
@@ -126,14 +124,14 @@ export default function ImportStep3PreviewTopic({
       {
         title: t("status") || "Status",
         dataIndex: "statusLabel",
-        render: (status) => {
-          if (status === "Valid")
+        render: (s) => {
+          if (s === "Valid")
             return (
               <Tag icon={<CheckCircleOutlined />} color="success">
                 {t("Valid") || "Valid"}
               </Tag>
             );
-          if (status === "Warning")
+          if (s === "Warning")
             return (
               <Tag icon={<ExclamationCircleOutlined />} color="warning">
                 {t("Warning") || "Warning"}
@@ -150,10 +148,10 @@ export default function ImportStep3PreviewTopic({
         title: t("issues") || "Issues",
         dataIndex: "issues",
         render: (issues) =>
-          issues.length ? (
+          issues?.length ? (
             <ul className="text-sm text-red-500 list-disc ml-4">
-              {issues.map((i, idx) => (
-                <li key={idx}>{i}</li>
+              {issues.map((it, idx) => (
+                <li key={idx}>{it}</li>
               ))}
             </ul>
           ) : (
@@ -161,7 +159,7 @@ export default function ImportStep3PreviewTopic({
           ),
       },
     ],
-    []
+    [t]
   );
 
   const errorCount = previewData.filter(
@@ -172,9 +170,12 @@ export default function ImportStep3PreviewTopic({
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold text-gray-800 mb-1">
-          {t("previewValidate")}
+          {t("previewValidate") || "Preview & Validate"}
         </h2>
-        <p className="text-gray-500">{t("reviewDataBeforeImporting")}</p>
+        <p className="text-gray-500">
+          {t("reviewDataBeforeImporting") ||
+            "Review the data before importing."}
+        </p>
       </div>
 
       <Table
@@ -187,10 +188,10 @@ export default function ImportStep3PreviewTopic({
 
       <div className="flex justify-between mt-6">
         <Button
-          onClick={() => setCurrentStep(1)}
+          onClick={() => setCurrentStep(0)}
           className="border-gray-300 hover:border-orange-400"
         >
-          {t("backToMapping") || "Back to Mapping"}
+          {t("Back") || "Back"}
         </Button>
 
         <Button
