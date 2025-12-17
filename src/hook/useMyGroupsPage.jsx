@@ -25,40 +25,44 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
   const [invitations, setInvitations] = useState([]);
   const [invitationsLoading, setInvitationsLoading] = useState(false);
 
-  const reduxApplications = useSelector((state) => state.invitation?.applications || []);
+  const reduxApplications = useSelector(
+    (state) => state.invitation?.applications || []
+  );
 
-  const { isConnected, joinGroupChannel, leaveGroupChannel } = useInvitationRealtime(
-    token,
-    userInfo?.userId || userInfo?.id,
-    {
+  const { isConnected, joinGroupChannel, leaveGroupChannel } =
+    useInvitationRealtime(token, userInfo?.userId || userInfo?.id, {
       onApplicationReceived: (payload) => {
         console.log("[MyGroups] Received PendingUpdated:", payload);
-        
+
         dispatch(updatePendingList(payload));
-        
+
         const count = payload.candidates?.length || 0;
         if (count > 0) {
           notification.success({
             message: t("newApplication") || "New Application",
-            description: `You have ${count} new application${count > 1 ? "s" : ""}`,
+            description: `You have ${count} new application${
+              count > 1 ? "s" : ""
+            }`,
             placement: "topRight",
             duration: 4,
           });
         }
-        
+
         if (payload.groupId) {
           refreshPendingForGroup(payload.groupId);
         }
       },
-    }
-  );
+    });
 
   useEffect(() => {
     if (activeTab === "applications" && isConnected) {
       const leaderGroups = groups.filter((g) => g.isLeader);
-      
-      console.log("[MyGroups] 🎯 Joining SignalR groups for leaders:", leaderGroups.map(g => g.id));
-      
+
+      console.log(
+        "[MyGroups] 🎯 Joining SignalR groups for leaders:",
+        leaderGroups.map((g) => g.id)
+      );
+
       // Join all leader groups
       leaderGroups.forEach((group) => {
         console.log(`[MyGroups] Attempting to join group: ${group.id}`);
@@ -86,7 +90,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         }
         grouped[app.groupId].push(mapPendingRequest(app));
       });
-      
+
       setPendingByGroup((prev) => ({
         ...prev,
         ...grouped,
@@ -153,9 +157,9 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = t("groupName") || "Group name is required";
-    
+
     // Remove majorId validation - no longer required
-    
+
     const mm = Number(form.maxMembers);
     if (!mm || mm < 4 || mm > 6) {
       e.maxMembers = "Max members must be between 4 and 6";
@@ -210,7 +214,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         await fetchMyGroups();
       }
     } catch (error) {
-
       notification.error({
         message: t("error") || "Failed to create group.",
       });
@@ -228,8 +231,10 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     Modal.confirm({
       title: t("confirmLeaveGroup") || "Leave Group",
       content: isActiveGroup
-        ? (t("leaveActiveGroupWarning") || "This group is currently active. Leaving will remove you from all ongoing activities. Are you sure you want to leave?")
-        : (t("confirmLeaveGroupMessage") || `Are you sure you want to leave this group?`),
+        ? t("leaveActiveGroupWarning") ||
+          "This group is currently active. Leaving will remove you from all ongoing activities. Are you sure you want to leave?"
+        : t("confirmLeaveGroupMessage") ||
+          `Are you sure you want to leave this group?`,
       okText: t("leave") || "Leave",
       cancelText: t("cancel") || "Cancel",
       okButtonProps: { danger: true },
@@ -238,7 +243,9 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         if (isActiveGroup) {
           notification.error({
             message: t("cannotLeaveActiveGroup") || "Cannot leave active group",
-            description: t("cannotLeaveActiveGroupDesc") || "You cannot leave a group that is currently active. Please wait until the group status changes or contact your mentor.",
+            description:
+              t("cannotLeaveActiveGroupDesc") ||
+              "You cannot leave a group that is currently active. Please wait until the group status changes or contact your mentor.",
             duration: 5,
           });
           return;
@@ -255,13 +262,18 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
           if (error?.response?.status === 409) {
             notification.error({
               message: t("cannotLeaveAsLeader") || "Cannot leave as leader",
-              description: t("transferLeadershipFirst") || "You must transfer leadership to another member before leaving the group. Please assign a new leader first.",
+              description:
+                t("transferLeadershipFirst") ||
+                "You must transfer leadership to another member before leaving the group. Please assign a new leader first.",
               duration: 6,
             });
           } else {
             notification.error({
               message: t("error") || "Error",
-              description: error?.response?.data?.message || t("failedToLeaveGroup") || "Failed to leave group.",
+              description:
+                error?.response?.data?.message ||
+                t("failedToLeaveGroup") ||
+                "Failed to leave group.",
               duration: 4,
             });
           }
@@ -288,7 +300,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         message: t("approve") || "Approved",
       });
     } catch (error) {
-
       notification.error({
         message: t("approveFailed") || "Approve failed",
       });
@@ -313,7 +324,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         message: t("reject") || "Rejected",
       });
     } catch (error) {
-
       notification.error({
         message: t("rejectFailed") || "Reject failed",
       });
@@ -328,7 +338,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       const data = Array.isArray(res?.data) ? res.data : [];
       setMajors(data);
     } catch (error) {
-
       notification.error({
         message: t("error") || "Failed to load majors.",
       });
@@ -349,16 +358,16 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       const raw = Array.isArray(res?.data?.data)
         ? res.data.data
         : Array.isArray(res?.data)
-          ? res.data
-          : [];
+        ? res.data
+        : [];
       const openTopics = raw.filter(
         (topic) =>
-          String(topic?.status || topic?.topicStatus || topic?.state || "").toLowerCase() ===
-          "open"
+          String(
+            topic?.status || topic?.topicStatus || topic?.state || ""
+          ).toLowerCase() === "open"
       );
       setTopics(openTopics);
     } catch (error) {
-
       notification.error({
         message: t("error") || "Failed to load topics.",
       });
@@ -401,7 +410,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       handleCloseTopicModal();
       await fetchMyGroups();
     } catch (error) {
-
       notification.error({
         message: t("error") || "Failed to assign topic.",
       });
@@ -410,8 +418,8 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     }
   };
 
-  const canSelectTopic = (group) =>
-    Boolean(group) && group.isLeader && group.members >= group.maxMembers;
+  // Allow leaders to select/assign topic even if group isn't full
+  const canSelectTopic = (group) => Boolean(group) && group.isLeader;
 
   const loadPendingApplications = async (dataset) => {
     const leaderGroups = dataset.filter((g) => g.isLeader);
@@ -425,33 +433,33 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
             const list = Array.isArray(res?.data) ? res.data : [];
             return [group.id, list];
           } catch (error) {
-
             return [group.id, []];
           }
         })
       );
-      
+
       // Separate applications and invitations
       const applicationsByGroup = {};
       let allInvitations = [];
-      
+
       entries.forEach(([groupId, list]) => {
-        const applications = list.filter(item => item.type === "application" || !item.type);
-        const invitations = list.filter(item => item.type === "invitation");
-        
+        const applications = list.filter(
+          (item) => item.type === "application" || !item.type
+        );
+        const invitations = list.filter((item) => item.type === "invitation");
+
         // Group applications by groupId
         if (applications.length > 0) {
           applicationsByGroup[groupId] = applications.map(mapPendingRequest);
         }
-        
+
         // Collect all invitations (don't map, keep original structure)
         allInvitations = allInvitations.concat(invitations);
       });
-      
+
       setPendingByGroup(applicationsByGroup);
       setInvitations(allInvitations);
     } catch (error) {
-
       setPendingByGroup({});
       setInvitations([]);
     } finally {
@@ -465,9 +473,11 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     try {
       const res = await GroupService.getJoinRequests(groupId);
       const list = Array.isArray(res?.data) ? res.data : [];
-      
-      const applications = list.filter(item => item.type === "application" || !item.type);
-      
+
+      const applications = list.filter(
+        (item) => item.type === "application" || !item.type
+      );
+
       setPendingByGroup((prev) => ({
         ...prev,
         [groupId]: applications.map(mapPendingRequest),
@@ -483,28 +493,27 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       const res = await GroupService.getMyGroups();
       const arr = Array.isArray(res?.data) ? res.data : [];
       const normalized = arr.map((g, idx) => normalizeGroup(g, idx));
-      
+
       // Load completion percent from tracking reports API for each group
       const groupsWithProgress = await Promise.all(
         normalized.map(async (group) => {
           try {
             const reportRes = await ReportService.getProjectReport(group.id);
-            const completionPercent = reportRes?.data?.project?.completionPercent ?? 0;
+            const completionPercent =
+              reportRes?.data?.project?.completionPercent ?? 0;
             return {
               ...group,
               progress: completionPercent,
             };
           } catch (error) {
-
             return group; // Return group with original progress if report fetch fails
           }
         })
       );
-      
+
       setGroups(groupsWithProgress);
       await loadPendingApplications(groupsWithProgress);
     } catch (error) {
-
       setGroups([]);
       setPendingByGroup({});
       setInvitations([]);
@@ -522,10 +531,8 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       const data = res?.data || null;
       setBoard(data);
       return data;
-    }catch (error) {
-
-    }
-  } 
+    } catch (error) {}
+  };
 
   const getAllTasksFromBoard = (board) => {
     if (!board?.columns) return [];
@@ -555,11 +562,9 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       const userMajor = userInfo?.majorName || "Software Engineering";
       const params = {
         major: userMajor,
-        pageSize: 100
+        pageSize: 100,
       };
       const response = await SkillService.list(params, false);
-
-
 
       // Try different possible structures
       let data = [];
@@ -571,10 +576,8 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         data = response.data.items;
       }
 
-
       setSkills(data);
     } catch (error) {
-
       setSkills([]);
     } finally {
       setSkillsLoading(false);

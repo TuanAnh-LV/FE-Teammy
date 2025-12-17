@@ -22,16 +22,34 @@ const TopicDetailModal = ({
   isAISuggestion = false,
   membership = {},
   myGroupDetails = null,
+  allProjects = [],
 }) => {
   const { t } = useTranslation();
 
   if (!topic) return null;
 
-  // Check if group is full
-  const currentMembers = myGroupDetails?.currentMembers || 0;
-  const maxMembers = myGroupDetails?.maxMembers || 0;
-  const isGroupFull = currentMembers >= maxMembers && maxMembers > 0;
-  const canSelectTopic = topic.status === "open" && isGroupFull;
+  // Check if user's group has pending invitation for this topic
+  const myGroupId =
+    membership?.groupId || myGroupDetails?.groupId || myGroupDetails?.id;
+  const topicGroups = topic.groups || topic.detail?.groups || [];
+  const myGroupInTopic = topicGroups.find((g) => g.groupId === myGroupId);
+  const hasPendingInvitation = myGroupInTopic?.status === "pending_invitation";
+
+  // Check if group has pending invitation for ANY other topic by scanning all projects
+  const groupHasAnyPending = allProjects.some((p) => {
+    if (p.topicId === topic.topicId) return false; // Skip current topic
+    const groups = p.groups || p.detail?.groups || [];
+    return groups.some(
+      (g) => g.groupId === myGroupId && g.status === "pending_invitation"
+    );
+  });
+
+  // Show other groups selecting this topic (exclude user's group)
+  const otherGroupsSelecting = topicGroups.filter(
+    (g) => g.groupId !== myGroupId && g.status === "pending_invitation"
+  );
+
+  const canSelectTopic = isOpen && !hasPendingInvitation && !groupHasAnyPending;
 
   const formattedDate = topic.createdAt
     ? new Date(topic.createdAt).toLocaleDateString("en-US", {
@@ -54,13 +72,25 @@ const TopicDetailModal = ({
 
   return (
     <Modal
+      centered
       open={isOpen}
       onCancel={onClose}
       footer={null}
-      width={800}
+      title={null}
+      destroyOnClose
+      maskClosable
       closeIcon={<X className="w-5 h-5" />}
-      className="topic-detail-modal"
-      loading={detailLoading}
+      width="min(800px, 92vw)"
+      styles={{
+        content: { padding: 0, borderRadius: 14 },
+        body: {
+          padding: 0,
+          maxHeight: "calc(100vh - 120px)",
+          overflowY: "auto",
+        },
+      }}
+      confirmLoading={loading}
+      className="rounded-2xl topic-detail-modal"
     >
       {detailLoading ? (
         <div className="p-12 flex items-center justify-center">
@@ -192,6 +222,33 @@ const TopicDetailModal = ({
               </div>
             )}
 
+            {/* Groups Selecting This Topic */}
+            {otherGroupsSelecting.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  {t("groupsSelectingTopic") || "Groups Selecting This Topic"}
+                </h3>
+                <div className="space-y-2">
+                  {otherGroupsSelecting.map((group, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200"
+                    >
+                      <Users className="w-5 h-5 text-amber-600" />
+                      <div className="flex-1">
+                        <span className="text-gray-800 font-medium">
+                          {group.groupName}
+                        </span>
+                        <span className="ml-2 text-xs text-amber-700 font-medium">
+                          ({t("pendingInvitation") || "Pending Invitation"})
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Created Date */}
             {formattedDate && (
               <div className="mb-6">
@@ -309,20 +366,40 @@ const TopicDetailModal = ({
             >
               {t("close") || "Close"}
             </button>
-            {!hasGroupTopic &&
-              membership?.status === "leader" &&
-              canSelectTopic && (
-                <button
-                  onClick={() => {
-                    onSelectTopic(topic);
-                    onClose();
-                  }}
-                  disabled={loading}
-                  className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all bg-[#FF7A00] hover:!opacity-90 text-white border-none"
-                >
-                  {loading ? t("selecting") : t("selectTopic")}
-                </button>
-              )}
+            {!hasGroupTopic && membership?.status === "leader" && (
+              <>
+                {hasPendingInvitation ? (
+                  <button
+                    disabled
+                    className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all bg-amber-100 text-amber-700 border border-amber-300 cursor-not-allowed"
+                  >
+                    {t("pendingInvitation") || "Pending Invitation"}
+                  </button>
+                ) : groupHasAnyPending ? (
+                  <button
+                    disabled
+                    className="flex-1 px-4 py-2.5 text-xs font-medium rounded-lg transition-all bg-gray-100 text-gray-500 border border-gray-300 cursor-not-allowed"
+                    title={
+                      t("alreadyHasPendingTopic") ||
+                      "You have a pending invitation for another topic"
+                    }
+                  >
+                    {t("hasPendingInvitation") || "Pending for Another Topic"}
+                  </button>
+                ) : canSelectTopic ? (
+                  <button
+                    onClick={() => {
+                      onSelectTopic(topic);
+                      onClose();
+                    }}
+                    disabled={loading}
+                    className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all bg-[#FF7A00] hover:!opacity-90 text-white border-none"
+                  >
+                    {loading ? t("selecting") : t("selectTopic")}
+                  </button>
+                ) : null}
+              </>
+            )}
           </div>
         </div>
       )}
