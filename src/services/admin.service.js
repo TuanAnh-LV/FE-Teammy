@@ -142,4 +142,10 @@ export const AdminService = {
       isLoading,
     });
   },
+    getDashboardModerator(isLoading = true) {
+    return BaseService.get({
+      url: API.ADMIN.DASHBOARD_MODERATOR,
+      isLoading,
+    });
+  },
 };

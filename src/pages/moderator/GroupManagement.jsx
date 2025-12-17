@@ -262,8 +262,10 @@ export default function GroupManagement() {
                 {t("allStatus") || "All Status"}
               </Option>
               <Option value="Active">{t("active") || "Active"}</Option>
-              <Option value="Pending">{t("pending") || "Pending"}</Option>
-              <Option value="Inactive">{t("inactive") || "Inactive"}</Option>
+              <Option value="Recruiting">
+                {t("recruiting") || "Recruiting"}
+              </Option>
+              <Option value="Closed">{t("closed") || "Closed"}</Option>
             </Select>
           </div>
         </div>

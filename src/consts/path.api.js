@@ -18,6 +18,7 @@ export const API = {
     DASHBOARD: "/dashboard",
     ACTIVITY_LOGS: "/admin/activity-logs",
     MAJOR_STATS: "/users/admin/major-stats",
+    DASHBOARD_MODERATOR: "/dashboard/moderator",
   },
   POST: {
     GET_PERSONAL: "/profile-posts",

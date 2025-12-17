@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, Badge, Spin, notification, Table } from "antd";
+import { Card, Badge, Spin, notification, Table, Tag } from "antd";
 import {
   ExclamationCircleOutlined,
   TeamOutlined,
@@ -30,7 +30,7 @@ const ModeratorDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await AdminService.getDashboardStats();
+      const response = await AdminService.getDashboardModerator();
       if (response?.data) setDashboardData(response.data);
     } catch {
       notification.error({
@@ -71,29 +71,28 @@ const ModeratorDashboard = () => {
     }
   };
 
-  // ✅ Card icon “màu mè”
   const stats = [
     {
-      title: t("totalGroups"),
-      value: dashboardData?.totalGroups || 0,
+      title: t("totalGroups") || "Total Groups",
+      value: dashboardData?.totalGroups ?? 0,
       icon: <TeamOutlined className="text-white text-xl" />,
       bg: "from-blue-500 to-cyan-400",
     },
     {
-      title: t("groupsMissingTopics"),
-      value: dashboardData?.openTopics || 0,
+      title: t("groupsMissingTopic") || "Groups Missing Topic",
+      value: dashboardData?.groupsMissingTopic ?? 0,
       icon: <BulbOutlined className="text-white text-xl" />,
       bg: "from-amber-500 to-orange-400",
     },
     {
-      title: t("groupsMissingMentor"),
-      value: dashboardData?.recruitingGroups || 0,
+      title: t("groupsMissingMentor") || "Groups Missing Mentor",
+      value: dashboardData?.groupsMissingMentor ?? 0,
       icon: <UserOutlined className="text-white text-xl" />,
       bg: "from-violet-500 to-fuchsia-400",
     },
     {
-      title: t("studentWithoutGroup"),
-      value: 20,
+      title: t("studentsWithoutGroup") || "Students Without Group",
+      value: dashboardData?.studentsWithoutGroup ?? 0,
       icon: <AlertOutlined className="text-white text-xl" />,
       bg: "from-rose-500 to-red-400",
     },
@@ -178,10 +177,18 @@ const ModeratorDashboard = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
-          Dashboard
-        </h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
+            Dashboard
+          </h1>
+
+          {dashboardData?.semesterLabel && (
+            <Tag color="geekblue" className="rounded-full px-3 py-1">
+              {dashboardData.semesterLabel}
+            </Tag>
+          )}
+        </div>
       </div>
 
       {/* ✅ Top Statistics with colorful icons */}
