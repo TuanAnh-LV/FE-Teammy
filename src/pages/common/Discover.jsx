@@ -15,7 +15,7 @@ import { AuthService } from "../../services/auth.service";
 import { AiService } from "../../services/ai.service";
 import { Modal, Input, notification } from "antd";
 import { Sparkles } from "lucide-react";
-// import { getErrorMessage } from "../../utils/helpers";
+import { getErrorMessage } from "../../utils/helpers";
 
 const Discover = () => {
   const { t } = useTranslation();
@@ -43,11 +43,10 @@ const Discover = () => {
     major: "all",
     aiRecommended: false,
   });
-  const [isLoadingTopics, setIsLoadingTopics] = useState(true);
-  const [isLoadingAI, setIsLoadingAI] = useState(false);
 
   const aiSuggestionsFetchedRef = useRef(null);
 
+  // Function to refetch all topics
   const refetchTopics = useCallback(async () => {
     try {
       const res = await TopicService.getTopics();
@@ -271,7 +270,6 @@ const Discover = () => {
     let mounted = true;
     const fetchAISuggestions = async () => {
       try {
-        setIsLoadingAI(true);
         const aiResponse = await AiService.getTopicSuggestions({
           groupId: membership.groupId,
           limit: 5,
@@ -353,8 +351,6 @@ const Discover = () => {
         }
       } catch {
         if (mounted) setAiSuggestedTopics([]);
-      } finally {
-        if (mounted) setIsLoadingAI(false);
       }
     };
 
@@ -368,7 +364,6 @@ const Discover = () => {
     let mounted = true;
     const fetchTopics = async () => {
       try {
-        setIsLoadingTopics(true);
         const res = await TopicService.getTopics();
         const payload = res?.data ?? res;
         const list =
@@ -420,7 +415,7 @@ const Discover = () => {
           message: t("failedLoadTopics") || "Failed to load topics",
         });
       } finally {
-        if (mounted) setIsLoadingTopics(false);
+        // no-op
       }
     };
     fetchTopics();
@@ -517,186 +512,120 @@ const Discover = () => {
         </div>
 
         <div className="flex flex-col gap-4 md:gap-6">
-          {isLoadingTopics ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <div className="relative">
-                <div className="w-16 h-16 border-4 border-gray-200 border-t-[#FF7A00] rounded-full animate-spin"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 text-[#FF7A00] animate-pulse" />
+          <div className="flex flex-col gap-4">
+            {membership.hasGroup && aiSuggestedTopics.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+                  <h3 className="text-lg md:text-xl font-bold text-gray-900">
+                    {t("aiRecommendedTopics") || "AI Recommended Topics"}
+                  </h3>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-600 text-white">
+                    {aiSuggestedTopics.length}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  {t("aiTopicSuggestionsDesc") ||
+                    "Topics matched to your group's interests and skills"}
+                </p>
+                <div className="flex flex-col gap-4">
+                  {aiSuggestedTopics.map((project) => (
+                    <div key={project.topicId} className="relative">
+                      <div className="absolute -top-3 -left-3 flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold rounded-full shadow-lg z-10">
+                        <Sparkles className="w-3.5 h-3.5 fill-white" />
+                        AI Recommended
+                      </div>
+
+                      <div className="absolute -top-3 -right-3 flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg z-10">
+                        <svg
+                          className="w-3.5 h-3.5 fill-white"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        {project.score}% Match
+                      </div>
+
+                      <ProjectCard
+                        project={project}
+                        onSelectTopic={openInviteModal}
+                        onViewDetail={handleViewTopicDetail}
+                        hasGroupTopic={
+                          !!(
+                            myGroupDetails?.topicId ||
+                            myGroupDetails?.topic?.topicId
+                          )
+                        }
+                        isAISuggestion={true}
+                        membership={membership}
+                        myGroupDetails={myGroupDetails}
+                        allProjects={[...aiSuggestedTopics, ...projects]}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
-              <p className="mt-6 text-gray-600 font-medium text-lg">
-                {t("loadingTopics") || "Loading topics..."}
-              </p>
-              <p className="mt-2 text-gray-500 text-sm">
-                {t("pleaseWait") || "Please wait a moment"}
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {membership.hasGroup && isLoadingAI && (
-                <div className="mb-4 rounded-3xl bg-gradient-to-r from-fuchsia-400 via-indigo-400 to-cyan-400 p-[2px] shadow-[0_20px_60px_-20px_rgba(99,102,241,0.45)]">
-                  <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-50 via-indigo-50 to-cyan-50 p-8">
-                    {/* glow blobs */}
-                    <div className="pointer-events-none absolute -top-24 -left-24 h-64 w-64 rounded-full bg-gradient-to-br from-fuchsia-400/35 via-purple-400/20 to-indigo-400/20 blur-3xl animate-pulse" />
-                    <div
-                      className="pointer-events-none absolute -bottom-28 -right-28 h-72 w-72 rounded-full bg-gradient-to-br from-cyan-400/30 via-indigo-400/20 to-fuchsia-400/20 blur-3xl animate-pulse"
-                      style={{ animationDelay: "300ms" }}
-                    />
+            )}
 
-                    {/* subtle dots texture */}
-                    <div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.35)_1px,transparent_0)] [background-size:14px_14px]" />
-
-                    <div className="relative flex flex-col items-center justify-center text-center">
-                      {/* fancy spinner */}
-                      <div className="relative mb-4 grid h-14 w-14 place-items-center">
-                        <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,rgba(236,72,153,0.95),rgba(99,102,241,0.95),rgba(6,182,212,0.95),rgba(236,72,153,0.95))] animate-spin" />
-                        <div className="absolute inset-[4px] rounded-full bg-white/70 backdrop-blur" />
-                        <Sparkles className="relative h-6 w-6 text-fuchsia-600 animate-pulse drop-shadow" />
-                      </div>
-
-                      <p className="font-bold text-base bg-gradient-to-r from-fuchsia-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
-                        {t("aiAnalyzing") || "AI is analyzing your group..."}
-                      </p>
-
-                      <p className="mt-1 text-sm text-indigo-700/80">
-                        {t("findingBestMatch") ||
-                          "Finding the best topic matches"}
-                      </p>
-
-                      {/* 3 dots loading */}
-                      <div className="mt-3 flex items-center gap-1">
-                        <span
-                          className="h-2 w-2 rounded-full bg-fuchsia-500 animate-bounce"
-                          style={{ animationDelay: "0ms" }}
-                        />
-                        <span
-                          className="h-2 w-2 rounded-full bg-indigo-500 animate-bounce"
-                          style={{ animationDelay: "120ms" }}
-                        />
-                        <span
-                          className="h-2 w-2 rounded-full bg-cyan-500 animate-bounce"
-                          style={{ animationDelay: "240ms" }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              {membership.hasGroup && aiSuggestedTopics.length > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+            {filteredProjects.length > 0 ? (
+              <>
+                {membership.hasGroup && aiSuggestedTopics.length > 0 && (
+                  <div className="mt-8 mb-4">
                     <h3 className="text-lg md:text-xl font-bold text-gray-900">
-                      {t("aiRecommendedTopics") || "AI Recommended Topics"}
+                      {t("allTopics") || "All Available Topics"}
                     </h3>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-600 text-white">
-                      {aiSuggestedTopics.length}
-                    </span>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {t("browseAllTopics") ||
+                        "Browse all topics from the catalog"}
+                    </p>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">
-                    {t("aiTopicSuggestionsDesc") ||
-                      "Topics matched to your group's interests and skills"}
-                  </p>
-                  <div className="flex flex-col gap-4">
-                    {aiSuggestedTopics.map((project) => (
-                      <div key={project.topicId} className="relative">
-                        <div className="absolute -top-3 -left-3 flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold rounded-full shadow-lg z-10">
-                          <Sparkles className="w-3.5 h-3.5 fill-white" />
-                          {t("aiRecommended") || "AI Recommended"}
-                        </div>
+                )}
 
-                        <div className="absolute -top-3 -right-3 flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg z-10">
-                          <svg
-                            className="w-3.5 h-3.5 fill-white"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                          {project.score}% Match
-                        </div>
-
-                        <ProjectCard
-                          project={project}
-                          onSelectTopic={openInviteModal}
-                          onViewDetail={handleViewTopicDetail}
-                          hasGroupTopic={
-                            !!(
-                              myGroupDetails?.topicId ||
-                              myGroupDetails?.topic?.topicId
-                            )
-                          }
-                          isAISuggestion={true}
-                          membership={membership}
-                          myGroupDetails={myGroupDetails}
-                          allProjects={[...aiSuggestedTopics, ...projects]}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {filteredProjects.length > 0 ? (
-                <>
-                  {membership.hasGroup && aiSuggestedTopics.length > 0 && (
-                    <div className="mt-8 mb-4">
-                      <h3 className="text-lg md:text-xl font-bold text-gray-900">
-                        {t("allTopics") || "All Available Topics"}
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {t("browseAllTopics") ||
-                          "Browse all topics from the catalog"}
-                      </p>
-                    </div>
-                  )}
-
-                  {filteredProjects.map((project) => (
-                    <ProjectCard
-                      key={project.topicId}
-                      project={project}
-                      onSelectTopic={openInviteModal}
-                      onViewDetail={handleViewTopicDetail}
-                      hasGroupTopic={
-                        !!(
-                          myGroupDetails?.topicId ||
-                          myGroupDetails?.topic?.topicId
-                        )
-                      }
-                      membership={membership}
-                      myGroupDetails={myGroupDetails}
-                      allProjects={[...aiSuggestedTopics, ...projects]}
+                {filteredProjects.map((project) => (
+                  <ProjectCard
+                    key={project.topicId}
+                    project={project}
+                    onSelectTopic={openInviteModal}
+                    onViewDetail={handleViewTopicDetail}
+                    hasGroupTopic={
+                      !!(
+                        myGroupDetails?.topicId ||
+                        myGroupDetails?.topic?.topicId
+                      )
+                    }
+                    membership={membership}
+                    myGroupDetails={myGroupDetails}
+                    allProjects={[...aiSuggestedTopics, ...projects]}
+                  />
+                ))}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 px-4">
+                <div className="text-gray-400 mb-4">
+                  <svg
+                    className="w-24 h-24 mx-auto"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
                     />
-                  ))}
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-16 px-4">
-                  <div className="text-gray-400 mb-4">
-                    <svg
-                      className="w-24 h-24 mx-auto"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                    {t("noProjectsFound") || "No Projects Found"}
-                  </h3>
-                  <p className="text-gray-500 text-center max-w-md">
-                    {t("noProjectsDescription") ||
-                      "No projects match your current filters. Try adjusting your filter criteria."}
-                  </p>
+                  </svg>
                 </div>
-              )}
-            </div>
-          )}
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                  {t("noProjectsFound") || "No Projects Found"}
+                </h3>
+                <p className="text-gray-500 text-center max-w-md">
+                  {t("noProjectsDescription") ||
+                    "No projects match your current filters. Try adjusting your filter criteria."}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <TopicDetailModal

@@ -31,10 +31,9 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
   const [availableSkills, setAvailableSkills] = useState([]);
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [skillFilter, setSkillFilter] = useState("all");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return; // Only run when modal is open
 
     let mounted = true;
     const loadGroupName = async () => {
@@ -59,8 +58,9 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
     };
   }, [defaultGroupId, isOpen]);
 
+  // Fetch skills when majorName is available
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return; // Only run when modal is open
 
     const fetchSkills = async () => {
       if (!majorName) {
@@ -73,7 +73,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
         if (response?.data) {
           setAvailableSkills(response.data);
         }
-      } catch {
+      } catch (error) {
         setAvailableSkills([]);
       }
     };
@@ -85,14 +85,14 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
     if (!selectedSkills.includes(skillToken)) {
       const newSkills = [...selectedSkills, skillToken];
       setSelectedSkills(newSkills);
-      form.setFieldsValue({ required_skills: newSkills });
+      form.setFieldsValue({ skills: newSkills });
     }
   };
 
   const handleRemoveSkill = (skillToken) => {
     const newSkills = selectedSkills.filter((s) => s !== skillToken);
     setSelectedSkills(newSkills);
-    form.setFieldsValue({ required_skills: newSkills });
+    form.setFieldsValue({ skills: newSkills });
   };
 
   const filteredSkills = availableSkills.filter((skill) => {
@@ -113,14 +113,13 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
 
   const handleSubmit = async () => {
     try {
-      setIsSubmitting(true);
       const {
         groupId,
         title,
         description,
         position_needed,
         expiresAt,
-        required_skills,
+        skills,
       } = await form.validateFields();
 
       await PostService.createRecruitmentPost({
@@ -129,7 +128,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
         description,
         position_needed,
         expiresAt: expiresAt?.toISOString(),
-        required_skills,
+        skills: skills || [],
       });
 
       notification.success({
@@ -141,8 +140,6 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
       onCreated?.();
     } catch {
       /* validate/API error handled elsewhere */
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -169,15 +166,18 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           description: "",
           position_needed: "",
           expiresAt: null,
-          required_skills: [],
+          skills: [],
         }}
       >
+        {/* Keep groupId as a hidden form field, display the group name as a disabled field */}
         <Form.Item name="groupId" hidden>
           <Input />
         </Form.Item>
+
         <Form.Item label={t("group") || "Group"} shouldUpdate>
           <Input value={groupName || defaultGroupId || ""} disabled />
         </Form.Item>
+
         <Form.Item
           label={t("pleaseEnterTitle") ? "Title" : "Title"}
           name="title"
@@ -192,6 +192,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
             placeholder={t("placeholderTitle") || "VD: Tuyển FE cho project"}
           />
         </Form.Item>
+
         <Form.Item
           label={t("pleaseEnterDescription") ? "Description" : "Description"}
           name="description"
@@ -210,6 +211,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
             }
           />
         </Form.Item>
+
         <Form.Item
           label={
             t("pleaseEnterPosition") ? "Position Needed" : "Position Needed"
@@ -225,6 +227,8 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
         >
           <Input placeholder={t("placeholderSkills") || "VD: Git, Azure"} />
         </Form.Item>
+
+        {/* Expires At Field */}
         <Form.Item
           label={t("pleaseSelectDeadline") ? "Expires At" : "Expires At"}
           name="expiresAt"
@@ -252,9 +256,11 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
             placeholder="Chọn ngày hết hạn"
           />
         </Form.Item>
+
+        {/* Skills Selection */}
         <Form.Item
           label={t("requiredSkills") || "Required Skills"}
-          name="required_skills"
+          name="skills"
           rules={[
             {
               validator: (_, value) => {
@@ -272,15 +278,15 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           ]}
         >
           <div className="space-y-3">
+            {/* Selected Skills */}
             <div className="min-h-[80px] p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
               <p className="text-xs font-medium text-gray-700 mb-2">
-                {t("selectedSkills") ||
-                  `Selected Skills (${selectedSkills.length})`}
+                Selected Skills ({selectedSkills.length})
               </p>
               <div className="flex flex-wrap gap-2">
                 {selectedSkills.length === 0 ? (
                   <p className="text-gray-400 text-xs">
-                    {t("clickSkillsToAdd") || "Click skills below to add them"}
+                    Click skills below to add them
                   </p>
                 ) : (
                   selectedSkills.map((skillToken) => {
@@ -303,6 +309,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
               </div>
             </div>
 
+            {/* Role Filter */}
             {majorName && availableSkills.length > 0 && (
               <>
                 <div className="flex gap-2 flex-wrap">
@@ -315,7 +322,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                   >
-                    {t("all") || "All"} ({availableSkills.length})
+                    All ({availableSkills.length})
                   </button>
                   {["frontend", "backend", "mobile", "devops", "qa"].map(
                     (role) => {
@@ -341,10 +348,10 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
                   )}
                 </div>
 
+                {/* Available Skills */}
                 <div className="max-h-[200px] overflow-y-auto p-3 border border-gray-300 rounded-lg bg-white">
                   <p className="text-xs font-medium text-gray-700 mb-2">
-                    {t("availableSkillsClickToAdd") ||
-                      "Available Skills (Click to add)"}
+                    Available Skills (Click to add)
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {filteredSkills.map((skill) => {
@@ -378,12 +385,12 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
 
             {!majorName && (
               <p className="text-xs text-gray-500">
-                {t("skillsWillBeAvailableAfterLoadingGroupInformation") ||
-                  "Skills will be available after loading group information"}
+                Skills will be available after loading group information
               </p>
             )}
           </div>
         </Form.Item>
+
         <div className="flex justify-between mt-4">
           <Button
             onClick={() => {
@@ -398,8 +405,6 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           <Button
             type="primary"
             htmlType="submit"
-            loading={isSubmitting}
-            disabled={isSubmitting}
             className="inline-flex items-center rounded-lg !bg-[#FF7A00] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:!opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-60"
           >
             {t("publishPost") || "Publish Post"}
