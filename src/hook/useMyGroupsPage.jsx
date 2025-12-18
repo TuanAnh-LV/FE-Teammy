@@ -3,7 +3,6 @@ import { notification, Modal } from "antd";
 import { GroupService } from "../services/group.service";
 import { MajorService } from "../services/major.service";
 import { BoardService } from "../services/board.service";
-import { SkillService } from "../services/skill.service";
 import { ReportService } from "../services/report.service";
 import { useInvitationRealtime } from "./useInvitationRealtime";
 import { useAuth } from "../context/AuthContext";
@@ -106,13 +105,10 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     maxMembers: 5,
     majorId: "",
     topicId: "",
-    skills: [],
   });
   const [errors, setErrors] = useState({});
   const [majors, setMajors] = useState([]);
   const [majorsLoading, setMajorsLoading] = useState(false);
-  const [skills, setSkills] = useState([]);
-  const [skillsLoading, setSkillsLoading] = useState(false);
   const [board, setBoard] = useState(null);
   const [loadingBoard, setLoadingBoard] = useState(false);
   const hasFetchedGroupsRef = useRef(false);
@@ -168,7 +164,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       maxMembers: 5,
       majorId: "",
       topicId: "",
-      skills: [],
     });
     setErrors({});
     setSubmitting(false);
@@ -197,9 +192,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         description: form.description.trim(),
         maxMembers: Number(form.maxMembers) || 1,
       };
-      if (form.skills && form.skills.length > 0) {
-        payload.skills = form.skills;
-      }
       const res = await GroupService.createGroup(payload);
       if (res?.data) {
         notification.success({ message: t("success") || "Group created!" });
@@ -471,36 +463,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     if (majorsFetchLock.current) return;
     majorsFetchLock.current = true;
     fetchMajors();
-    fetchSkills();
   }, [open]);
-
-  const fetchSkills = async () => {
-    try {
-      setSkillsLoading(true);
-      const userMajor = userInfo?.majorName || "Software Engineering";
-      const params = {
-        major: userMajor,
-        pageSize: 100,
-      };
-      const response = await SkillService.list(params, false);
-
-      // Try different possible structures
-      let data = [];
-      if (Array.isArray(response?.data)) {
-        data = response.data;
-      } else if (response?.data?.data && Array.isArray(response.data.data)) {
-        data = response.data.data;
-      } else if (response?.data?.items && Array.isArray(response.data.items)) {
-        data = response.data.items;
-      }
-
-      setSkills(data);
-    } catch (error) {
-      setSkills([]);
-    } finally {
-      setSkillsLoading(false);
-    }
-  };
 
   const activeApplications = Object.entries(pendingByGroup).filter(
     ([, list]) => Array.isArray(list) && list.length > 0
@@ -526,8 +489,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     invitationsLoading,
     majors,
     majorsLoading,
-    skills,
-    skillsLoading,
     board,
     loadingBoard,
 

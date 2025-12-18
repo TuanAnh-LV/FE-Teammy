@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Mail, Calendar, Phone, User, MessageSquare, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const ProfileHeader = ({ profile }) => {
+const ProfileHeader = ({ profile, isOwnProfile = false }) => {
   const navigate = useNavigate();
 
   const initials = useMemo(() => {
@@ -98,8 +98,8 @@ const ProfileHeader = ({ profile }) => {
           </div>
         </div>
 
-        {/* Right: Send Message button */}
-        {profile.userId && (
+        {/* Right: Send Message button - hide when viewing own profile */}
+        {profile.userId && !isOwnProfile && (
           <button
             onClick={() => navigate(`/messages/${profile.userId}`)}
             className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"

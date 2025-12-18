@@ -160,9 +160,15 @@ const ProfileSettings = ({ profile, onUpdate }) => {
         displayName: settingsForm.fullName.trim(),
         phone: settingsForm.phone.trim(),
         gender: settingsForm.gender,
+        // Send skills as an array (same style as group creation / complete profile)
         skills: Array.isArray(settingsForm.skills)
-          ? settingsForm.skills.join(", ")
-          : settingsForm.skills,
+          ? settingsForm.skills
+          : typeof settingsForm.skills === "string" && settingsForm.skills
+          ? settingsForm.skills
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [],
         skillsCompleted: settingsForm.skillsCompleted,
         portfolioUrl: settingsForm.portfolioUrl.trim(),
       };

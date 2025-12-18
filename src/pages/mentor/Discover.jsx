@@ -299,6 +299,18 @@ const Discover = () => {
                           "chưa xác định"}
                       </span>
                     </p>
+
+                    {/* Optional message from student/group leader */}
+                    {inv.message && (
+                      <p className="mt-2 text-sm text-gray-700 bg-white border border-blue-100 rounded-lg px-3 py-2 shadow-sm">
+                        <span className="text-xs uppercase tracking-wide text-blue-500 font-semibold">
+                          {t("message") || "Message"}
+                        </span>
+                        <br />
+                        <span className="italic break-words">{inv.message}</span>
+                      </p>
+                    )}
+
                     {inv.createdAt && (
                       <p className="text-xs text-gray-500 mt-1">
                         {getRelativeTime(inv.createdAt)}
