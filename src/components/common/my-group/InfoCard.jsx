@@ -13,6 +13,7 @@ export default function InfoCard({
   onBack,
   onEdit,
   onSelectTopic,
+  onActivate,
 }) {
   const hasTopicAssigned = group?.topicId && group?.topicId.trim() !== "";
   const { t } = useTranslation();
@@ -42,6 +43,7 @@ export default function InfoCard({
             <span />
           )}
           <div className="flex items-center gap-2">
+
             {onEdit && (
               <button
                 type="button"
@@ -60,6 +62,15 @@ export default function InfoCard({
                 {hasTopicAssigned
                   ? (t("changeTopic") || "Change Topic")
                   : (t("selectTopic") || "Select Topic")}
+              </button>
+            )}
+            {onActivate && (
+              <button
+                type="button"
+                onClick={onActivate}
+                className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+              >
+                {t("confirmGroup") || "Confirm group"}
               </button>
             )}
           </div>

@@ -4,6 +4,7 @@ import { GroupService } from "../../../services/group.service";
 import { notification } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../../../hook/useTranslation";
+import { getStatusTagClasses } from "../../../utils/statusTag";
 
 const ProjectCard = ({
   project,
@@ -70,14 +71,7 @@ const ProjectCard = ({
           </span>
 
           {(project.tags || []).map((tag) => {
-            const normalized = (tag || "").toLowerCase();
-
-            const tagClasses =
-              normalized === "open"
-                ? "bg-green-100 text-green-700"
-                : normalized === "closed"
-                ? "bg-red-100 text-red-700"
-                : "bg-gray-100 text-gray-700";
+            const tagClasses = getStatusTagClasses(tag);
 
             return (
               <span
@@ -266,3 +260,6 @@ const ProjectCard = ({
 };
 
 export default ProjectCard;
+
+
+
