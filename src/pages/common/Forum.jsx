@@ -35,11 +35,10 @@ const Forum = () => {
   const [membership, setMembership] = useState({
     hasGroup: false,
     groupId: null,
-    status: null, // 'leader' | 'member' | 'student' | null
+    status: null,
   });
-
+  const [membershipLoaded, setMembershipLoaded] = useState(false);
   const [myGroupDetails, setMyGroupDetails] = useState(null);
-
   const userRole = membership.status === "leader" ? "leader" : "individual";
 
   // UI state
@@ -49,7 +48,6 @@ const Forum = () => {
     useState(false);
 
   const savedUser = JSON.parse(localStorage.getItem("userInfo") || "{}");
-  const currentUserName = savedUser.name || "";
 
   // search
   const [query, setQuery] = useState("");
@@ -69,6 +67,14 @@ const Forum = () => {
   const [aiSuggestedGroupPosts, setAiSuggestedGroupPosts] = useState([]);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailGroupId, setDetailGroupId] = useState(null);
+  const aiProfilesFetchedKeyRef = useRef(null);
+  const aiGroupsFetchedKeyRef = useRef(null);
+  const aiProfilesNotificationShownRef = useRef(false);
+  const aiGroupsNotificationShownRef = useRef(false);
+  // Loading states
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [isLoadingAIProfiles, setIsLoadingAIProfiles] = useState(false);
+  const [isLoadingAIGroups, setIsLoadingAIGroups] = useState(false);
 
   const [applyLoadingId, setApplyLoadingId] = useState(null);
 
@@ -159,6 +165,9 @@ const Forum = () => {
         }
       } catch {
         // Ignore membership fetch error
+      } finally {
+        // Mark membership as loaded regardless of success/failure
+        setMembershipLoaded(true);
       }
     })();
   }, []);
@@ -167,6 +176,7 @@ const Forum = () => {
     let mounted = true;
     (async () => {
       try {
+        setIsLoadingPosts(true);
         const [groupRes, individualRes] = await Promise.all([
           PostService.getRecruitmentPosts(),
           PostService.getPersonalPosts(),
@@ -185,6 +195,10 @@ const Forum = () => {
         if (mounted) {
           setAllPostsData([]);
         }
+      } finally {
+        if (mounted) {
+          setIsLoadingPosts(false);
+        }
       }
     })();
     return () => {
@@ -200,31 +214,51 @@ const Forum = () => {
   }, [activeTab, allPostsData]);
 
   /** 4) Gọi AI suggestions khi chuyển sang tab individuals */
+  // Extract values to avoid re-running when myGroupDetails reference changes
+  const groupCurrentMembers =
+    myGroupDetails?.currentMembers || myGroupDetails?.members?.length || 0;
+  const groupMaxMembers =
+    myGroupDetails?.maxMembers || myGroupDetails?.capacity || 0;
+  const groupTopicId = myGroupDetails?.topicId || "";
+
   useEffect(() => {
-    if (activeTab !== "individuals" || !membership.groupId) {
+    // Wait for membership to be loaded first
+    if (!membershipLoaded) {
+      return;
+    }
+
+    if (
+      activeTab !== "individuals" ||
+      !membership.groupId ||
+      membership.status !== "leader"
+    ) {
+      aiProfilesFetchedKeyRef.current = null;
+      aiProfilesNotificationShownRef.current = false;
       setAiSuggestedPosts([]);
       return;
     }
 
-    // Check if group is active (full members and has topic)
-    if (myGroupDetails) {
-      const currentMembers =
-        myGroupDetails.currentMembers || myGroupDetails.members?.length || 0;
-      const maxMembers =
-        myGroupDetails.maxMembers || myGroupDetails.capacity || 0;
-      const hasTopic =
-        myGroupDetails.topicId && myGroupDetails.topicId.trim() !== "";
+    // Calculate eligibility once
+    const hasTopic = !!(groupTopicId && String(groupTopicId).trim() !== "");
+    const eligible = !(groupCurrentMembers >= groupMaxMembers && hasTopic);
 
-      // If group is full AND has topic, don't show AI suggestions
-      if (currentMembers >= maxMembers && hasTopic) {
-        setAiSuggestedPosts([]);
-        return;
-      }
+    // If group is full AND has topic, don't show AI suggestions
+    if (!eligible) {
+      aiProfilesFetchedKeyRef.current = null;
+      aiProfilesNotificationShownRef.current = false;
+      setAiSuggestedPosts([]);
+      return;
     }
+
+    // key để tránh gọi lại khi myGroupDetails đổi reference
+    const key = `individuals-${membership.groupId}-${eligible ? 1 : 0}`;
+    if (aiProfilesFetchedKeyRef.current === key) return;
+    aiProfilesFetchedKeyRef.current = key;
 
     let mounted = true;
     (async () => {
       try {
+        setIsLoadingAIProfiles(true);
         const aiResponse = await AiService.getProfilePostSuggestions({
           groupId: membership.groupId,
           limit: 10,
@@ -252,17 +286,24 @@ const Forum = () => {
 
         if (mounted && suggestions.length > 0) {
           setAiSuggestedPosts(suggestions);
-          notification.info({
-            message: t("aiSuggestionsAvailable") || "AI Suggestions Available",
-            description: `Found ${suggestions.length} recommended profiles for your group`,
-            placement: "topRight",
-            duration: 3,
-          });
+          // Only show notification once
+          if (!aiProfilesNotificationShownRef.current) {
+            notification.info({
+              message:
+                t("aiSuggestionsAvailable") || "AI Suggestions Available",
+              description: `Found ${suggestions.length} recommended profiles for your group`,
+              placement: "topRight",
+              duration: 3,
+            });
+            aiProfilesNotificationShownRef.current = true;
+          }
         } else {
           if (mounted) setAiSuggestedPosts([]);
         }
       } catch {
         if (mounted) setAiSuggestedPosts([]);
+      } finally {
+        if (mounted) setIsLoadingAIProfiles(false);
       }
     })();
 
@@ -270,32 +311,49 @@ const Forum = () => {
       mounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, membership.groupId, myGroupDetails]);
+  }, [
+    activeTab,
+    membership.groupId,
+    groupCurrentMembers,
+    groupMaxMembers,
+    groupTopicId,
+    membershipLoaded,
+  ]);
 
   /** 5) Gọi AI suggestions khi chuyển sang tab groups */
   useEffect(() => {
-    if (activeTab !== "groups" || !savedUser?.majorId) {
-      setAiSuggestedGroupPosts([]);
+    // Wait for membership to be loaded first
+    if (!membershipLoaded) {
       return;
     }
 
-    // If user has a group that is full AND has topic, don't show suggestions
-    if (membership.hasGroup && myGroupDetails) {
-      const currentMembers = myGroupDetails.members?.length || 0;
-      const maxMembers =
-        myGroupDetails.maxMembers || myGroupDetails.capacity || 0;
-      const hasTopic =
-        myGroupDetails.topicId && myGroupDetails.topicId.trim() !== "";
-
-      if (currentMembers >= maxMembers && hasTopic) {
-        setAiSuggestedGroupPosts([]);
-        return;
-      }
+    if (activeTab !== "groups" || !savedUser?.majorId) {
+      aiGroupsFetchedKeyRef.current = null;
+      aiGroupsNotificationShownRef.current = false;
+      setAiSuggestedGroupPosts([]);
+      setIsLoadingAIGroups(false);
+      return;
     }
+
+    // Only call API if user doesn't have a group
+    if (membership.hasGroup) {
+      aiGroupsFetchedKeyRef.current = null;
+      aiGroupsNotificationShownRef.current = false;
+      setAiSuggestedGroupPosts([]);
+      setIsLoadingAIGroups(false);
+      return;
+    }
+
+    const key = `groups-${savedUser.majorId}`;
+    if (aiGroupsFetchedKeyRef.current === key) {
+      return;
+    }
+    aiGroupsFetchedKeyRef.current = key;
 
     let mounted = true;
     (async () => {
       try {
+        setIsLoadingAIGroups(true);
         const aiResponse = await AiService.getRecruitmentPostSuggestions({
           majorId: savedUser.majorId,
           limit: 10,
@@ -322,17 +380,24 @@ const Forum = () => {
 
         if (mounted && suggestions.length > 0) {
           setAiSuggestedGroupPosts(suggestions);
-          notification.info({
-            message: t("aiSuggestionsAvailable") || "AI Suggestions Available",
-            description: `Found ${suggestions.length} recommended groups for you`,
-            placement: "topRight",
-            duration: 3,
-          });
+          // Only show notification once
+          if (!aiGroupsNotificationShownRef.current) {
+            notification.info({
+              message:
+                t("aiSuggestionsAvailable") || "AI Suggestions Available",
+              description: `Found ${suggestions.length} recommended groups for you`,
+              placement: "topRight",
+              duration: 3,
+            });
+            aiGroupsNotificationShownRef.current = true;
+          }
         } else {
           if (mounted) setAiSuggestedGroupPosts([]);
         }
       } catch {
         if (mounted) setAiSuggestedGroupPosts([]);
+      } finally {
+        if (mounted) setIsLoadingAIGroups(false);
       }
     })();
 
@@ -340,7 +405,7 @@ const Forum = () => {
       mounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, savedUser?.majorId, membership.hasGroup, myGroupDetails]);
+  }, [activeTab, savedUser?.majorId, membership.hasGroup, membershipLoaded]);
 
   /** refetch sau khi tạo post - GỌI LẠI API để có data mới nhất */
   const handleCreated = async () => {
@@ -761,71 +826,179 @@ const Forum = () => {
 
         {/* LISTS */}
         <div className="space-y-4">
-          {/* AI Suggested Groups - Show at top for groups tab */}
-          {activeTab === "groups" && (
-            <AIRecommendedGroups
-              aiSuggestedGroupPosts={aiSuggestedGroupPosts}
-              membership={membership}
-              onOpenDetail={handleOpenGroupDetail}
-              onApply={handleAIGroupApply}
-            />
-          )}
-
-          {/* AI Suggested Profiles - Show at top for individuals tab */}
-          {activeTab === "individuals" && (
-            <AIRecommendedProfiles
-              aiSuggestedPosts={aiSuggestedPosts}
-              membership={membership}
-              onInvite={onInvite}
-              myGroupDetails={myGroupDetails}
-            />
-          )}
-
-          {/* Only show "No results" if there are no AI suggestions AND no filtered posts */}
-          {filtered.length === 0 &&
-            aiSuggestedGroupPosts.length === 0 &&
-            aiSuggestedPosts.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">
-                {t("noData") || "No results found."}
+          {/* Main loading state */}
+          {isLoadingPosts ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-gray-200 border-t-[#FF7A00] rounded-full animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <MessageSquare className="w-6 h-6 text-[#FF7A00] animate-pulse" />
+                </div>
               </div>
-            )}
+              <p className="mt-6 text-gray-600 font-medium text-lg">
+                {t("loadingPosts") || "Loading posts..."}
+              </p>
+              <p className="mt-2 text-gray-500 text-sm">
+                {t("pleaseWait") || "Please wait a moment"}
+              </p>
+            </div>
+          ) : (
+            <>
+              {activeTab === "groups" && isLoadingAIGroups && (
+                <div className="mb-4 rounded-3xl bg-gradient-to-r from-fuchsia-400 via-indigo-400 to-cyan-400 p-[2px] shadow-[0_20px_60px_-20px_rgba(99,102,241,0.45)]">
+                  <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-50 via-indigo-50 to-cyan-50 p-8">
+                    <div className="pointer-events-none absolute -top-24 -left-24 h-64 w-64 rounded-full bg-gradient-to-br from-fuchsia-400/35 via-purple-400/20 to-indigo-400/20 blur-3xl animate-pulse" />
+                    <div
+                      className="pointer-events-none absolute -bottom-28 -right-28 h-72 w-72 rounded-full bg-gradient-to-br from-cyan-400/30 via-indigo-400/20 to-fuchsia-400/20 blur-3xl animate-pulse"
+                      style={{ animationDelay: "300ms" }}
+                    />
+                    <div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.35)_1px,transparent_0)] [background-size:14px_14px]" />
 
-          {/* GROUP CARDS */}
-          {activeTab === "groups" &&
-            paged.map((p) => (
-              <GroupCard
-                key={p.id}
-                post={p}
-                membership={membership}
-                applyLoadingId={applyLoadingId}
-                onOpenDetail={openDetail}
-                onApply={onClickOpenApply}
-                onClickLeader={goProfile}
+                    <div className="relative flex flex-col items-center justify-center text-center">
+                      <div className="relative mb-4 grid h-14 w-14 place-items-center">
+                        <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,rgba(236,72,153,0.95),rgba(99,102,241,0.95),rgba(6,182,212,0.95),rgba(236,72,153,0.95))] animate-spin" />
+                        <div className="absolute inset-[4px] rounded-full bg-white/70 backdrop-blur" />
+                        <Users className="relative h-6 w-6 text-fuchsia-600 animate-pulse drop-shadow" />
+                      </div>
+
+                      <p className="font-bold text-base bg-gradient-to-r from-fuchsia-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
+                        {t("aiAnalyzingGroups") ||
+                          "AI is finding groups for you..."}
+                      </p>
+                      <p className="mt-1 text-sm text-indigo-700/80">
+                        {t("findingBestGroupMatch") ||
+                          "Finding the best group matches"}
+                      </p>
+                      <div className="mt-3 flex items-center gap-1">
+                        <span
+                          className="h-2 w-2 rounded-full bg-fuchsia-500 animate-bounce"
+                          style={{ animationDelay: "0ms" }}
+                        />
+                        <span
+                          className="h-2 w-2 rounded-full bg-indigo-500 animate-bounce"
+                          style={{ animationDelay: "120ms" }}
+                        />
+                        <span
+                          className="h-2 w-2 rounded-full bg-cyan-500 animate-bounce"
+                          style={{ animationDelay: "240ms" }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "individuals" && isLoadingAIProfiles && (
+                <div className="mb-4 rounded-3xl bg-gradient-to-r from-fuchsia-400 via-indigo-400 to-cyan-400 p-[2px] shadow-[0_20px_60px_-20px_rgba(99,102,241,0.45)]">
+                  <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-50 via-indigo-50 to-cyan-50 p-8">
+                    <div className="pointer-events-none absolute -top-24 -left-24 h-64 w-64 rounded-full bg-gradient-to-br from-fuchsia-400/35 via-purple-400/20 to-indigo-400/20 blur-3xl animate-pulse" />
+                    <div
+                      className="pointer-events-none absolute -bottom-28 -right-28 h-72 w-72 rounded-full bg-gradient-to-br from-cyan-400/30 via-indigo-400/20 to-fuchsia-400/20 blur-3xl animate-pulse"
+                      style={{ animationDelay: "300ms" }}
+                    />
+                    <div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.35)_1px,transparent_0)] [background-size:14px_14px]" />
+
+                    <div className="relative flex flex-col items-center justify-center text-center">
+                      <div className="relative mb-4 grid h-14 w-14 place-items-center">
+                        <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,rgba(236,72,153,0.95),rgba(99,102,241,0.95),rgba(6,182,212,0.95),rgba(236,72,153,0.95))] animate-spin" />
+                        <div className="absolute inset-[4px] rounded-full bg-white/70 backdrop-blur" />
+                        <Users className="relative h-6 w-6 text-fuchsia-600 animate-pulse drop-shadow" />
+                      </div>
+
+                      <p className="font-bold text-base bg-gradient-to-r from-fuchsia-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
+                        {t("aiAnalyzingProfiles") ||
+                          "AI is finding profiles for you..."}
+                      </p>
+                      <p className="mt-1 text-sm text-indigo-700/80">
+                        {t("findingBestProfileMatch") ||
+                          "Finding the best profile matches"}
+                      </p>
+                      <div className="mt-3 flex items-center gap-1">
+                        <span
+                          className="h-2 w-2 rounded-full bg-fuchsia-500 animate-bounce"
+                          style={{ animationDelay: "0ms" }}
+                        />
+                        <span
+                          className="h-2 w-2 rounded-full bg-indigo-500 animate-bounce"
+                          style={{ animationDelay: "120ms" }}
+                        />
+                        <span
+                          className="h-2 w-2 rounded-full bg-cyan-500 animate-bounce"
+                          style={{ animationDelay: "240ms" }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* AI Suggested Groups - Show at top for groups tab */}
+              {activeTab === "groups" && (
+                <AIRecommendedGroups
+                  aiSuggestedGroupPosts={aiSuggestedGroupPosts}
+                  membership={membership}
+                  onOpenDetail={handleOpenGroupDetail}
+                  onApply={handleAIGroupApply}
+                />
+              )}
+
+              {/* AI Suggested Profiles - Show at top for individuals tab */}
+              {activeTab === "individuals" && (
+                <AIRecommendedProfiles
+                  aiSuggestedPosts={aiSuggestedPosts}
+                  membership={membership}
+                  onInvite={onInvite}
+                  myGroupDetails={myGroupDetails}
+                />
+              )}
+
+              {/* Only show "No results" if there are no AI suggestions AND no filtered posts */}
+              {filtered.length === 0 &&
+                aiSuggestedGroupPosts.length === 0 &&
+                aiSuggestedPosts.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">
+                    {t("noData") || "No results found."}
+                  </div>
+                )}
+
+              {/* GROUP CARDS */}
+              {activeTab === "groups" &&
+                paged.map((p) => (
+                  <GroupCard
+                    key={p.id}
+                    post={p}
+                    membership={membership}
+                    applyLoadingId={applyLoadingId}
+                    onOpenDetail={openDetail}
+                    onApply={onClickOpenApply}
+                    onClickLeader={goProfile}
+                  />
+                ))}
+
+              {/* PERSONAL CARDS */}
+              {activeTab === "individuals" &&
+                paged.map((u) => (
+                  <PersonalCard
+                    key={u.id}
+                    post={u}
+                    userRole={userRole}
+                    onInvite={onInvite}
+                    onClickProfile={goProfile}
+                    membership={membership}
+                    myGroupDetails={myGroupDetails}
+                  />
+                ))}
+
+              {/* Pagination */}
+              <Pagination
+                page={page}
+                setPage={setPage}
+                pageSize={pageSize}
+                setPageSize={setPageSize}
+                total={total}
               />
-            ))}
-
-          {/* PERSONAL CARDS */}
-          {activeTab === "individuals" &&
-            paged.map((u) => (
-              <PersonalCard
-                key={u.id}
-                post={u}
-                userRole={userRole}
-                onInvite={onInvite}
-                onClickProfile={goProfile}
-                membership={membership}
-                myGroupDetails={myGroupDetails}
-              />
-            ))}
-
-          {/* Pagination */}
-          <Pagination
-            page={page}
-            setPage={setPage}
-            pageSize={pageSize}
-            setPageSize={setPageSize}
-            total={total}
-          />
+            </>
+          )}
         </div>
         <CreatePostModal
           isOpen={isCreatePostModalOpen}
@@ -838,7 +1011,6 @@ const Forum = () => {
           isOpen={isCreatePersonalPostModalOpen}
           closeModal={() => setIsCreatePersonalPostModalOpen(false)}
           onCreated={handleCreated}
-          currentUserName={currentUserName}
           destroyOnClose
         />
         <GroupDetailModal

@@ -83,9 +83,15 @@ const GroupDetailModal = ({
 
   const title = useMemo(
     () =>
-      group?.group?.name || group?.title || t("groupDetail") || "Group Detail",
+      group?.title || group?.group?.name || t("groupDetail") || "Group Detail",
     [group, t]
   );
+  const maxMembers = group?.group?.maxMembers;
+  const currentMembers =
+    typeof group?.currentMembers === "number"
+      ? group.currentMembers
+      : group?.group?.members?.length ?? 0;
+
   const mentor = group?.group?.mentor || group?.mentor;
   const memberList = [
     ...(group?.group?.leader
@@ -120,7 +126,7 @@ const GroupDetailModal = ({
           <div className="space-y-5">
             <div className="rounded-xl border border-gray-200 p-4">
               <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-800">
-                {t("description") || "Description"}
+                {t("descriptionPost") || "Description post"}
               </div>
               <div
                 className="text-sm text-gray-700 whitespace-pre-wrap"
@@ -180,29 +186,18 @@ const GroupDetailModal = ({
                     </span>
                   )}
 
-                  {typeof group.group?.maxMembers === "number" && (
+                  {typeof maxMembers === "number" && (
                     <span className="inline-flex items-center rounded-full border border-gray-200 px-2 py-[2px] text-[11px]">
-                      {t("groupMaxMembers") || "Max"}:{" "}
+                      {t("groupMembers") || "Members"}:{" "}
                       <span className="ml-1 font-medium text-gray-700">
-                        {group.group.maxMembers}
-                      </span>
-                    </span>
-                  )}
-
-                  {(typeof group.currentMembers === "number" ||
-                    group.group?.members?.length) && (
-                    <span className="inline-flex items-center rounded-full border border-gray-200 px-2 py-[2px] text-[11px]">
-                      {t("groupCurrentMembers") || "Current"}:{" "}
-                      <span className="ml-1 font-medium text-gray-700">
-                        {group.currentMembers ??
-                          group.group?.members?.length ??
-                          0}
+                        {currentMembers}/{maxMembers}
                       </span>
                     </span>
                   )}
                 </div>
 
                 <p className="mt-1 text-xs text-gray-500">
+                  {t("descriptionGroup") || "Description group"}:{" "}
                   {group.group?.description ||
                     group.description ||
                     t("noDescription") ||

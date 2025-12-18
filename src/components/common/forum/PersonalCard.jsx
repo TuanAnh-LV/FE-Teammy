@@ -20,7 +20,6 @@ export function PersonalCard({
   myGroupDetails,
 }) {
   const { t } = useTranslation();
-  // Show status only when hasApplied is true
   const inviteStatus = post.hasApplied
     ? post.myApplicationStatus || "pending"
     : null;
@@ -54,7 +53,6 @@ export function PersonalCard({
         className="flex items-start gap-3 cursor-pointer hover:text-gray-800"
         onClick={() => onClickProfile(authorId || author)}
       >
-        {/* AVATAR + FALLBACK INITIALS */}
         <div className="relative mt-1 h-10 w-10 shrink-0">
           {avatarUrl && (
             <img
@@ -75,12 +73,16 @@ export function PersonalCard({
           </div>
         </div>
 
-        {/* TÊN + THỜI GIAN + MAJOR */}
         <div>
           <h3 className="text-base font-semibold text-gray-900">
-            {name || t("profile") || "Profile"}
+            {post.title}
           </h3>
+
           <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
+            <span className="font-medium text-gray-700">
+              {name || t("profile") || "Profile"}
+            </span>
+            <span>•</span>
             <span>{timeAgo}</span>
           </div>
         </div>
@@ -90,10 +92,9 @@ export function PersonalCard({
         {post.description}
       </p>
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="mt-4 space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Skills */}
             <div className="text-xs font-semibold tracking-wide text-gray-500">
               {(t("skills") || "Skills") + ":"}
               <div className="mt-2 flex flex-wrap gap-2">
@@ -103,7 +104,6 @@ export function PersonalCard({
               </div>
             </div>
 
-            {/* Major */}
             <div className="lg:ml-10 text-xs font-semibold tracking-wide text-gray-800">
               {(t("major") || "Major") + ":"}
               <div className="mt-2 text-gray-500">{majorName}</div>
