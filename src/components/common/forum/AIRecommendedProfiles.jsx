@@ -1,6 +1,7 @@
 import React from "react";
 import { Sparkles, Star, UserPlus } from "lucide-react";
 import { Chip, StatusChip } from "./Chip";
+import { PostService } from "../../../services/post.service";
 import { initials, timeAgoFrom } from "../../../utils/helpers";
 import { useTranslation } from "../../../hook/useTranslation";
 import { useNavigate } from "react-router-dom";
@@ -61,7 +62,8 @@ export function AIRecommendedProfiles({
         const description = profilePost.description || "";
         const createdAt = profilePost.createdAt || new Date();
         const timeAgo = createdAt ? timeAgoFrom(createdAt) : "";
-        const title = profilePost.title || t("profile") || "Profile";
+
+        // Skills - parse from matchingSkills array or position_needed string
         const matchingSkills = suggestion.matchingSkills || [];
         const positionNeeded = profilePost.position_needed || "";
         const skillsArray =
@@ -71,12 +73,18 @@ export function AIRecommendedProfiles({
                 .split(",")
                 .map((s) => s.trim())
                 .filter(Boolean);
+
+        // Major
         const majorName = user.majorName || major.majorName || "";
+
+        // Primary role
         const primaryRole = suggestion.primaryRole || "";
+
+        // Show status only when hasApplied is true
         const inviteStatus = profilePost.hasApplied
           ? profilePost.myApplicationStatus || "pending"
           : null;
-        const aiReason = suggestion.aiReason || "";
+
         return (
           <div
             key={idx}
@@ -121,48 +129,35 @@ export function AIRecommendedProfiles({
               {/* Name & Time */}
               <div className="flex-1">
                 <h3 className="text-base font-semibold text-gray-900">
-                  {title}
+                  {userName}
                 </h3>
-
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
-                  <span className="font-medium text-gray-700">{userName}</span>
-                  <span>•</span>
                   <span>{timeAgo}</span>
                 </div>
               </div>
             </div>
 
+            {/* Description */}
             <p className="mt-3 text-sm text-gray-700" style={clamp3}>
               {description}
             </p>
-            {aiReason && String(aiReason).trim() !== "" && (
-              <div className="mt-4 rounded-xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-purple-50 to-white p-3">
-                <div className="flex items-start gap-2">
-                  <Sparkles className="mt-0.5 h-4 w-4 text-indigo-600 shrink-0" />
-                  <div className="flex-1">
-                    <div className="text-xs font-bold text-indigo-700">
-                      {t("aiReason") || "AI Reason"}
-                    </div>
-                    <p className="mt-1 text-sm text-gray-700">{aiReason}</p>
-                  </div>
-                </div>
-              </div>
-            )}
 
+            {/* Primary Role Badge */}
             {primaryRole && (
-              <div className="text-xs font-semibold tracking-wide text-gray-500">
-                {(t("roleNeed") || "Role") + ":"}
-                <div className="mt-2 flex-wrap gap-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+              <div className="mt-3">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
                   {primaryRole.charAt(0).toUpperCase() + primaryRole.slice(1)}
-                </div>
+                </span>
               </div>
             )}
 
+            {/* Skills & Major */}
             <div className="mt-5 flex flex-col gap-3">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Skills */}
                 {skillsArray.length > 0 && (
                   <div className="text-xs font-semibold tracking-wide text-gray-500">
-                    {(t("matchingSkills") || "Matching Skills") + ":"}
+                    {(t("skills") || "Skills") + ":"}
                     <div className="mt-2 flex flex-wrap gap-2">
                       {skillsArray.map((s, i) => (
                         <Chip key={i}>{s}</Chip>
@@ -171,6 +166,7 @@ export function AIRecommendedProfiles({
                   </div>
                 )}
 
+                {/* Major */}
                 {majorName && (
                   <div className="lg:ml-10 text-xs font-semibold tracking-wide text-gray-800">
                     {(t("major") || "Major") + ":"}
@@ -180,6 +176,7 @@ export function AIRecommendedProfiles({
               </div>
             </div>
 
+            {/* Actions */}
             <div className="mt-5 pt-4 border-t border-gray-300">
               <div className="flex justify-end">
                 {profilePost.hasApplied && inviteStatus ? (
@@ -187,6 +184,7 @@ export function AIRecommendedProfiles({
                 ) : membership?.status !== "member" &&
                   membership?.status !== "student" &&
                   (() => {
+                    // Kiểm tra xem nhóm đã full thành viên chưa
                     if (myGroupDetails) {
                       const currentMembers =
                         myGroupDetails.currentMembers ||
@@ -196,6 +194,7 @@ export function AIRecommendedProfiles({
                         myGroupDetails.maxMembers ||
                         myGroupDetails.capacity ||
                         0;
+                      // Nếu nhóm đã full thành viên, ẩn nút invite
                       if (currentMembers >= maxMembers) {
                         return false;
                       }

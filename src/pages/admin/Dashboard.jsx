@@ -63,7 +63,7 @@ const AdminDashboard = () => {
   };
   const fetchMajorsData = async () => {
     try {
-      const response = await AdminService.getMajorStats(false);
+      const response = await AdminService.getMajorStats(false); // dùng API admin
       if (response?.data) {
         const stats = Array.isArray(response.data) ? response.data : [];
 
@@ -139,10 +139,11 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
-            {t("dashboard") || "Dashboard"}
+            Dashboard
           </h1>
         </div>
       </div>

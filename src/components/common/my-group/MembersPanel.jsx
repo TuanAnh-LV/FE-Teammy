@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MoreVertical } from "lucide-react";
+import { MoreVertical, Users, GraduationCap, UserPlus } from "lucide-react";
 import AssignRoleModal from "./AssignRoleModal";
 
 export default function MembersPanel({
@@ -148,8 +148,21 @@ export default function MembersPanel({
   // When we only need the contribution cards (members tab), skip the other blocks.
   if (showStats) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {memberStats.length ? (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-gray-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              {t("teamMembers") || "Team Members"}
+            </h3>
+          </div>
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold text-gray-500 uppercase mb-4">
+            {t("contribution") || "Contribution"}
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {memberStats.length ? (
           memberStats.map((member, idx) => {
             const initials = (member.name || member.displayName || "U")
               .split(" ")
@@ -247,17 +260,22 @@ export default function MembersPanel({
                     <span>{t("tasksCompleted") || "Tasks Completed"}</span>
                     <span className="font-semibold">{tasksCompleted}</span>
                   </div>
-                  <div className="mt-2 flex justify-between">
-                    <span>
-                      {t("contributionScore") || "Contribution Score"}
-                    </span>
-                    <span className="font-semibold">{contribution}%</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
-                    <div
-                      className="h-2 rounded-full bg-blue-500"
-                      style={{ width: `${Math.min(contribution, 100)}%` }}
-                    />
+                  <div className="mt-3">
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                      {t("contribution") || "Contribution"}
+                    </h4>
+                    <div className="flex justify-between mb-2">
+                      <span>
+                        {t("contributionScore") || "Contribution Score"}
+                      </span>
+                      <span className="font-semibold">{contribution}%</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div
+                        className="h-2 rounded-full bg-blue-500"
+                        style={{ width: `${Math.min(contribution, 100)}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
                 {member.email && (
@@ -276,6 +294,8 @@ export default function MembersPanel({
             {t("noMembersYet") || "No members yet."}
           </div>
         )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -285,9 +305,12 @@ export default function MembersPanel({
       <div className="space-y-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {t("teamMembers") || "Team Members"}
-            </h3>
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-gray-600" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                {t("teamMembers") || "Team Members"}
+              </h3>
+            </div>
             <span className="text-sm text-gray-400">
               {groupMembers?.length || 0}{" "}
               {groupMembers?.length === 1 ? "person" : "people"}
@@ -413,18 +436,22 @@ export default function MembersPanel({
               <button
                 type="button"
                 onClick={onInvite}
-                className="w-full border border-dashed border-blue-400 rounded-xl py-2 text-sm font-semibold text-blue-600 bg-white hover:bg-blue-50 transition"
+                className="w-full inline-flex items-center justify-center gap-2 border border-dashed border-blue-400 rounded-xl py-2.5 text-sm font-semibold text-blue-600 bg-white hover:bg-blue-50 transition"
               >
-                {t("inviteMembers") || "Invite Members"}
+                <UserPlus className="w-4 h-4" />
+                {t("inviteMembers") || "+ Invite Members"}
               </button>
             )}
           </div>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            {t("projectMentor") || "Mentor"}
-          </h3>
+          <div className="flex items-center gap-2 mb-4">
+            <GraduationCap className="w-5 h-5 text-gray-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              {t("projectMentor") || "Mentor"}
+            </h3>
+          </div>
           {mentor ? (
             <div
               className="flex items-center gap-3 cursor-pointer"
@@ -462,9 +489,13 @@ export default function MembersPanel({
               </div>
             </div>
           ) : (
-            <div className="text-sm text-gray-500">
-              {t("noMentorAssigned") ||
-                "No mentor assigned. Add a mentor to keep guidance aligned."}
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                <GraduationCap className="w-8 h-8 text-gray-300" />
+              </div>
+              <p className="text-sm text-gray-500 text-center">
+                {t("noMentorAssigned") || "No mentor assigned"}
+              </p>
             </div>
           )}
         </div>
