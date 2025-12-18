@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { notification, Modal } from "antd";
 import { GroupService } from "../services/group.service";
-import { TopicService } from "../services/topic.service";
 import { MajorService } from "../services/major.service";
 import { BoardService } from "../services/board.service";
 import { SkillService } from "../services/skill.service";
@@ -110,12 +109,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     skills: [],
   });
   const [errors, setErrors] = useState({});
-  const [topicModalGroup, setTopicModalGroup] = useState(null);
-  const [topics, setTopics] = useState([]);
-  const [topicsLoading, setTopicsLoading] = useState(false);
-  const [assigningTopic, setAssigningTopic] = useState(false);
-  const [selectedTopicId, setSelectedTopicId] = useState("");
-  const [topicSearch, setTopicSearch] = useState("");
   const [majors, setMajors] = useState([]);
   const [majorsLoading, setMajorsLoading] = useState(false);
   const [skills, setSkills] = useState([]);
@@ -346,81 +339,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     }
   };
 
-  const fetchTopics = async (group, keyword = "") => {
-    if (!group) return;
-    setTopicsLoading(true);
-    try {
-      const params = {
-        q: keyword.trim() || undefined,
-        majorId: group.majorId || undefined,
-      };
-      const res = await TopicService.getTopics(params);
-      const raw = Array.isArray(res?.data?.data)
-        ? res.data.data
-        : Array.isArray(res?.data)
-        ? res.data
-        : [];
-      const openTopics = raw.filter(
-        (topic) =>
-          String(
-            topic?.status || topic?.topicStatus || topic?.state || ""
-          ).toLowerCase() === "open"
-      );
-      setTopics(openTopics);
-    } catch (error) {
-      notification.error({
-        message: t("error") || "Failed to load topics.",
-      });
-    } finally {
-      setTopicsLoading(false);
-    }
-  };
-
-  const handleOpenTopicModal = (group) => {
-    if (!group) return;
-    setTopicModalGroup(group);
-    setSelectedTopicId(group.topicId || "");
-    setTopicSearch("");
-    fetchTopics(group, "");
-  };
-
-  const handleCloseTopicModal = () => {
-    if (assigningTopic) return;
-    setTopicModalGroup(null);
-    setSelectedTopicId("");
-    setTopicSearch("");
-    setTopics([]);
-  };
-
-  const handleSearchTopics = (value) => {
-    setTopicSearch(value);
-    if (topicModalGroup) {
-      fetchTopics(topicModalGroup, value);
-    }
-  };
-
-  const handleAssignTopic = async () => {
-    if (!selectedTopicId || !topicModalGroup) return;
-    try {
-      setAssigningTopic(true);
-      await GroupService.assignTopic(topicModalGroup.id, selectedTopicId);
-      notification.success({
-        message: t("updateSuccess") || "Topic assigned successfully.",
-      });
-      handleCloseTopicModal();
-      await fetchMyGroups();
-    } catch (error) {
-      notification.error({
-        message: t("error") || "Failed to assign topic.",
-      });
-    } finally {
-      setAssigningTopic(false);
-    }
-  };
-
-  // Allow leaders to select/assign topic even if group isn't full
-  const canSelectTopic = (group) => Boolean(group) && group.isLeader;
-
   const loadPendingApplications = async (dataset) => {
     const leaderGroups = dataset.filter((g) => g.isLeader);
     setPendingLoading(true);
@@ -606,12 +524,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     activeApplications,
     invitations,
     invitationsLoading,
-    topicModalGroup,
-    topics,
-    topicsLoading,
-    assigningTopic,
-    selectedTopicId,
-    topicSearch,
     majors,
     majorsLoading,
     skills,
@@ -628,12 +540,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     handleLeaveGroup,
     handleApprove,
     handleReject,
-    handleOpenTopicModal,
-    handleCloseTopicModal,
-    handleSearchTopics,
-    handleAssignTopic,
-    setSelectedTopicId,
-    canSelectTopic,
 
     //board
     fetchBoardTask,

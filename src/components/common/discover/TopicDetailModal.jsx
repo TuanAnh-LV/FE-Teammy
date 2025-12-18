@@ -10,6 +10,7 @@ import {
   Award,
 } from "lucide-react";
 import { useTranslation } from "../../../hook/useTranslation";
+import { getStatusLabel, getStatusTagClasses } from "../../../utils/statusTag";
 
 const TopicDetailModal = ({
   isOpen,
@@ -131,29 +132,16 @@ const TopicDetailModal = ({
                 {topic.domain}
               </span>
               {(() => {
-                const status = (topic.status || "").toLowerCase();
-
-                const statusUI = {
-                  open: {
-                    label: t("open") || "Open",
-                    cls: "bg-green-50 text-green-700 border border-green-200",
-                    icon: null,
-                  },
-                  closed: {
-                    label: t("closed") || "Closed",
-                    cls: "bg-gray-100 text-gray-700 border border-gray-200",
-                    icon: null,
-                  },
-                };
-
-                const ui = statusUI[status] || statusUI.closed;
+                const statusLabel = getStatusLabel(topic.status, t);
+                const statusClass = getStatusTagClasses(topic.status, {
+                  withBorder: true,
+                });
 
                 return (
                   <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg ${ui.cls}`}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg ${statusClass}`}
                   >
-                    {ui.icon}
-                    {ui.label}
+                    {statusLabel}
                   </span>
                 );
               })()}
@@ -408,3 +396,6 @@ const TopicDetailModal = ({
 };
 
 export default TopicDetailModal;
+
+
+
