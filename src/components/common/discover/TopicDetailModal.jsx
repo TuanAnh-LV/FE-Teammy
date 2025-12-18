@@ -28,23 +28,19 @@ const TopicDetailModal = ({
 
   if (!topic) return null;
 
-  // Check if user's group has pending invitation for this topic
   const myGroupId =
     membership?.groupId || myGroupDetails?.groupId || myGroupDetails?.id;
   const topicGroups = topic.groups || topic.detail?.groups || [];
   const myGroupInTopic = topicGroups.find((g) => g.groupId === myGroupId);
   const hasPendingInvitation = myGroupInTopic?.status === "pending_invitation";
-
-  // Check if group has pending invitation for ANY other topic by scanning all projects
   const groupHasAnyPending = allProjects.some((p) => {
-    if (p.topicId === topic.topicId) return false; // Skip current topic
+    if (p.topicId === topic.topicId) return false;
     const groups = p.groups || p.detail?.groups || [];
     return groups.some(
       (g) => g.groupId === myGroupId && g.status === "pending_invitation"
     );
   });
 
-  // Show other groups selecting this topic (exclude user's group)
   const otherGroupsSelecting = topicGroups.filter(
     (g) => g.groupId !== myGroupId && g.status === "pending_invitation"
   );
@@ -374,17 +370,6 @@ const TopicDetailModal = ({
                     className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all bg-amber-100 text-amber-700 border border-amber-300 cursor-not-allowed"
                   >
                     {t("pendingInvitation") || "Pending Invitation"}
-                  </button>
-                ) : groupHasAnyPending ? (
-                  <button
-                    disabled
-                    className="flex-1 px-4 py-2.5 text-xs font-medium rounded-lg transition-all bg-gray-100 text-gray-500 border border-gray-300 cursor-not-allowed"
-                    title={
-                      t("alreadyHasPendingTopic") ||
-                      "You have a pending invitation for another topic"
-                    }
-                  >
-                    {t("hasPendingInvitation") || "Pending for Another Topic"}
                   </button>
                 ) : canSelectTopic ? (
                   <button

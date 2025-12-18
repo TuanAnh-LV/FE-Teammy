@@ -142,7 +142,7 @@ export function GroupCard({
         {/* Skills */}
         {toArraySkills(post).length > 0 && (
           <div className="text-xs font-semibold tracking-wide text-gray-800">
-            {(t("skills") || "Skills") + ":"}
+            {(t("requiredSkills") || "Required Skillss") + ":"}
             <div className="mt-2 flex flex-wrap gap-2">
               {toArraySkills(post).map((s) => (
                 <Chip key={s}>{s}</Chip>

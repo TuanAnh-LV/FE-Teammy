@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "../../../hook/useTranslation";
 import { Modal, Input, Button, Form, notification } from "antd";
 import { PostService } from "../../../services/post.service";
+import { AuthService } from "../../../services/auth.service";
 
 const { TextArea } = Input;
 
@@ -13,20 +14,52 @@ const CreatePersonalPostModal = ({
 }) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [currentUserInfo, setCurrentUserInfo] = React.useState({
+    skills: [],
+  });
 
-  // Lấy skills từ userInfo giống như name
-  const savedUser = JSON.parse(localStorage.getItem("userInfo") || "{}");
-  const currentUserSkills = savedUser.skills || [];
+  // Lấy thông tin user từ API khi modal mở
+  React.useEffect(() => {
+    if (isOpen) {
+      const fetchUserInfo = async () => {
+        try {
+          const response = await AuthService.me();
+          const userData = response.data;
+          setCurrentUserInfo({
+            name: userData.displayName || currentUserName,
+            skills: userData.skills || [],
+          });
+          // Cập nhật form với dữ liệu mới
+          form.setFieldsValue({
+            name: userData.displayName || currentUserName,
+            skills: Array.isArray(userData.skills)
+              ? userData.skills.join(", ")
+              : userData.skills,
+          });
+        } catch (err) {
+          console.error("Failed to fetch user info:", err);
+          // Fallback về giá trị props nếu API fail
+          setCurrentUserInfo({
+            name: currentUserName,
+            skills: [],
+          });
+        }
+      };
+      fetchUserInfo();
+    }
+  }, [isOpen, currentUserName, form]);
 
   const handleSubmit = async () => {
     try {
+      setIsSubmitting(true);
       const values = await form.validateFields();
       const { title, description } = values;
 
-      // Sử dụng skills từ userInfo
-      const skillsCsv = Array.isArray(currentUserSkills)
-        ? currentUserSkills.join(",")
-        : String(currentUserSkills || "");
+      // Sử dụng skills từ API
+      const skillsCsv = Array.isArray(currentUserInfo.skills)
+        ? currentUserInfo.skills.join(",")
+        : String(currentUserInfo.skills || "");
 
       await PostService.createPersonalPost({
         title,
@@ -49,6 +82,8 @@ const CreatePersonalPostModal = ({
           t("pleaseTryAgain") ||
           "Please try again",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -71,10 +106,10 @@ const CreatePersonalPostModal = ({
         initialValues={{
           title: "",
           description: "",
-          name: currentUserName,
-          skills: Array.isArray(currentUserSkills)
-            ? currentUserSkills.join(", ")
-            : currentUserSkills,
+          name: currentUserInfo.name,
+          skills: Array.isArray(currentUserInfo.skills)
+            ? currentUserInfo.skills.join(", ")
+            : currentUserInfo.skills,
         }}
       >
         {/* chỉ hiển thị tên */}
@@ -137,6 +172,8 @@ const CreatePersonalPostModal = ({
           <Button
             type="primary"
             htmlType="submit"
+            loading={isSubmitting}
+            disabled={isSubmitting}
             className="!bg-[#FF7A00] hover:!opacity-90 !text-white !border-none"
           >
             {t("publishProfile") || "Publish Profile"}

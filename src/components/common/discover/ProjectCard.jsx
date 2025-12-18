@@ -193,17 +193,6 @@ const ProjectCard = ({
               >
                 {t("pendingInvitation") || "Pending Invitation"}
               </button>
-            ) : groupHasAnyPending ? (
-              <button
-                disabled
-                className="w-full text-xs font-medium py-3 rounded-lg transition-colors !bg-gray-100 !text-gray-500 !border !border-gray-300 cursor-not-allowed"
-                title={
-                  t("alreadyHasPendingTopic") ||
-                  "You have a pending invitation for another topic"
-                }
-              >
-                {t("hasPendingInvitation") || "Pending for Another Topic"}
-              </button>
             ) : canSelectTopic ? (
               <button
                 onClick={async (e) => {
