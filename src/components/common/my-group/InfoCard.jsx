@@ -1,34 +1,10 @@
 import React from "react";
-import {
-  Calendar,
-  Users,
-  ClipboardList,
-  Target,
-  Edit2,
-  BookOpen,
-  CheckCircle2,
-  Clock,
-  GraduationCap,
-} from "lucide-react";
+import { ArrowLeft, Calendar, Users, ClipboardList, Target } from "lucide-react";
 import { useTranslation } from "../../../hook/useTranslation";
 
 const formatText = (value) => {
   if (!value) return "";
   return value;
-};
-
-const formatDate = (dateString) => {
-  if (!dateString) return "--";
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return dateString;
-  }
 };
 
 export default function InfoCard({
@@ -50,126 +26,107 @@ export default function InfoCard({
     Math.max(0, Number(group.progress) || 0)
   );
 
-  const getStatusColor = (status) => {
-    const statusLower = (status || "").toLowerCase();
-    if (statusLower.includes("recruiting")) {
-      return "bg-blue-500 text-white";
-    }
-    if (statusLower.includes("active") || statusLower.includes("confirmed")) {
-      return "bg-emerald-500 text-white";
-    }
-    if (statusLower.includes("pending")) {
-      return "bg-amber-500 text-white";
-    }
-    return "bg-gray-500 text-white";
-  };
-
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-      {/* Header with Title, Status, and Action Buttons */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-3 mb-2">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">
-              {group.title}
-            </h1>
-            <span
-              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide flex-shrink-0 ${getStatusColor(
-                statusLabel
-              )}`}
+    <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 border border-gray-200 bg-white shadow-sm">
+      <div className="mx-auto w-full max-w-[79rem] px-6 py-4">
+        <div className="flex items-center justify-between pt-10">
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-gray-900"
             >
+              <ArrowLeft className="h-4 w-4" />
+              {t("back") || "Back"}
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="flex items-center gap-2">
+
+            {onEdit && (
+              <button
+                type="button"
+                onClick={onEdit}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
+              >
+                {t("editGroup") || "Edit group"}
+              </button>
+            )}
+            {onSelectTopic && (
+              <button
+                type="button"
+                onClick={onSelectTopic}
+                className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-orange-700 focus:outline-none focus:ring-4 focus:ring-green-100"
+              >
+                {hasTopicAssigned
+                  ? (t("changeTopic") || "Change Topic")
+                  : (t("selectTopic") || "Select Topic")}
+              </button>
+            )}
+            {onActivate && (
+              <button
+                type="button"
+                onClick={onActivate}
+                className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+              >
+                {t("confirmGroup") || "Confirm group"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-3 flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <h3 className="text-3xl font-black bg-gradient-to-r from-[#3182ed] to-[#0595c7] text-transparent bg-clip-text">{group.title}</h3>
+            <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-0.5 text-xs font-semibold uppercase tracking-wide text-green-700">
               {statusLabel}
             </span>
           </div>
-          <p className="text-base text-gray-600">
+          <p className="text-[16px] text-[#627084]">
             {group.topicName || group.field || t("selectMajor") || "Topic pending"}
           </p>
         </div>
-        <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-          {onEdit && (
-            <button
-              type="button"
-              onClick={onEdit}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition-colors"
-            >
-              <Edit2 className="w-4 h-4 text-gray-600" />
-              <span className="hidden sm:inline">
-                {t("editGroup") || "Edit group"}
-              </span>
-              <span className="sm:hidden">{t("edit") || "Edit"}</span>
-            </button>
-          )}
-          {onSelectTopic && (
-            <button
-              type="button"
-              onClick={onSelectTopic}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition-colors"
-            >
-              <BookOpen className="w-4 h-4 text-gray-600" />
-              <span className="hidden sm:inline">
-                {hasTopicAssigned
-                  ? t("changeTopic") || "Change Topic"
-                  : t("selectTopic") || "Select Topic"}
-              </span>
-              <span className="sm:hidden">
-                {hasTopicAssigned ? t("change") || "Change" : t("topic") || "Topic"}
-              </span>
-            </button>
-          )}
-          {onActivate && (
-            <button
-              type="button"
-              onClick={onActivate}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition-colors"
-            >
-              <CheckCircle2 className="w-4 h-4 text-gray-600" />
-              <span className="hidden sm:inline">
-                {t("confirmGroup") || "Confirm group"}
-              </span>
-              <span className="sm:hidden">{t("confirm") || "Confirm"}</span>
-            </button>
-          )}
-        </div>
-      </div>
 
-      {/* Group Info - Single Row with Icons */}
-      <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-5 text-sm text-gray-600">
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-gray-400 flex-shrink-0" />
-          <span>
-            {memberCount}/{group.maxMembers} {t("members") || "members"}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <GraduationCap className="h-4 w-4 text-gray-400 flex-shrink-0" />
-          <span>{group.field || t("selectMajor") || "Major"}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
-          <span>{group.semester || group.semesterLabel || "-"}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-gray-400 flex-shrink-0" />
-          <span>
-            {t("due") || "Due"}:{" "}
-            <span className="font-semibold text-gray-900">
-              {formatDate(group.end)}
+        <div className="mt-5 flex flex-wrap gap-6 text-sm text-[#627084]">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-gray-400" />
+            <span className="text-[#627084]">
+              {memberCount}/{group.maxMembers}
             </span>
-          </span>
+            <span>{t("members") || "members"}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Target className="h-4 w-4 text-gray-400" />
+            <span className="">
+              {group.field || t("selectMajor") || "Major"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 text-gray-400" />
+            <span className="">
+              {group.semester || group.semesterLabel || "-"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-gray-400" />
+            <span className="">
+              {t("due") || "Due"}: {group.end || "--"}
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* Progress Bar */}
-      <div>
-        <div className="flex items-center justify-between text-xs font-semibold uppercase text-gray-500 mb-2">
-          <p>{t("progress") || "Progress"}</p>
-          <span className="text-gray-900">{progressValue}%</span>
-        </div>
-        <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gray-400 rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${progressValue}%` }}
-          />
+        <div className="mt-6">
+          <div className="flex items-center justify-between text-xs font-semibold uppercase text-gray-500">
+            <p>{t("progress") || "Progress"}</p>
+            <span className="text-gray-900">{progressValue}%</span>
+          </div>
+          <div className="mt-2 h-2 w-full bg-gray-100">
+            <div
+              className="h-full bg-blue-500"
+              style={{ width: `${progressValue}%` }}
+            />
+          </div>
         </div>
       </div>
     </div>
