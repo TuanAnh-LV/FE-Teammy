@@ -7,12 +7,21 @@ import InfoCard from "../../components/common/my-group/InfoCard";
 import AddMemberModal from "../../components/common/my-group/AddMemberModal";
 import EditGroupModal from "../../components/common/my-group/EditGroupModal";
 import LoadingState from "../../components/common/LoadingState";
-import { Plus, FolderKanban, ListTodo, Flag, BarChart3, FileText } from "lucide-react";
+import {
+  Plus,
+  FolderKanban,
+  ListTodo,
+  Flag,
+  BarChart3,
+  Calendar,
+  ClipboardList,
+  UserPlus,
+} from "lucide-react";
 import { Modal, Form, Input } from "antd";
 import TaskModal from "../../components/common/kanban/TaskModal";
 import useKanbanBoard from "../../hook/useKanbanBoard";
 import { filterColumns } from "../../utils/kanbanUtils";
-import TabSwitcher from "../../components/common/my-group/TabSwitcher";
+import SidebarNavigation from "../../components/common/my-group/SidebarNavigation";
 import OverviewSection from "../../components/common/my-group/OverviewSection";
 import MembersPanel from "../../components/common/my-group/MembersPanel";
 import FilesPanel from "../../components/common/my-group/FilesPanel";
@@ -101,6 +110,7 @@ export default function MyGroup() {
     addTaskComment,
     updateTaskComment,
     deleteTaskComment,
+    updateColumnPositionOptimistic,
   } = useKanbanBoard(id);
 
   useEffect(() => {
@@ -211,6 +221,15 @@ export default function MyGroup() {
     date: f.createdAt ? new Date(f.createdAt) : null,
   }));
 
+  const getMemberInitials = (name = "") => {
+    const trimmed = String(name || "").trim();
+    if (!trimmed) return "?";
+    const parts = trimmed.split(/\s+/).slice(0, 2);
+    return parts
+      .map((part) => part.charAt(0).toUpperCase())
+      .join("");
+  };
+
   const statusMeta = {
     todo: { label: "To Do", dot: "bg-gray-300" },
     to_do: { label: "To Do", dot: "bg-gray-300" },
@@ -305,38 +324,110 @@ export default function MyGroup() {
     value
       .replace(/_/g, " ")
       .replace(/\b\w/g, (c) => c.toUpperCase());
-  const handleMoveColumn = (columnId, columnMetaData = {}) => {
-    let nextPosition = columnMetaData?.position ?? 0;
-    Modal.confirm({
-      title: t("moveColumn") || "Move column",
-      content: (
-        <div className="space-y-2">
-          <p className="text-sm text-gray-600">
-            {t("enterNewPosition") || "Enter new position (0 = first)."}
-          </p>
-          <input
-            type="number"
-            defaultValue={nextPosition}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            onChange={(e) => {
-              nextPosition = Number(e.target.value) || 0;
-            }}
-          />
-        </div>
-      ),
-      okText: t("ok") || "OK",
-      cancelText: t("cancel") || "Cancel",
-      onOk: async () => {
-        try {
-          await BoardService.updateColumn(id, columnId, {
-            position: nextPosition,
-          });
-          refetchBoard({ showLoading: false });
-        } catch (err) {
+  const handleMoveColumnLeft = async (columnId, columnMetaData = {}) => {
+    // Lấy danh sách tất cả columns và sắp xếp theo position
+    const sortedColumns = Object.entries(columnMeta || {})
+      .map(([colId, meta]) => ({
+        id: colId,
+        position: meta?.position ?? 0,
+        title: meta?.title || colId,
+      }))
+      .sort((a, b) => a.position - b.position);
 
-        }
-      },
-    });
+    const currentIndex = sortedColumns.findIndex((col) => col.id === columnId);
+    if (currentIndex <= 0) return; // Không thể di chuyển trái
+
+    const currentColumn = sortedColumns[currentIndex];
+    const leftColumn = sortedColumns[currentIndex - 1];
+
+    // Optimistic update: swap positions immediately
+    if (updateColumnPositionOptimistic) {
+      updateColumnPositionOptimistic(
+        columnId,
+        leftColumn.position,
+        leftColumn.id,
+        currentColumn.position
+      );
+    }
+
+    try {
+      await Promise.all([
+        BoardService.updateColumn(id, columnId, {
+          position: leftColumn.position,
+          columnName: columnMetaData?.title || currentColumn.title,
+        }),
+        BoardService.updateColumn(id, leftColumn.id, {
+          position: currentColumn.position,
+          columnName: leftColumn.title,
+        }),
+      ]);
+      // Refresh để đảm bảo sync với server
+      refetchBoard({ showLoading: false });
+    } catch (err) {
+      // Rollback nếu có lỗi
+      if (updateColumnPositionOptimistic) {
+        updateColumnPositionOptimistic(
+          columnId,
+          currentColumn.position,
+          leftColumn.id,
+          leftColumn.position
+        );
+      }
+      // Error handling
+    }
+  };
+
+  const handleMoveColumnRight = async (columnId, columnMetaData = {}) => {
+    // Lấy danh sách tất cả columns và sắp xếp theo position
+    const sortedColumns = Object.entries(columnMeta || {})
+      .map(([colId, meta]) => ({
+        id: colId,
+        position: meta?.position ?? 0,
+        title: meta?.title || colId,
+      }))
+      .sort((a, b) => a.position - b.position);
+
+    const currentIndex = sortedColumns.findIndex((col) => col.id === columnId);
+    if (currentIndex < 0 || currentIndex >= sortedColumns.length - 1) return; // Không thể di chuyển phải
+
+    const currentColumn = sortedColumns[currentIndex];
+    const rightColumn = sortedColumns[currentIndex + 1];
+
+    // Optimistic update: swap positions immediately
+    if (updateColumnPositionOptimistic) {
+      updateColumnPositionOptimistic(
+        columnId,
+        rightColumn.position,
+        rightColumn.id,
+        currentColumn.position
+      );
+    }
+
+    try {
+      await Promise.all([
+        BoardService.updateColumn(id, columnId, {
+          position: rightColumn.position,
+          columnName: columnMetaData?.title || currentColumn.title,
+        }),
+        BoardService.updateColumn(id, rightColumn.id, {
+          position: currentColumn.position,
+          columnName: rightColumn.title,
+        }),
+      ]);
+      // Refresh để đảm bảo sync với server
+      refetchBoard({ showLoading: false });
+    } catch (err) {
+      // Rollback nếu có lỗi
+      if (updateColumnPositionOptimistic) {
+        updateColumnPositionOptimistic(
+          columnId,
+          currentColumn.position,
+          rightColumn.id,
+          rightColumn.position
+        );
+      }
+      // Error handling
+    }
   };
 
   if (loading) {
@@ -348,38 +439,57 @@ export default function MyGroup() {
     );
   }
 
+  const tabs = [
+    { key: "overview", label: t("overview") || "Overview" },
+    { key: "members", label: t("teamMembers") || "Members" },
+    { key: "workspace", label: t("workspace") || "Workspace" },
+    { key: "posts", label: t("posts") || "Posts" },
+    { key: "files", label: t("files") || "Files" },
+  ];
+
   return (
-    <div className="relative bg-[#f7fafc]">
-      <div className="relative z-10 min-h-screen flex flex-col items-center pt-4 xl:pt-8 pb-24">
-        <div className="w-full flex flex-col gap-6">
-          {group && (
-            <InfoCard
-              group={group}
-              memberCount={groupMembers.length}
-              onBack={() => navigate(-1)}
-              onSelectTopic={
-                group.canEdit ? () => navigate("/discover") : undefined
-              }
-              onEdit={group.canEdit ? () => setEditOpen(true) : null}
-              onActivate={canActivateGroup ? handleActivateGroup : null}
-            />
-          )}
+    <>
+    <div className="relative bg-[#f7fafc] min-h-screen flex overflow-hidden">
+      {/* Sidebar Navigation - Full Height */}
+      <div className="w-64 flex-shrink-0 hidden lg:block">
+        <SidebarNavigation
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          tabs={tabs}
+          t={t}
+        />
+      </div>
 
-          <div className="mx-auto w-full max-w-7xl px-2 sm:px-8">
-            <TabSwitcher
-              activeTab={activeTab}
-              onChange={setActiveTab}
-              tabs={[
-                { key: "overview", label: t("overview") || "Overview" },
-                { key: "members", label: t("teamMembers") || "Members" },
-                { key: "workspace", label: t("workspace") || "Workspace" },
-                { key: "posts", label: t("posts") || "Posts" },
-                { key: "files", label: t("files") || "Files" },
-              ]}
-            />
+      {/* Mobile Sidebar (overlay) */}
+      <div className="lg:hidden">
+        <SidebarNavigation
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          tabs={tabs}
+          t={t}
+        />
+      </div>
 
-            {/* OVERVIEW */}
-            {activeTab === "overview" && (
+      {/* Main Content Area */}
+      <div className="flex-1 min-w-0 overflow-y-auto h-screen">
+        <div className="px-2 sm:px-4 lg:px-6 xl:px-8 pt-20 pb-24">
+          {/* OVERVIEW */}
+          {activeTab === "overview" && (
+            <div className="space-y-6">
+              {/* Group Header - Only in Overview */}
+              {group && (
+                <InfoCard
+                  group={group}
+                  memberCount={groupMembers.length}
+                  onBack={() => navigate(-1)}
+                  onSelectTopic={
+                    group.canEdit ? () => navigate("/discover") : undefined
+                  }
+                  onEdit={group.canEdit ? () => setEditOpen(true) : null}
+                  onActivate={canActivateGroup ? handleActivateGroup : null}
+                />
+              )}
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <OverviewSection
                   descriptionText={descriptionText}
@@ -403,6 +513,7 @@ export default function MyGroup() {
                   showStats={false}
                 />
               </div>
+            </div>
             )}
 
             {/* MEMBERS */}
@@ -429,26 +540,91 @@ export default function MyGroup() {
 
             {/* WORKSPACE */}
             {activeTab === "workspace" && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
+              <div className="pt-2 space-y-4">
+                {/* Workspace Header */}
+                <div className="flex flex-col gap-4 mb-20 md:flex-row md:items-center md:justify-between">
+                  <div className="space-y-2">
                     <h3 className="text-xl font-semibold text-gray-900">
                       {t("workspace") || "Workspace"}
                     </h3>
-                    <p className="text-sm text-gray-500">
-                      {t("workspaceIntro") ||
-                        "Drag tasks across columns, assign owners, and keep momentum."}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-4 text-xs md:text-sm text-gray-500">
+                      <div className="inline-flex items-center gap-1.5">
+                        <ClipboardList className="w-4 h-4 text-gray-400" />
+                        <span>
+                          {group.semester || group.semesterLabel || "-"}
+                        </span>
+                      </div>
+                      <div className="inline-flex items-center gap-1.5">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <span>
+                          {(t("due") || "Due")}: {group.end || "--"}
+                        </span>
+                      </div>
+                      {group.status && (
+                        <span className="inline-flex items-center rounded-full bg-blue-500 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                          {group.status}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  {activeWorkspaceTab === "kanban" && (
+                  <div className="flex flex-wrap items-center gap-3 md:gap-4">
+                    {/* Member Avatars */}
+                    {groupMembers.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex -space-x-2">
+                          {groupMembers.slice(0, 4).map((member) => {
+                            const initials = getMemberInitials(
+                              member.name || member.email
+                            );
+                            return (
+                              <div
+                                key={member.id}
+                                className="relative h-9 w-9 rounded-full border-2 border-white bg-gray-100 text-xs font-semibold text-gray-700 shadow-sm overflow-hidden"
+                                title={member.name || member.email}
+                              >
+                                {member.avatarUrl ? (
+                                  <img
+                                    src={member.avatarUrl}
+                                    alt={member.name}
+                                    className="h-full w-full rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="flex h-full w-full items-center justify-center">
+                                    {initials}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                          {groupMembers.length > 4 && (
+                            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-dashed border-gray-300 bg-white text-xs font-semibold text-gray-600">
+                              +{groupMembers.length - 4}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Invite Members */}
                     <button
-                      className="flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
-                      onClick={() => setIsColumnModalOpen(true)}
+                      onClick={() => setShowModal(true)}
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition"
                     >
-                      <Plus className="w-4 h-4" />
-                      {t("newColumn") || "New Column"}
+                      <UserPlus className="w-4 h-4" />
+                      {t("inviteMembers") || "Invite members"}
                     </button>
-                  )}
+
+                    {/* New Column (Kanban only) */}
+                    {activeWorkspaceTab === "kanban" && (
+                      <button
+                        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsColumnModalOpen(true)}
+                      >
+                        <Plus className="w-4 h-4" />
+                        {t("newColumn") || "New Column"}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Sub-tabs */}
@@ -516,26 +692,29 @@ export default function MyGroup() {
                 </div>
 
                 {/* KANBAN SUB-TAB */}
-                  {activeWorkspaceTab === "kanban" && (
-                    <KanbanTab
-                      kanbanLoading={kanbanLoading}
-                      kanbanError={kanbanError}
-                      hasKanbanData={hasKanbanData}
-                      filteredColumns={filteredColumns}
+                {activeWorkspaceTab === "kanban" && (
+                  <KanbanTab
+                    kanbanLoading={kanbanLoading}
+                    kanbanError={kanbanError}
+                    hasKanbanData={hasKanbanData}
+                    filteredColumns={filteredColumns}
                     columnMeta={columnMeta}
                     setSelectedTask={setSelectedTask}
                     createTask={createTask}
+                    deleteTask={deleteTask}
                     deleteColumn={deleteColumn}
-                    moveColumn={handleMoveColumn}
+                    moveColumnLeft={handleMoveColumnLeft}
+                    moveColumnRight={handleMoveColumnRight}
                     handleDragOver={handleDragOver}
                     handleDragEnd={handleDragEnd}
                     isColumnModalOpen={isColumnModalOpen}
                     setIsColumnModalOpen={setIsColumnModalOpen}
-                      handleCreateColumn={handleCreateColumn}
-                      t={t}
-                      normalizeTitle={normalizeTitle}
-                    />
-                  )}
+                    handleCreateColumn={handleCreateColumn}
+                    t={t}
+                    normalizeTitle={normalizeTitle}
+                    groupMembers={kanbanMembers}
+                  />
+                )}
 
                   {activeWorkspaceTab === "list" && (
                     <div className="mt-2 space-y-3">
@@ -609,9 +788,9 @@ export default function MyGroup() {
             {activeTab === "posts" && (
               <GroupPostsTab groupId={id} groupData={group} />
             )}
-          </div>
         </div>
       </div>
+    </div>
 
       {/* ---------------------
            MODALS
@@ -688,6 +867,6 @@ export default function MyGroup() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 }
