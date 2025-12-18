@@ -1,5 +1,5 @@
 import React from "react";
-import { Activity, Code, FileText, Zap } from "lucide-react";
+import { Activity, Code } from "lucide-react";
 
 export default function OverviewSection({
   descriptionText,
@@ -34,35 +34,23 @@ export default function OverviewSection({
     if (!str) return str;
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
-
   return (
     <div className="lg:col-span-2 space-y-4">
-      {/* Description Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center gap-2 mb-3">
-          <FileText className="w-5 h-5 text-gray-600" />
-          <h3 className="text-lg font-semibold text-gray-900">
-            {t("Description") || "Description"}
-          </h3>
-        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">
+          {t("Description") || "Description"}
+        </h3>
         <p className="text-gray-600 leading-relaxed">
-          {descriptionText || (
-            <span className="text-gray-400">
-              {t("noDescription") || "No description provided."}
-            </span>
-          )}
+          {descriptionText || t("noDescription") || "No description provided."}
         </p>
       </div>
 
-      {/* Recent Activity Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              {t("recentActivity") || "Recent Activity"}
-            </h3>
-          </div>
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Activity className="w-5 h-5 text-blue-600" />
+            {t("recentActivity") || "Recent Activity"}
+          </h3>
           <span className="text-sm text-gray-400">
             {recentActivity.length}{" "}
             {recentActivity.length === 1 ? "update" : "updates"}
@@ -114,12 +102,9 @@ export default function OverviewSection({
       {/* Technologies Section */}
       {groupSkills && groupSkills.length > 0 && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Code className="w-5 h-5 text-gray-600" />
-            <h3 className="text-lg font-semibold text-gray-900 capitalize">
-              {t("technologies") || "Technologies"}
-            </h3>
-          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 capitalize">
+            {t("technologies") || "Technologies"}
+          </h3>
           <div className="flex flex-wrap gap-2">
             {groupSkills.map((skill, index) => {
               const skillName = skill?.token || skill?.name || skill;

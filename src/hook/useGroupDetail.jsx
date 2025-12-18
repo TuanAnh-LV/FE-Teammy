@@ -217,55 +217,76 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
     async (memberId, memberName) => {
       if (!groupId || !memberId) return;
 
-      return new Promise((resolve) => {
-        Modal.confirm({
-          title: t("confirmKickMember") || "Remove Member",
-          content: `Are you sure you want to remove ${memberName} from the group?`,
-          okText: t("remove") || "Remove",
-          cancelText: t("cancel") || "Cancel",
-          okButtonProps: {
-            danger: true,
-            className: "bg-red-600 hover:bg-red-700",
-          },
-          cancelButtonProps: {
-            className: "border-gray-300 text-gray-700 hover:bg-gray-50",
-          },
-          icon: null,
-          width: 480,
-          onOk: async () => {
-            try {
-              await GroupService.kickMember(groupId, memberId);
+      const confirmed = window.confirm(
+        t("confirmKickMember") ||
+          `Are you sure you want to remove ${memberName} from the group?`
+      );
 
-              notification.success({
-                message: t("success") || "Success",
-                description:
-                  t("memberRemovedSuccessfully") || "Member removed successfully.",
-              });
+      if (!confirmed) return;
 
-              const membersRes = await GroupService.getListMembers(groupId);
-              const members = Array.isArray(membersRes?.data)
-                ? membersRes.data
-                : [];
-              setGroupMembers(members);
+      try {
+        await GroupService.kickMember(groupId, memberId);
 
-              resolve(true);
-            } catch (error) {
-              notification.error({
-                message: t("error") || "Error",
-                description:
-                  error?.response?.data?.message ||
-                  error?.message ||
-                  t("failedToRemoveMember") ||
-                  "Failed to remove member.",
-              });
-              resolve(false);
-            }
-          },
-          onCancel: () => {
-            resolve(false);
-          },
+        notification.success({
+          message: t("success") || "Success",
+          description:
+            t("memberRemovedSuccessfully") || "Member removed successfully.",
         });
-      });
+
+        const membersRes = await GroupService.getListMembers(groupId);
+        const members = Array.isArray(membersRes?.data)
+          ? membersRes.data
+          : [];
+
+        const normalizedMembers = members.map((m) => {
+          const email = m.email || "";
+          const normalizedEmail = email.toLowerCase();
+          const currentEmail = (userInfo?.email || "").toLowerCase();
+
+          const avatarFromApi =
+            m.avatarUrl ||
+            m.avatarURL ||
+            m.avatar_url ||
+            m.avatar ||
+            m.imageUrl ||
+            m.imageURL ||
+            m.image_url ||
+            m.photoURL ||
+            m.photoUrl ||
+            m.photo_url ||
+            m.profileImage ||
+            m.user?.avatarUrl ||
+            m.user?.avatar ||
+            m.user?.photoURL ||
+            m.user?.photoUrl ||
+            m.user?.imageUrl ||
+            m.user?.profileImage ||
+            "";
+
+          const memberIdValue =
+            m.id || m.memberId || m.userId || m.userID || m.accountId || "";
+
+          return {
+            id: memberIdValue,
+            name: m.displayName || m.name || "",
+            email,
+            role: m.role || m.status || "",
+            joinedAt: m.joinedAt,
+            avatarUrl:
+              avatarFromApi ||
+              (currentEmail && normalizedEmail === currentEmail
+                ? userInfo?.photoURL || ""
+                : ""),
+          };
+        });
+
+        setGroupMembers(normalizedMembers);
+      } catch {
+        notification.error({
+          message: t("error") || "Error",
+          description: t("failedToRemoveMember") || "Failed to remove member.",
+        });
+      }
     },
     [groupId, t, userInfo]
   );

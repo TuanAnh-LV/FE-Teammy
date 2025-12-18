@@ -13,40 +13,59 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
   const [submitting, setSubmitting] = useState(false);
   const [majors, setMajors] = useState([]);
   const [semesters, setSemesters] = useState([]);
-
+  const [topicDetail, setTopicDetail] = useState(null);
   useEffect(() => {
-    if (open) {
-      const fetchMetadata = async () => {
-        try {
-          const [majorsRes, semestersRes] = await Promise.all([
-            MajorService.getMajors(),
-            SemesterService.list(),
-          ]);
-          setMajors(majorsRes?.data || []);
-          setSemesters(semestersRes?.data || []);
-        } catch {
-          notification.error({
-            message: t("failedLoadMetadata") || "Failed to load metadata",
-          });
-        }
-      };
-      fetchMetadata();
-    }
+    if (!open) return;
+
+    (async () => {
+      try {
+        const [majorsRes, semestersRes] = await Promise.all([
+          MajorService.getMajors(),
+          SemesterService.list(),
+        ]);
+        setMajors(majorsRes?.data || []);
+        setSemesters(semestersRes?.data || []);
+      } catch {
+        notification.error({
+          message: t("failedLoadMetadata") || "Failed to load metadata",
+        });
+      }
+    })();
   }, [open]);
 
   useEffect(() => {
-    if (open && topic) {
-      form.setFieldsValue({
-        title: topic.title,
-        description: topic.description,
-        majorId: topic.majorId,
-        semesterId: topic.semesterId,
-        source: topic.source,
-        status: topic.status,
-        mentorEmails: topic.mentorEmails?.join(", ") || "",
-      });
-    }
-  }, [open, topic, form]);
+    if (!open || !topic?.topicId) return;
+
+    (async () => {
+      try {
+        const res = await TopicService.getTopicById(topic.topicId);
+        setTopicDetail(res?.data ?? res);
+      } catch {
+        setTopicDetail(topic);
+      }
+    })();
+  }, [open, topic?.topicId]);
+
+  useEffect(() => {
+    const data = topicDetail || topic;
+    if (!open || !data) return;
+
+    const mentorEmailsArr = Array.isArray(data.mentorEmails)
+      ? data.mentorEmails
+      : Array.isArray(data.mentors)
+      ? data.mentors.map((m) => m.email || m.mentorEmail).filter(Boolean)
+      : [];
+
+    form.setFieldsValue({
+      title: data.title,
+      description: data.description,
+      majorId: data.majorId,
+      semesterId: data.semesterId,
+      source: data.source,
+      status: data.status,
+      mentorEmails: mentorEmailsArr.join(", "),
+    });
+  }, [open, topicDetail, topic, form]);
 
   const handleSubmit = async () => {
     try {
