@@ -132,6 +132,16 @@ const Profile = () => {
   const targetUserId = profileUserId || userInfo?.userId || "";
   const baseUser = viewingOtherProfile ? {} : userInfo || {};
 
+  // Normalize skills from API: accept either string ("a, b, c") or array and always convert to array
+  const normalizedSkills = profileData?.skills
+    ? Array.isArray(profileData.skills)
+      ? profileData.skills
+      : profileData.skills
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+    : [];
+
   const profile = {
     userId:
       profileData?.userId ||
@@ -152,18 +162,14 @@ const Profile = () => {
       profileData?.avatarUrl || baseUser?.photoURL || baseUser?.avatarUrl || "",
     skillsCompleted:
       profileData?.skillsCompleted ?? baseUser?.skillsCompleted ?? false,
-    skills: profileData?.skills || null,
+    skills: normalizedSkills.length ? normalizedSkills : null,
     major: profileData?.majorName || "Software Engineering",
     majorId: profileData?.majorId || baseUser?.majorId || null,
     university: "FPT University",
     joined: "Jan 2024",
     activeProjects: 1,
     completedProjects: 5,
-    skillCount: profileData?.skills
-      ? Array.isArray(profileData.skills)
-        ? profileData.skills.length
-        : profileData.skills.split(",").length
-      : 0,
+    skillCount: normalizedSkills.length,
     portfolioUrl: profileData?.portfolioUrl || "",
   };
 
@@ -179,7 +185,7 @@ const Profile = () => {
   return (
     <div className="bg-[#f9fafb] mt-16 md:mt-20 mb-24 md:mb-32">
       {/* HEADER */}
-      <ProfileHeader profile={profile} />
+      <ProfileHeader profile={profile} isOwnProfile={isOwnProfile} />
 
       {/* CONTENT: stats + tabs */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6 md:space-y-8 mt-6">

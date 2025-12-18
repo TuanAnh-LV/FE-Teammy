@@ -58,6 +58,7 @@ export const API = {
     MY_GROUPS: "/groups/my",
     GROUP_DETAIL: "/groups/:id",
     UPDATE_GROUP: (id) => `/groups/${id}`,
+    ACTIVATE: (id) => `/groups/${id}/activate`,
     LIST_MEMBERS: "/groups/:id/members",
     INVITE_MEMBER: "/groups/:id/invites",
     INVITE_MENTOR: (groupId) => `/groups/${groupId}/mentor-invites`,

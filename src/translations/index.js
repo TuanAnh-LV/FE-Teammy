@@ -548,6 +548,20 @@
     cannotKickFromActiveGroup: "Cannot remove member from active group",
     cannotKickFromActiveGroupDesc:
       "You cannot remove members from a group that is currently active. Please wait until the group status changes or contact your mentor.",
+    // Group activation
+    confirmGroup: "Confirm group",
+    cannotActivateGroup: "Cannot activate group",
+    groupMustSelectTopicAndMentor:
+      "Group must select a topic and mentor before confirming.",
+    confirmActivateGroup: "Confirm activate group?",
+    confirmActivateGroupMessage:
+      "Once activated, your group will be locked for this semester. Do you want to continue?",
+    groupActivated: "Group activated successfully",
+    failedToActivateGroup: "Failed to activate group. Please try again.",
+    groupNotEnoughMembersToActivateTitle:
+      "Group is not full enough to activate",
+    groupNotEnoughMembersToActivateDesc:
+      "Please add more members to your group before activating it.",
     heroBuildYourFuture: "Build your future, one capstone at a time",
     startMatching: "Start Matching",
     seeHowItWorks: "See How It Works",
@@ -1882,6 +1896,19 @@
     removeSuccess: "Xóa thành công",
     cannotKickFromActiveGroup: "Không thể xóa thành viên khi nhóm đang hoạt động",
     cannotKickFromActiveGroupDesc: "Vui lòng đợi nhóm đổi trạng thái.",
+    // Group activation
+    confirmGroup: "Xác nhận nhóm",
+    cannotActivateGroup: "Không thể xác nhận nhóm",
+    groupMustSelectTopicAndMentor:
+      "Nhóm cần chọn đề tài và mentor trước khi xác nhận.",
+    confirmActivateGroup: "Xác nhận kích hoạt nhóm?",
+    confirmActivateGroupMessage:
+      "Khi kích hoạt, thông tin nhóm sẽ được cố định cho học kỳ này. Bạn có chắc chắn muốn tiếp tục?",
+    groupActivated: "Kích hoạt nhóm thành công",
+    failedToActivateGroup: "Kích hoạt nhóm thất bại. Vui lòng thử lại.",
+    groupNotEnoughMembersToActivateTitle: "Nhóm chưa đủ thành viên để kích hoạt",
+    groupNotEnoughMembersToActivateDesc:
+      "Vui lòng thêm đủ thành viên vào nhóm trước khi kích hoạt.",
 
     // Hero & Features
     heroBuildYourFuture: "Xây dựng tương lai của bạn — từng bước một",

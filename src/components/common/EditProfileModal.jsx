@@ -26,7 +26,10 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
         phone: profileData.phone || "",
         gender: profileData.gender || "",
         majorId: profileData.majorId || "",
-        skills: profileData.skills || "",
+        // Convert skills array from API to comma-separated string for textarea
+        skills: Array.isArray(profileData.skills)
+          ? profileData.skills.join(", ")
+          : profileData.skills || "",
         skillsCompleted: profileData.skillsCompleted || false,
       });
     }
@@ -61,15 +64,30 @@ const EditProfileModal = ({ isOpen, onClose, profileData, onUpdate }) => {
     setIsSubmitting(true);
 
     try {
-      const response = await UserService.updateMyProfile(formData);
+      // Normalize skills from textarea (string) to array for API
+      const skillsArray = (formData.skills || "")
+        .split(/[,\\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const payload = {
+        ...formData,
+        skills: skillsArray,
+      };
+
+      const response = await UserService.updateMyProfile(payload);
       if (response?.data) {
-        toast.success(t("profileUpdatedSuccess") || "Profile updated successfully!");
+        toast.success(
+          t("profileUpdatedSuccess") || "Profile updated successfully!"
+        );
         onUpdate(response.data);
         onClose();
       }
     } catch (error) {
-
-      toast.error(t("updateProfileFailed") || "Failed to update profile. Please try again.");
+      toast.error(
+        t("updateProfileFailed") ||
+          "Failed to update profile. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }

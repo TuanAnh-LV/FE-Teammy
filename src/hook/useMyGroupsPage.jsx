@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { notification, Modal } from "antd";
 import { GroupService } from "../services/group.service";
-import { TopicService } from "../services/topic.service";
 import { MajorService } from "../services/major.service";
 import { BoardService } from "../services/board.service";
-import { SkillService } from "../services/skill.service";
 import { ReportService } from "../services/report.service";
 import { useInvitationRealtime } from "./useInvitationRealtime";
 import { useAuth } from "../context/AuthContext";
@@ -107,19 +105,10 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     maxMembers: 5,
     majorId: "",
     topicId: "",
-    skills: [],
   });
   const [errors, setErrors] = useState({});
-  const [topicModalGroup, setTopicModalGroup] = useState(null);
-  const [topics, setTopics] = useState([]);
-  const [topicsLoading, setTopicsLoading] = useState(false);
-  const [assigningTopic, setAssigningTopic] = useState(false);
-  const [selectedTopicId, setSelectedTopicId] = useState("");
-  const [topicSearch, setTopicSearch] = useState("");
   const [majors, setMajors] = useState([]);
   const [majorsLoading, setMajorsLoading] = useState(false);
-  const [skills, setSkills] = useState([]);
-  const [skillsLoading, setSkillsLoading] = useState(false);
   const [board, setBoard] = useState(null);
   const [loadingBoard, setLoadingBoard] = useState(false);
   const hasFetchedGroupsRef = useRef(false);
@@ -175,7 +164,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       maxMembers: 5,
       majorId: "",
       topicId: "",
-      skills: [],
     });
     setErrors({});
     setSubmitting(false);
@@ -204,9 +192,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         description: form.description.trim(),
         maxMembers: Number(form.maxMembers) || 1,
       };
-      if (form.skills && form.skills.length > 0) {
-        payload.skills = form.skills;
-      }
       const res = await GroupService.createGroup(payload);
       if (res?.data) {
         notification.success({ message: t("success") || "Group created!" });
@@ -346,81 +331,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     }
   };
 
-  const fetchTopics = async (group, keyword = "") => {
-    if (!group) return;
-    setTopicsLoading(true);
-    try {
-      const params = {
-        q: keyword.trim() || undefined,
-        majorId: group.majorId || undefined,
-      };
-      const res = await TopicService.getTopics(params);
-      const raw = Array.isArray(res?.data?.data)
-        ? res.data.data
-        : Array.isArray(res?.data)
-        ? res.data
-        : [];
-      const openTopics = raw.filter(
-        (topic) =>
-          String(
-            topic?.status || topic?.topicStatus || topic?.state || ""
-          ).toLowerCase() === "open"
-      );
-      setTopics(openTopics);
-    } catch (error) {
-      notification.error({
-        message: t("error") || "Failed to load topics.",
-      });
-    } finally {
-      setTopicsLoading(false);
-    }
-  };
-
-  const handleOpenTopicModal = (group) => {
-    if (!group) return;
-    setTopicModalGroup(group);
-    setSelectedTopicId(group.topicId || "");
-    setTopicSearch("");
-    fetchTopics(group, "");
-  };
-
-  const handleCloseTopicModal = () => {
-    if (assigningTopic) return;
-    setTopicModalGroup(null);
-    setSelectedTopicId("");
-    setTopicSearch("");
-    setTopics([]);
-  };
-
-  const handleSearchTopics = (value) => {
-    setTopicSearch(value);
-    if (topicModalGroup) {
-      fetchTopics(topicModalGroup, value);
-    }
-  };
-
-  const handleAssignTopic = async () => {
-    if (!selectedTopicId || !topicModalGroup) return;
-    try {
-      setAssigningTopic(true);
-      await GroupService.assignTopic(topicModalGroup.id, selectedTopicId);
-      notification.success({
-        message: t("updateSuccess") || "Topic assigned successfully.",
-      });
-      handleCloseTopicModal();
-      await fetchMyGroups();
-    } catch (error) {
-      notification.error({
-        message: t("error") || "Failed to assign topic.",
-      });
-    } finally {
-      setAssigningTopic(false);
-    }
-  };
-
-  // Allow leaders to select/assign topic even if group isn't full
-  const canSelectTopic = (group) => Boolean(group) && group.isLeader;
-
   const loadPendingApplications = async (dataset) => {
     const leaderGroups = dataset.filter((g) => g.isLeader);
     setPendingLoading(true);
@@ -553,36 +463,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     if (majorsFetchLock.current) return;
     majorsFetchLock.current = true;
     fetchMajors();
-    fetchSkills();
   }, [open]);
-
-  const fetchSkills = async () => {
-    try {
-      setSkillsLoading(true);
-      const userMajor = userInfo?.majorName || "Software Engineering";
-      const params = {
-        major: userMajor,
-        pageSize: 100,
-      };
-      const response = await SkillService.list(params, false);
-
-      // Try different possible structures
-      let data = [];
-      if (Array.isArray(response?.data)) {
-        data = response.data;
-      } else if (response?.data?.data && Array.isArray(response.data.data)) {
-        data = response.data.data;
-      } else if (response?.data?.items && Array.isArray(response.data.items)) {
-        data = response.data.items;
-      }
-
-      setSkills(data);
-    } catch (error) {
-      setSkills([]);
-    } finally {
-      setSkillsLoading(false);
-    }
-  };
 
   const activeApplications = Object.entries(pendingByGroup).filter(
     ([, list]) => Array.isArray(list) && list.length > 0
@@ -606,16 +487,8 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     activeApplications,
     invitations,
     invitationsLoading,
-    topicModalGroup,
-    topics,
-    topicsLoading,
-    assigningTopic,
-    selectedTopicId,
-    topicSearch,
     majors,
     majorsLoading,
-    skills,
-    skillsLoading,
     board,
     loadingBoard,
 
@@ -628,12 +501,6 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     handleLeaveGroup,
     handleApprove,
     handleReject,
-    handleOpenTopicModal,
-    handleCloseTopicModal,
-    handleSearchTopics,
-    handleAssignTopic,
-    setSelectedTopicId,
-    canSelectTopic,
 
     //board
     fetchBoardTask,

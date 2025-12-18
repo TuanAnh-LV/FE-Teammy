@@ -1,16 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "../../hook/useTranslation";
 import { useAuth } from "../../context/AuthContext";
-import { GroupService } from "../../services/group.service";
 import { BoardService } from "../../services/board.service";
-import { SkillService } from "../../services/skill.service";
-import { ReportService } from "../../services/report.service";
 import InfoCard from "../../components/common/my-group/InfoCard";
 import AddMemberModal from "../../components/common/my-group/AddMemberModal";
 import EditGroupModal from "../../components/common/my-group/EditGroupModal";
 import LoadingState from "../../components/common/LoadingState";
-import { notification } from "antd";
 import { Plus, FolderKanban, ListTodo, Flag, BarChart3, FileText } from "lucide-react";
 import { Modal, Form, Input } from "antd";
 import TaskModal from "../../components/common/kanban/TaskModal";
@@ -26,6 +22,9 @@ import BacklogTab from "../../components/common/workspace/BacklogTab";
 import MilestonesTab from "../../components/common/workspace/MilestonesTab";
 import ReportsTab from "../../components/common/workspace/ReportsTab";
 import ListView from "../../components/common/workspace/ListView";
+import { useGroupActivation } from "../../hook/useGroupActivation";
+import { useGroupDetail } from "../../hook/useGroupDetail";
+import { useGroupEditForm } from "../../hook/useGroupEditForm";
 
 export default function MyGroup() {
   const { id } = useParams();
@@ -33,563 +32,53 @@ export default function MyGroup() {
   const navigate = useNavigate();
   const { userInfo } = useAuth();
 
-  const [group, setGroup] = useState(null);
-  const [groupMembers, setGroupMembers] = useState([]);
+  const {
+    group,
+    setGroup,
+    groupMembers,
+    setGroupMembers,
+    groupSkillsWithRole,
+    groupFiles,
+    loading,
+    loadGroupFiles,
+    fetchCompletionPercent,
+    handleKickMember,
+    handleAssignRole,
+    handleTransferLeader,
+  } = useGroupDetail({ groupId: id, t, userInfo });
+
   const [board, setBoard] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editSubmitting, setEditSubmitting] = useState(false);
-  const [editForm, setEditForm] = useState({
-    name: "",
-    description: "",
-    maxMembers: 5,
-    majorId: "",
-    topicId: "",
-    skills: [],
-  });
-  const [editErrors, setEditErrors] = useState({});
-  const [availableSkills, setAvailableSkills] = useState([]);
-  const [skillsLoading, setSkillsLoading] = useState(false);
-  const [groupSkillsWithRole, setGroupSkillsWithRole] = useState([]);
-  const loadedGroupIdRef = useRef(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState("kanban");
   const [listFilterStatus, setListFilterStatus] = useState("All");
 
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const [columnForm] = Form.useForm();
-  const [groupFiles, setGroupFiles] = useState([]);
 
-  // ---------------------------
-  // Fetch Completion Percent from API
-  // ---------------------------
-  const fetchCompletionPercent = async () => {
-    if (!id) return;
-    try {
-      const res = await ReportService.getProjectReport(id);
-      const completionPercent = res?.data?.project?.completionPercent ?? 0;
-      setGroup((prev) =>
-        prev ? { ...prev, progress: completionPercent } : prev
-      );
-    } catch {
-      notification.error({
-        message: t("error") || "Error",
-        description:
-          t("failedToFetchProgress") || "Failed to fetch project progress.",
-      });
-    }
-  };
+  const {
+    editOpen,
+    setEditOpen,
+    editForm,
+    editErrors,
+    editSubmitting,
+    availableSkills,
+    skillsLoading,
+    handleEditChange,
+    handleSubmitEdit,
+  } = useGroupEditForm({ group, groupMembers, userInfo, t, setGroup });
 
-  // ---------------------------
-  // Load Group Data (without board)
-  // ---------------------------
-  useEffect(() => {
-    if (!id) return;
-    if (loadedGroupIdRef.current === id) return;
-
-    loadedGroupIdRef.current = id;
-
-    const loadData = async () => {
-      try {
-        setLoading(true);
-
-        const [detailRes, membersRes, reportRes] = await Promise.allSettled([
-          GroupService.getGroupDetail(id),
-          GroupService.getListMembers(id),
-          ReportService.getProjectReport(id),
-        ]);
-
-        // Group detail
-        const d = detailRes.status === "fulfilled" ? detailRes.value.data : {};
-
-        const semesterInfo = d.semester || {};
-        const rawStartDate = semesterInfo.startDate || d.startDate;
-        const rawEndDate = semesterInfo.endDate || d.endDate;
-
-        const season =
-          typeof semesterInfo.season === "string"
-            ? semesterInfo.season.trim()
-            : semesterInfo.season
-            ? String(semesterInfo.season)
-            : "";
-
-        const formattedSeason = season
-          ? season.charAt(0).toUpperCase() + season.slice(1)
-          : "";
-
-        const semesterLabel = [formattedSeason, semesterInfo.year]
-          .filter(Boolean)
-          .join(" ");
-
-        // Members
-        const members =
-          membersRes.status === "fulfilled" &&
-          Array.isArray(membersRes.value?.data)
-            ? membersRes.value.data
-            : [];
-
-        const normalizedMembers = members.map((m) => {
-          const email = m.email || "";
-          const normalizedEmail = email.toLowerCase();
-          const currentEmail = (userInfo?.email || "").toLowerCase();
-
-          const avatarFromApi =
-            m.avatarUrl ||
-            m.avatarURL ||
-            m.avatar_url ||
-            m.avatar ||
-            m.imageUrl ||
-            m.imageURL ||
-            m.image_url ||
-            m.photoURL ||
-            m.photoUrl ||
-            m.photo_url ||
-            m.profileImage ||
-            m.user?.avatarUrl ||
-            m.user?.avatar ||
-            m.user?.photoURL ||
-            m.user?.photoUrl ||
-            m.user?.imageUrl ||
-            m.user?.profileImage ||
-            "";
-
-          const memberId =
-            m.id || m.memberId || m.userId || m.userID || m.accountId || "";
-
-          return {
-            id: memberId,
-            name: m.displayName || m.name || "",
-            email,
-            role: m.role || m.status || "",
-            joinedAt: m.joinedAt,
-            avatarUrl:
-              avatarFromApi ||
-              (currentEmail && normalizedEmail === currentEmail
-                ? userInfo?.photoURL || ""
-                : ""),
-            assignedRoles: m.assignedRoles || [],
-          };
-        });
-
-        const currentEmail = (userInfo?.email || "").toLowerCase();
-        const detailRole = (d.role || "").toLowerCase();
-        const leaderFromMembers = normalizedMembers.some(
-          (member) =>
-            (member.email || "").toLowerCase() === currentEmail &&
-            (member.role || "").toLowerCase() === "leader"
-        );
-
-        // Get completion percent from API
-        const completionPercent =
-          reportRes.status === "fulfilled"
-            ? reportRes.value?.data?.project?.completionPercent ?? 0
-            : 0;
-
-        setGroup({
-          id: d.id || id,
-          title: d.name || "",
-          field:
-            d.field ||
-            d.major?.name ||
-            d.major?.majorName ||
-            (typeof d.major === "string" ? d.major : "") ||
-            "",
-          description: d.description || "",
-          start: rawStartDate ? rawStartDate.slice(0, 10) : "",
-          end: rawEndDate ? rawEndDate.slice(0, 10) : "",
-          semester: semesterLabel,
-          progress: completionPercent,
-          mentor: d.mentor,
-          status: d.status || "",
-          statusText: d.status || "",
-          maxMembers: Number(d.maxMembers || d.capacity || 5),
-          majorId:
-            d.majorId || d.major?.id || d.major?.majorId || d.majorID || "",
-          topicId: d.topicId || d.topic?.id || "",
-          topicName: d.topicName || d.topic?.title || d.topic?.name || "",
-          skills: Array.isArray(d.skills)
-            ? d.skills
-            : typeof d.skills === "string" && d.skills
-            ? d.skills
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean)
-            : [],
-          canEdit: detailRole === "leader" || leaderFromMembers,
-        });
-
-        setGroupMembers(normalizedMembers);
-
-        // Fetch full skill info for technologies display
-        if (d.skills && d.skills.length > 0) {
-          try {
-            const skillsResponse = await SkillService.list({});
-            const allSkills = Array.isArray(skillsResponse?.data)
-              ? skillsResponse.data
-              : [];
-            const groupSkillTokens = Array.isArray(d.skills) ? d.skills : [];
-            const matchedSkills = allSkills.filter((s) =>
-              groupSkillTokens.includes(s.token)
-            );
-            setGroupSkillsWithRole(matchedSkills);
-          } catch {
-            setGroupSkillsWithRole([]);
-          }
-        } else {
-          setGroupSkillsWithRole([]);
-        }
-      } catch {
-        notification.error({
-          message: t("error") || "Error",
-          description:
-            t("failedToLoadGroupData") || "Failed to load group data.",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [id, userInfo]);
-
-  const loadGroupFiles = async () => {
-    if (!id) return;
-    try {
-      const res = await BoardService.getGroupFiles(id);
-      const list = Array.isArray(res?.data) ? res.data : res?.items || [];
-      setGroupFiles(list);
-    } catch {
-      notification.error({
-        message: t("error") || "Error",
-        description:
-          t("failedToLoadGroupFiles") || "Failed to load group files.",
-      });
-      setGroupFiles([]);
-    }
-  };
-
-  // Load files only when Files tab is active
   useEffect(() => {
     if (activeTab === "files") {
       loadGroupFiles();
     }
   }, [id, activeTab]);
 
-  useEffect(() => {
-    if (group) {
-      setEditForm({
-        name: group.title || "",
-        description: group.description || "",
-        maxMembers: group.maxMembers || groupMembers.length || 5,
-        majorId: group.majorId || "",
-        topicId: group.topicId || "",
-      });
-    }
-  }, [group, groupMembers.length]);
-
   const handleAddMember = (user) => {
     setShowModal(false);
   };
 
-  const validateEditForm = () => {
-    const errors = {};
-    if (!editForm.name.trim()) {
-      errors.name = t("groupName") || "Group name is required";
-    }
-    const max = Number(editForm.maxMembers);
-    if (!max || max < groupMembers.length) {
-      errors.maxMembers =
-        t("maxMembersValidation") ||
-        "Max members must be at least current member count.";
-    }
-    setEditErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
 
-  // Fetch skills when edit modal opens
-  useEffect(() => {
-    const fetchSkills = async () => {
-      try {
-        setSkillsLoading(true);
-        const majorName = userInfo?.majorName || group?.field;
-
-        const params = { pageSize: 100 };
-        if (majorName) {
-          params.major = majorName;
-        }
-
-        const response = await SkillService.list(params);
-        const skillsList = Array.isArray(response?.data) ? response.data : [];
-        setAvailableSkills(skillsList);
-      } catch {
-        setAvailableSkills([]);
-      } finally {
-        setSkillsLoading(false);
-      }
-    };
-
-    if (editOpen && group) {
-      // Parse existing skills
-      let groupSkills = [];
-      if (Array.isArray(group.skills)) {
-        groupSkills = group.skills;
-      } else if (typeof group.skills === "string" && group.skills) {
-        groupSkills = group.skills
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
-      }
-
-      // Update form with current group data including skills
-      setEditForm({
-        name: group.title || "",
-        description: group.description || "",
-        maxMembers: group.maxMembers || groupMembers.length || 5,
-        majorId: group.majorId || "",
-        topicId: group.topicId || "",
-        skills: groupSkills,
-      });
-
-      fetchSkills();
-    }
-  }, [editOpen, group, groupMembers.length, userInfo?.majorName]);
-
-  const handleEditChange = (field, value) => {
-    setEditForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmitEdit = async (e) => {
-    e?.preventDefault();
-    if (!group || !validateEditForm()) return;
-
-    try {
-      setEditSubmitting(true);
-
-      const payload = {
-        name: editForm.name.trim(),
-        description: editForm.description.trim(),
-        maxMembers: Number(editForm.maxMembers),
-      };
-
-      if (editForm.majorId.trim()) payload.majorId = editForm.majorId.trim();
-      if (editForm.topicId.trim()) payload.topicId = editForm.topicId.trim();
-
-      // Add skills as array
-      if (editForm.skills && editForm.skills.length > 0) {
-        payload.skills = editForm.skills;
-      }
-
-      await GroupService.updateGroup(group.id, payload);
-
-      notification.success({
-        message: t("updateSuccess") || "Group updated successfully.",
-      });
-
-      setGroup((prev) =>
-        prev
-          ? {
-              ...prev,
-              title: payload.name,
-              description: payload.description,
-              maxMembers: payload.maxMembers,
-              majorId: payload.majorId ?? prev.majorId,
-              topicId: payload.topicId ?? prev.topicId,
-              skills: payload.skills ?? prev.skills,
-            }
-          : prev
-      );
-
-      setEditOpen(false);
-    } catch {
-      notification.error({
-        message: t("error") || "Failed to update group.",
-      });
-    } finally {
-      setEditSubmitting(false);
-    }
-  };
-
-  const handleKickMember = async (memberId, memberName) => {
-    if (!group?.id || !memberId) return;
-
-    const confirmed = window.confirm(
-      t("confirmKickMember") ||
-        `Are you sure you want to remove ${memberName} from the group?`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      await GroupService.kickMember(group.id, memberId);
-
-      notification.success({
-        message: t("success") || "Success",
-        description:
-          t("memberRemovedSuccessfully") || "Member removed successfully.",
-      });
-
-      // Refresh group members
-      const membersRes = await GroupService.getListMembers(group.id);
-      const members = Array.isArray(membersRes?.data) ? membersRes.data : [];
-
-      const normalizedMembers = members.map((m) => {
-        const email = m.email || "";
-        const normalizedEmail = email.toLowerCase();
-        const currentEmail = (userInfo?.email || "").toLowerCase();
-
-        const avatarFromApi =
-          m.avatarUrl ||
-          m.avatarURL ||
-          m.avatar_url ||
-          m.avatar ||
-          m.imageUrl ||
-          m.imageURL ||
-          m.image_url ||
-          m.photoURL ||
-          m.photoUrl ||
-          m.photo_url ||
-          m.profileImage ||
-          m.user?.avatarUrl ||
-          m.user?.avatar ||
-          m.user?.photoURL ||
-          m.user?.photoUrl ||
-          m.user?.imageUrl ||
-          m.user?.profileImage ||
-          "";
-
-        const memberId =
-          m.id || m.memberId || m.userId || m.userID || m.accountId || "";
-
-        return {
-          id: memberId,
-          name: m.displayName || m.name || "",
-          email,
-          role: m.role || m.status || "",
-          joinedAt: m.joinedAt,
-          avatarUrl:
-            avatarFromApi ||
-            (currentEmail && normalizedEmail === currentEmail
-              ? userInfo?.photoURL || ""
-              : ""),
-        };
-      });
-
-      setGroupMembers(normalizedMembers);
-    } catch {
-      notification.error({
-        message: t("error") || "Error",
-        description: t("failedToRemoveMember") || "Failed to remove member.",
-      });
-    }
-  };
-
-  const handleAssignRole = async (memberId, roleName) => {
-    if (!group?.id || !memberId || !roleName) return;
-
-    try {
-      await GroupService.assignMemberRole(group.id, memberId, roleName);
-
-      notification.success({
-        message: t("success") || "Success",
-        description:
-          t("roleAssignedSuccessfully") || "Role assigned successfully.",
-      });
-
-      // Refresh group members to show updated role
-      const membersRes = await GroupService.getListMembers(group.id);
-      const members = Array.isArray(membersRes?.data) ? membersRes.data : [];
-
-      const normalizedMembers = members.map((m) => {
-        const email = m.email || "";
-        const normalizedEmail = email.toLowerCase();
-        const currentEmail = (userInfo?.email || "").toLowerCase();
-
-        const avatarFromApi =
-          m.avatarUrl ||
-          m.avatarURL ||
-          m.avatar_url ||
-          m.avatar ||
-          m.imageUrl ||
-          m.imageURL ||
-          m.image_url ||
-          m.photoURL ||
-          m.photoUrl ||
-          m.photo_url ||
-          m.profileImage ||
-          m.user?.avatarUrl ||
-          m.user?.avatar ||
-          m.user?.photoURL ||
-          m.user?.photoUrl ||
-          m.user?.imageUrl ||
-          m.user?.profileImage ||
-          "";
-
-        const memberId =
-          m.id || m.memberId || m.userId || m.userID || m.accountId || "";
-
-        return {
-          id: memberId,
-          name: m.displayName || m.name || "",
-          email,
-          role: m.role || m.status || "",
-          joinedAt: m.joinedAt,
-          avatarUrl:
-            avatarFromApi ||
-            (currentEmail && normalizedEmail === currentEmail
-              ? userInfo?.photoURL || ""
-              : ""),
-        };
-      });
-
-      setGroupMembers(normalizedMembers);
-    } catch (err) {
-      notification.error({
-        message: t("error") || "Error",
-        description: t("failedToAssignRole") || "Failed to assign role.",
-      });
-      throw err;
-    }
-  };
-
-  const handleTransferLeader = (member) => {
-    if (!group?.id || !member) return;
-
-    const memberId = member.id || member.userId || member.userID || member.memberId || member.accountId;
-    const memberName = member.name || member.displayName || member.email;
-
-    Modal.confirm({
-      title: t("confirmChangeLeader") || "Change Leader",
-      content: `${t("confirmChangeLeaderMessage") || "Are you sure you want to transfer leadership to"} ${memberName}?`,
-      okText: t("confirm") || "Confirm",
-      cancelText: t("cancel") || "Cancel",
-      okButtonProps: { type: "primary" },
-      onOk: async () => {
-        try {
-          await GroupService.transferLeader(group.id, memberId);
-          notification.success({
-            message: t("leadershipTransferred") || "Leadership transferred",
-            description: `${memberName} ${t("isNowTheLeader") || "is now the leader"}`,
-          });
-          
-          // Reload group details
-          try {
-            await fetchGroupDetail();
-          } catch (fetchError) {
-            // Ignore fetch error, just log it
-            console.error("Failed to refresh group details:", fetchError);
-          }
-        } catch (error) {
-          notification.error({
-            message: t("failedToTransferLeader") || "Failed to transfer leadership",
-            description: error?.response?.data?.message || error?.message || t("pleaseTryAgain") || "Please try again.",
-          });
-        }
-      },
-    });
-  };
-
-  // Kanban Logic - Always load board data to show recent activity
   const {
     columns,
     filteredColumns,
@@ -614,7 +103,6 @@ export default function MyGroup() {
     deleteTaskComment,
   } = useKanbanBoard(id);
 
-  // Update board state when kanban data loads
   useEffect(() => {
     if (filteredColumns) {
       const boardData = {
@@ -625,7 +113,6 @@ export default function MyGroup() {
       };
       setBoard(boardData);
 
-      // Fetch progress from API instead of calculating
       fetchCompletionPercent();
     }
   }, [filteredColumns]);
@@ -690,6 +177,14 @@ export default function MyGroup() {
 
   const descriptionText = (group?.description || "").trim();
   const mentor = group?.mentor || null;
+
+  const { canActivateGroup, handleActivateGroup } = useGroupActivation({
+    group,
+    groupMembers,
+    t,
+    id,
+    setGroup,
+  });
 
   const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return "N/A";
@@ -866,6 +361,7 @@ export default function MyGroup() {
                 group.canEdit ? () => navigate("/discover") : undefined
               }
               onEdit={group.canEdit ? () => setEditOpen(true) : null}
+              onActivate={canActivateGroup ? handleActivateGroup : null}
             />
           )}
 

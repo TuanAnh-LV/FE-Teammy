@@ -30,6 +30,14 @@ export const GroupService = {
       isLoading: true,
     });
   },
+
+  activateGroup(id) {
+    return BaseService.post({
+      url: API.GROUP.ACTIVATE(id),
+      isLoading: true,
+    });
+  },
+
   updateGroup(id, payload) {
     return BaseService.patch({
       url: API.GROUP.UPDATE_GROUP(id),
