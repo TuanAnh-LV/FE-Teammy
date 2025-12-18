@@ -3,7 +3,7 @@ import { MessageSquare, Upload, X, FileIcon } from "lucide-react";
 import { priorityStyles, statusStyles, initials } from "../../../utils/kanbanHelpers";
 import { useNavigate } from "react-router-dom";
 import { BoardService } from "../../../services/board.service";
-import { notification } from "antd";
+import { notification, Modal } from "antd";
 import { useTranslation } from "../../../hook/useTranslation";
 
 const getAssigneeId = (assignee) => {
@@ -61,7 +61,9 @@ const TaskModal = ({
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [text, setText] = useState("");
+  const [activeTab, setActiveTab] = useState("comments"); // "comments" or "files"
   const [detailForm, setDetailForm] = useState({
+    title: "",
     assignees: [],
     dueDate: "",
     status: "",
@@ -99,6 +101,7 @@ const TaskModal = ({
       const fallbackColumn = Object.keys(columnMeta || {})[0] || "";
 
       setDetailForm({
+        title: task.title || "",
         assignees: task.assignees || [],
         dueDate: normalizedDueDate,
         status: matchedStatusColumn || fallbackColumn,
@@ -194,13 +197,31 @@ const TaskModal = ({
     if (readOnly) return;
     onUpdateTask(task.id, { [field]: detailForm[field] || "" });
   };
-  const activeAssignee = detailForm.assignees?.[0] || null;
-  const activeAssigneeId = getAssigneeId(activeAssignee);
-  const activeAssigneeLabel = getAssigneeLabel(activeAssignee) || t("unassigned") || "Unassigned";
-  const availableMembers = Array.isArray(members) ? members : [];
-  const activeMember =
-    availableMembers.find((member) => getAssigneeId(member) === activeAssigneeId) ||
-    null;
+  const availableMembers = Array.isArray(allMembers) ? allMembers : [];
+  
+  // Helper to check if a member is selected
+  const isAssigneeSelected = (member) => {
+    const memberId = getAssigneeId(member);
+    return (detailForm.assignees || []).some(assignee => getAssigneeId(assignee) === memberId);
+  };
+  
+  // Toggle assignee selection
+  const toggleAssignee = (member) => {
+    const memberId = getAssigneeId(member);
+    const currentAssignees = detailForm.assignees || [];
+    const isSelected = isAssigneeSelected(member);
+    
+    let newAssignees;
+    if (isSelected) {
+      newAssignees = currentAssignees.filter(assignee => getAssigneeId(assignee) !== memberId);
+    } else {
+      newAssignees = [...currentAssignees, member];
+    }
+    
+    setDetailForm((prev) => ({ ...prev, assignees: newAssignees }));
+    const assigneeIds = newAssignees.map(a => getAssigneeId(a)).filter(Boolean);
+    onUpdateAssignees(task.id, assigneeIds);
+  };
   const handleAddComment = () => {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -224,11 +245,27 @@ const TaskModal = ({
   };
   const handleDeleteComment = (commentId) => {
     if (!commentId) return;
-    if (!window.confirm(t("confirmDeleteComment") || "Delete this comment?")) return;
-    onDeleteComment(task.id, commentId);
-    if (editingCommentId === commentId) {
-      cancelEditComment();
-    }
+    Modal.confirm({
+      title: t("deleteComment") || "Delete Comment",
+      content: t("confirmDeleteComment") || "Are you sure you want to delete this comment?",
+      okText: t("delete") || "Delete",
+      cancelText: t("cancel") || "Cancel",
+      okButtonProps: {
+        danger: true,
+        className: "bg-red-600 hover:bg-red-700",
+      },
+      cancelButtonProps: {
+        className: "border-gray-300 text-gray-700 hover:bg-gray-50",
+      },
+      icon: null,
+      width: 480,
+      onOk: () => {
+        onDeleteComment(task.id, commentId);
+        if (editingCommentId === commentId) {
+          cancelEditComment();
+        }
+      },
+    });
   };
   
   const fetchTaskFiles = async () => {
@@ -314,29 +351,50 @@ const TaskModal = ({
   };
   
   const handleDeleteFile = async (fileId) => {
-    if (!window.confirm(t("confirmDeleteFile") || "Delete this file?")) return;
-    
-    try {
-      const fileToDelete = files.find(f => f.id === fileId);
-      
-      if (fileToDelete && fileToDelete.taskId && groupId && task?.id) {
-        await BoardService.deleteTaskFile(groupId, task.id, fileId);
-        notification.success({
-          message: t("fileDeletedSuccess") || "File deleted successfully",
-          duration: 2,
-        });
-      }
-      
-      setFiles(prev => prev.filter(f => f.id !== fileId));
-    } catch (error) {
-
-      notification.error({
-        message: t("failedDeleteFile") || "Failed to delete file",
-        description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
-        duration: 2,
+    return new Promise((resolve) => {
+      Modal.confirm({
+        title: t("deleteFile") || "Delete File",
+        content: t("confirmDeleteFile") || "Are you sure you want to delete this file?",
+        okText: t("delete") || "Delete",
+        cancelText: t("cancel") || "Cancel",
+        okButtonProps: {
+          danger: true,
+          className: "bg-red-600 hover:bg-red-700",
+        },
+        cancelButtonProps: {
+          className: "border-gray-300 text-gray-700 hover:bg-gray-50",
+        },
+        icon: null,
+        width: 480,
+        onOk: async () => {
+          try {
+            const fileToDelete = files.find(f => f.id === fileId);
+            
+            if (fileToDelete && fileToDelete.taskId && groupId && task?.id) {
+              await BoardService.deleteTaskFile(groupId, task.id, fileId);
+              notification.success({
+                message: t("fileDeletedSuccess") || "File deleted successfully",
+                duration: 2,
+              });
+            }
+            
+            setFiles(prev => prev.filter(f => f.id !== fileId));
+            resolve(true);
+          } catch (error) {
+            notification.error({
+              message: t("failedDeleteFile") || "Failed to delete file",
+              description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
+              duration: 2,
+            });
+            setFiles(prev => prev.filter(f => f.id !== fileId));
+            resolve(false);
+          }
+        },
+        onCancel: () => {
+          resolve(false);
+        },
       });
-      setFiles(prev => prev.filter(f => f.id !== fileId));
-    }
+    });
   };
   
   const getFileIcon = (fileName) => {
@@ -437,17 +495,42 @@ const TaskModal = ({
                   {task.status}
                 </span>
               </div>
-              <h3 className="text-xl font-bold text-gray-900">{task.title}</h3>
+              <input
+                type="text"
+                value={detailForm.title}
+                onChange={(e) =>
+                  setDetailForm((prev) => ({ ...prev, title: e.target.value }))
+                }
+                onBlur={() => handleFieldBlur("title")}
+                className="text-xl font-bold text-gray-900 w-full bg-transparent border-none outline-none focus:ring-2 focus:ring-blue-200 rounded px-2 py-1 -ml-2"
+                readOnly={readOnly}
+                disabled={readOnly}
+              />
             </div>
             <div className="flex items-center gap-2">
               {!readOnly && onDeleteTask && (
                 <button
                   className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
                   onClick={() => {
-                    if (window.confirm(t("confirmDeleteTask") || "Delete this task?")) {
-                      onDeleteTask(task.id);
-                      onClose();
-                    }
+                    Modal.confirm({
+                      title: t("deleteTask") || "Delete Task",
+                      content: t("confirmDeleteTask") || "Are you sure you want to delete this task?",
+                      okText: t("delete") || "Delete",
+                      cancelText: t("cancel") || "Cancel",
+                      okButtonProps: {
+                        danger: true,
+                        className: "bg-red-600 hover:bg-red-700",
+                      },
+                      cancelButtonProps: {
+                        className: "border-gray-300 text-gray-700 hover:bg-gray-50",
+                      },
+                      icon: null,
+                      width: 480,
+                      onOk: () => {
+                        onDeleteTask(task.id);
+                        onClose();
+                      },
+                    });
                   }}
                 >
                   {t("delete") || "Delete"}
@@ -480,134 +563,64 @@ const TaskModal = ({
                 />
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-gray-800">{t("files") || "Files"}</h4>
-                  {!readOnly && (
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingFile}
-                      className="inline-flex items-center gap-1 text-xs px-2 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+              {/* Tabs for Comments and Files */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-1 border-b border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("comments")}
+                    className={`px-4 py-2 text-sm font-medium transition-colors ${
+                      activeTab === "comments"
+                        ? "text-blue-600 border-b-2 border-blue-600"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4" />
+                      {t("comments") || "Comments"}
+                      {comments.length > 0 && (
+                        <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full text-xs">
+                          {comments.length}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("files")}
+                    className={`px-4 py-2 text-sm font-medium transition-colors ${
+                      activeTab === "files"
+                        ? "text-blue-600 border-b-2 border-blue-600"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
                       <Upload className="w-4 h-4" />
-                      {uploadingFile ? t("uploading") || "Uploading..." : t("upload") || "Upload"}
-                    </button>
-                  )}
+                      {t("files") || "Files"}
+                      {files.length > 0 && (
+                        <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full text-xs">
+                          {files.length}
+                        </span>
+                      )}
+                    </div>
+                  </button>
                 </div>
-                
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  disabled={readOnly}
-                />
 
-                {loadingFiles ? (
-                  <p className="text-xs text-gray-500">{t("loadingFiles") || "Loading files..."}</p>
-                ) : files.length === 0 ? (
-                  <p className="text-xs text-gray-500">{t("noFilesAttached") || "No files attached"}</p>
-                ) : (
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {files.map((file) => (
-                      <div
-                        key={file.id}
-                        className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition"
-                      >
-                        <div className="flex-shrink-0">
-                          {getFileIcon(file.name)}
-                        </div>
-                        <a
-                          href={file.url || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 min-w-0"
-                        >
-                          <p className="text-xs font-medium text-blue-600 hover:underline truncate">
-                            {file.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {formatFileSize(file.size)}
-                          </p>
-                        </a>
-                        {!readOnly && (
-                          <button
-                            onClick={() => handleDeleteFile(file.id)}
-                            className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition"
-                            title={t("deleteFile") || "Delete file"}
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3 flex-wrap">
-                <h4 className="text-sm font-semibold text-gray-800 whitespace-nowrap">
-                  {t("assignees") || "Assignees"}
-                </h4>
-
-                <div className="flex flex-wrap gap-2">
-                  {(task.assignees || []).length === 0 && (
-                    <span className="text-sm text-gray-500">{t("noAssigneesYet") || "No assignees yet"}</span>
-                  )}
-                  {(task.assignees || []).map((assignee, index) => {
-                    const label = getAssigneeLabel(assignee) || t("unassigned") || "Unassigned";
-                    const id = getAssigneeId(assignee) || `${label}-${index}`;
-                    return (
-                      <div
-                        key={id}
-                        className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full border border-gray-200 bg-white cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openProfile(getAssigneeId(assignee));
-                        }}
-                      >
-                        {renderMemberAvatar(assignee, "w-6 h-6 text-[10px]")}
-                        <span className="text-sm text-gray-800">{label}</span>
-                      </div>
-                      );
-                  })}
-                </div>
-              </div>
-
-
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-gray-700" />
-                  {t("comments") || "Comments"}
-                </h4>
-                <div className="space-y-5">
-                  {commentLoading ? (
-                    <div className="text-xs text-gray-500">{t("loadingComments") || "Loading comments..."}</div>
-                  ) : comments.length > 0 ? (
-                    comments.map((comment) => (
-                      <div
-                        key={comment.id}
-                        className="bg-gray-50 border border-gray-200 rounded-lg p-3"
-                      >
-                        <div className="flex gap-3">
+                {/* Comments Tab Content */}
+                {activeTab === "comments" && (
+                  <div className="space-y-4">
+                    <div className="space-y-5 max-h-96 overflow-y-auto">
+                      {commentLoading ? (
+                        <div className="text-xs text-gray-500">{t("loadingComments") || "Loading comments..."}</div>
+                      ) : comments.length > 0 ? (
+                        comments.map((comment) => (
                           <div
-                            className="flex-shrink-0 cursor-pointer"
-                            onClick={() =>
-                              openProfile(
-                                comment.userId ||
-                                  comment.authorId ||
-                                  comment.createdById ||
-                                  ""
-                              )
-                            }
+                            key={comment.id}
+                            className="bg-gray-50 border border-gray-200 rounded-lg p-3"
                           >
-                            {renderCommentAvatar(comment)}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between text-xs text-gray-500">
-                              <span
-                                className="cursor-pointer font-semibold text-gray-700"
+                            <div className="flex gap-3">
+                              <div
+                                className="flex-shrink-0 cursor-pointer"
                                 onClick={() =>
                                   openProfile(
                                     comment.userId ||
@@ -617,91 +630,189 @@ const TaskModal = ({
                                   )
                                 }
                               >
-                                {(() => {
-                                  const userId = comment.userId || comment.authorId || comment.createdById || "";
-                                  const member = allMembers?.find(m => 
-                                    m.id === userId || 
-                                    m.userId === userId || 
-                                    m.accountId === userId
-                                  );
-                                  return member?.displayName || member?.name || comment.createdBy || t("unknown") || "Unknown";
-                                })()}
-                              </span>
-                              <div className="flex items-center gap-2">
-                                {comment.createdAt && (
-                                  <span>{formatTimestamp(comment.createdAt)}</span>
+                                {renderCommentAvatar(comment)}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between text-xs text-gray-500">
+                                  <span
+                                    className="cursor-pointer font-semibold text-gray-700"
+                                    onClick={() =>
+                                      openProfile(
+                                        comment.userId ||
+                                          comment.authorId ||
+                                          comment.createdById ||
+                                          ""
+                                      )
+                                    }
+                                  >
+                                    {(() => {
+                                      const userId = comment.userId || comment.authorId || comment.createdById || "";
+                                      const member = allMembers?.find(m => 
+                                        m.id === userId || 
+                                        m.userId === userId || 
+                                        m.accountId === userId
+                                      );
+                                      return member?.displayName || member?.name || comment.createdBy || t("unknown") || "Unknown";
+                                    })()}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    {comment.createdAt && (
+                                      <span>{formatTimestamp(comment.createdAt)}</span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      className="text-blue-600 hover:underline"
+                                      onClick={() => startEditComment(comment)}
+                                    >
+                                      {t("edit") || "Edit"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="text-red-500 hover:underline"
+                                      onClick={() => handleDeleteComment(comment.id)}
+                                    >
+                                      {t("delete") || "Delete"}
+                                    </button>
+                                  </div>
+                                </div>
+                                {editingCommentId === comment.id ? (
+                                  <div className="mt-3 space-y-2">
+                                    <textarea
+                                      value={editingContent}
+                                      onChange={(e) => setEditingContent(e.target.value)}
+                                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-200"
+                                      rows={2}
+                                    />
+                                    <div className="flex items-center justify-end gap-2 text-sm">
+                                      <button
+                                        type="button"
+                                        className="px-3 py-1 rounded-lg border text-gray-600 hover:bg-gray-100"
+                                        onClick={cancelEditComment}
+                                      >
+                                        {t("cancel") || "Cancel"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="px-3 py-1 rounded-lg bg-gray-900 text-white hover:bg-black"
+                                        onClick={saveEditComment}
+                                        disabled={!editingContent.trim()}
+                                      >
+                                        {t("save") || "Save"}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-gray-800 mt-2 whitespace-pre-wrap">
+                                    {comment.content || comment.text}
+                                  </div>
                                 )}
-                                <button
-                                  type="button"
-                                  className="text-blue-600 hover:underline"
-                                  onClick={() => startEditComment(comment)}
-                                >
-                                  {t("edit") || "Edit"}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="text-red-500 hover:underline"
-                                  onClick={() => handleDeleteComment(comment.id)}
-                                >
-                                  {t("delete") || "Delete"}
-                                </button>
                               </div>
                             </div>
-                            {editingCommentId === comment.id ? (
-                              <div className="mt-3 space-y-2">
-                                <textarea
-                                  value={editingContent}
-                                  onChange={(e) => setEditingContent(e.target.value)}
-                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-200"
-                                  rows={2}
-                                />
-                                <div className="flex items-center justify-end gap-2 text-sm">
-                                  <button
-                                    type="button"
-                                    className="px-3 py-1 rounded-lg border text-gray-600 hover:bg-gray-100"
-                                    onClick={cancelEditComment}
-                                  >
-                                    {t("cancel") || "Cancel"}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="px-3 py-1 rounded-lg bg-gray-900 text-white hover:bg-black"
-                                    onClick={saveEditComment}
-                                    disabled={!editingContent.trim()}
-                                  >
-                                    {t("save") || "Save"}
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="text-sm text-gray-800 mt-2 whitespace-pre-wrap">
-                                {comment.content || comment.text}
-                              </div>
-                            )}
                           </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-xs text-gray-500">{t("noCommentsYet") || "No comments yet"}</div>
-                  )}
-                </div>
+                        ))
+                      ) : (
+                        <div className="text-xs text-gray-500">{t("noCommentsYet") || "No comments yet"}</div>
+                      )}
+                    </div>
 
-                <div className="mt-2 flex items-center gap-2">
-                  <input
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder={t("writeComment") || "Write a comment..."}
-                    className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-gray-300"
-                  />
-                  <button
-                    className="bg-gray-900 text-white px-4 py-2 rounded-lg font-medium hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={handleAddComment}
-                    disabled={!text.trim()}
-                  >
-                    {t("post") || "Post"}
-                  </button>
-                </div>
+                    <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+                      <input
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        placeholder={t("writeComment") || "Write a comment..."}
+                        className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-gray-300"
+                      />
+                      <button
+                        className="bg-gray-900 text-white px-4 py-2 rounded-lg font-medium hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleAddComment}
+                        disabled={!text.trim()}
+                      >
+                        {t("post") || "Post"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Files Tab Content */}
+                {activeTab === "files" && (
+                  <div className="space-y-4">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      disabled={readOnly}
+                    />
+
+                    {loadingFiles ? (
+                      <p className="text-xs text-gray-500">{t("loadingFiles") || "Loading files..."}</p>
+                    ) : files.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-xs text-gray-500 mb-4">{t("noFilesAttached") || "No files attached"}</p>
+                        {!readOnly && (
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingFile}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Upload className="w-4 h-4" />
+                            {uploadingFile ? t("uploading") || "Uploading..." : t("upload") || "Upload"}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {files.map((file) => (
+                            <div
+                              key={file.id}
+                              className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition"
+                            >
+                              <div className="flex-shrink-0">
+                                {getFileIcon(file.name)}
+                              </div>
+                              <a
+                                href={file.url || '#'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 min-w-0"
+                              >
+                                <p className="text-xs font-medium text-blue-600 hover:underline truncate">
+                                  {file.name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {formatFileSize(file.size)}
+                                </p>
+                              </a>
+                              {!readOnly && (
+                                <button
+                                  onClick={() => handleDeleteFile(file.id)}
+                                  className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition"
+                                  title={t("deleteFile") || "Delete file"}
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {!readOnly && (
+                          <div className="pt-2 border-t border-gray-200">
+                            <button
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={uploadingFile}
+                              className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-gray-300 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Upload className="w-4 h-4" />
+                              {uploadingFile ? t("uploading") || "Uploading..." : t("upload") || "Upload"}
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -711,7 +822,7 @@ const TaskModal = ({
                 <div className="space-y-5">
                   <div className="flex items-start gap-5 relative" ref={assigneeMenuRef}>
                     <label className="text-sm text-[#292A2E] font-semibold w-24 mt-2">
-                      {t("assignee") || "Assignee"}
+                      {t("assignees") || "Assignees"}
                     </label>
                     <div className="flex-1">
                       <button
@@ -719,55 +830,84 @@ const TaskModal = ({
                         onClick={() => setAssigneeMenuOpen((prev) => !prev)}
                         className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2 text-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200"
                       >
-                        <div className="flex items-center gap-2">
-                          {renderMemberAvatar(
-                            activeMember || { name: activeAssigneeLabel || "U" }
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {(detailForm.assignees || []).length === 0 ? (
+                            <span className="text-gray-500">{t("unassigned") || "Unassigned"}</span>
+                          ) : (detailForm.assignees || []).length === 1 ? (
+                            <>
+                              {renderMemberAvatar(detailForm.assignees[0])}
+                              <span className="text-gray-900 truncate">
+                                {getAssigneeLabel(detailForm.assignees[0])}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-gray-900">
+                              {detailForm.assignees.length} {t("selected") || "selected"}
+                            </span>
                           )}
-                          <span className="text-gray-900">
-                            {activeAssigneeLabel || t("unassigned") || "Unassigned"}
-                          </span>
                         </div>
-                        <span className="text-gray-500 text-xs">▼</span>
+                        <span className="text-gray-500 text-xs ml-2">▼</span>
                       </button>
                       {assigneeMenuOpen && (
                         <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDetailForm((prev) => ({ ...prev, assignees: [] }));
-                              onUpdateAssignees(task.id, []);
-                              setAssigneeMenuOpen(false);
-                            }}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100 text-left"
-                          >
-                            <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-xs font-semibold">
-                              U
-                            </div>
-                            <span>{t("unassign") || "Unassign"}</span>
-                          </button>
-                          {availableMembers.map((member) => {
-                            const optionId = getAssigneeId(member);
-                            const label = getAssigneeLabel(member) || optionId;
-                            return (
-                              <button
-                                type="button"
-                                key={optionId}
-                                onClick={() => {
-                                  const nextList = optionId ? [member] : [];
-                                  setDetailForm((prev) => ({
-                                    ...prev,
-                                    assignees: nextList,
-                                  }));
-                                  onUpdateAssignees(task.id, optionId ? [optionId] : []);
-                                  setAssigneeMenuOpen(false);
-                                }}
-                                className="w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100 text-left"
-                              >
-                                {renderMemberAvatar(member)}
-                                <span className="text-gray-900">{label}</span>
-                              </button>
-                            );
-                          })}
+                          <div className="p-2 border-b border-gray-200">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDetailForm((prev) => ({ ...prev, assignees: [] }));
+                                onUpdateAssignees(task.id, []);
+                              }}
+                              className="w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100 text-left rounded-lg"
+                            >
+                              <div className="w-5 h-5 flex items-center justify-center">
+                                <input
+                                  type="checkbox"
+                                  checked={(detailForm.assignees || []).length === 0}
+                                  onChange={() => {
+                                    setDetailForm((prev) => ({ ...prev, assignees: [] }));
+                                    onUpdateAssignees(task.id, []);
+                                  }}
+                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </div>
+                              <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-xs font-semibold">
+                                U
+                              </div>
+                              <span>{t("unassign") || "Unassign"}</span>
+                            </button>
+                          </div>
+                          <div className="p-1">
+                            {availableMembers.map((member) => {
+                              const optionId = getAssigneeId(member);
+                              const label = getAssigneeLabel(member) || optionId;
+                              const isSelected = isAssigneeSelected(member);
+                              return (
+                                <button
+                                  type="button"
+                                  key={optionId}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleAssignee(member);
+                                  }}
+                                  className="w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100 text-left rounded-lg"
+                                >
+                                  <div className="w-5 h-5 flex items-center justify-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => toggleAssignee(member)}
+                                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </div>
+                                  {renderMemberAvatar(member)}
+                                  <span className="text-gray-900 flex-1">{label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </div>

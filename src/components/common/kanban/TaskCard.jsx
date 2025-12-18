@@ -1,12 +1,10 @@
 // src/components/kanban/TaskCard.jsx
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Calendar, MessageSquare } from "lucide-react";
-import {
-  priorityStyles,
-  initials,
-} from "../../../utils/kanbanHelpers";
+import { Calendar, MessageSquare, MoreVertical } from "lucide-react";
+import { priorityStyles, initials } from "../../../utils/kanbanHelpers";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 const getAssigneeId = (assignee) => {
   if (!assignee) return "";
@@ -27,15 +25,21 @@ const getAssigneeLabel = (assignee) => {
   );
 };
 
-const formatColumnName = (name) => {
-  if (!name) return "";
-  return name
-    .split("_")
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+const getAssigneeAvatar = (assignee) => {
+  if (!assignee) return "";
+  if (typeof assignee === "string") return "";
+  return (
+    assignee.avatarUrl ||
+    assignee.avatarURL ||
+    assignee.photoUrl ||
+    assignee.photoURL ||
+    assignee.user?.avatarUrl ||
+    assignee.user?.avatarURL ||
+    ""
+  );
 };
 
-const TaskCard = ({ task, onOpen, columnMeta = {} }) => {
+const TaskCard = ({ task, onOpen, onDeleteTask, columnMeta = {} }) => {
   const {
     attributes,
     listeners,
@@ -52,43 +56,27 @@ const TaskCard = ({ task, onOpen, columnMeta = {} }) => {
   };
 
   const priorityClass = priorityStyles[task.priority] || "bg-gray-100 text-gray-700";
-  
-  // Dynamic status color based on columnMeta and position
-  const getStatusClass = () => {
-    const column = columnMeta[task.columnId];
-    
-    // Done column - green
-    if (column?.isDone) {
-      return "bg-emerald-100 text-emerald-700";
-    }
-    
-    // Get all columns sorted by position
-    const allColumns = Object.values(columnMeta).sort((a, b) => (a.position || 0) - (b.position || 0));
-    const currentPosition = column?.position || 0;
-    const totalColumns = allColumns.length;
-    
-    if (currentPosition === 1 || currentPosition === allColumns[0]?.position) {
-      return "bg-gray-100 text-gray-700";
-    }
-    
 
-    const nonDoneColumns = allColumns.filter(col => !col.isDone);
-    const positionInNonDone = nonDoneColumns.findIndex(col => col.columnId === task.columnId);
-    
-    if (positionInNonDone === 0) {
-      return "bg-gray-100 text-gray-700";
-    } else if (positionInNonDone === 1) {
-      return "bg-blue-100 text-blue-700"; 
-    } else {
-      return "bg-indigo-100 text-indigo-700";
-    }
-  };
-  const statusClass = getStatusClass();
-  
   const dueLabel = task.dueDate
     ? new Date(task.dueDate).toLocaleDateString()
     : "--";
   const commentsCount = Array.isArray(task.comments) ? task.comments.length : 0;
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <div
@@ -97,28 +85,63 @@ const TaskCard = ({ task, onOpen, columnMeta = {} }) => {
       {...attributes}
       {...listeners}
       className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-3 cursor-grab active:cursor-grabbing hover:shadow-md transition"
-      onClick={() => onOpen(task)}
+      onClick={(e) => {
+        // Don't open task detail if delete modal is open
+        if (!showDeleteModal) {
+          onOpen(task);
+        }
+      }}
     >
-      <div className="flex items-start justify-between gap-4">
-        <h4 className="font-semibold text-gray-900 leading-snug">
-          {task.title}
-        </h4>
-        <span className={`text-xs px-2 py-1 rounded-full ${priorityClass}`}>
-          {task.priority}
+      {/* Top row: priority + kebab menu */}
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${priorityClass}`}
+        >
+          {task.priority || "medium"}
         </span>
+        {onDeleteTask && (
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((v) => !v);
+              }}
+              className="p-1 rounded-md text-gray-500 hover:bg-gray-100"
+              aria-label="Task actions"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-1 w-32 rounded-md border border-gray-200 bg-white shadow-lg z-20">
+                <button
+                  type="button"
+                  className="w-full px-3 py-1.5 text-left text-xs text-red-600 hover:bg-red-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen(false);
+                    setShowDeleteModal(true);
+                  }}
+                >
+                  Delete task
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-        {task.description}
-      </p>
+      <h4 className="font-semibold text-gray-900 leading-snug line-clamp-2">
+        {task.title}
+      </h4>
 
-      <div className="flex items-center gap-2 mt-3">
-        <span className={`text-xs px-2 py-1 rounded-full ${statusClass}`}>
-          {formatColumnName(columnMeta[task.status]?.title || task.status)}
-        </span>
-      </div>
+      {task.description && (
+        <p className="text-sm text-gray-600 mt-1.5 line-clamp-2">
+          {task.description}
+        </p>
+      )}
 
-      <div className="flex items-center justify-between mt-4">
+      <div className="flex items-center justify-between mt-3">
         <div className="flex items-center gap-2 text-xs text-gray-600">
           <Calendar className="w-4 h-4" />
           <span>{dueLabel}</span>
@@ -128,13 +151,22 @@ const TaskCard = ({ task, onOpen, columnMeta = {} }) => {
             {(task.assignees || []).slice(0, 3).map((assignee, index) => {
               const label = getAssigneeLabel(assignee) || "Unassigned";
               const key = getAssigneeId(assignee) || `${label}-${index}`;
+              const avatarUrl = getAssigneeAvatar(assignee);
               return (
                 <div
                   key={key}
-                  className="w-6 h-6 rounded-full bg-gray-800 text-white text-[10px] flex items-center justify-center ring-2 ring-white"
+                  className="w-6 h-6 rounded-full bg-gray-800 text-white text-[10px] flex items-center justify-center ring-2 ring-white overflow-hidden"
                   title={label}
                 >
-                  {initials(label || "U")}
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={label}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    initials(label || "U")
+                  )}
                 </div>
               );
             })}
@@ -150,6 +182,18 @@ const TaskCard = ({ task, onOpen, columnMeta = {} }) => {
           </div>
         </div>
       </div>
+
+      <ConfirmDeleteModal
+        open={showDeleteModal}
+        onCancel={() => setShowDeleteModal(false)}
+        onConfirm={() => {
+          setShowDeleteModal(false);
+          if (onDeleteTask) onDeleteTask(task.id);
+        }}
+        title="Delete Task"
+        message={`Are you sure you want to delete the task "${task.title}"? This action cannot be undone.`}
+        type="task"
+      />
     </div>
   );
 };

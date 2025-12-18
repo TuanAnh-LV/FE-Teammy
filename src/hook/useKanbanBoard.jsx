@@ -170,6 +170,32 @@ const enrichCommentsWithMembers = (comments = [], members = []) => {
   });
 };
 
+const enrichAssigneesWithMembers = (assignees = [], members = []) => {
+  if (!Array.isArray(assignees)) return [];
+  return assignees.map((assignee) => {
+    // Nếu assignee đã là object đầy đủ (có name, email, avatarUrl), giữ nguyên
+    if (assignee && typeof assignee === "object" && assignee.name) {
+      return assignee;
+    }
+    
+    // Nếu chỉ là ID string hoặc object thiếu thông tin, tìm trong members
+    const assigneeId = typeof assignee === "string" ? assignee : (assignee?.id || assignee?.userId || "");
+    const member = findMemberByUserId(members, assigneeId);
+    
+    if (member) {
+      return {
+        id: member.id || assigneeId,
+        name: member.name || member.displayName || member.fullName || "",
+        email: member.email || "",
+        avatarUrl: member.avatarUrl || member.avatarURL || member.photoUrl || member.photoURL || "",
+      };
+    }
+    
+    // Fallback: nếu không tìm thấy member, trả về object từ normalizePersonEntity
+    return normalizePersonEntity(assignee);
+  }).filter(Boolean);
+};
+
 const commentsMetaEqual = (a = [], b = []) => {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i += 1) {
@@ -214,7 +240,10 @@ export function useKanbanBoard(groupId) {
           priority: (t.priority || "").toLowerCase(),
           status: t.status || "",
           dueDate: t.dueDate || "",
-          assignees: normalizePersonList(t.assignees),
+          assignees: enrichAssigneesWithMembers(
+            normalizePersonList(t.assignees),
+            groupMembers
+          ),
           comments: enrichCommentsWithMembers(
             normalizeCommentsList(t.comments),
             groupMembers
@@ -482,11 +511,47 @@ export function useKanbanBoard(groupId) {
 
   const createColumn = async (payload) => {
     if (!groupId) return;
+    
+    // Optimistic update: tạo column tạm thời
+    const tempId = `temp-column-${Date.now()}`;
+    const columnName = payload.columnName || "New Column";
+    const position = payload.position ?? 0;
+    
+    // Lưu tempId để rollback nếu cần
+    const optimisticColumnId = tempId;
+    
+    // Thêm column vào state ngay lập tức
+    setColumnMeta((prev) => ({
+      ...prev,
+      [optimisticColumnId]: {
+        title: columnName,
+        isDone: false,
+        dueDate: null,
+        position: position,
+      },
+    }));
+    
+    setColumns((prev) => ({
+      ...prev,
+      [optimisticColumnId]: [],
+    }));
+    
     try {
       await BoardService.createColumn(groupId, payload);
+      // Fetch lại để lấy ID thật từ server
       fetchBoard({ showLoading: false });
     } catch (err) {
-
+      // Rollback nếu thất bại
+      setColumnMeta((prev) => {
+        const updated = { ...prev };
+        delete updated[optimisticColumnId];
+        return updated;
+      });
+      setColumns((prev) => {
+        const updated = { ...prev };
+        delete updated[optimisticColumnId];
+        return updated;
+      });
     }
   };
 
@@ -503,6 +568,11 @@ export function useKanbanBoard(groupId) {
   const createTask = async (payload) => {
     if (!groupId) return;
     const tempId = `temp-${Date.now()}`;
+    // Enrich assignees với member info nếu có cho optimistic update
+    const enrichedAssignees = enrichAssigneesWithMembers(
+      normalizePersonList(payload.assignees),
+      groupMembers
+    );
     const optimisticTask = {
       id: tempId,
       columnId: payload.columnId,
@@ -511,15 +581,25 @@ export function useKanbanBoard(groupId) {
       priority: (payload.priority || "medium").toLowerCase(),
       status: payload.status || "todo",
       dueDate: payload.dueDate || null,
-      assignees: normalizePersonList(payload.assignees),
+      assignees: enrichedAssignees,
       comments: [],
     };
     setColumns((prev) => ({
       ...prev,
-      [payload.columnId]: [...(prev[payload.columnId] || []), optimisticTask],
+      [payload.columnId]: [optimisticTask, ...(prev[payload.columnId] || [])],
     }));
     try {
-      await BoardService.createTask(groupId, payload);
+      // Chuẩn bị payload cho API: nếu assignees là object, chỉ gửi userIds
+      const apiPayload = { ...payload };
+      if (apiPayload.assignees && Array.isArray(apiPayload.assignees)) {
+        apiPayload.assignees = apiPayload.assignees.map((assignee) => {
+          if (typeof assignee === "object" && assignee !== null) {
+            return assignee.id || assignee.userId || assignee.email || assignee;
+          }
+          return assignee;
+        });
+      }
+      await BoardService.createTask(groupId, apiPayload);
       fetchBoard({ showLoading: false });
     } catch (err) {
 
@@ -828,6 +908,19 @@ export function useKanbanBoard(groupId) {
     addTaskComment,
     updateTaskComment,
     deleteTaskComment,
+    updateColumnPositionOptimistic: (columnId1, newPosition1, columnId2, newPosition2) => {
+      // Optimistic update: swap positions immediately
+      setColumnMeta((prev) => {
+        const updated = { ...prev };
+        if (updated[columnId1]) {
+          updated[columnId1] = { ...updated[columnId1], position: newPosition1 };
+        }
+        if (updated[columnId2]) {
+          updated[columnId2] = { ...updated[columnId2], position: newPosition2 };
+        }
+        return updated;
+      });
+    },
   };
 }
 
