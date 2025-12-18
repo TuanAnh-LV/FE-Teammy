@@ -85,8 +85,6 @@ export default function MyGroupsPage() {
     handleReject,
     majors,
     majorsLoading,
-    skills,
-    skillsLoading,
   } = useMyGroupsPage(t, navigate, userInfo);
 
   const tabs = [
@@ -717,8 +715,6 @@ export default function MyGroupsPage() {
         errors={errors}
         majors={majors}
         majorsLoading={majorsLoading}
-        skills={skills}
-        skillsLoading={skillsLoading}
         onClose={requestCloseModal}
         onSubmit={handleCreateGroup}
         onChange={handleFormChange}
