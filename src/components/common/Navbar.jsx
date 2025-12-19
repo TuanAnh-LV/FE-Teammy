@@ -66,11 +66,7 @@ const Navbar = () => {
     setUser(userInfo || null);
   }, [userInfo]);
 
-  // Debug: Log khi Redux state thay đổi
-  useEffect(() => {
-    console.log("[Navbar] Redux invitations updated:", reduxPendingInvitations);
-    console.log("[Navbar] Redux applications updated:", reduxApplications);
-  }, [reduxPendingInvitations, reduxApplications]);
+  // Debug logs removed for production
 
   useEffect(() => {
     const formatRelative = (iso) => {

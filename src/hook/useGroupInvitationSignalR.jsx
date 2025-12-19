@@ -173,19 +173,9 @@ export const useGroupInvitationSignalR = (token, userId, callbacks = {}) => {
         "UserOffline",
       ];
 
-      // WILDCARD: Lắng nghe TẤT CẢ events để debug
-      const originalOn = conn.on.bind(conn);
-      conn.on = function(eventName, callback) {
-        console.log(`[SignalR] 🎯 Registered listener for: ${eventName}`);
-        return originalOn(eventName, callback);
-      };
-
       eventNames.forEach((eventName) => {
         conn.off(eventName);
         conn.on(eventName, (data) => {
-          // Debug log for all events
-          console.log(`[SignalR] 🔔 Event received: ${eventName}`, data);
-          
           const listeners = getEventListenerSet(eventName);
           listeners.forEach((callback) => {
             try {
@@ -230,8 +220,6 @@ export const useGroupInvitationSignalR = (token, userId, callbacks = {}) => {
         globalConnection = conn;
         notifyConnectionState(signalR.HubConnectionState.Connected);
         isConnecting = false;
-        console.log("[SignalR] ✅ Connected successfully to /groupChatHub");
-        console.log("[SignalR] 📡 Listening for events:", eventNames);
       } catch (error) {
         console.error("[SignalR] Failed to connect via WebSockets:", error?.message || error);
         isConnecting = false;

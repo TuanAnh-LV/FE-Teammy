@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { GroupService } from "../../../services/group.service";
 
 const ProfileGroups = ({ userId }) => {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!userId) return;
@@ -22,6 +24,7 @@ const ProfileGroups = ({ userId }) => {
             role: g.role || g.memberRole || "",
             status: g.status || "Active",
             progress: g.progress || g.projectProgress || 0,
+            workspaceId: g.workspaceId || g.workspaceID || g.workspace?.id,
           }))
         );
       } catch (error) {
@@ -57,7 +60,12 @@ const ProfileGroups = ({ userId }) => {
         {groups.map((group) => (
           <div
             key={group.id}
-            className="border border-gray-100 rounded-2xl p-4 md:p-5 space-y-3"
+            className="border border-gray-100 rounded-2xl p-4 md:p-5 space-y-3 cursor-pointer hover:shadow-md transition"
+            onClick={() => {
+              if (group.id) {
+                navigate(`/my-group/${group.id}`);
+              }
+            }}
           >
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -68,9 +76,7 @@ const ProfileGroups = ({ userId }) => {
                   <p className="text-sm text-gray-500">Role: {group.role}</p>
                 )}
               </div>
-              {/* <button className="px-4 py-1.5 text-xs md:text-sm rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shadow-sm">
-                View Details
-              </button> */}
+              {/* Có thể thêm nút View Details riêng nếu cần sau này */}
             </div>
 
             <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-600 border border-blue-200">

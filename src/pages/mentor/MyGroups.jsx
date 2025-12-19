@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Card, Progress, Tag, Button, Spin } from "antd";
-import { MessageOutlined, ClockCircleOutlined } from "@ant-design/icons";
-import { Search, BookOpen, Target, Calendar } from "lucide-react";
+import { Card, Progress, Button, Spin } from "antd";
+import { BookOpen, Target, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { GroupService } from "../../services/group.service";
 import { ReportService } from "../../services/report.service";
@@ -13,8 +12,6 @@ export default function MyGroups() {
 
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchMyGroups();
@@ -91,31 +88,7 @@ export default function MyGroups() {
   };
 
   const normalized = groups.map(normalize);
-
-  const stats = {
-    total: normalized.length,
-    ontrack: normalized.filter(
-      (g) => g.status === (t("onTrack") || "Đúng tiến độ")
-    ).length,
-    need: normalized.filter(
-      (g) => g.status !== (t("onTrack") || "Đúng tiến độ")
-    ).length,
-    avg:
-      normalized.length > 0
-        ? Math.round(
-            normalized.reduce((s, g) => s + g.progress, 0) / normalized.length
-          )
-        : 0,
-  };
-
-  const filtered = normalized.filter((g) => {
-    const match = g.name.toLowerCase().includes(searchQuery.toLowerCase());
-    if (filter === "ontrack")
-      return match && g.status === (t("onTrack") || "Đúng tiến độ");
-    if (filter === "need")
-      return match && g.status !== (t("onTrack") || "Đúng tiến độ");
-    return match;
-  });
+  const filtered = normalized;
 
   return (
     <div className="min-h-screen pb-20">
@@ -127,93 +100,6 @@ export default function MyGroups() {
           {t("manageAndTrackGroups") ||
             "Quản lý và theo dõi các nhóm dự án bạn đang hướng dẫn"}
         </p>
-
-        {/* SEARCH */}
-        <div className="relative mt-8 w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder={t("searchGroups") || "Tìm kiếm nhóm..."}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#F9FAFB] border border-gray-300 rounded-md px-3 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        {/* STATS */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-10">
-          {/* TOTAL */}
-          <div className="rounded-xl border border-gray-300 bg-white shadow-sm p-6">
-            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-            <p className="text-sm text-gray-500 mt-2">
-              {t("totalGroupsLabel")}
-            </p>
-          </div>
-
-          {/* ON TRACK */}
-          <div className="rounded-xl border border-gray-300 bg-white shadow-sm p-6">
-            <p className="text-2xl font-bold text-green-600">{stats.ontrack}</p>
-            <p className="text-sm text-gray-500 mt-2">{t("onTrack")}</p>
-          </div>
-
-          {/* NEED ATTENTION */}
-          <div className="rounded-xl border border-gray-300 bg-white shadow-sm p-6">
-            <p className="text-2xl font-bold text-orange-500">{stats.need}</p>
-            <p className="text-sm text-gray-500 mt-2">
-              {t("needAttention") || "Cần theo dõi"}
-            </p>
-          </div>
-
-          {/* AVG PROGRESS */}
-          <div className="rounded-xl border border-gray-300 bg-white shadow-sm p-6">
-            <p className="text-2xl font-bold text-blue-600">{stats.avg}%</p>
-            <p className="text-sm text-gray-500 mt-2">{t("averageProgress")}</p>
-          </div>
-        </div>
-
-        {/* FILTERS */}
-        <div className="inline-flex gap-2 mt-10 p-1 bg-[#f3f5f6] rounded-sm">
-          <button
-            onClick={() => setFilter("all")}
-            className={`
-              px-4 py-2 text-sm font-medium transition rounded-md
-              ${
-                filter === "all"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }
-            `}
-          >
-            {t("all") || "Tất cả"} ({stats.total})
-          </button>
-
-          <button
-            onClick={() => setFilter("ontrack")}
-            className={`
-              px-4 py-2 text-sm font-medium transition rounded-md
-              ${
-                filter === "ontrack"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }
-            `}
-          >
-            {t("onTrack") || "Đúng tiến độ"} ({stats.ontrack})
-          </button>
-
-          <button
-            onClick={() => setFilter("need")}
-            className={`
-              px-4 py-2 text-sm font-medium transition rounded-md
-              ${
-                filter === "need"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }
-            `}
-          >
-            {t("needAttention") || "Cần theo dõi"} ({stats.need})
-          </button>
-        </div>
       </div>
 
       {/* ---------------------------------- */}
@@ -240,12 +126,6 @@ export default function MyGroups() {
                       </h2>
                       <p className="text-sm text-gray-500 mt-1">{g.topic}</p>
                     </div>
-                    <Tag
-                      color={g.status === "Đúng tiến độ" ? "green" : "orange"}
-                      className="!rounded-full !px-3 !py-1 !ml-4"
-                    >
-                      {g.status}
-                    </Tag>
                   </div>
 
                   <p className="text-gray-600 text-sm leading-relaxed">
@@ -342,11 +222,6 @@ export default function MyGroups() {
                     >
                       {t("viewDetails") || "Xem chi tiết"}
                     </Button>
-
-                    <Button
-                      className="!rounded-lg !border !h-10 !w-10 !flex !items-center !justify-center !p-0"
-                      icon={<MessageOutlined />}
-                    />
                   </div>
                 </div>
               </div>

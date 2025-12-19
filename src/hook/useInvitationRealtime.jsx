@@ -20,8 +20,6 @@ export const useInvitationRealtime = (token, userId, options = {}) => {
 
   const handleInvitationCreated = useCallback(
     (invitation) => {
-      console.log("[Realtime] InvitationCreated received:", invitation);
-
       const normalizedId =
         invitation.invitationId ||
         invitation.id ||
@@ -62,8 +60,6 @@ export const useInvitationRealtime = (token, userId, options = {}) => {
 
   const handleInvitationStatusChanged = useCallback(
     (payload) => {
-      console.log("[Realtime] InvitationStatusChanged:", payload);
-
       const invitationId =
         payload.invitationId ||
         payload.id ||
@@ -89,8 +85,6 @@ export const useInvitationRealtime = (token, userId, options = {}) => {
 
   const handlePendingUpdated = useCallback(
     (payload) => {
-      console.log("[Realtime] PendingUpdated received:", payload);
-
       const { groupId, candidates = [] } = payload;
 
       candidates.forEach((candidate) => {
@@ -147,7 +141,6 @@ export const useInvitationRealtime = (token, userId, options = {}) => {
 
       try {
         await connection.invoke("JoinGroup", groupId);
-        console.log(`[Realtime] Joined group channel: ${groupId}`);
       } catch (error) {
         console.error("[Realtime] Error joining group:", error);
       }
@@ -161,7 +154,6 @@ export const useInvitationRealtime = (token, userId, options = {}) => {
 
       try {
         await connection.invoke("LeaveGroup", groupId);
-        console.log(`[Realtime] Left group channel: ${groupId}`);
       } catch (error) {
         console.error("[Realtime] Error leaving group:", error);
       }

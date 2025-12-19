@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Tabs, Button, Breadcrumb, Spin } from "antd";
-import {
-  ArrowLeftOutlined,
-    BarChartOutlined,
-  MessageOutlined,
-  HomeOutlined,
-} from "@ant-design/icons";
-import GroupOverview from "../../components/mentor/GroupOverview";
+import { Tabs, Breadcrumb, Spin } from "antd";
+import { BarChartOutlined, HomeOutlined } from "@ant-design/icons";
+import InfoCard from "../../components/common/my-group/InfoCard";
+import OverviewSection from "../../components/common/my-group/OverviewSection";
+import MembersPanel from "../../components/common/my-group/MembersPanel";
 import { GroupService } from "../../services/group.service";
 import useKanbanBoard from "../../hook/useKanbanBoard";
 import KanbanTab from "../../components/common/workspace/KanbanTab";
@@ -16,11 +13,13 @@ import MilestonesTab from "../../components/common/workspace/MilestonesTab";
 import ReportsTab from "../../components/common/workspace/ReportsTab";
 import TaskModal from "../../components/common/kanban/TaskModal";
 import { useAuth } from "../../context/AuthContext";
+import { useTranslation } from "../../hook/useTranslation";
 
 export default function GroupDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { userInfo } = useAuth();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("overview");
   const [groupDetail, setGroupDetail] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -79,7 +78,10 @@ export default function GroupDetail() {
   }
 
   const groupName = groupDetail?.name || `Group #${id}`;
-  const groupDescription = groupDetail?.description || "View project overview, timeline, and member contributions.";
+  const groupDescription =
+    groupDetail?.description ||
+    t("groupOverviewSubtitle") ||
+    "View project overview, timeline, and member contributions.";
 
   const hasKanbanData =
     filteredColumns && Object.keys(filteredColumns || {}).length > 0;
@@ -87,21 +89,183 @@ export default function GroupDetail() {
   const normalizeTitle = (value = "") =>
     value.toLowerCase().replace(/\s+/g, "_");
 
+  // Build recent activity directly from kanban columns
+  const tasks =
+    filteredColumns && typeof filteredColumns === "object"
+      ? Object.values(filteredColumns)
+          .flatMap((col) => col || [])
+          .filter(Boolean)
+      : [];
+
+  const recentActivity = tasks
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt || 0) -
+        new Date(a.updatedAt || a.createdAt || 0)
+    )
+    .slice(0, 4);
+
+  const descriptionText = (groupDetail?.description || "").trim();
+  const mentor =
+    groupDetail?.mentor ||
+    (Array.isArray(groupDetail?.mentors) ? groupDetail.mentors[0] : null);
+
+  const statusMeta = {
+    todo: { label: "To Do", dot: "bg-gray-300" },
+    to_do: { label: "To Do", dot: "bg-gray-300" },
+    inprogress: { label: "In Progress", dot: "bg-amber-400" },
+    in_progress: { label: "In Progress", dot: "bg-amber-400" },
+    doing: { label: "Doing", dot: "bg-amber-400" },
+    done: { label: "Done", dot: "bg-green-500" },
+    completed: { label: "Done", dot: "bg-green-500" },
+    review: { label: "Review", dot: "bg-blue-400" },
+  };
+
+  const findAssignees = (task) => {
+    const list = task?.assignees || task?.assignee || [];
+    if (Array.isArray(list)) return list;
+    if (typeof list === "string" || typeof list === "object") return [list];
+    return [];
+  };
+
+  const renderAssignee = (assignee) => {
+    const name =
+      (assignee?.displayName ||
+        assignee?.name ||
+        assignee?.email ||
+        assignee) ?? "";
+    const initials = String(name || "U")
+      .trim()
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+
+    return { name, initials };
+  };
+
+  const overviewGroup = groupDetail
+    ? {
+        title: groupDetail.name || groupName,
+        statusText: groupDetail.status,
+        topicName:
+          groupDetail.topic?.title ||
+          groupDetail.topicTitle ||
+          groupDetail.topicName,
+        field: groupDetail.major?.majorName,
+        maxMembers: groupDetail.maxMembers || 5,
+        progress:
+          typeof groupDetail.projectProgress === "number"
+            ? groupDetail.projectProgress
+            : 0,
+        semester:
+          groupDetail.semester &&
+          `${groupDetail.semester.season || ""} ${
+            groupDetail.semester.year || ""
+          }`.trim(),
+        end: groupDetail.semester?.endDate,
+      }
+    : null;
+
+  const groupSkills = Array.isArray(groupDetail?.skills)
+    ? groupDetail.skills
+    : [];
+
+  const boardForStats =
+    filteredColumns && typeof filteredColumns === "object"
+      ? {
+          columns: Object.entries(filteredColumns).map(
+            ([columnId, colTasks]) => ({
+              id: columnId,
+              tasks: colTasks || [],
+            })
+          ),
+        }
+      : null;
+
   const items = [
     {
       key: "overview",
       label: (
         <span>
-          <BarChartOutlined /> Overview
+          <BarChartOutlined /> {t("overview") || "Overview"}
         </span>
       ),
-      children: <GroupOverview groupId={id} groupDetail={groupDetail} />,
+      children: (
+        <div className="space-y-6">
+          {overviewGroup && (
+            <InfoCard
+              group={overviewGroup}
+              memberCount={groupDetail?.currentMembers || groupMembers.length}
+              onBack={undefined}
+              onEdit={null}
+              onSelectTopic={null}
+              onActivate={null}
+            />
+          )}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <OverviewSection
+              descriptionText={descriptionText}
+              recentActivity={recentActivity}
+              statusMeta={statusMeta}
+              findAssignees={findAssignees}
+              renderAssignee={renderAssignee}
+              groupSkills={groupSkills}
+              t={t}
+            />
+            <MembersPanel
+              groupMembers={groupMembers}
+              mentor={mentor}
+              group={groupDetail}
+              onInvite={null}
+              onAssignRole={null}
+              onKickMember={null}
+              onTransferLeader={null}
+              currentUserEmail={userInfo?.email}
+              t={t}
+              showStats={false}
+            />
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "contributions",
+      label: (
+        <span>
+          <BarChartOutlined /> {t("contributions") || "Contributions"}
+        </span>
+      ),
+      children: (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-3">
+              <MembersPanel
+                groupMembers={groupMembers}
+                mentor={mentor}
+                group={groupDetail}
+                onInvite={null}
+                onAssignRole={null}
+                onKickMember={null}
+                onTransferLeader={null}
+                currentUserEmail={userInfo?.email}
+                t={t}
+                showStats
+                board={boardForStats}
+              />
+            </div>
+          </div>
+        </div>
+      ),
     },
     {
       key: "workspace",
       label: (
         <span>
-          <BarChartOutlined /> Workspace
+          <BarChartOutlined /> {t("workspace") || "Workspace"}
         </span>
       ),
       children: (
