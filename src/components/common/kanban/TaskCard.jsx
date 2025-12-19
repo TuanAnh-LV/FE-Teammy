@@ -3,11 +3,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Calendar, MessageSquare, MoreVertical, Trash2 } from "lucide-react";
-import {
-  priorityStyles,
-  initials,
-} from "../../../utils/kanbanHelpers";
+import { priorityStyles, initials } from "../../../utils/kanbanHelpers";
 import { Modal, Input } from "antd";
+import { useTranslation } from "../../../hook/useTranslation";
 
 const getAssigneeId = (assignee) => {
   if (!assignee) return "";
@@ -57,6 +55,7 @@ const formatColumnName = (name) => {
 };
 
 const TaskCard = ({ task, onOpen, onDelete, columnMeta = {} }) => {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
