@@ -29,6 +29,9 @@ export const API = {
     DETAIL_PERSONAL: (id) => `/profile-posts/${id}`,
     DETAIL_GROUP: (id) => `/recruitment-posts/${id}`,
     UPDATE_PERSONAL: (id) => `/profile-posts/${id}`,
+    UPDATE_GROUP: (id) => `/recruitment-posts/${id}`,
+    DELETE_PERSONAL: (id) => `/profile-posts/${id}`,
+    DELETE_GROUP: (id) => `/recruitment-posts/${id}`,
     GET_GROUP_POSTS: (groupId) => `/recruitment-posts/group/${groupId}`,
   },
   GROUPS: {
@@ -168,7 +171,10 @@ export const API = {
     AUTO_ASSIGN_TOPIC: "/ai/auto-assign/topic",
     SUMMARY: "/ai/summary",
     OPTIONS: "/ai/options",
-    AUTO_RESOLVE: "/ai/auto-resolve"
+    AUTO_RESOLVE: "/ai/auto-resolve",
+    GENERATE_POST_GROUP: (groupId) => `/ai-gateway/generate-post/group/${groupId}`,
+  GENERATE_POST_PERSONAL: "/ai-gateway/generate-post/personal",
+
   },
   SEMESTERS: {
     LIST: "/semesters",

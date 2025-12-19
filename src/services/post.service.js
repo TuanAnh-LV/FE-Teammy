@@ -54,21 +54,31 @@ export const PostService = {
       isLoading: true,
     });
   },
-  // Get all profile posts (lay tat ca posts ca nhan, roi filter o client)
+  updateRecruitmentPost(id, payload) {
+    return BaseService.put({
+      url: API.POST.UPDATE_GROUP(id),
+      payload,
+      isLoading: true,
+    });
+  },
+  deleteRecruitmentPost(id) {
+    return BaseService.remove({
+      url: API.POST.DELETE_GROUP(id),
+      isLoading: true,
+    });
+  },
   getAllProfilePosts() {
     return BaseService.get({
       url: API.POST.GET_PERSONAL,
       isLoading: true,
     });
   },
-  // Delete a profile post
   deleteProfilePost(postId) {
-    return BaseService.delete({
-      url: `${API.POST.GET_PERSONAL}/${postId}`,
+    return BaseService.remove({
+      url: API.POST.DELETE_PERSONAL(postId),
       isLoading: true,
     });
   },
-  // Get posts for a specific group
   getGroupPostsByGroupId(groupId) {
     return BaseService.get({
       url: API.POST.GET_GROUP_POSTS(groupId),

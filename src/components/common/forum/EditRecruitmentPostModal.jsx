@@ -12,57 +12,72 @@ import {
 import { Plus } from "lucide-react";
 import { PostService } from "../../../services/post.service";
 import { SkillService } from "../../../services/skill.service";
-import moment from "moment";
-import { AiService } from "../../../services/ai.service";
+import dayjs from "dayjs";
 
 const { TextArea } = Input;
 
-const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
+const EditRecruitmentPostModal = ({
+  isOpen,
+  closeModal,
+  onUpdated,
+  post,
+  majorName,
+}) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
-  const [groupName, setGroupName] = useState("");
-  const [majorName, setMajorName] = useState("");
   const [availableSkills, setAvailableSkills] = useState([]);
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [skillFilter, setSkillFilter] = useState("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !post) return;
 
-    let mounted = true;
-    const loadGroupName = async () => {
-      try {
-        if (!defaultGroupId) return;
-        const res = await import("../../../services/group.service").then((m) =>
-          m.GroupService.getGroupDetail(defaultGroupId)
-        );
-        const name = res?.data?.title || res?.data?.name || "";
-        const major = res?.data?.major?.majorName || res?.data?.majorName || "";
-        if (mounted) {
-          setGroupName(name);
-          setMajorName(major);
-        }
-      } catch {
-        // ignore silently
-      }
-    };
-    loadGroupName();
-    return () => {
-      mounted = false;
-    };
-  }, [defaultGroupId, isOpen]);
+    console.log("EditRecruitmentPostModal - post data:", post);
+
+    let existingSkills = [];
+    const skillsData =
+      post.required_skills ||
+      post.requiredSkills ||
+      post.skills ||
+      post.skillsRequired ||
+      "";
+
+    if (Array.isArray(skillsData)) {
+      existingSkills = skillsData;
+    } else if (typeof skillsData === "string") {
+      existingSkills = skillsData
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+
+    console.log("Parsed skills:", existingSkills);
+
+    setSelectedSkills(existingSkills);
+
+    const deadlineRaw =
+      post.expires_at ||
+      post.applicationDeadline ||
+      post.expiresAt ||
+      post.deadline ||
+      post.expiredAt;
+
+    const deadline = deadlineRaw ? dayjs(deadlineRaw) : null;
+
+    form.setFieldsValue({
+      title: post.title || "",
+      description: post.description || "",
+      position_needed: post.position_needed || post.positionNeeded || "",
+      expires_at: deadline && deadline.isValid() ? deadline : null,
+      required_skills: existingSkills,
+    });
+  }, [isOpen, post, form]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !majorName) return;
 
     const fetchSkills = async () => {
-      if (!majorName) {
-        setAvailableSkills([]);
-        return;
-      }
-
       try {
         const response = await SkillService.list({ major: majorName });
         if (response?.data) {
@@ -110,103 +125,38 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
     try {
       setIsSubmitting(true);
       const {
-        groupId,
         title,
         description,
         position_needed,
-        expiresAt,
+        expires_at,
         required_skills,
       } = await form.validateFields();
 
-      await PostService.createRecruitmentPost({
-        groupId,
+      await PostService.updateRecruitmentPost(post.id, {
         title,
         description,
         position_needed,
-        expiresAt: expiresAt?.toISOString(),
+        expires_at: expires_at?.toISOString(),
         required_skills,
       });
 
       notification.success({
-        message: t("createRecruitPostSuccess") || "Recruitment post created",
+        message: t("updateRecruitPostSuccess") || "Recruitment post updated",
       });
       form.resetFields();
       setSelectedSkills([]);
       closeModal();
-      onCreated?.();
+      onUpdated?.();
     } catch {
       /* validate/API error handled elsewhere */
     } finally {
       setIsSubmitting(false);
     }
   };
-  const handleGenerateWithAI = async () => {
-    const gid = defaultGroupId || form.getFieldValue("groupId");
-    if (!gid) {
-      notification.warning({
-        message: t("groupNotFound") || "Group not found",
-      });
-      return;
-    }
-
-    try {
-      setIsGeneratingAI(true);
-
-      const res = await AiService.generatePostForGroup(gid);
-
-      const draft =
-        res?.data?.draft || res?.data?.data?.draft || res?.data?.data || {};
-
-      const nextTitle = draft.title || "";
-      const nextDescription = draft.description || "";
-      const nextPosition = draft.positionNeed || draft.position_needed || "";
-      const nextSkills = draft.requiredSkills || draft.required_skills || [];
-
-      const nextExpires = draft.expiresAt || draft.expires_at || null;
-
-      form.setFieldsValue({
-        title: nextTitle,
-        description: nextDescription,
-        position_needed: nextPosition,
-        required_skills: Array.isArray(nextSkills) ? nextSkills : [],
-        expiresAt: nextExpires ? moment(nextExpires) : null,
-      });
-
-      if (Array.isArray(nextSkills)) setSelectedSkills(nextSkills);
-
-      notification.success({
-        message: t("aiGenerateSuccess") || "Generated by AI",
-      });
-    } catch (err) {
-      notification.error({
-        message: t("aiGenerateFailed") || "Failed to generate by AI",
-        description:
-          err?.response?.data?.message ||
-          t("pleaseTryAgain") ||
-          "Please try again",
-      });
-    } finally {
-      setIsGeneratingAI(false);
-    }
-  };
 
   return (
     <Modal
-      title={
-        <div className="flex items-center justify-between pr-10">
-          <span>
-            {t("createRecruitPostTitle") || "Create Recruitment Post"}
-          </span>
-          <Button
-            onClick={handleGenerateWithAI}
-            loading={isGeneratingAI}
-            disabled={isGeneratingAI || isSubmitting}
-            className="!border-orange-400 !text-orange-500"
-          >
-            {t("generateWithAI") || "Generate with AI"}
-          </Button>
-        </div>
-      }
+      title={t("editRecruitPostTitle") || "Edit Recruitment Post"}
       open={isOpen}
       onCancel={() => {
         form.resetFields();
@@ -222,20 +172,13 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
         layout="vertical"
         onFinish={handleSubmit}
         initialValues={{
-          groupId: defaultGroupId || "",
           title: "",
           description: "",
           position_needed: "",
-          expiresAt: null,
+          expires_at: null,
           required_skills: [],
         }}
       >
-        <Form.Item name="groupId" hidden>
-          <Input />
-        </Form.Item>
-        <Form.Item label={t("group") || "Group"} shouldUpdate>
-          <Input value={groupName || defaultGroupId || ""} disabled />
-        </Form.Item>
         <Form.Item
           label={t("pleaseEnterTitle") ? "Title" : "Title"}
           name="title"
@@ -250,6 +193,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
             placeholder={t("placeholderTitle") || "VD: Tuyển FE cho project"}
           />
         </Form.Item>
+
         <Form.Item
           label={t("pleaseEnterDescription") ? "Description" : "Description"}
           name="description"
@@ -268,6 +212,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
             }
           />
         </Form.Item>
+
         <Form.Item
           label={
             t("pleaseEnterPosition") ? "Position Needed" : "Position Needed"
@@ -283,33 +228,28 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
         >
           <Input placeholder={t("placeholderSkills") || "VD: Git, Azure"} />
         </Form.Item>
+
         <Form.Item
           label={t("pleaseSelectDeadline") ? "Expires At" : "Expires At"}
-          name="expiresAt"
+          name="expires_at"
           rules={[
             {
               required: true,
               message: t("pleaseSelectDeadline") || "Please select deadline",
             },
-            {
-              validator: (_, value) =>
-                value && value.isAfter(moment())
-                  ? Promise.resolve()
-                  : Promise.reject(
-                      t("deadlineMustBeFuture") ||
-                        "Expires date must be after now!"
-                    ),
-            },
           ]}
         >
           <DatePicker
             style={{ width: "100%" }}
+            format="YYYY-MM-DD"
             disabledDate={(current) =>
-              current && current < moment().endOf("day")
+              current && current < dayjs().endOf("day")
             }
             placeholder="Chọn ngày hết hạn"
           />
         </Form.Item>
+
+        {/* Skills Section */}
         <Form.Item
           label={t("requiredSkills") || "Required Skills"}
           name="required_skills"
@@ -330,6 +270,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           ]}
         >
           <div className="space-y-3">
+            {/* Selected Skills Area */}
             <div className="min-h-[80px] p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
               <p className="text-xs font-medium text-gray-700 mb-2">
                 {t("selectedSkills") ||
@@ -343,7 +284,8 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
                 ) : (
                   selectedSkills.map((skillToken) => {
                     const skill = availableSkills.find(
-                      (s) => s.token === skillToken
+                      (s) =>
+                        s.token === skillToken || s.skillToken === skillToken
                     );
                     return (
                       <Tag
@@ -361,6 +303,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
               </div>
             </div>
 
+            {/* Skill Filter Buttons */}
             {majorName && availableSkills.length > 0 && (
               <>
                 <div className="flex gap-2 flex-wrap">
@@ -399,6 +342,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
                   )}
                 </div>
 
+                {/* Available Skills */}
                 <div className="max-h-[200px] overflow-y-auto p-3 border border-gray-300 rounded-lg bg-white">
                   <p className="text-xs font-medium text-gray-700 mb-2">
                     {t("availableSkillsClickToAdd") ||
@@ -406,10 +350,11 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {filteredSkills.map((skill) => {
-                      const isSelected = selectedSkills.includes(skill.token);
+                      const skillToken = skill.token || skill.skillToken;
+                      const isSelected = selectedSkills.includes(skillToken);
                       return (
                         <Tag
-                          key={skill.token}
+                          key={skillToken}
                           color={
                             isSelected ? "default" : getRoleColor(skill.role)
                           }
@@ -419,10 +364,10 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
                               : "hover:scale-105"
                           }`}
                           onClick={() =>
-                            !isSelected && handleAddSkill(skill.token)
+                            !isSelected && handleAddSkill(skillToken)
                           }
                         >
-                          {skill.token}
+                          {skillToken}
                           {!isSelected && (
                             <Plus className="inline-block w-3 h-3 ml-1" />
                           )}
@@ -442,6 +387,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
             )}
           </div>
         </Form.Item>
+
         <div className="flex justify-between mt-4">
           <Button
             onClick={() => {
@@ -460,7 +406,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
             disabled={isSubmitting}
             className="inline-flex items-center rounded-lg !bg-[#FF7A00] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:!opacity-90 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-60"
           >
-            {t("publishPost") || "Publish Post"}
+            {t("updatePost") || "Update Post"}
           </Button>
         </div>
       </Form>
@@ -468,4 +414,4 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
   );
 };
 
-export default CreatePostModal;
+export default EditRecruitmentPostModal;

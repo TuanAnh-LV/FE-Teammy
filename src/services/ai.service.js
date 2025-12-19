@@ -65,5 +65,20 @@ export const AiService = {
       isLoading: true,
     });
   },
+  generatePostForGroup(groupId) {
+  return BaseService.post({
+    url: API.AI.GENERATE_POST_GROUP(groupId),
+    payload: {}, 
+    isLoading: true,
+  });
+},
+
+generatePersonalPost() {
+  return BaseService.post({
+    url: API.AI.GENERATE_POST_PERSONAL,
+    payload: {}, 
+    isLoading: true,
+  });
+},
 };
 
