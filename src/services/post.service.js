@@ -2,15 +2,18 @@ import { BaseService } from "../config/basic.service";
 import { API } from "../consts/path.api";
 
 export const PostService = {
-  getPersonalPosts() {
+  getPersonalPosts(params) {
     return BaseService.get({
       url: API.POST.GET_PERSONAL,
-      isLoading: true,  
+      params,             
+      isLoading: true,
     });
   },
-  getRecruitmentPosts() {
+
+  getRecruitmentPosts(params) {
     return BaseService.get({
       url: API.POST.GET_GROUP,
+      params,                
       isLoading: true,
     });
   },

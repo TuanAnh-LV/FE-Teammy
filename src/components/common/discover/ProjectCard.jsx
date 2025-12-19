@@ -111,6 +111,21 @@ const ProjectCard = ({
               </span>
             </div>
           )}
+          {isAISuggestion && project.aiReason && (
+            <div className="mt-2 p-3 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+              <div className="flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-semibold text-purple-900 mb-1">
+                    {t("aiRecommendationReason") || "Why AI Recommends This"}
+                  </p>
+                  <p className="text-xs text-gray-700 leading-relaxed">
+                    {project.aiReason}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           {otherGroupsSelecting.length > 0 && (
             <div className="flex items-center gap-2 text-xs text-amber-600">
               <Users className="w-3.5 h-3.5" />

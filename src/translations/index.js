@@ -1222,8 +1222,10 @@
   aiNoContent: "AI could not generate content. Please try again with different inputs.",
   aiGenerateSuccess: "AI generated content successfully.",
   aiGenerateFailed: "AI failed to generate content. Please try again.",
+  aiRecommendationReason: "AI Recommendation Reason",
   },
   VIE: {
+    aiRecommendationReason: "Lý Do Đề Xuất Của AI",
     aiGenerateFailed: "AI tạo nội dung thất bại. Vui lòng thử lại.",
     aiGenerateSuccess: "AI đã tạo nội dung thành công.",
     aiNoContent: "AI không thể tạo nội dung. Vui lòng thử lại với các đầu vào khác.",

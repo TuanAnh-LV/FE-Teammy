@@ -319,7 +319,6 @@ const Discover = () => {
                     : detail.createdByName || "",
 
                 mentorsRaw: mentors,
-
                 progress: 0,
                 members: mentors.map((m) =>
                   (m.mentorName || m.name || "M")
@@ -338,6 +337,7 @@ const Discover = () => {
                 topicSkills: item.topicSkills || detail.skills || [],
                 isAISuggestion: true,
                 groups: detail.groups || [],
+                aiReason: item.aiReason || null,
               };
             });
           setAiSuggestedTopics(mapped);
