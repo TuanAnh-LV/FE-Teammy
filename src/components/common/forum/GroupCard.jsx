@@ -1,4 +1,13 @@
-import { Clock, Eye, Calendar, Users } from "lucide-react";
+import React, { useState } from "react";
+import {
+  Clock,
+  Eye,
+  Calendar,
+  Users,
+  MoreVertical,
+  Edit2,
+  Trash2,
+} from "lucide-react";
 import { Chip, StatusChip } from "./Chip";
 import { toArrayPositions, toArraySkills } from "../../../utils/helpers";
 import { useTranslation } from "../../../hook/useTranslation";
@@ -17,12 +26,75 @@ export function GroupCard({
   onOpenDetail,
   onApply,
   onClickLeader,
+  onEdit,
+  onDelete,
+  currentUserId,
 }) {
   const { t } = useTranslation();
+  const [showMenu, setShowMenu] = useState(false);
+
+  // Check if current user is the post owner (leader of the group)
+  const leaderId =
+    post.group?.leader?.userId ||
+    post.group?.leader?.id ||
+    post.leader?.userId ||
+    post.leader?.id ||
+    post.ownerId;
+  const isOwner = currentUserId && leaderId === currentUserId;
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow relative">
+      {/* Menu 3 chấm - chỉ hiển thị cho chủ post */}
+      {isOwner && onEdit && onDelete && (
+        <div className="absolute top-3 right-3 z-10">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors bg-white/80 backdrop-blur-sm border border-gray-200"
+          >
+            <MoreVertical className="w-4 h-4 text-gray-600" />
+          </button>
+          {showMenu && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setShowMenu(false)}
+              />
+              <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(false);
+                    onEdit(post);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  {t("edit") || "Edit"}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(false);
+                    onDelete(post.id);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {t("delete") || "Delete"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      <div
+        className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4"
+        style={{ paddingRight: isOwner ? "2.5rem" : "0" }}
+      >
         <div className="space-y-2 flex-1">
           {/* Title & Status */}
           <div className="flex items-start gap-2 md:gap-3 flex-wrap">

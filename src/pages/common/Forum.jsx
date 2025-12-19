@@ -9,13 +9,16 @@ import { Plus, Search, Users, MessageSquare } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
 import CreatePostModal from "../../components/common/forum/CreatePostModal";
 import CreatePersonalPostModal from "../../components/common/forum/CreatePersonalPostModal";
+import EditPersonalPostModal from "../../components/common/forum/EditPersonalPostModal";
+import EditRecruitmentPostModal from "../../components/common/forum/EditRecruitmentPostModal";
 import { PostService } from "../../services/post.service";
 import { AuthService } from "../../services/auth.service";
 import { GroupService } from "../../services/group.service";
 import { AiService } from "../../services/ai.service";
 import { toArraySafe, getErrorMessage } from "../../utils/helpers";
 import GroupDetailModal from "../../components/common/forum/GroupDetailModal";
-import { notification } from "antd";
+import { Modal, notification } from "antd";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
 import ApplyModal from "../../components/common/forum/ApplyModal";
 import { useNavigate } from "react-router-dom";
 import { AIRecommendedProfiles } from "../../components/common/forum/AIRecommendedProfiles";
@@ -25,7 +28,7 @@ import { PersonalCard } from "../../components/common/forum/PersonalCard";
 import { Pagination } from "../../components/common/forum/Pagination";
 import { useGroupInvitationSignalR } from "../../hook/useGroupInvitationSignalR";
 import { useAuth } from "../../context/AuthContext";
-
+const { confirm } = Modal;
 const Forum = () => {
   const { token, userInfo } = useAuth();
   const { t } = useTranslation();
@@ -40,16 +43,16 @@ const Forum = () => {
   const [membershipLoaded, setMembershipLoaded] = useState(false);
   const [myGroupDetails, setMyGroupDetails] = useState(null);
   const userRole = membership.status === "leader" ? "leader" : "individual";
-
-  // UI state
   const [activeTab, setActiveTab] = useState("groups");
   const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
   const [isCreatePersonalPostModalOpen, setIsCreatePersonalPostModalOpen] =
     useState(false);
-
+  const [isEditPersonalPostModalOpen, setIsEditPersonalPostModalOpen] =
+    useState(false);
+  const [isEditRecruitmentPostModalOpen, setIsEditRecruitmentPostModalOpen] =
+    useState(false);
+  const [editingPost, setEditingPost] = useState(null);
   const savedUser = JSON.parse(localStorage.getItem("userInfo") || "{}");
-
-  // search
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const timer = useRef(null);
@@ -59,8 +62,6 @@ const Forum = () => {
     timer.current = setTimeout(() => setDebouncedQuery(query), 200);
     return () => timer.current && clearTimeout(timer.current);
   }, [query]);
-
-  // posts list
   const [postsData, setPostsData] = useState([]);
   const [allPostsData, setAllPostsData] = useState([]);
   const [aiSuggestedPosts, setAiSuggestedPosts] = useState([]);
@@ -71,13 +72,10 @@ const Forum = () => {
   const aiGroupsFetchedKeyRef = useRef(null);
   const aiProfilesNotificationShownRef = useRef(false);
   const aiGroupsNotificationShownRef = useRef(false);
-  // Loading states
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [isLoadingAIProfiles, setIsLoadingAIProfiles] = useState(false);
   const [isLoadingAIGroups, setIsLoadingAIGroups] = useState(false);
-
   const [applyLoadingId, setApplyLoadingId] = useState(null);
-
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyPost, setApplyPost] = useState(null);
 
@@ -673,6 +671,82 @@ const Forum = () => {
     setDetailOpen(true);
   };
 
+  // Handler for editing personal post
+  const handleEditPersonalPost = (post) => {
+    setEditingPost(post);
+    setIsEditPersonalPostModalOpen(true);
+  };
+
+  // Handler for editing recruitment post
+  const handleEditRecruitmentPost = (post) => {
+    setEditingPost(post);
+    setIsEditRecruitmentPostModalOpen(true);
+  };
+
+  // Handler for deleting personal post
+  const handleDeletePersonalPost = (postId) => {
+    confirm({
+      centered: true,
+      title: t("confirmDeletePostTitle") || "Delete this post?",
+      content:
+        t("confirmDeletePost") || "Are you sure you want to delete this post?",
+      icon: <ExclamationCircleOutlined />,
+      okText: t("delete") || "Delete",
+      okType: "danger",
+      cancelText: t("cancel") || "Cancel",
+      async onOk() {
+        try {
+          await PostService.deleteProfilePost(postId);
+          notification.success({
+            message: t("deletePostSuccess") || "Post deleted successfully",
+          });
+          handleCreated();
+        } catch (err) {
+          notification.error({
+            message: t("deletePostFailed") || "Failed to delete post",
+            description:
+              err?.response?.data?.message ||
+              t("pleaseTryAgain") ||
+              "Please try again",
+          });
+          // QUAN TRỌNG: throw để Modal biết là onOk fail và không auto close (antd sẽ giữ loading)
+          throw err;
+        }
+      },
+    });
+  };
+
+  const handleDeleteRecruitmentPost = (postId) => {
+    confirm({
+      centered: true,
+      title: t("confirmDeletePostTitle") || "Delete this post?",
+      content:
+        t("confirmDeletePost") || "Are you sure you want to delete this post?",
+      icon: <ExclamationCircleOutlined />,
+      okText: t("delete") || "Delete",
+      okType: "danger",
+      cancelText: t("cancel") || "Cancel",
+      async onOk() {
+        try {
+          await PostService.deleteRecruitmentPost(postId);
+          notification.success({
+            message: t("deletePostSuccess") || "Post deleted successfully",
+          });
+          handleCreated();
+        } catch (err) {
+          notification.error({
+            message: t("deletePostFailed") || "Failed to delete post",
+            description:
+              err?.response?.data?.message ||
+              t("pleaseTryAgain") ||
+              "Please try again",
+          });
+          throw err;
+        }
+      },
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#f6f8fb] pb-16 pt-10">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 pt-10 lg:px-8">
@@ -972,6 +1046,9 @@ const Forum = () => {
                     onOpenDetail={openDetail}
                     onApply={onClickOpenApply}
                     onClickLeader={goProfile}
+                    onEdit={handleEditRecruitmentPost}
+                    onDelete={handleDeleteRecruitmentPost}
+                    currentUserId={userInfo?.userId}
                   />
                 ))}
 
@@ -986,6 +1063,9 @@ const Forum = () => {
                     onClickProfile={goProfile}
                     membership={membership}
                     myGroupDetails={myGroupDetails}
+                    onEdit={handleEditPersonalPost}
+                    onDelete={handleDeletePersonalPost}
+                    currentUserId={userInfo?.userId}
                   />
                 ))}
 
@@ -1012,6 +1092,27 @@ const Forum = () => {
           closeModal={() => setIsCreatePersonalPostModalOpen(false)}
           onCreated={handleCreated}
           destroyOnClose
+        />
+        <EditPersonalPostModal
+          isOpen={isEditPersonalPostModalOpen}
+          closeModal={() => {
+            setIsEditPersonalPostModalOpen(false);
+            setEditingPost(null);
+          }}
+          onUpdated={handleCreated}
+          post={editingPost}
+        />
+        <EditRecruitmentPostModal
+          isOpen={isEditRecruitmentPostModalOpen}
+          closeModal={() => {
+            setIsEditRecruitmentPostModalOpen(false);
+            setEditingPost(null);
+          }}
+          onUpdated={handleCreated}
+          post={editingPost}
+          majorName={
+            myGroupDetails?.major?.majorName || myGroupDetails?.majorName || ""
+          }
         />
         <GroupDetailModal
           isOpen={detailOpen}
