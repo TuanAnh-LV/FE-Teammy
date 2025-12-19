@@ -121,6 +121,8 @@
     taskPriority: "Task Priority",
     assignedTo: "Assigned To",
     dueDate: "Due Date",
+    deleteTaskTitle: "Delete task",
+    deletePlaceholder: "delete",
 
     // Status
     active: "Active",
@@ -152,6 +154,7 @@
     newTask: "New Task",
     member: "Member",
     unassigned: "Unassigned",
+    selectMultiple: "Select one or more assignees",
     deleteColumnTitle: "Delete column",
     moveColumn: "Move Column",
     confirmDelete: "Confirm Delete",
@@ -161,6 +164,7 @@
     noTasks: "No tasks yet. Switch to Kanban to create columns first.",
     deleteColumn: "Delete Column",
     deleteColumnConfirm: "Delete column?",
+    typeDeleteToConfirm: "Type 'delete' to confirm.",
     ok: "OK",
     noBoardData: "No board data available.",
     sinh_vien: "students",
@@ -445,6 +449,7 @@
     groupId: "Group #",
     timelineTasks: "Timeline & Tasks",
     contributionsChat: "Contributions & Chat",
+    contributions: "Contributions",
 
     // Forum
     recruitmentForum: "Recruitment Forum",
@@ -841,7 +846,7 @@
     feedbackGiven: "Feedback Given",
     allDepartments: "All Departments",
 
-    // Mentor Group List
+    // Mentor Group List / Discover
     avgProgress: "Avg Progress",
     needAttention: "Need Attention",
     highPriority: "High Priority",
@@ -849,6 +854,19 @@
     nextDigest: "Next digest:",
     taskEvents: "Task Events",
     weeklyDigest: "Weekly Digest",
+    groupsBeingMentored: "Recruiting groups",
+    groupInvitations: "Invitations",
+    mentorInvitationsTab: "Mentor invitations",
+    mentorInvitationsEmpty:
+      "No mentor invitations pending for this group at the moment.",
+    recruitingGroupsHeader: "Recruiting groups",
+    recruitingGroupsSubtitle:
+      "Browse student groups that are currently recruiting and send a mentor request.",
+    sendMentorRequest: "Send mentor request",
+    sendMentorRequestTitle: "Send mentor request",
+    sendMentorRequestSubtitle:
+      "Select a topic and write a short message to ask to mentor this group",
+    selectTopicForGroup: "Select a topic to mentor this group",
 
     // AI Assistant
     suggestMatches: "Suggest Matches",
@@ -867,6 +885,8 @@
     applySuggestion: "Apply Suggestion",
     sendNotification: "Send Notification",
     autoMergeGroup: "Auto Merge",
+    youSentMentorRequest:
+      "You sent a mentor request for this group with the topic below.",
 
     // Import
     importTopics: "Import Topics",
@@ -1256,12 +1276,16 @@
     post: "Đăng",
     writeComment: "Viết bình luận...",
     assignees: "Người Được Giao",
+    unassigned: "Chưa được phân công",
+    selectMultiple: "Chọn một hoặc nhiều người",
     files: "Tệp",
     uploadFilesFailed: "Tải lên tệp thất bại.",
     filesUploadedSuccess: "Tải lên tệp thành công.",
     noCommentsYet: "Chưa có bình luận nào.",
     noFilesAttached: "Không có tệp đính kèm.",
     deadline: "Hạn Chót",
+    deleteTaskTitle: "Xóa nhiệm vụ",
+    deletePlaceholder: "delete",
     invitedYouToMentorGroup: "đã mời bạn làm giảng viên hướng dẫn cho nhóm",
     acceptSuccessMessage: "Chấp nhận lời mời thành công.",
     expertiseNeeded: "Cần Kỹ Năng Chuyên Môn",
@@ -1460,6 +1484,9 @@
     noMentorInvitations: "Hiện chưa có lời mời nào.",
     invitedBy: "Được mời bởi",
     apply: "Ứng Tuyển",
+    groupInvitations: "Lời Mời",
+    mentorInvitationsTab: "Lời Mời Mentor",
+    mentorInvitationsEmpty: "Hiện không có lời mời mentor nào cho nhóm này.",
 
     // Auth
     login: "Đăng nhập",
@@ -1822,6 +1849,7 @@
     groupId: "Nhóm #",
     timelineTasks: "Timeline & Nhiệm Vụ",
     contributionsChat: "Đóng Góp & Trò Chuyện",
+    contributions: "Mức Độ Đóng Góp",
 
     // Forum
     recruitmentForum: "Diễn Đàn Tuyển Thành Viên",
@@ -2214,6 +2242,11 @@
     nextDigest: "Bản tóm tắt tiếp theo:",
     taskEvents: "Sự kiện nhiệm vụ",
     weeklyDigest: "Tóm tắt tuần",
+    sendMentorRequest: "Gửi yêu cầu mentor",
+    sendMentorRequestTitle: "Gửi yêu cầu mentor",
+    sendMentorRequestSubtitle:
+      "Chọn một topic và viết lời nhắn để gửi yêu cầu mentor cho nhóm",
+    selectTopicForGroup: "Chọn chủ đề để hướng dẫn nhóm này",
 
     // AI Assistant
     suggestMatches: "Gợi ý ghép nhóm",
@@ -2354,11 +2387,16 @@
     confirmDelete: "Xóa",
     create: "Tạo",
     totalGroupsLabel: "Tổng Số Nhóm",
-    groupsBeingMentored: "Nhóm Đang Hướng Dẫn",
+    groupsBeingMentored: "Nhóm Đang Tuyển Mentor",
+    recruitingGroupsHeader: "Nhóm Đang Tuyển Mentor",
+    recruitingGroupsSubtitle:
+      "Danh sách các nhóm sinh viên đang tuyển mentor. Hãy gửi yêu cầu nếu bạn phù hợp.",
     noGroupsBeingMentored: "Chưa có nhóm hướng dẫn",
     mentoringInvitations: "Lời Mời Hướng Dẫn",
     accepted: "Đã chấp nhận",
     justNow: "Vừa xong",
+    youSentMentorRequest:
+      "Bạn đã gửi lời mời mentor cho nhóm này với topic bên dưới.",
     minutesAgo: "phút trước",
     sinh_vien: "sinh viên",
     thanh_vien: "thành viên",
@@ -2378,6 +2416,7 @@
     noTasks: "Chưa có nhiệm vụ. Chuyển sang Kanban để tạo cột trước.",
     deleteColumn: "Xóa Cột",
     deleteColumnConfirm: "Xóa cột?",
+    typeDeleteToConfirm: "Nhập 'delete' để xác nhận.",
     ok: "OK",
     noBoardData: "Không có dữ liệu bảng.",
     confirmBanTitle:"Cấm {name}?",

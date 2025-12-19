@@ -72,6 +72,37 @@ const normalizePersonList = (list) => {
   return source.map(normalizePersonEntity).filter(Boolean);
 };
 
+const mapAssigneesWithMembers = (assignees = [], members = []) => {
+  if (!Array.isArray(assignees)) return [];
+  return assignees.map((a) => {
+    const id = extractPersonId(a);
+    if (!id) return a;
+    const matched =
+      members.find(
+        (m) =>
+          normalizeKey(m.id) === normalizeKey(id) ||
+          normalizeKey(m.userId) === normalizeKey(id) ||
+          normalizeKey(m.email) === normalizeKey(id)
+      ) || null;
+    if (matched) {
+      return {
+        id: matched.id || id,
+        name: extractPersonName(matched) || extractPersonName(a) || id,
+        email: matched.email || matched.user?.email || "",
+        avatarUrl:
+          matched.avatarUrl ||
+          matched.avatarURL ||
+          matched.photoUrl ||
+          matched.photoURL ||
+          matched.user?.avatarUrl ||
+          matched.user?.avatarURL ||
+          "",
+      };
+    }
+    return normalizePersonEntity(a) || { id, name: id, email: "", avatarUrl: "" };
+  });
+};
+
 const normalizeCommentsList = (data) => {
   if (!data) return [];
   let list = [];
@@ -214,7 +245,10 @@ export function useKanbanBoard(groupId) {
           priority: (t.priority || "").toLowerCase(),
           status: t.status || "",
           dueDate: t.dueDate || "",
-          assignees: normalizePersonList(t.assignees),
+          assignees: mapAssigneesWithMembers(
+            normalizePersonList(t.assignees),
+            groupMembers
+          ),
           comments: enrichCommentsWithMembers(
             normalizeCommentsList(t.comments),
             groupMembers
@@ -503,6 +537,10 @@ export function useKanbanBoard(groupId) {
   const createTask = async (payload) => {
     if (!groupId) return;
     const tempId = `temp-${Date.now()}`;
+    const normalizedAssignees = mapAssigneesWithMembers(
+      normalizePersonList(payload.assignees),
+      groupMembers
+    );
     const optimisticTask = {
       id: tempId,
       columnId: payload.columnId,
@@ -511,7 +549,7 @@ export function useKanbanBoard(groupId) {
       priority: (payload.priority || "medium").toLowerCase(),
       status: payload.status || "todo",
       dueDate: payload.dueDate || null,
-      assignees: normalizePersonList(payload.assignees),
+      assignees: normalizedAssignees,
       comments: [],
     };
     setColumns((prev) => ({
@@ -519,7 +557,11 @@ export function useKanbanBoard(groupId) {
       [payload.columnId]: [...(prev[payload.columnId] || []), optimisticTask],
     }));
     try {
-      await BoardService.createTask(groupId, payload);
+      const assigneeIds = normalizedAssignees.map((a) => a.id);
+      await BoardService.createTask(groupId, {
+        ...payload,
+        assignees: assigneeIds,
+      });
       fetchBoard({ showLoading: false });
     } catch (err) {
 
@@ -799,6 +841,20 @@ export function useKanbanBoard(groupId) {
     }
   };
 
+  const updateColumnPositionOptimistic = (columnId, newPosition, swapColumnId, swapPosition) => {
+    setColumnMeta((prev) => {
+      if (!prev || typeof prev !== "object") return prev;
+      const updated = { ...prev };
+      if (updated[columnId]) {
+        updated[columnId] = { ...updated[columnId], position: newPosition };
+      }
+      if (swapColumnId && updated[swapColumnId]) {
+        updated[swapColumnId] = { ...updated[swapColumnId], position: swapPosition };
+      }
+      return updated;
+    });
+  };
+
   return {
     columns,
     columnMeta,
@@ -828,6 +884,7 @@ export function useKanbanBoard(groupId) {
     addTaskComment,
     updateTaskComment,
     deleteTaskComment,
+    updateColumnPositionOptimistic,
   };
 }
 

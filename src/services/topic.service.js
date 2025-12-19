@@ -10,6 +10,14 @@ export const TopicService = {
     });
   },
 
+  // Mentor: list topics owned by current mentor & open
+  getOwnedOpenTopics() {
+    return BaseService.get({
+      url: API.TOPICS.LIST_OWNED_OPEN,
+      isLoading: true,
+    });
+  },
+
   createTopic(payload, isLoading = true) {
     return BaseService.post({
       url: API.TOPICS.CREATE,
