@@ -1,5 +1,5 @@
-import React from "react";
-import { UserPlus } from "lucide-react";
+import React, { useState } from "react";
+import { UserPlus, MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { Chip, StatusChip } from "./Chip";
 import { initials, timeAgoFrom, toArraySkills } from "../../../utils/helpers";
 import { useTranslation } from "../../../hook/useTranslation";
@@ -18,8 +18,12 @@ export function PersonalCard({
   onClickProfile,
   membership,
   myGroupDetails,
+  onEdit,
+  onDelete,
+  currentUserId,
 }) {
   const { t } = useTranslation();
+  const [showMenu, setShowMenu] = useState(false);
   const inviteStatus = post.hasApplied
     ? post.myApplicationStatus || "pending"
     : null;
@@ -47,11 +51,66 @@ export function PersonalCard({
   const majorName =
     post?.user?.majorName || post?.major?.majorName || author?.majorName || "";
 
+  // Check if current user is the post owner
+  const isOwner =
+    currentUserId &&
+    (authorId === currentUserId ||
+      post.userId === currentUserId ||
+      post.ownerId === currentUserId);
+
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow relative">
+      {/* Menu 3 chấm - chỉ hiển thị cho chủ post */}
+      {isOwner && onEdit && onDelete && (
+        <div className="absolute top-3 right-3 z-10">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors bg-white/80 backdrop-blur-sm border border-gray-200"
+          >
+            <MoreVertical className="w-4 h-4 text-gray-600" />
+          </button>
+          {showMenu && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setShowMenu(false)}
+              />
+              <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(false);
+                    onEdit(post);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  {t("edit") || "Edit"}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(false);
+                    onDelete(post.id);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {t("delete") || "Delete"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       <div
         className="flex items-start gap-3 cursor-pointer hover:text-gray-800"
         onClick={() => onClickProfile(authorId || author)}
+        style={{ paddingRight: isOwner ? "2.5rem" : "0" }}
       >
         <div className="relative mt-1 h-10 w-10 shrink-0">
           {avatarUrl && (
