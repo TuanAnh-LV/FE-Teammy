@@ -191,6 +191,21 @@ const TopicDetailModal = ({
               </div>
             )}
 
+            {/* AI Reasoning */}
+            {isAISuggestion && topic.aiReason && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                  {t("aiRecommendationReason") || "Why AI Recommends This"}
+                </h3>
+                <div className="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {topic.aiReason}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Mentors */}
             {topic.mentor && (
               <div className="mb-6">
@@ -381,6 +396,3 @@ const TopicDetailModal = ({
 };
 
 export default TopicDetailModal;
-
-
-

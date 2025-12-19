@@ -31,7 +31,6 @@ const CreatePersonalPostModal = ({
             name: userData.displayName || currentUserName,
             skills: userData.skills || [],
           });
-          // Cập nhật form với dữ liệu mới
           form.setFieldsValue({
             name: userData.displayName || currentUserName,
             skills: Array.isArray(userData.skills)
