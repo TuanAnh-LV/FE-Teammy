@@ -250,7 +250,14 @@ const Profile = () => {
         {/* TABS CONTENT */}
         <div className="bg-white rounded-2xl shadow-sm p-4 md:p-6">
           {activeTab === "overview" && <ProfileOverview profile={profile} />}
-          {activeTab === "groups" && <ProfileGroups userId={profile.userId} />}
+          {activeTab === "groups" &&
+            (isOwnProfile ? (
+              <ProfileGroups userId={profile.userId} />
+            ) : (
+              <div className="py-8 text-center text-sm text-gray-500">
+                Group list is only visible on your own profile.
+              </div>
+            ))}
           {activeTab === "posts" && <ProfilePostsTab userId={profile.userId} />}
           {activeTab === "settings" && isOwnProfile && (
             <ProfileSettings profile={profile} onUpdate={handleUpdateProfile} />

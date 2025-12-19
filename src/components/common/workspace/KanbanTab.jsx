@@ -17,8 +17,11 @@ export default function KanbanTab({
   columnMeta,
   setSelectedTask,
   createTask,
+  deleteTask,
   deleteColumn,
   moveColumn,
+  moveColumnLeft,
+  moveColumnRight,
   handleDragOver,
   handleDragEnd,
   isColumnModalOpen,
@@ -26,6 +29,7 @@ export default function KanbanTab({
   handleCreateColumn,
   t,
   normalizeTitle,
+  groupMembers = [],
   readOnly = false,
 }) {
   const sensors = useSensors(
@@ -76,17 +80,24 @@ export default function KanbanTab({
                   meta={meta}
                   tasks={filteredColumns[colId] || []}
                   columnMeta={columnMeta}
+                  groupMembers={groupMembers}
                   onOpen={setSelectedTask}
+                  onDeleteTask={
+                    !readOnly && typeof deleteTask === "function"
+                      ? (taskId) => deleteTask(taskId)
+                      : undefined
+                  }
                   onCreate={
                     !readOnly && typeof createTask === "function"
                       ? (quickPayload) => {
                           createTask({
                             columnId: colId,
                             title: quickPayload?.title || "New Task",
-                            description: "",
-                            priority: "medium",
+                            description: quickPayload?.description || "",
+                            priority: quickPayload?.priority || "medium",
                             status: statusForColumn,
-                            dueDate: null,
+                            dueDate: quickPayload?.dueDate || null,
+                            assignees: quickPayload?.assignees || [],
                           });
                         }
                       : undefined
@@ -96,19 +107,21 @@ export default function KanbanTab({
                       ? () => moveColumn(colId, meta)
                       : undefined
                   }
+                  onMoveColumnLeft={
+                    !readOnly && moveColumnLeft
+                      ? () => moveColumnLeft(colId, meta)
+                      : undefined
+                  }
+                  onMoveColumnRight={
+                    !readOnly && moveColumnRight
+                      ? () => moveColumnRight(colId, meta)
+                      : undefined
+                  }
+                  // Column component đã xử lý confirm xoá (nhập 'delete'),
+                  // nên ở đây chỉ cần gọi hàm xoá trực tiếp.
                   onDelete={
                     !readOnly && deleteColumn
-                      ? () => {
-                          Modal.confirm({
-                            title: t?.("deleteColumn") || "Delete Column",
-                            content:
-                              t?.("deleteColumnConfirm") ||
-                              `${t?.("deleteColumn") || "Delete"} column "${columnMeta[colId]?.title || colId}"?`,
-                            okText: t?.("ok") || "OK",
-                            cancelText: t?.("cancel") || "Cancel",
-                            onOk: () => deleteColumn(colId),
-                          });
-                        }
+                      ? () => deleteColumn(colId)
                       : undefined
                   }
                 />

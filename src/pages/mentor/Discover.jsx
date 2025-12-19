@@ -8,13 +8,14 @@ import {
   Loader2,
   X,
   Check,
+  Send,
+  MessageSquare,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Modal, notification } from "antd";
 import { GroupService } from "../../services/group.service";
-import { BoardService } from "../../services/board.service";
-import { ReportService } from "../../services/report.service";
 import { InvitationService } from "../../services/invitation.service";
+import { TopicService } from "../../services/topic.service";
 import { useTranslation } from "../../hook/useTranslation";
 
 const Discover = () => {
@@ -26,8 +27,21 @@ const Discover = () => {
   const [searchText, setSearchText] = useState("");
   const [acceptModalVisible, setAcceptModalVisible] = useState(false);
   const [acceptedGroupName, setAcceptedGroupName] = useState("");
+  const [groupDetailModalVisible, setGroupDetailModalVisible] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [groupMembers, setGroupMembers] = useState([]);
+  const [loadingGroupMembers, setLoadingGroupMembers] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [notificationApi, contextHolder] = notification.useNotification();
+
+  // Mentor request modal state
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [requestingGroup, setRequestingGroup] = useState(null);
+  const [ownedTopics, setOwnedTopics] = useState([]);
+  const [requestTopicId, setRequestTopicId] = useState("");
+  const [requestMessage, setRequestMessage] = useState("");
+  const [sendingRequest, setSendingRequest] = useState(false);
+  const [topicSearch, setTopicSearch] = useState("");
 
   useEffect(() => {
     fetchAvailableGroups();
@@ -38,50 +52,13 @@ const Discover = () => {
     try {
       setLoading(true);
 
-      const myGroupsRes = await GroupService.getMyGroups();
-      const myGroups = Array.isArray(myGroupsRes?.data) ? myGroupsRes.data : [];
+      // Mentor: xem danh sách nhóm đang tuyển, không load board/progress chi tiết
+      const groupsRes = await GroupService.listRecruitingGroups();
+      const recruitingGroups = Array.isArray(groupsRes?.data)
+        ? groupsRes.data
+        : [];
 
-      const withProgressAndActivities = await Promise.all(
-        myGroups.map(async (g) => {
-          try {
-            const [reportRes, boardRes] = await Promise.all([
-              ReportService.getProjectReport(g.id),
-              BoardService.getBoard(g.id),
-            ]);
-
-            const progress = reportRes?.data?.project?.completionPercent ?? 0;
-            const boardData = boardRes?.data;
-
-            const activities = [];
-            if (boardData && boardData.columns) {
-              const allTasks = boardData.columns.flatMap(
-                (col) => col.tasks || []
-              );
-              const sortedTasks = allTasks
-                .sort(
-                  (a, b) =>
-                    new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-                )
-                .slice(0, 3);
-
-              sortedTasks.forEach((task) => {
-                activities.push({
-                  type: "task",
-                  title: task.title || t("newTask") || "Task mới",
-                  user: task.assignee?.displayName || t("member") || "Member",
-                  time: task.createdAt,
-                });
-              });
-            }
-
-            return { ...g, calculatedProgress: progress, activities };
-          } catch {
-            return { ...g, calculatedProgress: 0, activities: [] };
-          }
-        })
-      );
-
-      setGroups(withProgressAndActivities);
+      setGroups(recruitingGroups);
     } catch {
       setGroups([]);
     } finally {
@@ -131,6 +108,29 @@ const Discover = () => {
 
   const normalizeGroup = (g) => {
     const topicTitle = g.topic?.title || t("noTopic") || "Chưa có topic";
+    const topicDescription = g.topic?.description || "";
+    const topicSkills = Array.isArray(g.topic?.skills) ? g.topic.skills : [];
+    const mentorName =
+      g.mentor?.displayName ||
+      g.mentor?.fullName ||
+      g.mentor?.name ||
+      g.mentorName ||
+      (Array.isArray(g.mentors) && g.mentors[0]
+        ? g.mentors[0].mentorName ||
+          g.mentors[0].name ||
+          g.mentors[0].displayName
+        : "") ||
+      "";
+    const mentorAvatarUrl =
+      g.mentor?.avatarUrl ||
+      g.mentor?.avatar ||
+      g.mentor?.profilePicture ||
+      (Array.isArray(g.mentors) && g.mentors[0]
+        ? g.mentors[0].avatarUrl ||
+          g.mentors[0].avatar ||
+          g.mentors[0].profilePicture
+        : "") ||
+      "";
     const semesterEnd = g.semester?.endDate
       ? new Date(g.semester.endDate).toLocaleDateString("vi-VN")
       : "N/A";
@@ -145,15 +145,22 @@ const Discover = () => {
       id: g.id,
       name: g.name || t("unnamedGroup") || "Nhóm không tên",
       topic: topicTitle,
+      topicDescription,
       description: g.description || t("noDescription") || "Chưa có mô tả.",
       members: g.currentMembers || 0,
       maxMembers: g.maxMembers || 5,
-      progress: g.calculatedProgress || 0,
+      // Không hiển thị progress chi tiết ở màn Discover để tránh gọi API board/report
+      progress: typeof g.projectProgress === "number" ? g.projectProgress : 0,
       deadline: semesterEnd,
       skills: displaySkills,
       expertiseNeeded:
         g.major?.majorName || t("noExpertiseNeeded") || "Chưa xác định",
-      activities: g.activities || [],
+      topicSkills,
+      mentorName,
+      mentorAvatarUrl,
+      hasTopic: !!g.topic,
+      hasMentor: !!mentorName,
+      activities: [],
       status: g.status || "active",
     };
   };
@@ -197,6 +204,76 @@ const Discover = () => {
     (inv) => inv.status === "accepted"
   ).length;
 
+  const openRequestModal = async (group) => {
+    setRequestingGroup(group);
+    setRequestTopicId("");
+    setRequestMessage("");
+    setOwnedTopics([]);
+    setRequestModalOpen(true);
+    try {
+      const res = await TopicService.getOwnedOpenTopics();
+      const data = Array.isArray(res?.data) ? res.data : [];
+      setOwnedTopics(data);
+    } catch {
+      setOwnedTopics([]);
+    }
+  };
+
+  const handleSendMentorRequest = async () => {
+    if (!requestingGroup?.id || !requestTopicId || !requestMessage.trim())
+      return;
+    try {
+      setSendingRequest(true);
+      await GroupService.sendMentorRequest(requestingGroup.id, {
+        topicId: requestTopicId,
+        message: requestMessage.trim(),
+      });
+      notificationApi.success({
+        message: t("inviteSent") || "Mentor request sent",
+      });
+      setRequestModalOpen(false);
+    } catch (error) {
+      notificationApi.error({
+        message: t("inviteFailed") || "Failed to send mentor request",
+        description:
+          error?.response?.data?.message ||
+          t("pleaseTryAgainLater") ||
+          "Please try again later",
+      });
+    } finally {
+      setSendingRequest(false);
+    }
+  };
+
+  const filteredOwnedTopics =
+    topicSearch.trim().length === 0
+      ? ownedTopics
+      : ownedTopics.filter((topic) =>
+          (topic.title || "")
+            .toLowerCase()
+            .includes(topicSearch.trim().toLowerCase())
+        );
+
+  const openGroupDetailModal = async (group) => {
+    if (!group?.id) return;
+    setSelectedGroup(group);
+    setGroupMembers([]);
+    setGroupDetailModalVisible(true);
+    try {
+      setLoadingGroupMembers(true);
+      const res = await GroupService.getListMembers(group.id);
+      const members = Array.isArray(res?.data) ? res.data : [];
+      setGroupMembers(members);
+    } catch (error) {
+      setGroupMembers([]);
+      notificationApi.error({
+        message: t("loadGroupMembersFailed") || "Không tải được danh sách thành viên",
+      });
+    } finally {
+      setLoadingGroupMembers(false);
+    }
+  };
+
   return (
     <div className="space-y-6 min-h-screen">
       {contextHolder}
@@ -204,11 +281,11 @@ const Discover = () => {
       {/* Header Section */}
       <div className="space-y-1">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-clip-text text-black">
-          {t("groupsBeingMentored")}
+          {t("recruitingGroupsHeader") || "Recruiting groups"}
         </h1>
         <p className="text-gray-600">
-          {t("manageAndTrackGroups") ||
-            "Quản lý và theo dõi các nhóm dự án bạn đang hướng dẫn. Hỗ trợ sinh viên thực hiện capstone project thành công."}
+          {t("recruitingGroupsSubtitle") ||
+            "Danh sách các nhóm đang ở trạng thái recruiting để bạn gửi yêu cầu mentor."}
         </p>
       </div>
 
@@ -287,18 +364,35 @@ const Discover = () => {
                           : inv.status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">
-                        {inv.invitedByName || t("invitedBy") || "Người mời"}
-                      </span>{" "}
-                      {t("invitedYouToMentorGroup") ||
-                        "mời bạn hướng dẫn nhóm cho đề tài"}{" "}
-                      <span className="font-medium">
-                        {inv.topicTitle ||
-                          t("topicUndefined") ||
-                          "chưa xác định"}
-                      </span>
-                    </p>
+                    {inv.type === "mentor_request" ? (
+                      <p className="text-sm text-gray-600">
+                        {t("youSentMentorRequest") ||
+                          "You sent a mentor request for this group with the topic below."}
+                        {inv.topicTitle && (
+                          <>
+                            {" "}
+                            <span className="font-medium">
+                              {inv.topicTitle ||
+                                t("topicUndefined") ||
+                                "chưa xác định"}
+                            </span>
+                          </>
+                        )}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">
+                          {inv.invitedByName || t("invitedBy") || "Người mời"}
+                        </span>{" "}
+                        {t("invitedYouToMentorGroup") ||
+                          "mời bạn hướng dẫn nhóm cho đề tài"}{" "}
+                        <span className="font-medium">
+                          {inv.topicTitle ||
+                            t("topicUndefined") ||
+                            "chưa xác định"}
+                        </span>
+                      </p>
+                    )}
 
                     {/* Optional message from student/group leader */}
                     {inv.message && (
@@ -317,7 +411,7 @@ const Discover = () => {
                       </p>
                     )}
                   </div>
-                  {inv.status === "pending" && (
+                  {inv.status === "pending" && inv.type !== "mentor_request" && (
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -375,7 +469,8 @@ const Discover = () => {
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
             <span>
-              {normalizedGroups.length} {t("groupsBeingMentored")}
+              {normalizedGroups.length}{" "}
+              {t("recruitingGroupsHeader") || "Recruiting groups"}
             </span>
           </div>
           <div className="flex items-center gap-1">
@@ -419,24 +514,6 @@ const Discover = () => {
               {/* Description */}
               <p className="text-sm text-gray-600">{group.description}</p>
 
-              {/* Progress */}
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs text-gray-500">
-                    {t("projectProgress")}
-                  </span>
-                  <span className="text-sm font-semibold text-gray-700">
-                    {group.progress}%
-                  </span>
-                </div>
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500 rounded-full transition-all"
-                    style={{ width: `${group.progress}%` }}
-                  />
-                </div>
-              </div>
-
               {/* Info */}
               <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
                 <div className="flex items-center gap-1">
@@ -464,34 +541,6 @@ const Discover = () => {
                 ))}
               </div>
 
-              {/* Recent Activity */}
-              <div className="border-t border-gray-100 pt-3 mt-2">
-                <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                  {t("recentActivity") || "Hoạt động gần đây"}
-                </p>
-                {group.activities.length > 0 ? (
-                  <div className="space-y-2">
-                    {group.activities.map((activity, idx) => (
-                      <div key={idx} className="flex items-start gap-2">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-gray-800 font-medium line-clamp-1">
-                            {activity.title}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {activity.user} • {getRelativeTime(activity.time)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-gray-500 italic">
-                    {t("noRecentActivity") || "Chưa có hoạt động gần đây"}
-                  </p>
-                )}
-              </div>
-
               {/* Expertise Needed */}
               <div className="border-t border-gray-100 pt-3 mt-2 text-xs text-gray-500">
                 <span>
@@ -502,13 +551,43 @@ const Discover = () => {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => navigate(`/mentor/my-groups/${group.id}`)}
-                className="mt-3 inline-flex items-center justify-center gap-2 w-full rounded-lg bg-[#4264D7] hover:bg-[#3451b8] text-white text-sm font-medium py-2.5 shadow-sm transition"
-              >
-                <span>{t("viewGroupDetails")}</span>
-              </button>
+              <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                {/** View details button */}
+                <button
+                  type="button"
+                  onClick={() => openGroupDetailModal(group)}
+                  className="inline-flex items-center justify-center gap-2 w-full sm:w-1/2 rounded-lg bg-[#4264D7] hover:bg-[#3451b8] text-white text-sm font-medium py-2.5 shadow-sm transition"
+                >
+                  <span>{t("viewGroupDetails")}</span>
+                </button>
+                {/** Mentor request button: disabled if group already has topic & mentor */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (group.hasTopic && group.hasMentor) return;
+                    openRequestModal(group);
+                  }}
+                  disabled={group.hasTopic && group.hasMentor}
+                  className={`inline-flex items-center justify-center gap-2 w-full sm:w-1/2 rounded-lg border text-sm font-medium py-2.5 shadow-sm transition ${
+                    group.hasTopic && group.hasMentor
+                      ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
+                      : "border-orange-400 text-orange-600 hover:bg-orange-50"
+                  }`}
+                >
+                  {!group.hasTopic || !group.hasMentor ? (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>
+                        {t("sendMentorRequest") || "Send mentor request"}
+                      </span>
+                    </>
+                  ) : (
+                    <span>
+                      {t("mentorAssigned") || "Mentor already assigned"}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -554,6 +633,306 @@ const Discover = () => {
           >
             {t("close") || "Đóng"}
           </button>
+        </div>
+      </Modal>
+
+      {/* Group detail modal */}
+      <Modal
+        open={groupDetailModalVisible}
+        onCancel={() => setGroupDetailModalVisible(false)}
+        footer={null}
+        width={520}
+        centered
+        closeIcon={<X className="w-5 h-5" />}
+      >
+        <div className="space-y-5">
+          {/* Header */}
+          {selectedGroup && (
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
+                <Users className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {selectedGroup.name}
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {groupMembers.length || selectedGroup.members}/
+                  {selectedGroup.maxMembers}{" "}
+                  {t("thanh_vien") || "members"}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Topic & description */}
+          {selectedGroup && (
+            <div className="space-y-4 text-sm">
+              {selectedGroup.topic && (
+                <div>
+                  <p className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase">
+                    {t("topic") || "Topic"}
+                  </p>
+                  <p className="mt-1 text-gray-900">
+                    {selectedGroup.topic}
+                  </p>
+                </div>
+              )}
+
+              {selectedGroup.description && (
+                <div>
+                  <p className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase">
+                    {t("description") || "Description"}
+                  </p>
+                  <p className="mt-1 text-gray-700">
+                    {selectedGroup.description}
+                  </p>
+                </div>
+              )}
+
+              {(selectedGroup.skills?.length > 0 ||
+                selectedGroup.topicSkills?.length > 0) && (
+                <div>
+                  <p className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase">
+                    {t("skills") || "Skills"}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {[...(selectedGroup.skills || []), ...(selectedGroup.topicSkills || [])].map(
+                      (skill, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-0.5 rounded-full bg-gray-100 text-xs text-gray-800"
+                        >
+                          {skill}
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Mentor badge */}
+          {selectedGroup?.mentorName && (
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                  {selectedGroup.mentorAvatarUrl ? (
+                    <img
+                      src={selectedGroup.mentorAvatarUrl}
+                      alt={selectedGroup.mentorName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs font-semibold text-blue-700">
+                      {selectedGroup.mentorName.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {selectedGroup.mentorName}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {t("mentor") || "Mentor"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Members list */}
+          <div className="pt-3 border-t border-gray-100">
+            <p className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase mb-2">
+              {t("members") || "Members"}
+            </p>
+            {loadingGroupMembers ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+              </div>
+            ) : groupMembers.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                {t("noMembersInGroup") || "Nhóm hiện chưa có thành viên nào."}
+              </p>
+            ) : (
+              <ul className="divide-y divide-gray-100">
+                {groupMembers.map((member) => (
+                  <li
+                    key={member.id || member.userId}
+                    className="flex items-center gap-3 py-3"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+                      {member.avatarUrl ? (
+                        <img
+                          src={member.avatarUrl}
+                          alt={member.fullName || member.name || "avatar"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs font-semibold text-gray-600">
+                          {(member.fullName || member.name || "?")
+                            .charAt(0)
+                            .toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {member.displayName ||
+                            member.fullName ||
+                            member.name ||
+                            t("unknownUser") ||
+                            "Không rõ tên"}
+                        </p>
+                        {member.role && (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[11px] border ${
+                              String(member.role).toLowerCase() === "mentor"
+                                ? "bg-blue-50 text-blue-700 border-blue-200"
+                                : "bg-gray-100 text-gray-700 border-gray-200"
+                            }`}
+                          >
+                            {String(member.role).toLowerCase()}
+                          </span>
+                        )}
+                      </div>
+                      {member.email && (
+                        <p className="text-xs text-gray-500 truncate">
+                          {member.email}
+                        </p>
+                      )}
+                      {Array.isArray(member.skills) && member.skills.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {member.skills.map((skill, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-100 text-[11px] text-blue-700"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Mentor request modal */}
+      <Modal
+        open={requestModalOpen}
+        title={
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center">
+              <Users className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">
+                {t("sendMentorRequestTitle") || "Gửi yêu cầu mentor"}
+              </h3>
+              <p className="text-xs text-gray-500">
+                {t("sendMentorRequestSubtitle") ||
+                  "Chọn một topic và viết lời nhắn để gửi yêu cầu mentor cho nhóm."}
+              </p>
+            </div>
+          </div>
+        }
+        onCancel={() => setRequestModalOpen(false)}
+        onOk={handleSendMentorRequest}
+        okButtonProps={{
+          loading: sendingRequest,
+          disabled: !requestTopicId || !requestMessage.trim(),
+        }}
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-gray-600 mb-1 mt-8">
+              {t("topic") || "Topic"}
+            </label>
+            {/* Search input with icon */}
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 mb-1">
+              <Search className="w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={topicSearch}
+                onChange={(e) => setTopicSearch(e.target.value)}
+                placeholder={t("searchGroupsTopics") || "Search topics..."}
+                className="flex-1 bg-transparent outline-none text-sm"
+              />
+            </div>
+
+            {/* Topic list */}
+            <div className="mt-1 max-h-56 overflow-y-auto rounded-xl bg-white border border-gray-200">
+              {filteredOwnedTopics.length === 0 ? (
+                <div className="px-3 py-3 text-xs text-gray-500">
+                  {t("noTopics") || "No topics available."}
+                </div>
+              ) : (
+                <div className="py-1 space-y-1">
+                  {filteredOwnedTopics.map((topic) => {
+                    const topicId = topic.id || topic.topicId || topic.topicID;
+                    const selected = requestTopicId === topicId;
+                    return (
+                      <button
+                        key={topicId}
+                        type="button"
+                        onClick={() => setRequestTopicId(topicId)}
+                        className={`w-full flex items-start gap-3 px-3 py-2 text-left text-sm rounded-xl transition ${
+                          selected ? "bg-blue-50" : "hover:bg-gray-50"
+                        }`}
+                        title={topic.title}
+                      >
+                        <span
+                          className={`mt-1 flex items-center justify-center w-4 h-4 rounded-full border ${
+                            selected
+                              ? "border-blue-600 bg-blue-600"
+                              : "border-gray-300 bg-white"
+                          }`}
+                        >
+                          {selected && (
+                            <span className="w-2 h-2 rounded-full bg-white" />
+                          )}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-800 truncate">
+                            {topic.title}
+                          </p>
+                          {topic.positions && (
+                            <p className="text-xs text-gray-500 truncate">
+                              {topic.positions}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
+              <span className="inline-flex w-4 h-4 items-center justify-center">
+                <MessageSquare className="w-3 h-3 text-gray-500" />
+              </span>
+              <span>{t("message") || "Message"}</span>
+            </label>
+            <textarea
+              rows={3}
+              value={requestMessage}
+              onChange={(e) => setRequestMessage(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+              placeholder={
+                t("enterNotificationMessage") || "Nhập lời nhắn của bạn..."
+              }
+            />
+          </div>
         </div>
       </Modal>
     </div>

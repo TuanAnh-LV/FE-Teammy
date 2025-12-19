@@ -78,6 +78,7 @@ export const API = {
     },
     TOPICS: {
         LIST: "/topics",
+        LIST_OWNED_OPEN: "/topics?ownedBy=me&status=open",
         CREATE: "/topics",
         DETAIL_TOPIC: (id) => `/topics/${id}`,
         UPDATE: (id) => `/topics/${id}`,

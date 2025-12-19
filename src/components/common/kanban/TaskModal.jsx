@@ -62,21 +62,25 @@ const TaskModal = ({
   const { t } = useTranslation();
   const [text, setText] = useState("");
   const [detailForm, setDetailForm] = useState({
+    title: "",
     assignees: [],
     dueDate: "",
     status: "",
     priority: "",
     description: "",
   });
+  const [activeTab, setActiveTab] = useState("files");
   const [commentLoading, setCommentLoading] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingContent, setEditingContent] = useState("");
-  const [assigneeMenuOpen, setAssigneeMenuOpen] = useState(false);
+  const [assigneeMenuOpenMain, setAssigneeMenuOpenMain] = useState(false);
+  const [assigneeMenuOpenDetails, setAssigneeMenuOpenDetails] = useState(false);
   const [files, setFiles] = useState([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const fileInputRef = useRef(null);
-  const assigneeMenuRef = useRef(null);
+  const assigneeMenuMainRef = useRef(null);
+  const assigneeMenuDetailsRef = useRef(null);
   const fetchCommentsRef = useRef(onFetchComments);
   const getColumnIdByStatus = (statusValue) => {
     const target = normalizeStatusKey(statusValue);
@@ -99,6 +103,7 @@ const TaskModal = ({
       const fallbackColumn = Object.keys(columnMeta || {})[0] || "";
 
       setDetailForm({
+        title: task.title || "",
         assignees: task.assignees || [],
         dueDate: normalizedDueDate,
         status: matchedStatusColumn || fallbackColumn,
@@ -143,10 +148,15 @@ const TaskModal = ({
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!assigneeMenuRef.current) return;
-      if (!assigneeMenuRef.current.contains(event.target)) {
-        setAssigneeMenuOpen(false);
-      }
+      const clickedInsideMain =
+        assigneeMenuMainRef.current &&
+        assigneeMenuMainRef.current.contains(event.target);
+      const clickedInsideDetails =
+        assigneeMenuDetailsRef.current &&
+        assigneeMenuDetailsRef.current.contains(event.target);
+      if (clickedInsideMain || clickedInsideDetails) return;
+      setAssigneeMenuOpenMain(false);
+      setAssigneeMenuOpenDetails(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
@@ -194,13 +204,11 @@ const TaskModal = ({
     if (readOnly) return;
     onUpdateTask(task.id, { [field]: detailForm[field] || "" });
   };
-  const activeAssignee = detailForm.assignees?.[0] || null;
-  const activeAssigneeId = getAssigneeId(activeAssignee);
-  const activeAssigneeLabel = getAssigneeLabel(activeAssignee) || t("unassigned") || "Unassigned";
-  const availableMembers = Array.isArray(members) ? members : [];
-  const activeMember =
-    availableMembers.find((member) => getAssigneeId(member) === activeAssigneeId) ||
-    null;
+  const availableMembers = Array.isArray(allMembers) ? allMembers : [];
+  const selectedAssignees = detailForm.assignees || [];
+  const primaryAssignee = selectedAssignees[0] || null;
+  const primaryAssigneeLabel =
+    getAssigneeLabel(primaryAssignee) || t("unassigned") || "Unassigned";
   const handleAddComment = () => {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -437,7 +445,16 @@ const TaskModal = ({
                   {task.status}
                 </span>
               </div>
-              <h3 className="text-xl font-bold text-gray-900">{task.title}</h3>
+              <input
+                className="w-full text-xl font-bold text-gray-900 border-b border-transparent focus:border-gray-300 outline-none"
+                value={detailForm.title || ""}
+                onChange={(e) =>
+                  setDetailForm((prev) => ({ ...prev, title: e.target.value }))
+                }
+                onBlur={() => handleFieldBlur("title")}
+                readOnly={readOnly}
+                disabled={readOnly}
+              />
             </div>
             <div className="flex items-center gap-2">
               {!readOnly && onDeleteTask && (
@@ -480,134 +497,126 @@ const TaskModal = ({
                 />
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-gray-800">{t("files") || "Files"}</h4>
-                  {!readOnly && (
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingFile}
-                      className="inline-flex items-center gap-1 text-xs px-2 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Upload className="w-4 h-4" />
-                      {uploadingFile ? t("uploading") || "Uploading..." : t("upload") || "Upload"}
-                    </button>
-                  )}
-                </div>
-                
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  disabled={readOnly}
-                />
-
-                {loadingFiles ? (
-                  <p className="text-xs text-gray-500">{t("loadingFiles") || "Loading files..."}</p>
-                ) : files.length === 0 ? (
-                  <p className="text-xs text-gray-500">{t("noFilesAttached") || "No files attached"}</p>
-                ) : (
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {files.map((file) => (
-                      <div
-                        key={file.id}
-                        className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition"
-                      >
-                        <div className="flex-shrink-0">
-                          {getFileIcon(file.name)}
+            <div className="space-y-5">
+              {/* Assignees preview only (selection moved to Details) */}
+              <div className="flex items-start gap-5" ref={assigneeMenuMainRef}>
+                <label className="text-sm font-medium text-[#292A2E] w-24 mt-2">
+                  {t("assignees") || "Assignees"}
+                </label>
+                <div className="flex-1 border border-gray-200 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {(detailForm.assignees || []).length === 0 ? (
+                      <span className="text-gray-500">
+                        {t("unassigned") || "Unassigned"}
+                      </span>
+                    ) : (
+                      (detailForm.assignees || []).map((a, idx) => (
+                        <div key={`${getAssigneeId(a)}-${idx}`} className="flex items-center gap-1">
+                          {renderMemberAvatar(a, "w-6 h-6")}
                         </div>
-                        <a
-                          href={file.url || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 min-w-0"
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+                <div className="flex items-center gap-2 border-b pb-2">
+                  <button
+                    className={`text-sm font-semibold px-3 py-1 rounded-lg ${activeTab === "files" ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                    onClick={() => setActiveTab("files")}
+                  >
+                    {t("files") || "Files"}
+                  </button>
+                  <button
+                    className={`text-sm font-semibold px-3 py-1 rounded-lg ${activeTab === "comments" ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                    onClick={() => setActiveTab("comments")}
+                  >
+                    {t("comments") || "Comments"}
+                  </button>
+                </div>
+
+                {activeTab === "files" && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold text-gray-800">{t("files") || "Files"}</h4>
+                      {!readOnly && (
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploadingFile}
+                          className="inline-flex items-center gap-1 text-xs px-2 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <p className="text-xs font-medium text-blue-600 hover:underline truncate">
-                            {file.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {formatFileSize(file.size)}
-                          </p>
-                        </a>
-                        {!readOnly && (
-                          <button
-                            onClick={() => handleDeleteFile(file.id)}
-                            className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition"
-                            title={t("deleteFile") || "Delete file"}
+                          <Upload className="w-4 h-4" />
+                          {uploadingFile ? t("uploading") || "Uploading..." : t("upload") || "Upload"}
+                        </button>
+                      )}
+                    </div>
+                    
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      disabled={readOnly}
+                    />
+
+                    {loadingFiles ? (
+                      <p className="text-xs text-gray-500">{t("loadingFiles") || "Loading files..."}</p>
+                    ) : files.length === 0 ? (
+                      <p className="text-xs text-gray-500">{t("noFilesAttached") || "No files attached"}</p>
+                    ) : (
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {files.map((file) => (
+                          <div
+                            key={file.id}
+                            className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition"
                           >
-                            <X className="w-4 h-4" />
-                          </button>
-                        )}
+                            <div className="flex-shrink-0">
+                              {getFileIcon(file.name)}
+                            </div>
+                            <a
+                              href={file.url || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 min-w-0"
+                            >
+                              <p className="text-xs font-medium text-blue-600 hover:underline truncate">
+                                {file.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {formatFileSize(file.size)}
+                              </p>
+                            </a>
+                            {!readOnly && (
+                              <button
+                                onClick={() => handleDeleteFile(file.id)}
+                                className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition"
+                                title={t("deleteFile") || "Delete file"}
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
-              </div>
 
-              <div className="flex items-center gap-3 flex-wrap">
-                <h4 className="text-sm font-semibold text-gray-800 whitespace-nowrap">
-                  {t("assignees") || "Assignees"}
-                </h4>
-
-                <div className="flex flex-wrap gap-2">
-                  {(task.assignees || []).length === 0 && (
-                    <span className="text-sm text-gray-500">{t("noAssigneesYet") || "No assignees yet"}</span>
-                  )}
-                  {(task.assignees || []).map((assignee, index) => {
-                    const label = getAssigneeLabel(assignee) || t("unassigned") || "Unassigned";
-                    const id = getAssigneeId(assignee) || `${label}-${index}`;
-                    return (
-                      <div
-                        key={id}
-                        className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full border border-gray-200 bg-white cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openProfile(getAssigneeId(assignee));
-                        }}
-                      >
-                        {renderMemberAvatar(assignee, "w-6 h-6 text-[10px]")}
-                        <span className="text-sm text-gray-800">{label}</span>
-                      </div>
-                      );
-                  })}
-                </div>
-              </div>
-
-
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-gray-700" />
-                  {t("comments") || "Comments"}
-                </h4>
-                <div className="space-y-5">
-                  {commentLoading ? (
-                    <div className="text-xs text-gray-500">{t("loadingComments") || "Loading comments..."}</div>
-                  ) : comments.length > 0 ? (
-                    comments.map((comment) => (
-                      <div
-                        key={comment.id}
-                        className="bg-gray-50 border border-gray-200 rounded-lg p-3"
-                      >
-                        <div className="flex gap-3">
-                          <div
-                            className="flex-shrink-0 cursor-pointer"
-                            onClick={() =>
-                              openProfile(
-                                comment.userId ||
-                                  comment.authorId ||
-                                  comment.createdById ||
-                                  ""
-                              )
-                            }
-                          >
-                            {renderCommentAvatar(comment)}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between text-xs text-gray-500">
-                              <span
-                                className="cursor-pointer font-semibold text-gray-700"
+                {activeTab === "comments" && (
+                  <div className="space-y-5">
+                    <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5 text-gray-700" />
+                      {t("comments") || "Comments"}
+                    </h4>
+                    <div className="space-y-3">
+                      {commentLoading ? (
+                        <div className="text-xs text-gray-500">{t("loadingComments") || "Loading comments..."}</div>
+                      ) : comments.length > 0 ? (
+                        comments.map((comment) => (
+                          <div key={comment.id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                            <div className="flex items-start gap-2">
+                              <div
+                                className="flex-shrink-0 cursor-pointer"
                                 onClick={() =>
                                   openProfile(
                                     comment.userId ||
@@ -617,157 +626,212 @@ const TaskModal = ({
                                   )
                                 }
                               >
-                                {(() => {
-                                  const userId = comment.userId || comment.authorId || comment.createdById || "";
-                                  const member = allMembers?.find(m => 
-                                    m.id === userId || 
-                                    m.userId === userId || 
-                                    m.accountId === userId
-                                  );
-                                  return member?.displayName || member?.name || comment.createdBy || t("unknown") || "Unknown";
-                                })()}
-                              </span>
-                              <div className="flex items-center gap-2">
-                                {comment.createdAt && (
-                                  <span>{formatTimestamp(comment.createdAt)}</span>
+                                {renderCommentAvatar(comment)}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between text-xs text-gray-500">
+                                  <span
+                                    className="cursor-pointer font-semibold text-gray-700"
+                                    onClick={() =>
+                                      openProfile(
+                                        comment.userId ||
+                                          comment.authorId ||
+                                          comment.createdById ||
+                                          ""
+                                      )
+                                    }
+                                  >
+                                    {(() => {
+                                      const userId = comment.userId || comment.authorId || comment.createdById || "";
+                                      const member = allMembers?.find(m => 
+                                        m.id === userId || 
+                                        m.userId === userId || 
+                                        m.accountId === userId
+                                      );
+                                      return member?.displayName || member?.name || comment.createdBy || t("unknown") || "Unknown";
+                                    })()}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    {comment.createdAt && (
+                                      <span>{formatTimestamp(comment.createdAt)}</span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      className="text-blue-600 hover:underline"
+                                      onClick={() => startEditComment(comment)}
+                                    >
+                                      {t("edit") || "Edit"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="text-red-500 hover:underline"
+                                      onClick={() => handleDeleteComment(comment.id)}
+                                    >
+                                      {t("delete") || "Delete"}
+                                    </button>
+                                  </div>
+                                </div>
+                                {editingCommentId === comment.id ? (
+                                  <div className="mt-3 space-y-2">
+                                    <textarea
+                                      value={editingContent}
+                                      onChange={(e) => setEditingContent(e.target.value)}
+                                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-200"
+                                      rows={2}
+                                    />
+                                    <div className="flex items-center justify-end gap-2 text-sm">
+                                      <button
+                                        type="button"
+                                        className="px-3 py-1 rounded-lg border text-gray-600 hover:bg-gray-100"
+                                        onClick={cancelEditComment}
+                                      >
+                                        {t("cancel") || "Cancel"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="px-3 py-1 rounded-lg bg-gray-900 text-white hover:bg-black"
+                                        onClick={saveEditComment}
+                                        disabled={!editingContent.trim()}
+                                      >
+                                        {t("save") || "Save"}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-gray-800 mt-2 whitespace-pre-wrap">
+                                    {comment.content || comment.text}
+                                  </div>
                                 )}
-                                <button
-                                  type="button"
-                                  className="text-blue-600 hover:underline"
-                                  onClick={() => startEditComment(comment)}
-                                >
-                                  {t("edit") || "Edit"}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="text-red-500 hover:underline"
-                                  onClick={() => handleDeleteComment(comment.id)}
-                                >
-                                  {t("delete") || "Delete"}
-                                </button>
                               </div>
                             </div>
-                            {editingCommentId === comment.id ? (
-                              <div className="mt-3 space-y-2">
-                                <textarea
-                                  value={editingContent}
-                                  onChange={(e) => setEditingContent(e.target.value)}
-                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-200"
-                                  rows={2}
-                                />
-                                <div className="flex items-center justify-end gap-2 text-sm">
-                                  <button
-                                    type="button"
-                                    className="px-3 py-1 rounded-lg border text-gray-600 hover:bg-gray-100"
-                                    onClick={cancelEditComment}
-                                  >
-                                    {t("cancel") || "Cancel"}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="px-3 py-1 rounded-lg bg-gray-900 text-white hover:bg-black"
-                                    onClick={saveEditComment}
-                                    disabled={!editingContent.trim()}
-                                  >
-                                    {t("save") || "Save"}
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="text-sm text-gray-800 mt-2 whitespace-pre-wrap">
-                                {comment.content || comment.text}
-                              </div>
-                            )}
                           </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-xs text-gray-500">{t("noCommentsYet") || "No comments yet"}</div>
-                  )}
-                </div>
+                        ))
+                      ) : (
+                        <div className="text-xs text-gray-500">{t("noCommentsYet") || "No comments yet"}</div>
+                      )}
+                    </div>
 
-                <div className="mt-2 flex items-center gap-2">
-                  <input
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder={t("writeComment") || "Write a comment..."}
-                    className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-gray-300"
-                  />
-                  <button
-                    className="bg-gray-900 text-white px-4 py-2 rounded-lg font-medium hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={handleAddComment}
-                    disabled={!text.trim()}
-                  >
-                    {t("post") || "Post"}
-                  </button>
-                </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        placeholder={t("writeComment") || "Write a comment..."}
+                        className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-gray-300"
+                      />
+                      <button
+                        className="bg-gray-900 text-white px-4 py-2 rounded-lg font-medium hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleAddComment}
+                        disabled={!text.trim()}
+                      >
+                        {t("post") || "Post"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
+
             </div>
 
             <div className="w-full lg:w-[380px] flex-shrink-0 space-y-4 lg:self-start">
               <div className="border rounded-lg p-4">
                 <h4 className="text-sm font-medium text-gray-800 mb-4">{t("details") || "Details"}</h4>
                 <div className="space-y-5">
-                  <div className="flex items-start gap-5 relative" ref={assigneeMenuRef}>
+                  <div className="flex items-start gap-5 relative" ref={assigneeMenuDetailsRef}>
                     <label className="text-sm text-[#292A2E] font-semibold w-24 mt-2">
-                      {t("assignee") || "Assignee"}
+                      {t("assignees") || "Assignees"}
                     </label>
                     <div className="flex-1">
                       <button
                         type="button"
-                        onClick={() => setAssigneeMenuOpen((prev) => !prev)}
+                        onClick={() => setAssigneeMenuOpenDetails((prev) => !prev)}
                         className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2 text-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                        disabled={readOnly}
                       >
-                        <div className="flex items-center gap-2">
-                          {renderMemberAvatar(
-                            activeMember || { name: activeAssigneeLabel || "U" }
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {(detailForm.assignees || []).length === 0 ? (
+                            <span className="text-gray-500">
+                              {t("selectAssignees") || "Select assignees"}
+                            </span>
+                          ) : (
+                            (detailForm.assignees || []).map((a, idx) => (
+                              <div key={`${getAssigneeId(a)}-${idx}`} className="flex items-center gap-1">
+                                {renderMemberAvatar(a, "w-6 h-6")}
+                              </div>
+                            ))
                           )}
-                          <span className="text-gray-900">
-                            {activeAssigneeLabel || t("unassigned") || "Unassigned"}
-                          </span>
                         </div>
                         <span className="text-gray-500 text-xs">▼</span>
                       </button>
-                      {assigneeMenuOpen && (
-                        <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                      {assigneeMenuOpenDetails && !readOnly && (
+                        <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                          <div className="px-3 py-2 text-xs text-gray-500">
+                            {t("selectMultiple") || "Select one or more assignees"}
+                          </div>
                           <button
                             type="button"
                             onClick={() => {
                               setDetailForm((prev) => ({ ...prev, assignees: [] }));
                               onUpdateAssignees(task.id, []);
-                              setAssigneeMenuOpen(false);
+                              setAssigneeMenuOpenDetails(false);
                             }}
                             className="w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100 text-left"
                           >
-                            <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-xs font-semibold">
+                            <div className="w-6 h-6 rounded-full bg-gray-200 text-gray-700 text-[10px] flex items-center justify-center ring-2 ring-white">
                               U
                             </div>
-                            <span>{t("unassign") || "Unassign"}</span>
+                            <span className="text-gray-900">{t("unassigned") || "Unassigned"}</span>
                           </button>
                           {availableMembers.map((member) => {
                             const optionId = getAssigneeId(member);
                             const label = getAssigneeLabel(member) || optionId;
+                            const isSelected = (detailForm.assignees || []).some(
+                              (a) => getAssigneeId(a) === optionId
+                            );
                             return (
                               <button
                                 type="button"
                                 key={optionId}
                                 onClick={() => {
-                                  const nextList = optionId ? [member] : [];
-                                  setDetailForm((prev) => ({
-                                    ...prev,
-                                    assignees: nextList,
-                                  }));
-                                  onUpdateAssignees(task.id, optionId ? [optionId] : []);
-                                  setAssigneeMenuOpen(false);
+                                  setDetailForm((prev) => {
+                                    const current = prev.assignees || [];
+                                    const next = isSelected
+                                      ? current.filter((a) => getAssigneeId(a) !== optionId)
+                                      : [...current, member];
+                                    return { ...prev, assignees: next };
+                                  });
                                 }}
-                                className="w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100 text-left"
+                                className={`w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100 text-left ${
+                                  isSelected ? "bg-blue-50" : ""
+                                }`}
                               >
                                 {renderMemberAvatar(member)}
                                 <span className="text-gray-900">{label}</span>
+                                {isSelected && <span className="ml-auto text-blue-600">✓</span>}
                               </button>
                             );
                           })}
+                          <div className="px-3 py-2 flex items-center justify-end gap-2 border-t">
+                            <button
+                              type="button"
+                              className="px-3 py-1 text-sm rounded-lg border text-gray-600 hover:bg-gray-100"
+                              onClick={() => {
+                                setAssigneeMenuOpenDetails(false);
+                              }}
+                            >
+                              {t("cancel") || "Cancel"}
+                            </button>
+                            <button
+                              type="button"
+                              className="px-3 py-1 text-sm rounded-lg bg-gray-900 text-white hover:bg-black"
+                              onClick={() => {
+                                const ids = (detailForm.assignees || []).map((a) => getAssigneeId(a)).filter(Boolean);
+                                onUpdateAssignees(task.id, ids);
+                                setAssigneeMenuOpenDetails(false);
+                              }}
+                            >
+                              {t("save") || "Save"}
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>

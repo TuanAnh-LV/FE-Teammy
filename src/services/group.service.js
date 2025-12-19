@@ -24,6 +24,14 @@ export const GroupService = {
     });
   },
 
+  // Mentor: list recruiting groups for mentoring
+  listRecruitingGroups() {
+    return BaseService.get({
+      url: `${API.GROUP.LIST_GROUP}?status=recruiting`,
+      isLoading: true,
+    });
+  },
+
   getGroupDetail(id) {
     return BaseService.get({
       url: API.GROUP.GROUP_DETAIL.replace(":id", id),
@@ -41,6 +49,15 @@ export const GroupService = {
   updateGroup(id, payload) {
     return BaseService.patch({
       url: API.GROUP.UPDATE_GROUP(id),
+      payload,
+      isLoading: true,
+    });
+  },
+
+  // Mentor: send mentor request to a group
+  sendMentorRequest(groupId, payload) {
+    return BaseService.post({
+      url: `/groups/${groupId}/mentor-requests`,
       payload,
       isLoading: true,
     });

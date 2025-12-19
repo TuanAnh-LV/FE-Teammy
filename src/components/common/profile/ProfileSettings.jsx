@@ -363,16 +363,6 @@ const ProfileSettings = ({ profile, onUpdate }) => {
             </div>
           )}
         </div>
-
-        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-          <input
-            type="checkbox"
-            checked={settingsForm.skillsCompleted}
-            onChange={(e) => handleChange("skillsCompleted", e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          />
-          <span>Mark skills form as completed</span>
-        </label>
       </div>
 
       <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
