@@ -75,6 +75,8 @@ export default function MyGroupsPage() {
     groupsById,
     invitations,
     invitationsLoading,
+    handleAcceptInvitation,
+    handleDeclineInvitation,
     setOpen,
     handleFormChange,
     handleCreateGroup,
@@ -566,9 +568,9 @@ export default function MyGroupsPage() {
                 {invitations.map((invitation) => (
                   <div
                     key={invitation.id}
-                    className="flex flex-col gap-3 md:gap-4 rounded-2xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm"
+                    className="flex flex-col gap-3 md:gap-4 rounded-2xl border border-gray-200 bg-white p-4 md:p-6 shadow-sm md:flex-row md:items-center md:justify-between"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-1">
                       <img
                         src={
                           invitation.avatarUrl ||
@@ -598,6 +600,22 @@ export default function MyGroupsPage() {
                           </p>
                         )}
                       </div>
+                    </div>
+                    <div className="flex gap-2 mt-2 md:mt-0">
+                      <button
+                        type="button"
+                        onClick={() => handleDeclineInvitation(invitation)}
+                        className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center rounded-full border border-red-200 px-3 md:px-4 text-xs md:text-sm font-semibold text-red-600 hover:bg-red-50"
+                      >
+                        {t("reject") || "Reject"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAcceptInvitation(invitation)}
+                        className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center rounded-full bg-emerald-500 px-3 md:px-4 text-xs md:text-sm font-semibold text-white hover:bg-emerald-600"
+                      >
+                        {t("accept") || "Accept"}
+                      </button>
                     </div>
                   </div>
                 ))}

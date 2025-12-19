@@ -16,6 +16,7 @@ import {
   Calendar,
   ClipboardList,
   UserPlus,
+  Clock,
 } from "lucide-react";
 import { Modal, Form, Input } from "antd";
 import TaskModal from "../../components/common/kanban/TaskModal";
@@ -34,6 +35,7 @@ import ListView from "../../components/common/workspace/ListView";
 import { useGroupActivation } from "../../hook/useGroupActivation";
 import { useGroupDetail } from "../../hook/useGroupDetail";
 import { useGroupEditForm } from "../../hook/useGroupEditForm";
+import { GroupService } from "../../services/group.service";
 
 export default function MyGroup() {
   const { id } = useParams();
@@ -54,6 +56,7 @@ export default function MyGroup() {
     handleKickMember,
     handleAssignRole,
     handleTransferLeader,
+    fetchGroupDetail,
   } = useGroupDetail({ groupId: id, t, userInfo });
 
   const [board, setBoard] = useState(null);
@@ -61,6 +64,8 @@ export default function MyGroup() {
   const [activeTab, setActiveTab] = useState("overview");
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState("kanban");
   const [listFilterStatus, setListFilterStatus] = useState("All");
+  const [pendingInvitations, setPendingInvitations] = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
 
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const [columnForm] = Form.useForm();
@@ -77,11 +82,46 @@ export default function MyGroup() {
     handleSubmitEdit,
   } = useGroupEditForm({ group, groupMembers, userInfo, t, setGroup });
 
+  const loadPendingInvitations = async () => {
+    if (!id) return;
+    try {
+      setPendingLoading(true);
+      // Gọi đúng API group-level: /groups/{id}/pending
+      const res = await GroupService.getJoinRequests(id);
+      const payload = res?.data;
+      let list = [];
+      if (Array.isArray(payload)) {
+        list = payload;
+      } else if (Array.isArray(payload?.data)) {
+        list = payload.data;
+      } else if (Array.isArray(payload?.items)) {
+        list = payload.items;
+      } else if (Array.isArray(res?.items)) {
+        list = res.items;
+      }
+
+      const mentorInvites = list.filter(
+        (x) => x.type === "mentor_invitation"
+      );
+      setPendingInvitations(mentorInvites);
+    } catch {
+      setPendingInvitations([]);
+    } finally {
+      setPendingLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "files") {
       loadGroupFiles();
     }
   }, [id, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "invitations") {
+      loadPendingInvitations();
+    }
+  }, [activeTab, id]);
 
   const handleAddMember = (user) => {
     setShowModal(false);
@@ -187,6 +227,15 @@ export default function MyGroup() {
 
   const descriptionText = (group?.description || "").trim();
   const mentor = group?.mentor || null;
+  const isLeader = React.useMemo(() => {
+    if (!userInfo?.email || !Array.isArray(groupMembers)) return false;
+    const currentEmail = userInfo.email.toLowerCase();
+    return groupMembers.some((m) => {
+      const role = (m.role || m.status || "").toLowerCase();
+      const email = (m.email || "").toLowerCase();
+      return role === "leader" && email === currentEmail;
+    });
+  }, [groupMembers, userInfo]);
 
   const { canActivateGroup, handleActivateGroup } = useGroupActivation({
     group,
@@ -265,6 +314,26 @@ export default function MyGroup() {
       .toUpperCase();
 
     return { name, initials };
+  };
+
+  const handleMentorInvitationAction = async (action, invite) => {
+    if (!id || !invite?.id) return;
+    try {
+      if (action === "accept") {
+        await GroupService.acceptJoinRequest(id, invite.id, {
+          type: "mentor_invitation",
+        });
+      } else {
+        await GroupService.rejectJoinRequest(id, invite.id, {
+          type: "mentor_invitation",
+        });
+      }
+      await loadPendingInvitations();
+      await fetchGroupDetail();
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to handle mentor invitation", error);
+    }
   };
 
   // Contribution statistics
@@ -430,6 +499,25 @@ export default function MyGroup() {
     }
   };
 
+  const tabs = React.useMemo(() => {
+    const base = [
+      { key: "overview", label: t("overview") || "Overview" },
+      { key: "members", label: t("teamMembers") || "Members" },
+    ];
+    if (isLeader) {
+      base.push({
+        key: "invitations",
+        label: t("groupInvitations") || "Invitations",
+      });
+    }
+    base.push(
+      { key: "workspace", label: t("workspace") || "Workspace" },
+      { key: "posts", label: t("posts") || "Posts" },
+      { key: "files", label: t("files") || "Files" }
+    );
+    return base;
+  }, [isLeader, t]);
+
   if (loading) {
     return (
       <LoadingState
@@ -438,14 +526,6 @@ export default function MyGroup() {
       />
     );
   }
-
-  const tabs = [
-    { key: "overview", label: t("overview") || "Overview" },
-    { key: "members", label: t("teamMembers") || "Members" },
-    { key: "workspace", label: t("workspace") || "Workspace" },
-    { key: "posts", label: t("posts") || "Posts" },
-    { key: "files", label: t("files") || "Files" },
-  ];
 
   return (
     <>
@@ -535,6 +615,92 @@ export default function MyGroup() {
                     board={board}
                   />
                 </div>
+              </div>
+            )}
+
+            {/* INVITATIONS (Leader only) */}
+            {activeTab === "invitations" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      {t("mentorInvitationsTab") || "Mentor invitations"}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {t("mentorInvitationsEmpty") ||
+                        "Review mentor invitations sent to your group."}
+                    </p>
+                  </div>
+                </div>
+
+                {pendingLoading ? (
+                  <div className="flex justify-center items-center py-10">
+                    <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : pendingInvitations.length === 0 ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 p-4 rounded-2xl border border-dashed border-gray-200">
+                    <Clock className="w-4 h-4" />
+                    <span>
+                      {t("mentorInvitationsEmpty") ||
+                        "No mentor invitations pending for this group."}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingInvitations.map((inv) => (
+                      <div
+                        key={inv.id}
+                        className="flex flex-col md:flex-row md:items-center gap-4 border rounded-2xl p-4 bg-white shadow-sm hover:shadow-md transition"
+                      >
+                        <div className="flex items-center gap-4 min-w-0">
+                          <img
+                            src={inv.avatarUrl || avatarFromEmail(inv.email, 80)}
+                            alt={inv.displayName || inv.email}
+                            className="w-12 h-12 rounded-full object-cover shadow"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-800 truncate">
+                              {inv.displayName || inv.email}
+                            </p>
+                            <p className="text-sm text-gray-600 truncate">
+                              {inv.email}
+                            </p>
+                            {inv.topicTitle && (
+                              <p className="text-xs text-gray-500 mt-1 truncate">
+                                {inv.topicTitle}
+                              </p>
+                            )}
+                            {inv.message && (
+                              <p className="text-xs text-gray-500 mt-1 italic truncate">
+                                {inv.message}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-3 md:ml-auto shrink-0 w-full md:w-auto justify-end">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleMentorInvitationAction("accept", inv)
+                            }
+                            className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-medium shadow-sm transition"
+                          >
+                            {t("accept") || "Accept"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleMentorInvitationAction("reject", inv)
+                            }
+                            className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-red-500 hover:bg-red-600 text-white text-sm font-medium shadow-sm transition"
+                          >
+                            {t("reject") || "Reject"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

@@ -56,20 +56,13 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     if (activeTab === "applications" && isConnected) {
       const leaderGroups = groups.filter((g) => g.isLeader);
 
-      console.log(
-        "[MyGroups] 🎯 Joining SignalR groups for leaders:",
-        leaderGroups.map((g) => g.id)
-      );
-
       // Join all leader groups
       leaderGroups.forEach((group) => {
-        console.log(`[MyGroups] Attempting to join group: ${group.id}`);
         joinGroupChannel(group.id);
       });
 
       // Cleanup: leave all groups when switching tab or unmounting
       return () => {
-        console.log("[MyGroups] 👋 Leaving all groups");
         leaderGroups.forEach((group) => {
           leaveGroupChannel(group.id);
         });
@@ -315,6 +308,45 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     }
   };
 
+  // Accept / reject mentor invitations (type: mentor_invitation)
+  const handleAcceptInvitation = async (invitation) => {
+    if (!invitation?.groupId || !invitation?.id) return;
+    try {
+      await GroupService.acceptJoinRequest(invitation.groupId, invitation.id, {
+        type: "mentor_invitation",
+      });
+      setInvitations((prev) =>
+        prev.filter((item) => item.id !== invitation.id)
+      );
+      notification.success({
+        message: t("accept") || "Accepted",
+      });
+    } catch (error) {
+      notification.error({
+        message: t("approveFailed") || "Approve failed",
+      });
+    }
+  };
+
+  const handleDeclineInvitation = async (invitation) => {
+    if (!invitation?.groupId || !invitation?.id) return;
+    try {
+      await GroupService.rejectJoinRequest(invitation.groupId, invitation.id, {
+        type: "mentor_invitation",
+      });
+      setInvitations((prev) =>
+        prev.filter((item) => item.id !== invitation.id)
+      );
+      notification.info({
+        message: t("reject") || "Rejected",
+      });
+    } catch (error) {
+      notification.error({
+        message: t("rejectFailed") || "Reject failed",
+      });
+    }
+  };
+
   const fetchMajors = async () => {
     if (majors.length > 0) return;
     setMajorsLoading(true);
@@ -340,7 +372,17 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         leaderGroups.map(async (group) => {
           try {
             const res = await GroupService.getJoinRequests(group.id);
-            const list = Array.isArray(res?.data) ? res.data : [];
+            const payload = res?.data;
+            let list = [];
+            if (Array.isArray(payload)) {
+              list = payload;
+            } else if (Array.isArray(payload?.data)) {
+              list = payload.data;
+            } else if (Array.isArray(payload?.items)) {
+              list = payload.items;
+            } else if (Array.isArray(res?.items)) {
+              list = res.items;
+            }
             return [group.id, list];
           } catch (error) {
             return [group.id, []];
@@ -356,14 +398,22 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         const applications = list.filter(
           (item) => item.type === "application" || !item.type
         );
-        const invitations = list.filter((item) => item.type === "invitation");
+        const invitations = list
+          .filter(
+            (item) =>
+              item.type === "invitation" || item.type === "mentor_invitation"
+          )
+          .map((inv) => ({
+            ...inv,
+            groupId,
+          }));
 
         // Group applications by groupId
         if (applications.length > 0) {
           applicationsByGroup[groupId] = applications.map(mapPendingRequest);
         }
 
-        // Collect all invitations (don't map, keep original structure)
+        // Collect all invitations (keep original structure + groupId)
         allInvitations = allInvitations.concat(invitations);
       });
 
@@ -505,5 +555,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     //board
     fetchBoardTask,
     getAllTasksFromBoard,
+    handleAcceptInvitation,
+    handleDeclineInvitation,
   };
 };
