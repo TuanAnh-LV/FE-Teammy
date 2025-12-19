@@ -78,6 +78,13 @@ const Forum = () => {
   const [applyLoadingId, setApplyLoadingId] = useState(null);
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyPost, setApplyPost] = useState(null);
+  const [useServerSearch, setUseServerSearch] = useState(false);
+  const normalizeSkills = (q) =>
+    q
+      .split(/[,\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join(",");
 
   const handleInvitationCreated = useCallback((payload) => {
     if (payload.type === "profile_post" && payload.postId) {
@@ -172,44 +179,89 @@ const Forum = () => {
 
   useEffect(() => {
     let mounted = true;
+
     (async () => {
+      const q = debouncedQuery.trim();
+
+      // Nếu không có query, load tất cả posts ban đầu
+      if (!q) {
+        setUseServerSearch(false);
+
+        try {
+          setIsLoadingPosts(true);
+          const [groupRes, individualRes] = await Promise.all([
+            PostService.getRecruitmentPosts(),
+            PostService.getPersonalPosts(),
+          ]);
+
+          const groupArr = toArraySafe(groupRes).filter(
+            (x) => x?.type === "group_hiring"
+          );
+          const individualArr = toArraySafe(individualRes).filter(
+            (x) => x?.type === "individual"
+          );
+
+          if (!mounted) return;
+
+          setAllPostsData([...groupArr, ...individualArr]);
+          setPostsData(activeTab === "groups" ? groupArr : individualArr);
+        } catch {
+          // Ignore error
+        } finally {
+          if (mounted) setIsLoadingPosts(false);
+        }
+        return;
+      }
+
+      // Có query - search trên server
       try {
         setIsLoadingPosts(true);
-        const [groupRes, individualRes] = await Promise.all([
-          PostService.getRecruitmentPosts(),
-          PostService.getPersonalPosts(),
-        ]);
-        const groupArr = toArraySafe(groupRes).filter(
-          (x) => x?.type === "group_hiring"
-        );
-        const individualArr = toArraySafe(individualRes).filter(
-          (x) => x?.type === "individual"
+
+        const params = {
+          skills: normalizeSkills(q),
+          majorId: savedUser?.majorId || undefined,
+        };
+
+        const res =
+          activeTab === "groups"
+            ? await PostService.getRecruitmentPosts(params)
+            : await PostService.getPersonalPosts(params);
+
+        const arr = toArraySafe(res).filter((x) =>
+          activeTab === "groups"
+            ? x?.type === "group_hiring"
+            : x?.type === "individual"
         );
 
-        if (mounted) {
-          setAllPostsData([...groupArr, ...individualArr]);
-        }
+        if (!mounted) return;
+
+        setPostsData(arr);
+        setUseServerSearch(true);
+        setPage(1);
       } catch {
         if (mounted) {
-          setAllPostsData([]);
+          setUseServerSearch(false);
+          setPostsData([]);
         }
       } finally {
-        if (mounted) {
-          setIsLoadingPosts(false);
-        }
+        if (mounted) setIsLoadingPosts(false);
       }
     })();
+
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [debouncedQuery, activeTab, savedUser?.majorId]);
 
-  /** 3) Khi activeTab thay đổi, CHỈ filter data từ allPostsData thay vì gọi API lại */
+  /** 3) Khi activeTab thay đổi, CHỈ filter data từ allPostsData nếu KHÔNG đang search */
   useEffect(() => {
+    // Nếu đang search trên server, không override postsData
+    if (useServerSearch) return;
+
     const groupArr = allPostsData.filter((x) => x?.type === "group_hiring");
     const individualArr = allPostsData.filter((x) => x?.type === "individual");
     setPostsData(activeTab === "groups" ? groupArr : individualArr);
-  }, [activeTab, allPostsData]);
+  }, [activeTab, allPostsData, useServerSearch]);
 
   /** 4) Gọi AI suggestions khi chuyển sang tab individuals */
   // Extract values to avoid re-running when myGroupDetails reference changes
@@ -448,18 +500,19 @@ const Forum = () => {
   /** filter */
   const filtered = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase();
+
     return (postsData || []).filter((item) => {
       // Hide posts that are explicitly closed or expired
       const statusStr = (item?.status || "").toString().toLowerCase();
       if (statusStr === "closed" || statusStr === "expired") return false;
 
       // Hide posts that are already shown in AI suggestions
-      if (activeTab === "groups" && aiGroupPostIds.has(item.id)) {
+      if (activeTab === "groups" && aiGroupPostIds.has(item.id)) return false;
+      if (activeTab === "individuals" && aiProfilePostIds.has(item.id))
         return false;
-      }
-      if (activeTab === "individuals" && aiProfilePostIds.has(item.id)) {
-        return false;
-      }
+
+      // ✅ Nếu đã search bằng server => bỏ qua filter text ở FE
+      if (useServerSearch) return true;
 
       const texts = [
         item.title,
@@ -479,9 +532,17 @@ const Forum = () => {
       ]
         .filter(Boolean)
         .map((s) => String(s).toLowerCase());
+
       return !q || texts.some((h) => h.includes(q));
     });
-  }, [postsData, debouncedQuery, activeTab, aiGroupPostIds, aiProfilePostIds]);
+  }, [
+    postsData,
+    debouncedQuery,
+    activeTab,
+    aiGroupPostIds,
+    aiProfilePostIds,
+    useServerSearch,
+  ]);
 
   useEffect(() => {
     setPage(1);
