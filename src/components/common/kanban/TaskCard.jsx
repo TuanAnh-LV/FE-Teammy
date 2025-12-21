@@ -4,7 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Calendar, MessageSquare, MoreVertical, Trash2 } from "lucide-react";
 import { priorityStyles, initials } from "../../../utils/kanbanHelpers";
-import { Modal, Input } from "antd";
+import { Modal, Input, notification } from "antd";
 import { useTranslation } from "../../../hook/useTranslation";
 
 const getAssigneeId = (assignee) => {
@@ -178,7 +178,13 @@ const TaskCard = ({ task, onOpen, onDelete, columnMeta = {} }) => {
                       okButtonProps: { danger: true },
                       cancelText: t?.("cancel") || "Cancel",
                       onOk: () => {
-                        if (inputValue !== "delete") return Promise.reject();
+                        if (inputValue.toLowerCase() !== "delete") {
+                          notification.error({
+                            message: t?.("validationError") || "Validation Error",
+                            description: t?.("mustTypeDelete") || "You must type 'delete' to confirm.",
+                          });
+                          return Promise.reject();
+                        }
                         setMenuOpen(false);
                         onDelete(task.id);
                         return Promise.resolve();

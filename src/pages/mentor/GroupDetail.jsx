@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, Breadcrumb, Spin } from "antd";
-import { BarChartOutlined, HomeOutlined } from "@ant-design/icons";
+import { BarChartOutlined, HomeOutlined, FileTextOutlined } from "@ant-design/icons";
 import InfoCard from "../../components/common/my-group/InfoCard";
 import OverviewSection from "../../components/common/my-group/OverviewSection";
 import MembersPanel from "../../components/common/my-group/MembersPanel";
+import FeedbackTab from "../../components/common/my-group/FeedbackTab";
 import { GroupService } from "../../services/group.service";
 import useKanbanBoard from "../../hook/useKanbanBoard";
 import KanbanTab from "../../components/common/workspace/KanbanTab";
@@ -331,6 +332,24 @@ export default function GroupDetail() {
           {activeWorkspaceTab === "reports" && (
             <ReportsTab groupId={id} />
           )}
+        </div>
+      ),
+    },
+    {
+      key: "feedback",
+      label: (
+        <span>
+          <FileTextOutlined /> {t("feedback") || "Feedback"}
+        </span>
+      ),
+      children: (
+        <div className="space-y-4">
+          <FeedbackTab
+            groupId={id}
+            isMentor={true}
+            isLeader={false}
+            groupName={groupName}
+          />
         </div>
       ),
     },

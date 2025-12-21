@@ -155,20 +155,31 @@ const ProfileSettings = ({ profile, onUpdate }) => {
 
   const handleSave = async () => {
     try {
+      // Validate skills: must have at least 3 skills
+      const skillsArray = Array.isArray(settingsForm.skills)
+        ? settingsForm.skills
+        : typeof settingsForm.skills === "string" && settingsForm.skills
+        ? settingsForm.skills
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
+
+      if (skillsArray.length < 3) {
+        notification.error({
+          message: "Validation Error",
+          description: "Please select at least 3 skills before saving.",
+        });
+        return;
+      }
+
       setSaving(true);
       const payload = {
         displayName: settingsForm.fullName.trim(),
         phone: settingsForm.phone.trim(),
         gender: settingsForm.gender,
         // Send skills as an array (same style as group creation / complete profile)
-        skills: Array.isArray(settingsForm.skills)
-          ? settingsForm.skills
-          : typeof settingsForm.skills === "string" && settingsForm.skills
-          ? settingsForm.skills
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean)
-          : [],
+        skills: skillsArray,
         skillsCompleted: settingsForm.skillsCompleted,
         portfolioUrl: settingsForm.portfolioUrl.trim(),
       };
@@ -258,14 +269,33 @@ const ProfileSettings = ({ profile, onUpdate }) => {
         </label>
 
         {/* Selected Skills */}
-        <div className="rounded-lg border-2 border-dashed border-blue-200 bg-blue-50 p-3 min-h-[60px]">
-          <p className="mb-2 text-xs font-medium text-blue-900">
-            Selected Skills ({settingsForm.skills?.length || 0})
-          </p>
+        <div className={`rounded-lg border-2 border-dashed p-3 min-h-[60px] ${
+          (settingsForm.skills?.length || 0) < 3
+            ? "border-red-300 bg-red-50"
+            : "border-blue-200 bg-blue-50"
+        }`}>
+          <div className="flex items-center justify-between mb-2">
+            <p className={`text-xs font-medium ${
+              (settingsForm.skills?.length || 0) < 3
+                ? "text-red-900"
+                : "text-blue-900"
+            }`}>
+              Selected Skills ({settingsForm.skills?.length || 0})
+            </p>
+            {(settingsForm.skills?.length || 0) < 3 && (
+              <span className="text-xs text-red-600 font-medium">
+                (Minimum 3 required)
+              </span>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2">
             {!settingsForm.skills || settingsForm.skills.length === 0 ? (
-              <p className="text-xs text-blue-600 italic">
-                Click skills below to add them
+              <p className={`text-xs italic ${
+                (settingsForm.skills?.length || 0) < 3
+                  ? "text-red-600"
+                  : "text-blue-600"
+              }`}>
+                Click skills below to add them (at least 3 required)
               </p>
             ) : (
               settingsForm.skills.map((skillToken) => {

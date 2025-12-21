@@ -27,6 +27,7 @@ import OverviewSection from "../../components/common/my-group/OverviewSection";
 import MembersPanel from "../../components/common/my-group/MembersPanel";
 import FilesPanel from "../../components/common/my-group/FilesPanel";
 import GroupPostsTab from "../../components/common/my-group/GroupPostsTab";
+import FeedbackTab from "../../components/common/my-group/FeedbackTab";
 import KanbanTab from "../../components/common/workspace/KanbanTab";
 import BacklogTab from "../../components/common/workspace/BacklogTab";
 import MilestonesTab from "../../components/common/workspace/MilestonesTab";
@@ -36,6 +37,7 @@ import { useGroupActivation } from "../../hook/useGroupActivation";
 import { useGroupDetail } from "../../hook/useGroupDetail";
 import { useGroupEditForm } from "../../hook/useGroupEditForm";
 import { GroupService } from "../../services/group.service";
+import { avatarFromEmail } from "../../utils/helpers";
 
 export default function MyGroup() {
   const { id } = useParams();
@@ -236,6 +238,13 @@ export default function MyGroup() {
       return role === "leader" && email === currentEmail;
     });
   }, [groupMembers, userInfo]);
+
+  const isMentor = React.useMemo(() => {
+    if (!userInfo?.email || !mentor) return false;
+    const currentEmail = userInfo.email.toLowerCase();
+    const mentorEmail = (mentor.email || mentor.userEmail || "").toLowerCase();
+    return mentorEmail === currentEmail;
+  }, [mentor, userInfo]);
 
   const { canActivateGroup, handleActivateGroup } = useGroupActivation({
     group,
@@ -512,6 +521,7 @@ export default function MyGroup() {
     }
     base.push(
       { key: "workspace", label: t("workspace") || "Workspace" },
+      { key: "feedback", label: t("feedback") || "Feedback" },
       { key: "posts", label: t("posts") || "Posts" },
       { key: "files", label: t("files") || "Files" }
     );
@@ -562,9 +572,7 @@ export default function MyGroup() {
                   group={group}
                   memberCount={groupMembers.length}
                   onBack={() => navigate(-1)}
-                  onSelectTopic={
-                    group.canEdit ? () => navigate("/discover") : undefined
-                  }
+                  onSelectTopic={group.canEdit ? () => navigate("/discover") : null}
                   onEdit={group.canEdit ? () => setEditOpen(true) : null}
                   onActivate={canActivateGroup ? handleActivateGroup : null}
                 />
@@ -947,6 +955,16 @@ export default function MyGroup() {
                 t={t}
                 groupId={id}
                 onUploadSuccess={loadGroupFiles}
+              />
+            )}
+
+            {/* FEEDBACK */}
+            {activeTab === "feedback" && (
+              <FeedbackTab
+                groupId={id}
+                isMentor={isMentor}
+                isLeader={isLeader}
+                groupName={group?.name || group?.title || ""}
               />
             )}
 
