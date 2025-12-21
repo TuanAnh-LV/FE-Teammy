@@ -489,24 +489,24 @@ const Discover = () => {
           <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {filteredGroups.map((group) => (
             <div
               key={group.id}
-              className="border border-gray-200 rounded-2xl bg-white hover:shadow-lg transition-all p-5 flex flex-col gap-3"
+              className="border border-gray-200 rounded-2xl bg-white hover:shadow-lg transition-all p-4 sm:p-5 flex flex-col gap-3"
             >
               {/* Header */}
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-base mb-1">
+              <div className="flex justify-between items-start gap-2">
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <h3 className="font-semibold text-gray-900 text-base mb-1 truncate">
                     {group.name}
                   </h3>
-                  <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-600 border border-blue-200">
-                    {group.topic}
+                  <span className="inline-flex items-center max-w-full px-3 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-600 border border-blue-200 overflow-hidden">
+                    <span className="block truncate max-w-full">{group.topic}</span>
                   </span>
                 </div>
 
-                <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-600 border border-green-200 capitalize">
+                <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-green-50 text-green-600 border border-green-200 capitalize flex-shrink-0">
                   {group.status}
                 </span>
               </div>
@@ -551,14 +551,14 @@ const Discover = () => {
                 </p>
               </div>
 
-              <div className="mt-3 flex flex-col sm:flex-row gap-2">
+              <div className="mt-3 flex flex-col xl:flex-row gap-2 md:gap-2.5">
                 {/** View details button */}
                 <button
                   type="button"
                   onClick={() => openGroupDetailModal(group)}
-                  className="inline-flex items-center justify-center gap-2 w-full sm:w-1/2 rounded-lg bg-[#4264D7] hover:bg-[#3451b8] text-white text-sm font-medium py-2.5 shadow-sm transition"
+                  className="inline-flex items-center justify-center gap-1.5 xl:gap-2 w-full xl:w-1/2 rounded-lg bg-[#4264D7] hover:bg-[#3451b8] text-white text-xs sm:text-sm font-medium py-2 sm:py-2.5 px-3 sm:px-4 md:px-5 shadow-sm transition whitespace-nowrap"
                 >
-                  <span>{t("viewGroupDetails")}</span>
+                  <span className="truncate">{t("viewGroupDetails")}</span>
                 </button>
                 {/** Mentor request button: disabled if group already has topic & mentor */}
                 <button
@@ -568,7 +568,7 @@ const Discover = () => {
                     openRequestModal(group);
                   }}
                   disabled={group.hasTopic && group.hasMentor}
-                  className={`inline-flex items-center justify-center gap-2 w-full sm:w-1/2 rounded-lg border text-sm font-medium py-2.5 shadow-sm transition ${
+                  className={`inline-flex items-center justify-center gap-1.5 xl:gap-2 w-full xl:w-1/2 rounded-lg border text-xs sm:text-sm font-medium py-2 sm:py-2.5 px-3 sm:px-4 md:px-5 shadow-sm transition whitespace-nowrap ${
                     group.hasTopic && group.hasMentor
                       ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
                       : "border-orange-400 text-orange-600 hover:bg-orange-50"
@@ -576,13 +576,13 @@ const Discover = () => {
                 >
                   {!group.hasTopic || !group.hasMentor ? (
                     <>
-                      <Send className="w-4 h-4" />
-                      <span>
+                      <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="truncate">
                         {t("sendMentorRequest") || "Send mentor request"}
                       </span>
                     </>
                   ) : (
-                    <span>
+                    <span className="truncate">
                       {t("mentorAssigned") || "Mentor already assigned"}
                     </span>
                   )}

@@ -3,7 +3,7 @@ import { MessageSquare, Upload, X, FileIcon } from "lucide-react";
 import { priorityStyles, statusStyles, initials } from "../../../utils/kanbanHelpers";
 import { useNavigate } from "react-router-dom";
 import { BoardService } from "../../../services/board.service";
-import { notification } from "antd";
+import { notification, Modal, Input } from "antd";
 import { useTranslation } from "../../../hook/useTranslation";
 
 const getAssigneeId = (assignee) => {
@@ -461,10 +461,38 @@ const TaskModal = ({
                 <button
                   className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
                   onClick={() => {
-                    if (window.confirm(t("confirmDeleteTask") || "Delete this task?")) {
-                      onDeleteTask(task.id);
-                      onClose();
-                    }
+                    let inputValue = "";
+                    Modal.confirm({
+                      title: t("deleteTaskTitle") || "Delete task",
+                      content: (
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-600">
+                            {t("typeDeleteToConfirm") || "Type 'delete' to confirm."}
+                          </p>
+                          <Input
+                            placeholder={t("deletePlaceholder") || "delete"}
+                            onChange={(ev) => {
+                              inputValue = ev.target.value;
+                            }}
+                          />
+                        </div>
+                      ),
+                      okText: t("delete") || "Delete",
+                      okButtonProps: { danger: true },
+                      cancelText: t("cancel") || "Cancel",
+                      onOk: () => {
+                        if (inputValue.toLowerCase() !== "delete") {
+                          notification.error({
+                            message: t("validationError") || "Validation Error",
+                            description: t("mustTypeDelete") || "You must type 'delete' to confirm.",
+                          });
+                          return Promise.reject();
+                        }
+                        onDeleteTask(task.id);
+                        onClose();
+                        return Promise.resolve();
+                      },
+                    });
                   }}
                 >
                   {t("delete") || "Delete"}

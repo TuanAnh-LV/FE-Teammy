@@ -9,7 +9,7 @@ import { MoreVertical, Plus, ChevronLeft, ChevronRight, X } from "lucide-react";
 import TaskCard from "./TaskCard";
 import { useTranslation } from "../../../hook/useTranslation";
 import { initials } from "../../../utils/kanbanHelpers";
-import { Modal, Input } from "antd";
+import { Modal, Input, notification } from "antd";
 
 const getAssigneeId = (assignee) => {
   if (!assignee) return "";
@@ -244,7 +244,13 @@ const Column = ({
                       okButtonProps: { danger: true },
                       cancelText: t?.("cancel") || "Cancel",
                       onOk: () => {
-                        if (inputValue !== "delete") return Promise.reject();
+                        if (inputValue.toLowerCase() !== "delete") {
+                          notification.error({
+                            message: t?.("validationError") || "Validation Error",
+                            description: t?.("mustTypeDelete") || "You must type 'delete' to confirm.",
+                          });
+                          return Promise.reject();
+                        }
                         if (onDelete) onDelete();
                         setMenuOpen(false);
                         return Promise.resolve();

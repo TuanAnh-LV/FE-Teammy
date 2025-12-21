@@ -5,6 +5,7 @@ import {
   FolderKanban,
   FileText,
   FolderOpen,
+  MessageSquare,
   Menu,
   X,
 } from "lucide-react";
@@ -16,8 +17,10 @@ export default function SidebarNavigation({ activeTab, onChange, tabs, t }) {
     overview: LayoutDashboard,
     members: Users,
     workspace: FolderKanban,
+    feedback: MessageSquare,
     posts: FileText,
     files: FolderOpen,
+    invitations: Users,
   };
 
   const handleTabChange = (tabKey) => {

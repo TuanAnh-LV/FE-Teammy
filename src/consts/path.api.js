@@ -78,6 +78,9 @@ export const API = {
       `/groups/${groupId}/pending/${requestId}/reject`,
         LEAVE_GROUP: (id) => `/groups/${id}/members/me`,
         JOIN_POST_TO_GROUP: (id) => `recruitment-posts/${id}/applications`,
+        FEEDBACK_LIST: (groupId) => `/groups/${groupId}/feedback`,
+        FEEDBACK_CREATE: (groupId) => `/groups/${groupId}/feedback`,
+        FEEDBACK_UPDATE_STATUS: (groupId, feedbackId) => `/groups/${groupId}/feedback/${feedbackId}/status`,
     },
     TOPICS: {
         LIST: "/topics",
