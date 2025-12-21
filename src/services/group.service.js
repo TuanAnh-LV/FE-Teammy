@@ -169,5 +169,29 @@ export const GroupService = {
       isLoading: true,
     });
   },
+
+  // Feedback APIs
+  getFeedbackList(groupId) {
+    return BaseService.get({
+      url: API.GROUP.FEEDBACK_LIST(groupId),
+      isLoading: true,
+    });
+  },
+
+  createFeedback(groupId, payload) {
+    return BaseService.post({
+      url: API.GROUP.FEEDBACK_CREATE(groupId),
+      payload,
+      isLoading: true,
+    });
+  },
+
+  updateFeedbackStatus(groupId, feedbackId, payload) {
+    return BaseService.post({
+      url: API.GROUP.FEEDBACK_UPDATE_STATUS(groupId, feedbackId),
+      payload,
+      isLoading: true,
+    });
+  },
 };
 

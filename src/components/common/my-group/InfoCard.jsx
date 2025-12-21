@@ -103,16 +103,19 @@ export default function InfoCard({
             <button
               type="button"
               onClick={onSelectTopic}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 transition-colors"
+              disabled={hasTopicAssigned}
+              className={`inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                hasTopicAssigned
+                  ? "text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed"
+                  : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
+              }`}
             >
-              <BookOpen className="w-4 h-4 text-gray-600" />
+              <BookOpen className={`w-4 h-4 ${hasTopicAssigned ? "text-gray-400" : "text-gray-600"}`} />
               <span className="hidden sm:inline">
-                {hasTopicAssigned
-                  ? t("changeTopic") || "Change Topic"
-                  : t("selectTopic") || "Select Topic"}
+                {t("selectTopic") || "Select Topic"}
               </span>
               <span className="sm:hidden">
-                {hasTopicAssigned ? t("change") || "Change" : t("topic") || "Topic"}
+                {t("topic") || "Topic"}
               </span>
             </button>
           )}
