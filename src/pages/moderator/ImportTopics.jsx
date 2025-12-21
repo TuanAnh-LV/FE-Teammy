@@ -16,19 +16,10 @@ import { useNavigate } from "react-router-dom";
 const ImportTopics = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-
-  // Flow mới: 0 Upload -> 1 Review -> 2 Result
   const [currentStep, setCurrentStep] = useState(0);
-
-  // giữ rawData nếu bạn muốn debug số dòng parse được
   const [rawData, setRawData] = useState([]);
-
-  // ✅ payload đã map (dữ liệu gửi validate) để Preview hiển thị
   const [uploadedTopics, setUploadedTopics] = useState([]);
-
-  // ✅ previewData (có status/issues) để Result đếm số topic
   const [mappedTopics, setMappedTopics] = useState([]);
-
   const [validationResult, setValidationResult] = useState(null);
   const [originalFile, setOriginalFile] = useState(null);
 

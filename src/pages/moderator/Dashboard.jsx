@@ -191,7 +191,6 @@ const ModeratorDashboard = () => {
         </div>
       </div>
 
-      {/* ✅ Top Statistics with colorful icons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((item, index) => (
           <Card

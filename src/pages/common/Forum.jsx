@@ -502,16 +502,13 @@ const Forum = () => {
     const q = debouncedQuery.trim().toLowerCase();
 
     return (postsData || []).filter((item) => {
-      // Hide posts that are explicitly closed or expired
       const statusStr = (item?.status || "").toString().toLowerCase();
       if (statusStr === "closed" || statusStr === "expired") return false;
 
-      // Hide posts that are already shown in AI suggestions
       if (activeTab === "groups" && aiGroupPostIds.has(item.id)) return false;
       if (activeTab === "individuals" && aiProfilePostIds.has(item.id))
         return false;
 
-      // ✅ Nếu đã search bằng server => bỏ qua filter text ở FE
       if (useServerSearch) return true;
 
       const texts = [
@@ -553,7 +550,6 @@ const Forum = () => {
   const end = start + pageSize;
   const paged = filtered.slice(start, end);
 
-  // Count open posts for stats from all posts
   const openGroupPosts = useMemo(() => {
     return (allPostsData || []).filter(
       (item) =>
@@ -770,7 +766,6 @@ const Forum = () => {
               t("pleaseTryAgain") ||
               "Please try again",
           });
-          // QUAN TRỌNG: throw để Modal biết là onOk fail và không auto close (antd sẽ giữ loading)
           throw err;
         }
       },
@@ -811,25 +806,21 @@ const Forum = () => {
   return (
     <div className="min-h-screen bg-[#f6f8fb] pb-16 pt-10">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 pt-10 lg:px-8">
-        {/* Header */}
         <div className="border-b border-gray-200 pb-6 md:pb-8 mb-4 md:mb-6">
           <div className="space-y-3">
             <h1 className="mt-2 text-2xl md:text-3xl font-black tracking-tight text-gray-900">
               {t("recruitmentForum") || "Recruitment Forum"}
             </h1>
             <p className="mt-3 max-w-3xl text-sm md:text-base text-gray-400 text-muted-foreground">
-              Post recruitment opportunities or showcase your profile to find
-              the perfect team match. Connect with students and groups across
-              all departments.
+              {t("recruitmentForumDescription") ||
+                "Post recruitment opportunities or showcase your profile to find the perfect team match. Connect with students and groups across all departments."}
             </p>
 
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center gap-3 w-full md:w-auto">
                 {userRole === "leader" &&
                   (() => {
-                    // Only check if group details are loaded
                     if (!myGroupDetails) {
-                      // If group details not loaded yet, show button
                       return (
                         <button
                           onClick={() => setIsCreatePostModalOpen(true)}
@@ -849,7 +840,6 @@ const Forum = () => {
                       );
                     }
 
-                    // Check if group is full
                     const currentMembers =
                       myGroupDetails.currentMembers ||
                       myGroupDetails.members?.length ||
@@ -859,7 +849,6 @@ const Forum = () => {
                     const isGroupFull =
                       maxMembers > 0 && currentMembers >= maxMembers;
 
-                    // Show button only if group is not full
                     return !isGroupFull ? (
                       <button
                         onClick={() => setIsCreatePostModalOpen(true)}
@@ -961,7 +950,6 @@ const Forum = () => {
 
         {/* LISTS */}
         <div className="space-y-4">
-          {/* Main loading state */}
           {isLoadingPosts ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="relative">
@@ -980,7 +968,12 @@ const Forum = () => {
           ) : (
             <>
               {activeTab === "groups" && isLoadingAIGroups && (
-                <div className="mb-4 rounded-3xl bg-gradient-to-r from-fuchsia-400 via-indigo-400 to-cyan-400 p-[2px] shadow-[0_20px_60px_-20px_rgba(99,102,241,0.45)]">
+                <div className="relative mb-4 rounded-3xl p-[2px] overflow-hidden shadow-[0_20px_60px_-20px_rgba(99,102,241,0.45)]">
+                  <div
+                    className="absolute inset-0 bg-[conic-gradient(from_180deg,#005BAA,#F37021,#00A94F,#005BAA)] animate-spin"
+                    style={{ animationDuration: "2.8s" }}
+                  />
+
                   <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-50 via-indigo-50 to-cyan-50 p-8">
                     <div className="pointer-events-none absolute -top-24 -left-24 h-64 w-64 rounded-full bg-gradient-to-br from-fuchsia-400/35 via-purple-400/20 to-indigo-400/20 blur-3xl animate-pulse" />
                     <div
@@ -991,30 +984,35 @@ const Forum = () => {
 
                     <div className="relative flex flex-col items-center justify-center text-center">
                       <div className="relative mb-4 grid h-14 w-14 place-items-center">
-                        <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,rgba(236,72,153,0.95),rgba(99,102,241,0.95),rgba(6,182,212,0.95),rgba(236,72,153,0.95))] animate-spin" />
+                        <div
+                          className="absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,#005BAA,#F37021,#00A94F,#005BAA)] animate-spin"
+                          style={{ animationDuration: "1.2s" }}
+                        />
                         <div className="absolute inset-[4px] rounded-full bg-white/70 backdrop-blur" />
-                        <Users className="relative h-6 w-6 text-fuchsia-600 animate-pulse drop-shadow" />
+                        <Users className="relative h-6 w-6 text-[#005BAA] animate-pulse drop-shadow" />
                       </div>
 
-                      <p className="font-bold text-base bg-gradient-to-r from-fuchsia-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
+                      <p className="font-bold text-base bg-gradient-to-r from-[#005BAA] via-[#F37021] to-[#00A94F] bg-clip-text text-transparent">
                         {t("aiAnalyzingGroups") ||
                           "AI is finding groups for you..."}
                       </p>
+
                       <p className="mt-1 text-sm text-indigo-700/80">
                         {t("findingBestGroupMatch") ||
                           "Finding the best group matches"}
                       </p>
+
                       <div className="mt-3 flex items-center gap-1">
                         <span
-                          className="h-2 w-2 rounded-full bg-fuchsia-500 animate-bounce"
+                          className="h-2 w-2 rounded-full bg-[#005BAA] animate-bounce"
                           style={{ animationDelay: "0ms" }}
                         />
                         <span
-                          className="h-2 w-2 rounded-full bg-indigo-500 animate-bounce"
+                          className="h-2 w-2 rounded-full bg-[#F37021] animate-bounce"
                           style={{ animationDelay: "120ms" }}
                         />
                         <span
-                          className="h-2 w-2 rounded-full bg-cyan-500 animate-bounce"
+                          className="h-2 w-2 rounded-full bg-[#00A94F] animate-bounce"
                           style={{ animationDelay: "240ms" }}
                         />
                       </div>
@@ -1024,7 +1022,12 @@ const Forum = () => {
               )}
 
               {activeTab === "individuals" && isLoadingAIProfiles && (
-                <div className="mb-4 rounded-3xl bg-gradient-to-r from-fuchsia-400 via-indigo-400 to-cyan-400 p-[2px] shadow-[0_20px_60px_-20px_rgba(99,102,241,0.45)]">
+                <div className="relative mb-4 rounded-3xl p-[2px] overflow-hidden shadow-[0_20px_60px_-20px_rgba(99,102,241,0.45)]">
+                  <div
+                    className="absolute inset-0 bg-[conic-gradient(from_180deg,#005BAA,#F37021,#00A94F,#005BAA)] animate-spin"
+                    style={{ animationDuration: "2.8s" }}
+                  />
+
                   <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-50 via-indigo-50 to-cyan-50 p-8">
                     <div className="pointer-events-none absolute -top-24 -left-24 h-64 w-64 rounded-full bg-gradient-to-br from-fuchsia-400/35 via-purple-400/20 to-indigo-400/20 blur-3xl animate-pulse" />
                     <div
@@ -1035,30 +1038,35 @@ const Forum = () => {
 
                     <div className="relative flex flex-col items-center justify-center text-center">
                       <div className="relative mb-4 grid h-14 w-14 place-items-center">
-                        <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,rgba(236,72,153,0.95),rgba(99,102,241,0.95),rgba(6,182,212,0.95),rgba(236,72,153,0.95))] animate-spin" />
+                        <div
+                          className="absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,#005BAA,#F37021,#00A94F,#005BAA)] animate-spin"
+                          style={{ animationDuration: "1.2s" }}
+                        />
                         <div className="absolute inset-[4px] rounded-full bg-white/70 backdrop-blur" />
-                        <Users className="relative h-6 w-6 text-fuchsia-600 animate-pulse drop-shadow" />
+                        <Users className="relative h-6 w-6 text-[#005BAA] animate-pulse drop-shadow" />
                       </div>
 
-                      <p className="font-bold text-base bg-gradient-to-r from-fuchsia-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
+                      <p className="font-bold text-base bg-gradient-to-r from-[#005BAA] via-[#F37021] to-[#00A94F] bg-clip-text text-transparent">
                         {t("aiAnalyzingProfiles") ||
                           "AI is finding profiles for you..."}
                       </p>
+
                       <p className="mt-1 text-sm text-indigo-700/80">
                         {t("findingBestProfileMatch") ||
                           "Finding the best profile matches"}
                       </p>
+
                       <div className="mt-3 flex items-center gap-1">
                         <span
-                          className="h-2 w-2 rounded-full bg-fuchsia-500 animate-bounce"
+                          className="h-2 w-2 rounded-full bg-[#005BAA] animate-bounce"
                           style={{ animationDelay: "0ms" }}
                         />
                         <span
-                          className="h-2 w-2 rounded-full bg-indigo-500 animate-bounce"
+                          className="h-2 w-2 rounded-full bg-[#F37021] animate-bounce"
                           style={{ animationDelay: "120ms" }}
                         />
                         <span
-                          className="h-2 w-2 rounded-full bg-cyan-500 animate-bounce"
+                          className="h-2 w-2 rounded-full bg-[#00A94F] animate-bounce"
                           style={{ animationDelay: "240ms" }}
                         />
                       </div>
