@@ -854,7 +854,6 @@
     nextDigest: "Next digest:",
     taskEvents: "Task Events",
     weeklyDigest: "Weekly Digest",
-    groupsBeingMentored: "Recruiting groups",
     groupInvitations: "Invitations",
     mentorInvitationsTab: "Mentor invitations",
     mentorInvitationsEmpty:
@@ -1223,8 +1222,16 @@
   aiGenerateSuccess: "AI generated content successfully.",
   aiGenerateFailed: "AI failed to generate content. Please try again.",
   aiRecommendationReason: "AI Recommendation Reason",
+  recruitmentForumDescription:
+    "Find and join student groups for your capstone projects. Browse posts by role, skills, and interests to connect with like-minded teammates.",
+    studentWithoutGroups: "Students Without Groups",
+    score: "Score",
   },
   VIE: {
+    score: "Điểm",
+    studentWithoutGroups: "Sinh Viên Chưa Có Nhóm",
+    recruitmentForumDescription:
+      "Tìm kiếm và tham gia các nhóm sinh viên cho các dự án tốt nghiệp của bạn. Duyệt các bài đăng theo vai trò, kỹ năng và sở thích để kết nối với những người cùng chí hướng.",
     aiRecommendationReason: "Lý Do Đề Xuất Của AI",
     aiGenerateFailed: "AI tạo nội dung thất bại. Vui lòng thử lại.",
     aiGenerateSuccess: "AI đã tạo nội dung thành công.",

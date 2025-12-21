@@ -25,7 +25,7 @@ const { TextArea } = Input;
 
 const MOCK = {
   withoutTopic: [{ id: 1, name: "Gamma Force", major: "Computer Science" }],
-  withoutMentor: [{ id: 2, name: "Beta Squad", major: "Engineering" }],
+  withoutGroups: [{ id: 2, name: "Beta Squad", major: "Engineering" }],
   missingMembers: [{ id: 3, name: "Delta Group", major: "IT" }],
 };
 
@@ -40,7 +40,7 @@ export default function ModeratorNotifications() {
 
   const counts = {
     withoutTopic: MOCK.withoutTopic.length,
-    withoutMentor: MOCK.withoutMentor.length,
+    withoutGroups: MOCK.withoutGroups.length,
     missingMembers: MOCK.missingMembers.length,
   };
 
@@ -66,14 +66,7 @@ export default function ModeratorNotifications() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1
-          className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold"
-          style={{
-            backgroundImage: "linear-gradient(90deg,#3182ED 0%,#43D08A 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
+        <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
           Notifications
         </h1>
         <p className="text-gray-600">
@@ -107,7 +100,7 @@ export default function ModeratorNotifications() {
             <Space>
               <TeamOutlined className="text-rose-500" />
               <span className="font-medium">
-                {t("groupsWithoutMentors") || "Groups Without Mentors"}
+                {t("studentWithoutGroups") || "Students Without Groups"}
               </span>
             </Space>
             <Tag color="red-inverse">{counts.withoutMentor}</Tag>
@@ -157,8 +150,8 @@ export default function ModeratorNotifications() {
                 <Option value="withoutTopic">
                   {t("groupsWithoutTopics") || "Groups Without Topics"}
                 </Option>
-                <Option value="withoutMentor">
-                  {t("groupsWithoutMentors") || "Groups Without Mentors"}
+                <Option value="withoutGroups">
+                  {t("studentWithoutGroups") || "Students Without Groups"}
                 </Option>
                 <Option value="missingMembers">
                   {t("groupsMissingMembers") || "Groups Missing Members"}

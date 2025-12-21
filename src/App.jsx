@@ -6,7 +6,7 @@ import RealtimeInvitationListener from "./components/realtime/RealtimeInvitation
 
 export default function App() {
   const element = useRoutes(routes);
-  
+
   return (
     <Suspense
       fallback={
