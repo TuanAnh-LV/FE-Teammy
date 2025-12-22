@@ -42,6 +42,7 @@ export default function UserDetailModal({ open, onClose, user, loading }) {
         <div className="flex items-center gap-4">
           <Avatar
             size={64}
+            src={user?.avatarUrl || undefined}
             icon={<UserOutlined />}
             style={{
               background: "linear-gradient(135deg, #3182ED 0%, #43D08A 100%)",
@@ -49,9 +50,7 @@ export default function UserDetailModal({ open, onClose, user, loading }) {
               fontSize: 26,
               fontWeight: 600,
             }}
-          >
-            {user.name?.[0]}
-          </Avatar>
+          />
           <div>
             <h2 className="text-xl font-bold text-gray-800">{user.name}</h2>
             <div className="flex items-center gap-2 mt-1">
@@ -81,19 +80,6 @@ export default function UserDetailModal({ open, onClose, user, loading }) {
               t("studentCode") || "Student Code",
               user.studentCode
             )}
-
-          <Divider className="my-4" />
-
-          <div>
-            <div className="text-gray-600 text-sm font-medium mb-1">
-              {t("notesDescription") || "Notes / Description"}
-            </div>
-            <div className="text-gray-700 leading-relaxed bg-gray-50 border rounded-lg p-3">
-              {user.note ||
-                t("noAdditionalInfo") ||
-                "No additional information provided."}
-            </div>
-          </div>
         </div>
       </Spin>
     </Modal>

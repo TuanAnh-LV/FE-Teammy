@@ -66,9 +66,8 @@ const AdminDashboard = () => {
         .sort((a, b) => b.studentCount - a.studentCount);
 
       setMajorsData(chartData);
-    } catch (error) {
+    } catch {
       // eslint-disable-next-line no-console
-      console.error("Failed to fetch majors stats:", error);
     }
   };
 

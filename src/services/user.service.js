@@ -63,5 +63,12 @@ export const UserService = {
       isLoading,
     });
   },
+  getPositions(majorId, isLoading = true) {
+  return BaseService.get({
+    url: API.USERS.GET_POSITIONS,
+    params: { majorId }, 
+    isLoading,
+  });
+},
 
 };
