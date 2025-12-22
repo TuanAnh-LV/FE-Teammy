@@ -15,20 +15,19 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
       const values = await form.validateFields();
       setSubmitting(true);
 
-      // build payload đúng với API POST /api/users/admin
       const payload = {
         email: values.email,
         displayName: values.name,
         role: values.role,
         studentCode: values.studentCode || null,
-        gender: values.gender || null, // hiện chưa có field gender, có thể bỏ
+        gender: values.gender || null,
         majorId: values.majorId || null,
+        gpa: values.gpa || null,
       };
 
       const res = await AdminService.createUser(payload);
       const created = res?.data ?? res;
 
-      // map data trả về để hiển thị trong bảng
       const majorName =
         created.majorName ||
         majorList?.find((m) => m.majorId === payload.majorId)?.majorName ||
@@ -46,6 +45,7 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
         phone: created.phone || values.phone || "",
         major: majorName,
         studentCode: created.studentCode || payload.studentCode || null,
+        gpa: created.gpa || payload.gpa || null,
         avatarUrl: created.avatarUrl || null,
         displayName: created.displayName || payload.displayName,
         majorId: created.majorId || payload.majorId || null,
@@ -65,16 +65,13 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
       onClose();
     } catch (err) {
       if (err?.errorFields) {
-        // lỗi validate form – bỏ qua
         return;
       }
 
-      // Xử lý lỗi từ backend
       const errorMessage =
         err?.response?.data?.message || err?.response?.data || "";
       const normalizedError = String(errorMessage).toLowerCase();
 
-      // Kiểm tra lỗi trùng email
       if (normalizedError.includes("email already exists")) {
         form.setFields([
           {
@@ -85,7 +82,6 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
         return;
       }
 
-      // Kiểm tra lỗi trùng student code
       if (normalizedError.includes("studentcode already exists")) {
         form.setFields([
           {
@@ -98,7 +94,6 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
         return;
       }
 
-      // Lỗi chung
       notification.error({
         message: t("addUserFailed") || "Failed to create user",
         description: errorMessage || t("pleaseTryAgain") || "Please try again",
@@ -244,6 +239,33 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
               </Select>
             </Form.Item>
           </Col>
+          <Col span={12}>
+            <Form.Item
+              label={t("gpa") || "GPA"}
+              name="gpa"
+              rules={[
+                {
+                  required: true,
+                  message: t("pleaseEnterGPA") || "Please enter GPA",
+                },
+                {
+                  pattern: /^[0-9](\.[0-9]{1,2})?$/,
+                  message: t("gpaInvalid") || "GPA must be between 0 and 10",
+                },
+              ]}
+            >
+              <Input
+                placeholder={t("enterGPAPlaceholder") || "Enter GPA (0 - 10)"}
+                type="number"
+                step="0"
+                min="0"
+                max="10"
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               label={t("status") || "Status"}

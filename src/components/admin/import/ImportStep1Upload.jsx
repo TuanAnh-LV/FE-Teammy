@@ -22,6 +22,7 @@ export default function ImportStep1Upload({
       majorName: row.MajorName || "",
       gender: row.Gender || "",
       studentCode: row.StudentCode || "",
+      gpa: row.GPA || "",
     }));
 
   const handleFile = async (file) => {
@@ -101,6 +102,7 @@ export default function ImportStep1Upload({
           MajorName: "Artificial Intelligence",
           Gender: "female",
           StudentCode: "SE150001",
+          GPA: "3.2",
         },
       ];
       const ws = XLSX.utils.json_to_sheet(template);

@@ -8,10 +8,12 @@ import {
   notification,
   DatePicker,
   Tag,
+  Select,
 } from "antd";
 import { Plus } from "lucide-react";
 import { PostService } from "../../../services/post.service";
 import { SkillService } from "../../../services/skill.service";
+import { UserService } from "../../../services/user.service";
 import dayjs from "dayjs";
 
 const { TextArea } = Input;
@@ -26,14 +28,14 @@ const EditRecruitmentPostModal = ({
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [availableSkills, setAvailableSkills] = useState([]);
+  const [availablePositions, setAvailablePositions] = useState([]);
+  const [majorId, setMajorId] = useState("");
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [skillFilter, setSkillFilter] = useState("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !post) return;
-
-    console.log("EditRecruitmentPostModal - post data:", post);
 
     let existingSkills = [];
     const skillsData =
@@ -52,8 +54,6 @@ const EditRecruitmentPostModal = ({
         .filter(Boolean);
     }
 
-    console.log("Parsed skills:", existingSkills);
-
     setSelectedSkills(existingSkills);
 
     const deadlineRaw =
@@ -65,14 +65,35 @@ const EditRecruitmentPostModal = ({
 
     const deadline = deadlineRaw ? dayjs(deadlineRaw) : null;
 
+    const positionData = post.position_needed || post.positionNeeded || "";
+    const positionArray =
+      typeof positionData === "string"
+        ? positionData
+            .split(",")
+            .map((p) => p.trim())
+            .filter(Boolean)
+        : Array.isArray(positionData)
+        ? positionData
+        : [];
+
     form.setFieldsValue({
       title: post.title || "",
       description: post.description || "",
-      position_needed: post.position_needed || post.positionNeeded || "",
+      position_needed: positionArray,
       expires_at: deadline && deadline.isValid() ? deadline : null,
       required_skills: existingSkills,
     });
   }, [isOpen, post, form]);
+
+  useEffect(() => {
+    if (!isOpen || !post) return;
+
+    // Extract majorId directly from post object
+    const majorIdValue =
+      post.major?.majorId || post.majorId || post.group?.major?.majorId || "";
+
+    setMajorId(majorIdValue);
+  }, [isOpen, post]);
 
   useEffect(() => {
     if (!isOpen || !majorName) return;
@@ -90,6 +111,29 @@ const EditRecruitmentPostModal = ({
 
     fetchSkills();
   }, [majorName, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !majorId) {
+      return;
+    }
+
+    const fetchPositions = async () => {
+      try {
+        const response = await UserService.getPositions(majorId, false);
+        if (response?.data) {
+          setAvailablePositions(response.data);
+        }
+      } catch (error) {
+        console.error(
+          "EditRecruitmentPostModal - Error fetching positions:",
+          error
+        );
+        setAvailablePositions([]);
+      }
+    };
+
+    fetchPositions();
+  }, [majorId, isOpen]);
 
   const handleAddSkill = (skillToken) => {
     if (!selectedSkills.includes(skillToken)) {
@@ -135,7 +179,9 @@ const EditRecruitmentPostModal = ({
       await PostService.updateRecruitmentPost(post.id, {
         title,
         description,
-        position_needed,
+        position_needed: Array.isArray(position_needed)
+          ? position_needed.join(", ")
+          : position_needed,
         expires_at: expires_at?.toISOString(),
         required_skills,
       });
@@ -175,7 +221,7 @@ const EditRecruitmentPostModal = ({
         initialValues={{
           title: "",
           description: "",
-          position_needed: "",
+          position_needed: [],
           expires_at: null,
           required_skills: [],
         }}
@@ -223,11 +269,19 @@ const EditRecruitmentPostModal = ({
             {
               required: true,
               message:
-                t("pleaseEnterPosition") || "Please enter the position needed",
+                t("pleaseEnterPosition") || "Please select the position needed",
             },
           ]}
         >
-          <Input placeholder={t("placeholderSkills") || "VD: Git, Azure"} />
+          <Select
+            mode="multiple"
+            placeholder={t("selectPosition") || "Select positions"}
+            disabled={!majorId || availablePositions.length === 0}
+            options={availablePositions.map((pos) => ({
+              label: pos.name || pos.positionName || pos,
+              value: pos.name || pos.positionName || pos,
+            }))}
+          />
         </Form.Item>
 
         <Form.Item
