@@ -171,9 +171,10 @@ export const GroupService = {
   },
 
   // Feedback APIs
-  getFeedbackList(groupId) {
+  getFeedbackList(groupId, params = {}) {
     return BaseService.get({
       url: API.GROUP.FEEDBACK_LIST(groupId),
+      params,
       isLoading: true,
     });
   },
@@ -190,6 +191,43 @@ export const GroupService = {
     return BaseService.post({
       url: API.GROUP.FEEDBACK_UPDATE_STATUS(groupId, feedbackId),
       payload,
+      isLoading: true,
+    });
+  },
+
+  updateFeedback(groupId, feedbackId, payload) {
+    return BaseService.put({
+      url: API.GROUP.FEEDBACK_UPDATE(groupId, feedbackId),
+      payload,
+      isLoading: true,
+    });
+  },
+
+  deleteFeedback(groupId, feedbackId) {
+    return BaseService.remove({
+      url: API.GROUP.FEEDBACK_DELETE(groupId, feedbackId),
+      isLoading: true,
+    });
+  },
+
+  // Close group APIs
+  closeGroup(groupId) {
+    return BaseService.post({
+      url: API.GROUP.CLOSE_GROUP(groupId),
+      isLoading: true,
+    });
+  },
+
+  confirmCloseGroup(groupId) {
+    return BaseService.post({
+      url: API.GROUP.CONFIRM_CLOSE(groupId),
+      isLoading: true,
+    });
+  },
+
+  rejectCloseGroup(groupId) {
+    return BaseService.post({
+      url: API.GROUP.REJECT_CLOSE(groupId),
       isLoading: true,
     });
   },

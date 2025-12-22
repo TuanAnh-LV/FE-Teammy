@@ -82,6 +82,11 @@ export const API = {
         FEEDBACK_LIST: (groupId) => `/groups/${groupId}/feedback`,
         FEEDBACK_CREATE: (groupId) => `/groups/${groupId}/feedback`,
         FEEDBACK_UPDATE_STATUS: (groupId, feedbackId) => `/groups/${groupId}/feedback/${feedbackId}/status`,
+        FEEDBACK_UPDATE: (groupId, feedbackId) => `/groups/${groupId}/feedback/${feedbackId}`,
+        FEEDBACK_DELETE: (groupId, feedbackId) => `/groups/${groupId}/feedback/${feedbackId}`,
+        CLOSE_GROUP: (groupId) => `/groups/${groupId}/close`,
+        CONFIRM_CLOSE: (groupId) => `/groups/${groupId}/close/confirm`,
+        REJECT_CLOSE: (groupId) => `/groups/${groupId}/close/reject`,
     },
     TOPICS: {
         LIST: "/topics",

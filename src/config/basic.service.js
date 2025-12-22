@@ -86,7 +86,15 @@ export const BaseService = {
   get({ url, isLoading = true, params = {}, headers = {}, responseType, onDownloadProgress }) {
     const cleanedParams = { ...params };
     for (const k in cleanedParams) {
-      if (cleanedParams[k] === "" && cleanedParams[k] !== 0) delete cleanedParams[k];
+      const value = cleanedParams[k];
+      // Loại bỏ các param không hợp lệ để tránh gửi dạng "undefined" / "null" lên API
+      if (
+        value === undefined ||
+        value === null ||
+        (value === "" && value !== 0)
+      ) {
+        delete cleanedParams[k];
+      }
     }
     checkLoading(isLoading);
     return axiosInstance.get(url, { 

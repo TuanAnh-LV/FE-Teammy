@@ -6,6 +6,7 @@ import { BoardService } from "../../services/board.service";
 import InfoCard from "../../components/common/my-group/InfoCard";
 import AddMemberModal from "../../components/common/my-group/AddMemberModal";
 import EditGroupModal from "../../components/common/my-group/EditGroupModal";
+import CloseGroupModal from "../../components/common/my-group/CloseGroupModal";
 import LoadingState from "../../components/common/LoadingState";
 import {
   Plus,
@@ -18,7 +19,7 @@ import {
   UserPlus,
   Clock,
 } from "lucide-react";
-import { Modal, Form, Input } from "antd";
+import { Modal, Form, Input, message } from "antd";
 import TaskModal from "../../components/common/kanban/TaskModal";
 import useKanbanBoard from "../../hook/useKanbanBoard";
 import { filterColumns } from "../../utils/kanbanUtils";
@@ -68,6 +69,8 @@ export default function MyGroup() {
   const [listFilterStatus, setListFilterStatus] = useState("All");
   const [pendingInvitations, setPendingInvitations] = useState([]);
   const [pendingLoading, setPendingLoading] = useState(false);
+  const [closeGroupModalOpen, setCloseGroupModalOpen] = useState(false);
+  const [closeGroupLoading, setCloseGroupLoading] = useState(false);
 
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const [columnForm] = Form.useForm();
@@ -253,6 +256,49 @@ export default function MyGroup() {
     id,
     setGroup,
   });
+
+  const groupStatus = group?.status || "";
+  const isActiveStatus = () => {
+    const statusLower = groupStatus.toLowerCase();
+    return statusLower.includes("active");
+  };
+  const isGroupClosed = () => {
+    if (!groupStatus) return false;
+    const statusLower = groupStatus.toLowerCase();
+    // Only treat final CLOSED state as read-only; ignore pending close states
+    if (
+      statusLower.includes("pending_close") ||
+      statusLower.includes("pending-close")
+    ) {
+      return false;
+    }
+    return statusLower.includes("closed");
+  };
+  const isReadOnly = isGroupClosed();
+
+  const handleCloseGroupClick = () => {
+    setCloseGroupModalOpen(true);
+  };
+
+  const handleRequestClose = async () => {
+    if (!id) return;
+    try {
+      setCloseGroupLoading(true);
+      await GroupService.closeGroup(id);
+      message.success(t("closeGroupRequested") || "Close group request sent successfully");
+      setCloseGroupModalOpen(false);
+      await fetchGroupDetail();
+    } catch (error) {
+      console.error("Failed to request close group:", error);
+      message.error(
+        error?.response?.data?.message ||
+          t("failedToRequestClose") ||
+          "Failed to request close group"
+      );
+    } finally {
+      setCloseGroupLoading(false);
+    }
+  };
 
   const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return "N/A";
@@ -513,7 +559,7 @@ export default function MyGroup() {
       { key: "overview", label: t("overview") || "Overview" },
       { key: "members", label: t("teamMembers") || "Members" },
     ];
-    if (isLeader) {
+    if (isLeader && !isReadOnly) {
       base.push({
         key: "invitations",
         label: t("groupInvitations") || "Invitations",
@@ -526,7 +572,7 @@ export default function MyGroup() {
       { key: "files", label: t("files") || "Files" }
     );
     return base;
-  }, [isLeader, t]);
+  }, [isLeader, isReadOnly, t]);
 
   if (loading) {
     return (
@@ -572,9 +618,24 @@ export default function MyGroup() {
                   group={group}
                   memberCount={groupMembers.length}
                   onBack={() => navigate(-1)}
-                  onSelectTopic={group.canEdit ? () => navigate("/discover") : null}
-                  onEdit={group.canEdit ? () => setEditOpen(true) : null}
-                  onActivate={canActivateGroup ? handleActivateGroup : null}
+                  onSelectTopic={
+                    group.canEdit && !isReadOnly
+                      ? () => navigate("/discover")
+                      : null
+                  }
+                  onEdit={
+                    group.canEdit && !isReadOnly ? () => setEditOpen(true) : null
+                  }
+                  onActivate={
+                    !isReadOnly && canActivateGroup ? handleActivateGroup : null
+                  }
+                  onCloseGroup={
+                    !isReadOnly && isLeader && isActiveStatus()
+                      ? handleCloseGroupClick
+                      : null
+                  }
+                  isLeader={isLeader}
+                  isMentor={isMentor}
                 />
               )}
 
@@ -592,8 +653,8 @@ export default function MyGroup() {
                   groupMembers={groupMembers}
                   mentor={mentor}
                   group={group}
-                  onInvite={() => setShowModal(true)}
-                  onAssignRole={handleAssignRole}
+                  onInvite={isReadOnly ? null : () => setShowModal(true)}
+                  onAssignRole={isReadOnly ? null : handleAssignRole}
                   onKickMember={handleKickMember}
                   onTransferLeader={handleTransferLeader}
                   currentUserEmail={userInfo?.email}
@@ -612,8 +673,8 @@ export default function MyGroup() {
                     groupMembers={groupMembers}
                     mentor={mentor}
                     group={group}
-                    onInvite={() => setShowModal(true)}
-                    onAssignRole={handleAssignRole}
+                    onInvite={isReadOnly ? null : () => setShowModal(true)}
+                    onAssignRole={isReadOnly ? null : handleAssignRole}
                     onKickMember={handleKickMember}
                     onTransferLeader={handleTransferLeader}
                     currentUserEmail={userInfo?.email}
@@ -780,16 +841,18 @@ export default function MyGroup() {
                     )}
 
                     {/* Invite Members */}
-                    <button
-                      onClick={() => setShowModal(true)}
-                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                      {t("inviteMembers") || "Invite members"}
-                    </button>
+                    {!isReadOnly && (
+                      <button
+                        onClick={() => setShowModal(true)}
+                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        {t("inviteMembers") || "Invite members"}
+                      </button>
+                    )}
 
                     {/* New Column (Kanban only) */}
-                    {activeWorkspaceTab === "kanban" && (
+                    {activeWorkspaceTab === "kanban" && !isReadOnly && (
                       <button
                         className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"
                         onClick={() => setIsColumnModalOpen(true)}
@@ -874,19 +937,24 @@ export default function MyGroup() {
                     filteredColumns={filteredColumns}
                     columnMeta={columnMeta}
                     setSelectedTask={setSelectedTask}
-                    createTask={createTask}
-                    deleteTask={deleteTask}
-                    deleteColumn={deleteColumn}
-                    moveColumnLeft={handleMoveColumnLeft}
-                    moveColumnRight={handleMoveColumnRight}
-                    handleDragOver={handleDragOver}
-                    handleDragEnd={handleDragEnd}
+                    createTask={isReadOnly ? undefined : createTask}
+                    deleteTask={isReadOnly ? undefined : deleteTask}
+                    deleteColumn={isReadOnly ? undefined : deleteColumn}
+                    moveColumnLeft={
+                      isReadOnly ? undefined : handleMoveColumnLeft
+                    }
+                    moveColumnRight={
+                      isReadOnly ? undefined : handleMoveColumnRight
+                    }
+                    handleDragOver={isReadOnly ? () => {} : handleDragOver}
+                    handleDragEnd={isReadOnly ? () => {} : handleDragEnd}
                     isColumnModalOpen={isColumnModalOpen}
                     setIsColumnModalOpen={setIsColumnModalOpen}
                     handleCreateColumn={handleCreateColumn}
                     t={t}
                     normalizeTitle={normalizeTitle}
                     groupMembers={kanbanMembers}
+                    readOnly={isReadOnly}
                   />
                 )}
 
@@ -918,7 +986,9 @@ export default function MyGroup() {
                         tasks={flattenedTasks}
                         columnMeta={columnMeta}
                         onOpenTask={setSelectedTask}
-                        onCreateTask={handleQuickCreateTask}
+                        onCreateTask={
+                          isReadOnly ? undefined : handleQuickCreateTask
+                        }
                         t={t}
                       />
                     </div>
@@ -933,17 +1003,23 @@ export default function MyGroup() {
                     onPromoteSuccess={() =>
                       refetchBoard({ showLoading: false })
                     }
+                    readOnly={isReadOnly}
+                    groupStatus={groupStatus}
                   />
                 )}
 
                 {/* MILESTONES SUB-TAB */}
                 {activeWorkspaceTab === "milestones" && (
-                  <MilestonesTab groupId={id} />
+                  <MilestonesTab
+                    groupId={id}
+                    readOnly={isReadOnly}
+                    groupStatus={groupStatus}
+                  />
                 )}
 
                 {/* REPORTS SUB-TAB */}
                 {activeWorkspaceTab === "reports" && (
-                  <ReportsTab groupId={id} />
+                  <ReportsTab groupId={id} groupStatus={group?.status} />
                 )}
               </div>
             )}
@@ -955,6 +1031,7 @@ export default function MyGroup() {
                 t={t}
                 groupId={id}
                 onUploadSuccess={loadGroupFiles}
+                readOnly={isReadOnly}
               />
             )}
 
@@ -965,6 +1042,7 @@ export default function MyGroup() {
                 isMentor={isMentor}
                 isLeader={isLeader}
                 groupName={group?.name || group?.title || ""}
+                groupDetail={group}
               />
             )}
 
@@ -980,7 +1058,7 @@ export default function MyGroup() {
            MODALS
       ---------------------- */}
       <AddMemberModal
-        open={showModal}
+        open={showModal && !isReadOnly}
         onClose={() => setShowModal(false)}
         onAdd={handleAddMember}
         t={t}
@@ -1000,20 +1078,34 @@ export default function MyGroup() {
         t={t}
       />
 
+      {isLeader && isActiveStatus() && (
+        <CloseGroupModal
+          open={closeGroupModalOpen}
+          onClose={() => setCloseGroupModalOpen(false)}
+          onConfirm={handleRequestClose}
+          role="leader"
+          status={groupStatus}
+          loading={closeGroupLoading}
+        />
+      )}
+
       <TaskModal
         task={selectedTask}
         groupId={id}
         columnMeta={columnMeta}
         members={kanbanMembers}
         groupDetail={group}
-        onUpdateTask={updateTaskFields}
-        onUpdateAssignees={updateTaskAssignees}
-        onDeleteTask={deleteTask}
+        onUpdateTask={isReadOnly ? () => {} : updateTaskFields}
+        onUpdateAssignees={
+          isReadOnly ? () => {} : updateTaskAssignees
+        }
+        onDeleteTask={isReadOnly ? undefined : deleteTask}
         onFetchComments={loadTaskComments}
-        onAddComment={addTaskComment}
-        onUpdateComment={updateTaskComment}
-        onDeleteComment={deleteTaskComment}
+        onAddComment={isReadOnly ? () => {} : addTaskComment}
+        onUpdateComment={isReadOnly ? () => {} : updateTaskComment}
+        onDeleteComment={isReadOnly ? () => {} : deleteTaskComment}
         onClose={() => setSelectedTask(null)}
+        readOnly={isReadOnly}
       />
 
       {/* New Column Modal */}

@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Clock,
   GraduationCap,
+  XCircle,
 } from "lucide-react";
 import { useTranslation } from "../../../hook/useTranslation";
 
@@ -38,6 +39,9 @@ export default function InfoCard({
   onEdit,
   onSelectTopic,
   onActivate,
+  onCloseGroup,
+  isLeader = false,
+  isMentor = false,
 }) {
   const hasTopicAssigned = group?.topicId && group?.topicId.trim() !== "";
   const { t } = useTranslation();
@@ -58,10 +62,35 @@ export default function InfoCard({
     if (statusLower.includes("active") || statusLower.includes("confirmed")) {
       return "bg-emerald-500 text-white";
     }
+    if (statusLower.includes("pending_close") || statusLower.includes("pending-close")) {
+      return "bg-orange-500 text-white";
+    }
     if (statusLower.includes("pending")) {
       return "bg-amber-500 text-white";
     }
+    if (statusLower.includes("closed")) {
+      return "bg-gray-600 text-white";
+    }
     return "bg-gray-500 text-white";
+  };
+
+  const isActiveStatus = () => {
+    const statusLower = (statusLabel || "").toLowerCase();
+    return statusLower.includes("active");
+  };
+
+  const isPendingCloseStatus = () => {
+    const statusLower = (statusLabel || "").toLowerCase();
+    return statusLower.includes("pending_close") || statusLower.includes("pending-close");
+  };
+
+  const shouldShowCloseButton = () => {
+    if (!onCloseGroup) return false;
+    // Leader can request close when status is active
+    if (isLeader && isActiveStatus()) return true;
+    // Mentor can confirm/reject when status is pending_close
+    if (isMentor && isPendingCloseStatus()) return true;
+    return false;
   };
 
   return (
@@ -86,7 +115,7 @@ export default function InfoCard({
           </p>
         </div>
         <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-          {onEdit && (
+          {onEdit && !isActiveStatus() && (
             <button
               type="button"
               onClick={onEdit}
@@ -130,6 +159,27 @@ export default function InfoCard({
                 {t("confirmGroup") || "Confirm group"}
               </span>
               <span className="sm:hidden">{t("confirm") || "Confirm"}</span>
+            </button>
+          )}
+          {shouldShowCloseButton() && (
+            <button
+              type="button"
+              onClick={onCloseGroup}
+              className={`inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                isPendingCloseStatus()
+                  ? "text-white bg-red-600 border border-red-600 hover:bg-red-700 focus:ring-red-300"
+                  : "text-red-700 bg-white border border-red-300 hover:bg-red-50 focus:ring-red-300"
+              }`}
+            >
+              <XCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">
+                {isPendingCloseStatus()
+                  ? t("reviewCloseRequest") || "Review Close Request"
+                  : t("closeGroup") || "Close Group"}
+              </span>
+              <span className="sm:hidden">
+                {isPendingCloseStatus() ? t("review") || "Review" : t("close") || "Close"}
+              </span>
             </button>
           )}
         </div>

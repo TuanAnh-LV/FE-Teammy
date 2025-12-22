@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Tabs, Breadcrumb, Spin } from "antd";
-import { BarChartOutlined, HomeOutlined, FileTextOutlined } from "@ant-design/icons";
+import { Tabs, Breadcrumb, Skeleton, Card } from "antd";
+import { BarChartOutlined, HomeOutlined, FileTextOutlined, TeamOutlined, AppstoreOutlined } from "@ant-design/icons";
 import InfoCard from "../../components/common/my-group/InfoCard";
 import OverviewSection from "../../components/common/my-group/OverviewSection";
 import MembersPanel from "../../components/common/my-group/MembersPanel";
 import FeedbackTab from "../../components/common/my-group/FeedbackTab";
+import CloseGroupModal from "../../components/common/my-group/CloseGroupModal";
 import { GroupService } from "../../services/group.service";
+import { message } from "antd";
 import useKanbanBoard from "../../hook/useKanbanBoard";
 import KanbanTab from "../../components/common/workspace/KanbanTab";
 import BacklogTab from "../../components/common/workspace/BacklogTab";
@@ -14,6 +16,7 @@ import MilestonesTab from "../../components/common/workspace/MilestonesTab";
 import ReportsTab from "../../components/common/workspace/ReportsTab";
 import TaskModal from "../../components/common/kanban/TaskModal";
 import { useAuth } from "../../context/AuthContext";
+import { subscribeGroupStatus } from "../../services/groupStatusHub";
 import { useTranslation } from "../../hook/useTranslation";
 
 export default function GroupDetail() {
@@ -23,10 +26,17 @@ export default function GroupDetail() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("overview");
   const [groupDetail, setGroupDetail] = useState(null);
+  const [groupMembersList, setGroupMembersList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState("kanban");
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
+  const [closeGroupModalOpen, setCloseGroupModalOpen] = useState(false);
+  const [closeGroupLoading, setCloseGroupLoading] = useState(false);
   const readOnlyWorkspace = true;
+
+  // Get group status - only check if groupDetail is loaded
+  const groupStatus = groupDetail?.status || "";
+  const isGroupClosed = groupDetail?.status ? (groupDetail.status.toLowerCase().includes("closed")) : false;
 
   const {
     filteredColumns,
@@ -49,40 +59,337 @@ export default function GroupDetail() {
     addTaskComment,
     updateTaskComment,
     deleteTaskComment,
-  } = useKanbanBoard(id);
+  } = useKanbanBoard(id, {
+    skipApiCalls: isGroupClosed,
+    groupStatus: groupStatus,
+  });
 
-  useEffect(() => {
-    if (id) {
-      fetchGroupDetail();
-    }
-  }, [id]);
-
-  const fetchGroupDetail = async () => {
+  const fetchGroupDetail = useCallback(async () => {
+    if (!id) return;
     try {
       setLoading(true);
       const response = await GroupService.getGroupDetail(id);
-      setGroupDetail(response?.data || null);
+      const data = response?.data || null;
+      setGroupDetail(data);
     } catch (error) {
-
+      console.error("Failed to fetch group detail:", error);
       setGroupDetail(null);
     } finally {
       setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchGroupDetail();
+  }, [fetchGroupDetail]);
+
+  // Realtime: listen GroupStatusChanged và refetch nếu payload groupId trùng
+  useEffect(() => {
+    const handler = (payload) => {
+      if (!payload || !payload.groupId) return;
+      if (String(payload.groupId) === String(id)) {
+        fetchGroupDetail();
+      }
+    };
+
+    const unsubscribe = subscribeGroupStatus(handler);
+    return () => {
+      unsubscribe();
+    };
+  }, [id, fetchGroupDetail]);
+
+  // Fetch group members (independent of workspace / board status)
+  const fetchGroupMembers = useCallback(async () => {
+    if (!id) return;
+    try {
+      const res = await GroupService.getListMembers(id);
+      const membersRaw = Array.isArray(res?.data) ? res.data : [];
+
+      const normalizedMembers = membersRaw.map((m) => {
+        const email = m.email || "";
+        const avatarFromApi =
+          m.avatarUrl ||
+          m.avatarURL ||
+          m.avatar_url ||
+          m.avatar ||
+          m.imageUrl ||
+          m.imageURL ||
+          m.image_url ||
+          m.photoURL ||
+          m.photoUrl ||
+          m.photo_url ||
+          m.profileImage ||
+          m.user?.avatarUrl ||
+          m.user?.avatar ||
+          m.user?.photoURL ||
+          m.user?.photoUrl ||
+          m.user?.imageUrl ||
+          m.user?.profileImage ||
+          "";
+
+        const memberId =
+          m.id || m.memberId || m.userId || m.userID || m.accountId || "";
+
+        return {
+          id: memberId,
+          name: m.displayName || m.name || "",
+          email,
+          role: m.role || m.status || "",
+          joinedAt: m.joinedAt,
+          avatarUrl: avatarFromApi,
+          assignedRoles: m.assignedRoles || [],
+        };
+      });
+
+      setGroupMembersList(normalizedMembers);
+    } catch (error) {
+      console.error("Failed to fetch group members:", error);
+      setGroupMembersList([]);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchGroupMembers();
+  }, [fetchGroupMembers]);
+
+  // Check mentor assignment after groupDetail is loaded
+  useEffect(() => {
+    if (groupDetail && userInfo?.email) {
+      const mentor = groupDetail?.mentor || (Array.isArray(groupDetail?.mentors) ? groupDetail.mentors[0] : null);
+      if (mentor) {
+        const mentorEmail = (mentor.email || mentor.userEmail || "").toLowerCase();
+        const currentUserEmail = userInfo.email.toLowerCase();
+        
+        if (mentorEmail !== currentUserEmail) {
+          // Not the assigned mentor, redirect to my-groups
+          navigate("/mentor/my-groups");
+        }
+      }
+    }
+  }, [groupDetail, userInfo, navigate]);
+
+  const descriptionText = (groupDetail?.description || "").trim();
+  const mentor =
+    groupDetail?.mentor ||
+    (Array.isArray(groupDetail?.mentors) ? groupDetail.mentors[0] : null);
+
+  const isMentor = React.useMemo(() => {
+    if (!userInfo?.email || !mentor) return false;
+    const currentEmail = userInfo.email.toLowerCase();
+    const mentorEmail = (mentor.email || mentor.userEmail || "").toLowerCase();
+    return mentorEmail === currentEmail;
+  }, [mentor, userInfo]);
+
+  const isPendingClose = () => {
+    if (!groupStatus) return false;
+    const statusLower = groupStatus.toLowerCase();
+    return statusLower.includes("pending_close") || statusLower.includes("pending-close");
+  };
+
+  const handleCloseGroupClick = () => {
+    setCloseGroupModalOpen(true);
+  };
+
+  const handleConfirmClose = async () => {
+    if (!id) return;
+    try {
+      setCloseGroupLoading(true);
+      await GroupService.confirmCloseGroup(id);
+      message.success(t("closeGroupConfirmed") || "Group close request confirmed successfully");
+      setCloseGroupModalOpen(false);
+      await fetchGroupDetail();
+    } catch (error) {
+      console.error("Failed to confirm close group:", error);
+      message.error(
+        error?.response?.data?.message ||
+          t("failedToConfirmClose") ||
+          "Failed to confirm close group"
+      );
+    } finally {
+      setCloseGroupLoading(false);
+    }
+  };
+
+  const handleRejectClose = async () => {
+    if (!id) return;
+    try {
+      setCloseGroupLoading(true);
+      await GroupService.rejectCloseGroup(id);
+      message.success(t("closeGroupRejected") || "Group close request rejected successfully");
+      setCloseGroupModalOpen(false);
+      await fetchGroupDetail();
+    } catch (error) {
+      console.error("Failed to reject close group:", error);
+      message.error(
+        error?.response?.data?.message ||
+          t("failedToRejectClose") ||
+          "Failed to reject close group"
+      );
+    } finally {
+      setCloseGroupLoading(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Spin size="large" tip="Loading group details..." />
+      <div className="min-h-screen space-y-6 animate-fadeIn">
+        {/* Breadcrumb Skeleton */}
+        <Breadcrumb
+          items={[
+            {
+              title: <Skeleton.Input active size="small" style={{ width: 100, height: 16 }} />,
+            },
+            {
+              title: <Skeleton.Input active size="small" style={{ width: 150, height: 16 }} />,
+            },
+          ]}
+        />
+
+        {/* Tabs Skeleton */}
+        <Card className="!bg-white !rounded-2xl !shadow-sm !p-6 !mt-4">
+          {/* Tab Headers Skeleton */}
+          <div className="flex gap-4 mb-6 border-b border-gray-200">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton.Input key={i} active size="small" style={{ width: 100, height: 40 }} />
+            ))}
+          </div>
+
+          {/* Content Skeleton */}
+          <div className="space-y-6">
+            {/* InfoCard Skeleton */}
+            <Card className="!rounded-2xl !shadow-sm !border !border-gray-200">
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <Skeleton.Input active size="large" style={{ width: "40%", height: 32, marginBottom: 12 }} />
+                    <Skeleton.Input active size="small" style={{ width: "60%", height: 20, marginBottom: 16 }} />
+                  </div>
+                  <Skeleton.Button active size="small" style={{ width: 100, height: 36 }} />
+                </div>
+                <div className="flex flex-wrap items-center gap-4">
+                  <Skeleton.Input active size="small" style={{ width: 120, height: 16 }} />
+                  <Skeleton.Input active size="small" style={{ width: 150, height: 16 }} />
+                  <Skeleton.Input active size="small" style={{ width: 100, height: 16 }} />
+                  <Skeleton.Input active size="small" style={{ width: 130, height: 16 }} />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Skeleton.Input active size="small" style={{ width: 80, height: 14 }} />
+                    <Skeleton.Input active size="small" style={{ width: 40, height: 14 }} />
+                  </div>
+                  <Skeleton.Input active style={{ width: "100%", height: 8, borderRadius: 4 }} />
+                </div>
+              </div>
+            </Card>
+
+            {/* Grid Layout Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column - OverviewSection Skeleton */}
+              <div className="lg:col-span-2 space-y-4">
+                {/* Description Card */}
+                <Card className="!rounded-2xl !shadow-sm !border !border-gray-200">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Skeleton.Avatar active size={20} shape="square" />
+                      <Skeleton.Input active size="small" style={{ width: 120, height: 20 }} />
+                    </div>
+                    <Skeleton paragraph={{ rows: 3, width: ["100%", "90%", "80%"] }} />
+                  </div>
+                </Card>
+
+                {/* Recent Activity Card */}
+                <Card className="!rounded-2xl !shadow-sm !border !border-gray-200">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Skeleton.Avatar active size={20} shape="square" />
+                        <Skeleton.Input active size="small" style={{ width: 140, height: 20 }} />
+                      </div>
+                      <Skeleton.Input active size="small" style={{ width: 60, height: 16 }} />
+                    </div>
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex items-start gap-3">
+                          <Skeleton.Avatar active size={10} shape="circle" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton.Input active style={{ width: "70%", height: 16 }} />
+                            <Skeleton.Input active style={{ width: "50%", height: 14 }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Technologies Card */}
+                <Card className="!rounded-2xl !shadow-sm !border !border-gray-200">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Skeleton.Avatar active size={20} shape="square" />
+                      <Skeleton.Input active size="small" style={{ width: 120, height: 20 }} />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <Skeleton.Input key={i} active size="small" style={{ width: 60 + i * 5, height: 28, borderRadius: 12 }} />
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Right Column - MembersPanel Skeleton */}
+              <div className="space-y-4">
+                {/* Team Members Card */}
+                <Card className="!rounded-2xl !shadow-sm !border !border-gray-200">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Skeleton.Avatar active size={20} shape="square" />
+                        <Skeleton.Input active size="small" style={{ width: 130, height: 20 }} />
+                      </div>
+                      <Skeleton.Input active size="small" style={{ width: 60, height: 16 }} />
+                    </div>
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex items-center justify-between border border-gray-200 rounded-xl p-3">
+                          <div className="flex items-center gap-3">
+                            <Skeleton.Avatar active size={40} shape="circle" />
+                            <div className="space-y-2">
+                              <Skeleton.Input active size="small" style={{ width: 100, height: 16 }} />
+                              <Skeleton.Input active size="small" style={{ width: 60, height: 14 }} />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Mentor Card */}
+                <Card className="!rounded-2xl !shadow-sm !border !border-gray-200">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Skeleton.Avatar active size={20} shape="square" />
+                      <Skeleton.Input active size="small" style={{ width: 80, height: 20 }} />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Skeleton.Avatar active size={48} shape="circle" />
+                      <div className="space-y-2">
+                        <Skeleton.Input active size="small" style={{ width: 120, height: 18 }} />
+                        <Skeleton.Input active size="small" style={{ width: 180, height: 14 }} />
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </Card>
       </div>
     );
   }
 
   const groupName = groupDetail?.name || `Group #${id}`;
-  const groupDescription =
-    groupDetail?.description ||
-    t("groupOverviewSubtitle") ||
-    "View project overview, timeline, and member contributions.";
 
   const hasKanbanData =
     filteredColumns && Object.keys(filteredColumns || {}).length > 0;
@@ -106,11 +413,6 @@ export default function GroupDetail() {
         new Date(a.updatedAt || a.createdAt || 0)
     )
     .slice(0, 4);
-
-  const descriptionText = (groupDetail?.description || "").trim();
-  const mentor =
-    groupDetail?.mentor ||
-    (Array.isArray(groupDetail?.mentors) ? groupDetail.mentors[0] : null);
 
   const statusMeta = {
     todo: { label: "To Do", dot: "bg-gray-300" },
@@ -200,11 +502,16 @@ export default function GroupDetail() {
           {overviewGroup && (
             <InfoCard
               group={overviewGroup}
-              memberCount={groupDetail?.currentMembers || groupMembers.length}
+              memberCount={
+                groupDetail?.currentMembers || groupMembersList.length
+              }
               onBack={undefined}
               onEdit={null}
               onSelectTopic={null}
               onActivate={null}
+              onCloseGroup={isMentor && isPendingClose() ? handleCloseGroupClick : null}
+              isLeader={false}
+              isMentor={isMentor}
             />
           )}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -218,7 +525,7 @@ export default function GroupDetail() {
               t={t}
             />
             <MembersPanel
-              groupMembers={groupMembers}
+              groupMembers={groupMembersList}
               mentor={mentor}
               group={groupDetail}
               onInvite={null}
@@ -237,7 +544,7 @@ export default function GroupDetail() {
       key: "contributions",
       label: (
         <span>
-          <BarChartOutlined /> {t("contributions") || "Contributions"}
+          <TeamOutlined /> {t("contributions") || "Contributions"}
         </span>
       ),
       children: (
@@ -245,7 +552,7 @@ export default function GroupDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-3">
               <MembersPanel
-                groupMembers={groupMembers}
+                groupMembers={groupMembersList}
                 mentor={mentor}
                 group={groupDetail}
                 onInvite={null}
@@ -266,7 +573,7 @@ export default function GroupDetail() {
       key: "workspace",
       label: (
         <span>
-          <BarChartOutlined /> {t("workspace") || "Workspace"}
+          <AppstoreOutlined /> {t("workspace") || "Workspace"}
         </span>
       ),
       children: (
@@ -322,15 +629,16 @@ export default function GroupDetail() {
               groupMembers={groupMembers}
               onPromoteSuccess={() => refetchBoard({ showLoading: false })}
               readOnly={readOnlyWorkspace}
+              groupStatus={groupStatus}
             />
           )}
 
           {activeWorkspaceTab === "milestones" && (
-            <MilestonesTab groupId={id} readOnly={readOnlyWorkspace} />
+            <MilestonesTab groupId={id} readOnly={readOnlyWorkspace} groupStatus={groupStatus} />
           )}
 
           {activeWorkspaceTab === "reports" && (
-            <ReportsTab groupId={id} />
+            <ReportsTab groupId={id} groupStatus={groupStatus} />
           )}
         </div>
       ),
@@ -349,6 +657,7 @@ export default function GroupDetail() {
             isMentor={true}
             isLeader={false}
             groupName={groupName}
+            groupDetail={groupDetail}
           />
         </div>
       ),
@@ -356,7 +665,7 @@ export default function GroupDetail() {
   ];
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen space-y-6 animate-fadeIn">
+    <div className=" min-h-screen space-y-6 animate-fadeIn">
       {/* Breadcrumb */}
       <Breadcrumb
         items={[
@@ -377,18 +686,6 @@ export default function GroupDetail() {
           },
         ]}
       />
-
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-4xl font-extrabold text-blue-600">
-            {groupName} – Progress Monitoring
-          </h1>
-          <p className="text-gray-500 text-sm">
-            {groupDescription}
-          </p>
-        </div>
-      </div>
 
       {/* Tabs */}
       <Tabs
@@ -420,6 +717,18 @@ export default function GroupDetail() {
         onDeleteComment={deleteTaskComment}
         readOnly={readOnlyWorkspace}
       />
+
+      {isMentor && isPendingClose() && (
+        <CloseGroupModal
+          open={closeGroupModalOpen}
+          onClose={() => setCloseGroupModalOpen(false)}
+          onConfirm={handleConfirmClose}
+          onReject={handleRejectClose}
+          role="mentor"
+          status={groupStatus}
+          loading={closeGroupLoading}
+        />
+      )}
     </div>
   );
 }

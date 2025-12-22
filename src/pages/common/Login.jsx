@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { notification } from "antd";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../config/firebase.config";
@@ -6,20 +6,11 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../../hook/useTranslation";
 
-const campuses = [
-  "FU-Hòa Lạc",
-  "FU-Hồ Chí Minh",
-  "FU-Đà Nẵng",
-  "FU-Cần Thơ",
-  "FU-Quy Nhơn",
-];
-
 const Login = () => {
   const { loginGoogle, token, userInfo, role } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(false);
-  const [campus, setCampus] = useState("");
+  const [loading, setLoading] = React.useState(false);
 
   // If already authenticated, keep user on the app instead of showing login again
   useEffect(() => {
@@ -111,47 +102,24 @@ const Login = () => {
           </p>
         </div>
 
-        {/* Select Campus */}
-        <label className="block text-xs font-semibold text-gray-500 mb-1">
-          Select campus
-        </label>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Dropdown */}
-          <div className="flex-1">
-            <div className="relative">
-              <select
-                value={campus}
-                onChange={(e) => setCampus(e.target.value)}
-                className="w-full appearance-none rounded-2xl border border-gray-200 bg-white py-3 px-4 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#4264d7] focus:border-transparent"
-              >
-                <option value="">Select Campus</option>
-                {campuses.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 text-xs">
-                ▼
-              </span>
-            </div>
-          </div>
-
-          {/* Google Login Button */}
-          <button
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="flex-1 border border-gray-200 rounded-2xl py-3 px-4 flex items-center justify-center gap-3 font-semibold text-gray-700 hover:bg-gray-50 transition disabled:opacity-60 whitespace-nowrap"
-          >
-            <div className="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-sm font-bold">
-              <span className="text-[#4285F4]">G</span>
-            </div>
-            <span className="text-sm">
-              {loading ? "Signing in..." : "Continue with Google"}
-            </span>
-          </button>
+        {/* Fixed Campus Display */}
+        <div className="mb-2 text-xs font-semibold text-gray-500">
+          Campus: <span className="text-gray-900">FU-Hồ Chí Minh</span>
         </div>
+
+        {/* Google Login Button */}
+        <button
+          onClick={handleGoogleLogin}
+          disabled={loading}
+          className="w-full border border-gray-200 rounded-2xl py-3 px-4 flex items-center justify-center gap-3 font-semibold text-gray-700 hover:bg-gray-50 transition disabled:opacity-60 whitespace-nowrap"
+        >
+          <div className="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-sm font-bold">
+            <span className="text-[#4285F4]">G</span>
+          </div>
+          <span className="text-sm">
+            {loading ? "Signing in..." : "Continue with Google"}
+          </span>
+        </button>
 
         <div className="text-center text-xs text-gray-400 space-y-1">
           <p>By continuing, you agree to Teammy's terms of use.</p>
