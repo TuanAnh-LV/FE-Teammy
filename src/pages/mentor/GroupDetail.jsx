@@ -32,8 +32,9 @@ export default function GroupDetail() {
   const [closeGroupLoading, setCloseGroupLoading] = useState(false);
   const readOnlyWorkspace = true;
 
+  // Get group status - only check if groupDetail is loaded
   const groupStatus = groupDetail?.status || "";
-  const isGroupClosed = groupDetail?.status && (groupDetail.status.toLowerCase().includes("closed"));
+  const isGroupClosed = groupDetail?.status ? (groupDetail.status.toLowerCase().includes("closed")) : false;
 
   const {
     filteredColumns,
@@ -108,8 +109,8 @@ export default function GroupDetail() {
     return mentorEmail === currentEmail;
   }, [mentor, userInfo]);
 
-  const groupStatus = groupDetail?.status || "";
   const isPendingClose = () => {
+    if (!groupStatus) return false;
     const statusLower = groupStatus.toLowerCase();
     return statusLower.includes("pending_close") || statusLower.includes("pending-close");
   };

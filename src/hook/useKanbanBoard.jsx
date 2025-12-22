@@ -347,6 +347,9 @@ export function useKanbanBoard(groupId, options = {}) {
 
   // Load comments only once after both columns and members are ready
   useEffect(() => {
+    // Don't load comments if group is closed
+    if (isGroupClosed()) return;
+    
     const hasColumns = columns && typeof columns === "object" && Object.keys(columns).length > 0;
     const hasMembers = groupMembers && groupMembers.length > 0;
     const isCurrentGroup = commentsLoadedRef.current === groupId;
@@ -360,7 +363,7 @@ export function useKanbanBoard(groupId, options = {}) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [columns, groupMembers, groupId]);
+  }, [columns, groupMembers, groupId, skipApiCalls, groupStatus]);
 
   useEffect(() => {
     if (!groupMembers || groupMembers.length === 0) return;
