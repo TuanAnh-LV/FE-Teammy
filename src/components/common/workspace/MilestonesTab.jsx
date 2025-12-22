@@ -39,7 +39,7 @@ const formatDate = (value) => {
   return d.isValid() ? d.format("DD/MM/YYYY") : "--";
 };
 
-export default function MilestonesTab({ groupId, readOnly = false }) {
+export default function MilestonesTab({ groupId, readOnly = false, groupStatus = "" }) {
   const { t } = useTranslation();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -58,8 +58,14 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
   const [assignBacklogIds, setAssignBacklogIds] = useState([]);
   const fetchedRef = useRef(null);
 
+  const isGroupClosed = () => {
+    if (!groupStatus) return false;
+    const statusLower = (groupStatus || "").toLowerCase();
+    return statusLower.includes("closed");
+  };
+
   const fetchMilestones = async () => {
-    if (!groupId) return;
+    if (!groupId || isGroupClosed()) return;
     setLoading(true);
     try {
       const res = await MilestoneService.list(groupId);
@@ -82,7 +88,7 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
   };
 
   const fetchBacklogOptions = async () => {
-    if (!groupId) return;
+    if (!groupId || isGroupClosed()) return;
     try {
       const res = await BacklogService.getBacklog(groupId);
       const payload = res?.data ?? res;
@@ -104,11 +110,11 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
   };
 
   useEffect(() => {
-    if (!groupId || fetchedRef.current === groupId) return;
+    if (!groupId || fetchedRef.current === groupId || isGroupClosed()) return;
     fetchedRef.current = groupId;
     fetchMilestones();
     fetchBacklogOptions();
-  }, [groupId]);
+  }, [groupId, groupStatus]);
 
   const resetForm = () => {
     setForm({
@@ -141,7 +147,7 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
   };
 
   const handleSave = async () => {
-    if (readOnly || !groupId) return;
+    if (readOnly || !groupId || isGroupClosed()) return;
     if (!form.name.trim()) {
       notification.error({
         message: t("validationError") || "Validation error",
@@ -180,7 +186,7 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
   };
 
   const handleDelete = (item) => {
-    if (readOnly) return;
+    if (readOnly || isGroupClosed()) return;
     const id = item?.milestoneId || item?.id;
     if (!id) return;
     Modal.confirm({
@@ -212,7 +218,7 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
   };
 
   const handleAssign = async () => {
-    if (readOnly || !groupId || !assignMilestoneId || !assignBacklogIds.length) {
+    if (readOnly || !groupId || !assignMilestoneId || !assignBacklogIds.length || isGroupClosed()) {
       notification.error({
         message: t("validationError") || "Validation error",
         description: t("pleaseSelectItems") || "Please select backlog items.",
@@ -235,7 +241,7 @@ export default function MilestonesTab({ groupId, readOnly = false }) {
   };
 
   const handleRemoveItem = (milestoneId, backlogItemId) => {
-    if (readOnly) return;
+    if (readOnly || isGroupClosed()) return;
     if (!groupId || !milestoneId || !backlogItemId) return;
     Modal.confirm({
       title: t("confirm") || "Confirm",

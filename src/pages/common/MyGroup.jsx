@@ -6,6 +6,7 @@ import { BoardService } from "../../services/board.service";
 import InfoCard from "../../components/common/my-group/InfoCard";
 import AddMemberModal from "../../components/common/my-group/AddMemberModal";
 import EditGroupModal from "../../components/common/my-group/EditGroupModal";
+import CloseGroupModal from "../../components/common/my-group/CloseGroupModal";
 import LoadingState from "../../components/common/LoadingState";
 import {
   Plus,
@@ -18,7 +19,7 @@ import {
   UserPlus,
   Clock,
 } from "lucide-react";
-import { Modal, Form, Input } from "antd";
+import { Modal, Form, Input, message } from "antd";
 import TaskModal from "../../components/common/kanban/TaskModal";
 import useKanbanBoard from "../../hook/useKanbanBoard";
 import { filterColumns } from "../../utils/kanbanUtils";
@@ -68,6 +69,8 @@ export default function MyGroup() {
   const [listFilterStatus, setListFilterStatus] = useState("All");
   const [pendingInvitations, setPendingInvitations] = useState([]);
   const [pendingLoading, setPendingLoading] = useState(false);
+  const [closeGroupModalOpen, setCloseGroupModalOpen] = useState(false);
+  const [closeGroupLoading, setCloseGroupLoading] = useState(false);
 
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const [columnForm] = Form.useForm();
@@ -253,6 +256,36 @@ export default function MyGroup() {
     id,
     setGroup,
   });
+
+  const groupStatus = group?.status || "";
+  const isActiveStatus = () => {
+    const statusLower = groupStatus.toLowerCase();
+    return statusLower.includes("active");
+  };
+
+  const handleCloseGroupClick = () => {
+    setCloseGroupModalOpen(true);
+  };
+
+  const handleRequestClose = async () => {
+    if (!id) return;
+    try {
+      setCloseGroupLoading(true);
+      await GroupService.closeGroup(id);
+      message.success(t("closeGroupRequested") || "Close group request sent successfully");
+      setCloseGroupModalOpen(false);
+      await fetchGroupDetail();
+    } catch (error) {
+      console.error("Failed to request close group:", error);
+      message.error(
+        error?.response?.data?.message ||
+          t("failedToRequestClose") ||
+          "Failed to request close group"
+      );
+    } finally {
+      setCloseGroupLoading(false);
+    }
+  };
 
   const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return "N/A";
@@ -575,6 +608,9 @@ export default function MyGroup() {
                   onSelectTopic={group.canEdit ? () => navigate("/discover") : null}
                   onEdit={group.canEdit ? () => setEditOpen(true) : null}
                   onActivate={canActivateGroup ? handleActivateGroup : null}
+                  onCloseGroup={isLeader && isActiveStatus() ? handleCloseGroupClick : null}
+                  isLeader={isLeader}
+                  isMentor={isMentor}
                 />
               )}
 
@@ -943,7 +979,7 @@ export default function MyGroup() {
 
                 {/* REPORTS SUB-TAB */}
                 {activeWorkspaceTab === "reports" && (
-                  <ReportsTab groupId={id} />
+                  <ReportsTab groupId={id} groupStatus={group?.status} />
                 )}
               </div>
             )}
@@ -965,6 +1001,7 @@ export default function MyGroup() {
                 isMentor={isMentor}
                 isLeader={isLeader}
                 groupName={group?.name || group?.title || ""}
+                groupDetail={group}
               />
             )}
 
@@ -999,6 +1036,17 @@ export default function MyGroup() {
         onClose={() => setEditOpen(false)}
         t={t}
       />
+
+      {isLeader && isActiveStatus() && (
+        <CloseGroupModal
+          open={closeGroupModalOpen}
+          onClose={() => setCloseGroupModalOpen(false)}
+          onConfirm={handleRequestClose}
+          role="leader"
+          status={groupStatus}
+          loading={closeGroupLoading}
+        />
+      )}
 
       <TaskModal
         task={selectedTask}
