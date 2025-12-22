@@ -54,6 +54,7 @@ export default function ImportStep3Preview({
         majorName: u.majorName || "-",
         gender: u.gender || "-",
         studentCode: u.studentCode || "-",
+        gpa: u.gpa || "-",
         status,
         issues,
       };
@@ -122,6 +123,7 @@ export default function ImportStep3Preview({
       { title: t("major") || "Major", dataIndex: "majorName" },
       { title: t("gender") || "Gender", dataIndex: "gender" },
       { title: t("studentCode") || "Student Code", dataIndex: "studentCode" },
+      { title: t("gpa") || "GPA", dataIndex: "gpa" },
       {
         title: t("status") || "Status",
         dataIndex: "status",

@@ -30,6 +30,9 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
       const majorId = user?.raw?.majorId ?? user?.majorId;
       if (majorId != null) initial.majorId = majorId;
 
+      const gpa = user?.raw?.gpa ?? user?.gpa;
+      if (gpa != null) initial.gpa = gpa;
+
       if (user?.raw?.isActive !== undefined) {
         initial.isActive = user.raw.isActive;
       } else if (user?.isActive !== undefined) {
@@ -113,6 +116,7 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
           role: payload?.role ?? values.role,
           isActive: latestIsActive,
           studentCode: payload?.studentCode ?? values.studentCode,
+          gpa: payload?.gpa ?? values.gpa,
         };
 
         try {
@@ -347,6 +351,33 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
             );
           }}
         </Form.Item>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              label={t("gpa") || "GPA"}
+              name="gpa"
+              rules={[
+                {
+                  required: true,
+                  message: t("pleaseEnterGPA") || "Please enter GPA",
+                },
+                {
+                  pattern: /^[0-9](\.[0-9]{1,2})?$/,
+                  message: t("gpaInvalid") || "GPA must be between 0 and 10",
+                },
+              ]}
+            >
+              <Input
+                placeholder={t("enterGPAPlaceholder") || "Enter GPA (0 - 10)"}
+                type="number"
+                step="0"
+                min="0"
+                max="10"
+              />
+            </Form.Item>
+          </Col>
+        </Row>
       </Form>
     </Modal>
   );

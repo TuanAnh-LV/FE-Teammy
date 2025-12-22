@@ -8,10 +8,12 @@ import {
   notification,
   DatePicker,
   Tag,
+  Select,
 } from "antd";
 import { Plus } from "lucide-react";
 import { PostService } from "../../../services/post.service";
 import { SkillService } from "../../../services/skill.service";
+import { UserService } from "../../../services/user.service";
 import moment from "moment";
 import { AiService } from "../../../services/ai.service";
 
@@ -22,7 +24,9 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
   const [form] = Form.useForm();
   const [groupName, setGroupName] = useState("");
   const [majorName, setMajorName] = useState("");
+  const [majorId, setMajorId] = useState("");
   const [availableSkills, setAvailableSkills] = useState([]);
+  const [availablePositions, setAvailablePositions] = useState([]);
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [skillFilter, setSkillFilter] = useState("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,9 +44,12 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
         );
         const name = res?.data?.title || res?.data?.name || "";
         const major = res?.data?.major?.majorName || res?.data?.majorName || "";
+        const majorIdValue =
+          res?.data?.major?.majorId || res?.data?.majorId || "";
         if (mounted) {
           setGroupName(name);
           setMajorName(major);
+          setMajorId(majorIdValue);
         }
       } catch {
         // ignore silently
@@ -75,6 +82,28 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
 
     fetchSkills();
   }, [majorName, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchPositions = async () => {
+      if (!majorId) {
+        setAvailablePositions([]);
+        return;
+      }
+
+      try {
+        const response = await UserService.getPositions(majorId, false);
+        if (response?.data) {
+          setAvailablePositions(response.data);
+        }
+      } catch {
+        setAvailablePositions([]);
+      }
+    };
+
+    fetchPositions();
+  }, [majorId, isOpen]);
 
   const handleAddSkill = (skillToken) => {
     if (!selectedSkills.includes(skillToken)) {
@@ -122,7 +151,9 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
         groupId,
         title,
         description,
-        position_needed,
+        position_needed: Array.isArray(position_needed)
+          ? position_needed.join(", ")
+          : position_needed,
         expiresAt: expiresAt?.toISOString(),
         required_skills,
       });
@@ -278,11 +309,19 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
             {
               required: true,
               message:
-                t("pleaseEnterPosition") || "Please enter the position needed",
+                t("pleaseEnterPosition") || "Please select the position needed",
             },
           ]}
         >
-          <Input placeholder={t("placeholderSkills") || "VD: Git, Azure"} />
+          <Select
+            mode="multiple"
+            placeholder={t("selectPosition") || "Select positions"}
+            disabled={!majorId || availablePositions.length === 0}
+            options={availablePositions.map((pos) => ({
+              label: pos.name || pos.positionName || pos,
+              value: pos.name || pos.positionName || pos,
+            }))}
+          />
         </Form.Item>
         <Form.Item
           label={t("pleaseSelectDeadline") ? "Expires At" : "Expires At"}

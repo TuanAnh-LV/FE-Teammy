@@ -45,7 +45,6 @@ const ProjectCard = ({
   const otherGroupsSelecting = topicGroups.filter(
     (g) => g.groupId !== myGroupId && g.status === "pending_invitation"
   );
-  console.log("otherGroupsSelecting", otherGroupsSelecting);
   const canSelectTopic = isOpen && !hasPendingInvitation && !groupHasAnyPending;
 
   return (
@@ -264,6 +263,3 @@ const ProjectCard = ({
 };
 
 export default ProjectCard;
-
-
-

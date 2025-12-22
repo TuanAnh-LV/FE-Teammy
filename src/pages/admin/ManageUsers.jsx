@@ -65,6 +65,7 @@ const ManageUsers = () => {
         createdAt: fullUser?.createdAt || null,
         emailVerified: fullUser?.emailVerified || false,
         raw: fullUser,
+        avatarUrl: fullUser?.avatarUrl || user.avatarUrl,
       };
       setSelectedUser(enriched);
     } catch {

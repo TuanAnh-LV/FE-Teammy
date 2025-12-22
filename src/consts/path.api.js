@@ -44,6 +44,7 @@ export const API = {
     UPDATE_PROFILE: "/users/me/profile",
     GET_USER_BY_ID: (id) => `/users/${id}/profile`,
     PROFILE_BY_ID: (userId) => `/users/${userId}/profile`,
+    GET_POSITIONS: "/users/positions",
   },
   INVITATIONS: {
     LIST: "/invitations",
