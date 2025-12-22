@@ -215,7 +215,8 @@ const commentsMetaEqual = (a = [], b = []) => {
   return true;
 };
 
-export function useKanbanBoard(groupId) {
+export function useKanbanBoard(groupId, options = {}) {
+  const { skipApiCalls = false, groupStatus } = options;
   const [columns, setColumns] = useState({});
   const [columnMeta, setColumnMeta] = useState({});
   const [groupMembers, setGroupMembers] = useState([]);
@@ -228,6 +229,13 @@ export function useKanbanBoard(groupId) {
   const commentsLoadedRef = useRef(false);
   const dragProcessingRef = useRef(false);
   const pendingMoveRef = useRef(null);
+
+  const isGroupClosed = () => {
+    if (skipApiCalls) return true;
+    if (!groupStatus) return false;
+    const statusLower = (groupStatus || "").toLowerCase();
+    return statusLower.includes("closed");
+  };
 
   const buildStateFromApi = (data) => {
     const colState = {};
@@ -266,7 +274,7 @@ export function useKanbanBoard(groupId) {
   };
 
   const fetchBoard = async ({ showLoading = true } = {}) => {
-    if (!groupId) return;
+    if (!groupId || isGroupClosed()) return;
     try {
       if (showLoading) setLoading(true);
       setError(null);
@@ -285,7 +293,7 @@ export function useKanbanBoard(groupId) {
   };
 
   const fetchGroupMembers = async () => {
-    if (!groupId) {
+    if (!groupId || isGroupClosed()) {
       setGroupMembers([]);
       return;
     }
@@ -320,6 +328,14 @@ export function useKanbanBoard(groupId) {
       return;
     }
     
+    // Skip API calls if group is closed
+    if (isGroupClosed()) {
+      setColumns({});
+      setColumnMeta({});
+      setGroupMembers([]);
+      return;
+    }
+    
     // Only load if groupId changed
     if (commentsLoadedRef.current === groupId) return;
     
@@ -327,7 +343,7 @@ export function useKanbanBoard(groupId) {
     fetchBoard();
     fetchGroupMembers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupId]);
+  }, [groupId, skipApiCalls, groupStatus]);
 
   // Load comments only once after both columns and members are ready
   useEffect(() => {
@@ -485,7 +501,7 @@ export function useKanbanBoard(groupId) {
   };
 
   const executeMove = async (payload) => {
-    if (!groupId || !payload?.taskId || !payload?.columnId) return;
+    if (!groupId || !payload?.taskId || !payload?.columnId || isGroupClosed()) return;
     dragProcessingRef.current = true;
     try {
       await BoardService.moveTask(groupId, payload.taskId, {
@@ -515,7 +531,7 @@ export function useKanbanBoard(groupId) {
   };
 
   const createColumn = async (payload) => {
-    if (!groupId) return;
+    if (!groupId || isGroupClosed()) return;
     try {
       await BoardService.createColumn(groupId, payload);
       fetchBoard({ showLoading: false });
@@ -525,7 +541,7 @@ export function useKanbanBoard(groupId) {
   };
 
   const deleteColumn = async (columnId) => {
-    if (!groupId || !columnId) return;
+    if (!groupId || !columnId || isGroupClosed()) return;
     try {
       await BoardService.deleteColumn(groupId, columnId);
       fetchBoard({ showLoading: false });
@@ -535,7 +551,7 @@ export function useKanbanBoard(groupId) {
   };
 
   const createTask = async (payload) => {
-    if (!groupId) return;
+    if (!groupId || isGroupClosed()) return;
     const tempId = `temp-${Date.now()}`;
     const normalizedAssignees = mapAssigneesWithMembers(
       normalizePersonList(payload.assignees),
@@ -614,7 +630,7 @@ export function useKanbanBoard(groupId) {
   };
 
   const updateTaskFields = async (taskId, changes, options = {}) => {
-    if (!groupId || !taskId) return;
+    if (!groupId || !taskId || isGroupClosed()) return;
     const { skipMove = false } = options;
     const normalizedChanges = { ...changes };
     if ("dueDate" in normalizedChanges) {
@@ -650,7 +666,7 @@ export function useKanbanBoard(groupId) {
   };
 
   const updateTaskAssignees = async (taskId, userIds) => {
-    if (!groupId || !taskId) return;
+    if (!groupId || !taskId || isGroupClosed()) return;
     const normalizedAssignees = (userIds || [])
       .map((id) => {
         if (!id) return null;
@@ -711,7 +727,7 @@ export function useKanbanBoard(groupId) {
   };
 
   const deleteTask = async (taskId) => {
-    if (!groupId || !taskId) return;
+    if (!groupId || !taskId || isGroupClosed()) return;
     setColumns((prev) => {
       const ids = Object.keys(prev || {});
       const colId = findColumnOfTask(prev, taskId, ids);
@@ -730,7 +746,7 @@ export function useKanbanBoard(groupId) {
   };
 
   const loadTaskComments = async (taskId) => {
-    if (!groupId || !taskId) return [];
+    if (!groupId || !taskId || isGroupClosed()) return [];
     try {
       const res = await BoardService.getTaskComments(groupId, taskId);
       const comments = enrichCommentsWithMembers(
@@ -746,7 +762,7 @@ export function useKanbanBoard(groupId) {
   };
 
   const loadAllTasksComments = async () => {
-    if (!groupId) return;
+    if (!groupId || isGroupClosed()) return;
     
     const taskIds = [];
     
@@ -777,7 +793,7 @@ export function useKanbanBoard(groupId) {
   };
 
   const addTaskComment = async (taskId, content) => {
-    if (!groupId || !taskId) return;
+    if (!groupId || !taskId || isGroupClosed()) return;
     const trimmed = (content || "").trim();
     if (!trimmed) return;
     const tempComment = {
@@ -805,7 +821,7 @@ export function useKanbanBoard(groupId) {
   };
 
   const updateTaskComment = async (taskId, commentId, content) => {
-    if (!groupId || !taskId || !commentId) return;
+    if (!groupId || !taskId || !commentId || isGroupClosed()) return;
     const trimmed = (content || "").trim();
     if (!trimmed) return;
     patchTaskState(taskId, (task) => ({
@@ -824,7 +840,7 @@ export function useKanbanBoard(groupId) {
   };
 
   const deleteTaskComment = async (taskId, commentId) => {
-    if (!groupId || !taskId || !commentId) return;
+    if (!groupId || !taskId || !commentId || isGroupClosed()) return;
     const snapshot = getTaskSnapshot(taskId);
     patchTaskState(taskId, (task) => ({
       comments: (task.comments || []).filter(

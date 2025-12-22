@@ -5,15 +5,21 @@ import dayjs from "dayjs";
 import { ReportService } from "../../../services/report.service";
 import { useTranslation } from "../../../hook/useTranslation";
 
-export default function ReportsTab({ groupId }) {
+export default function ReportsTab({ groupId, groupStatus }) {
   const { t } = useTranslation();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const fetchedRef = useRef(null);
 
+  const isGroupClosed = () => {
+    if (!groupStatus) return false;
+    const statusLower = (groupStatus || "").toLowerCase();
+    return statusLower.includes("closed");
+  };
+
   const fetchReport = async () => {
-    if (!groupId) return;
+    if (!groupId || isGroupClosed()) return;
     setLoading(true);
     setError(null);
     try {
@@ -28,10 +34,16 @@ export default function ReportsTab({ groupId }) {
   };
 
   useEffect(() => {
-    if (!groupId || fetchedRef.current === groupId) return;
+    if (!groupId || fetchedRef.current === groupId || isGroupClosed()) {
+      if (isGroupClosed()) {
+        setData(null);
+        setError(null);
+      }
+      return;
+    }
     fetchedRef.current = groupId;
     fetchReport();
-  }, [groupId]);
+  }, [groupId, groupStatus]);
 
   const project = data?.project || {};
   const backlog = data?.tasks?.backlog || {};
