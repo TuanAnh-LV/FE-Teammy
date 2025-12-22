@@ -1,5 +1,6 @@
 import { createContext, useState, useContext, useEffect } from "react";
 import { AuthService } from "../services/auth.service";
+import { connectGroupStatusHub, disconnectGroupStatusHub } from "../services/groupStatusHub";
 import { HttpException } from "../app/toastException/http.exception";
 // import { toast } from "react-toastify";
 // HTTP status codes
@@ -124,6 +125,11 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("userInfo", JSON.stringify(normalized));
       if (roleVal) localStorage.setItem("role", roleVal);
 
+      // Sau khi login thành công, connect tới GroupStatus hub với JWT hiện tại
+      connectGroupStatusHub(token).catch((err) => {
+        console.warn("Failed to connect GroupStatus hub", err);
+      });
+
       return normalized;
     } catch (error) {
 
@@ -141,6 +147,8 @@ export const AuthProvider = ({ children }) => {
     setRole(null);
     setUserInfo(null);
     localStorage.clear();
+    // Ngắt kết nối SignalR khi user logout
+    disconnectGroupStatusHub().catch(() => {});
   };
 
   const [notifications, setNotifications] = useState([]);

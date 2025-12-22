@@ -9,17 +9,39 @@ import { useTranslation } from "../../../hook/useTranslation";
 
 const { Search: SearchInput } = Input;
 
-export default function FeedbackTab({ groupId, isMentor = false, isLeader = false, groupName = "", groupDetail = null }) {
+export default function FeedbackTab({
+  groupId,
+  isMentor = false,
+  isLeader = false,
+  groupName = "",
+  groupDetail = null,
+}) {
   const { t } = useTranslation();
   const { userInfo } = useAuth();
   const [feedbackList, setFeedbackList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
   const [sendModalOpen, setSendModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingFeedback, setEditingFeedback] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const groupStatus = (groupDetail?.status || "").toString();
+  const isGroupClosed = () => {
+    if (!groupStatus) return false;
+    const statusLower = groupStatus.toLowerCase();
+    if (
+      statusLower.includes("pending_close") ||
+      statusLower.includes("pending-close")
+    ) {
+      return false;
+    }
+    return statusLower.includes("closed");
+  };
 
   // Verify if current user is the assigned mentor
   const isAssignedMentor = React.useMemo(() => {
@@ -31,23 +53,66 @@ export default function FeedbackTab({ groupId, isMentor = false, isLeader = fals
     return mentorEmail === currentUserEmail;
   }, [isMentor, groupDetail, userInfo]);
 
-  useEffect(() => {
-    if (groupId) {
-      fetchFeedbackList();
-    }
-  }, [groupId]);
-
-  const fetchFeedbackList = async () => {
+  const fetchFeedbackList = async (
+    pageParam = page,
+    pageSizeParam = pageSize,
+    statusParam = statusFilter
+  ) => {
     try {
       setLoading(true);
-      const response = await GroupService.getFeedbackList(groupId);
-      const data = response?.data || [];
-      const feedbackArray = Array.isArray(data) ? data : [];
-      // Log để debug feedback structure
-      if (feedbackArray.length > 0) {
-        console.log("Feedback structure:", feedbackArray[0]);
-      }
+
+      // Chỉ gửi những status hợp lệ cho API, còn lại bỏ qua (tương đương "all")
+      const allowedStatuses = [
+        "submitted",
+        "acknowledged",
+        "follow_up_requested",
+        "resolved",
+      ];
+      const normalizedStatus =
+        (statusParam || "").toString().toLowerCase().trim();
+      const apiStatus = allowedStatuses.includes(normalizedStatus)
+        ? normalizedStatus
+        : undefined;
+
+      const response = await GroupService.getFeedbackList(groupId, {
+        page: pageParam,
+        pageSize: pageSizeParam,
+        status: apiStatus,
+      });
+      const payload = response?.data ?? response;
+
+      // Tìm mảng feedback ở nhiều cấu trúc khác nhau (data, items, data.items, ...)
+      const findFirstArray = (obj, depth = 0) => {
+        if (!obj || typeof obj !== "object" || depth > 3) return null;
+        if (Array.isArray(obj)) return obj;
+        for (const value of Object.values(obj)) {
+          if (Array.isArray(value)) return value;
+          const nested = findFirstArray(value, depth + 1);
+          if (nested) return nested;
+        }
+        return null;
+      };
+
+      const feedbackArray = Array.isArray(payload)
+        ? payload
+        : findFirstArray(payload) || [];
+
       setFeedbackList(feedbackArray);
+
+      const totalFromPayload =
+        payload?.totalItems ||
+        payload?.total ||
+        payload?.totalCount ||
+        payload?.page?.totalElements ||
+        payload?.meta?.total ||
+        0;
+
+      const nextTotal =
+        Number(totalFromPayload) && !Number.isNaN(Number(totalFromPayload))
+          ? Number(totalFromPayload)
+          : feedbackArray.length;
+
+      setTotalItems(nextTotal);
     } catch (error) {
       console.error("Failed to fetch feedback:", error);
       setFeedbackList([]);
@@ -55,6 +120,13 @@ export default function FeedbackTab({ groupId, isMentor = false, isLeader = fals
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (groupId) {
+      fetchFeedbackList(1, pageSize, statusFilter);
+      setPage(1);
+    }
+  }, [groupId, statusFilter, pageSize]);
 
   const handleSendFeedback = async (values) => {
     // Security check: Only assigned mentor can send feedback
@@ -279,10 +351,11 @@ export default function FeedbackTab({ groupId, isMentor = false, isLeader = fals
             {t("feedbackFromMentor") || "Feedback from Mentor"}
           </h2>
           <span className="text-sm text-gray-500">
-            ({filteredFeedback.length} {t("feedbackCount") || "feedback"})
+            ({totalItems || filteredFeedback.length}{" "}
+            {t("feedbackCount") || "feedback"})
           </span>
         </div>
-        {isMentor && isAssignedMentor && (
+        {isMentor && isAssignedMentor && !isGroupClosed() && (
           <button
             onClick={() => setSendModalOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
@@ -351,6 +424,42 @@ export default function FeedbackTab({ groupId, isMentor = false, isLeader = fals
               />
             );
           })}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalItems > 0 && (
+        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+          <div className="text-sm text-gray-500">
+            {t("page") || "Page"} {page} /{" "}
+            {Math.max(1, Math.ceil(totalItems / pageSize))}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={page === 1 || loading}
+              onClick={() => {
+                const nextPage = Math.max(1, page - 1);
+                setPage(nextPage);
+                fetchFeedbackList(nextPage, pageSize, statusFilter);
+              }}
+              className="px-3 py-1 rounded-lg border text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              {t("previous") || "Previous"}
+            </button>
+            <button
+              type="button"
+              disabled={page * pageSize >= totalItems || loading}
+              onClick={() => {
+                const nextPage = page + 1;
+                setPage(nextPage);
+                fetchFeedbackList(nextPage, pageSize, statusFilter);
+              }}
+              className="px-3 py-1 rounded-lg border text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              {t("next") || "Next"}
+            </button>
+          </div>
         </div>
       )}
 

@@ -171,9 +171,10 @@ export const GroupService = {
   },
 
   // Feedback APIs
-  getFeedbackList(groupId) {
+  getFeedbackList(groupId, params = {}) {
     return BaseService.get({
       url: API.GROUP.FEEDBACK_LIST(groupId),
+      params,
       isLoading: true,
     });
   },
