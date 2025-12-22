@@ -193,5 +193,42 @@ export const GroupService = {
       isLoading: true,
     });
   },
+
+  updateFeedback(groupId, feedbackId, payload) {
+    return BaseService.put({
+      url: API.GROUP.FEEDBACK_UPDATE(groupId, feedbackId),
+      payload,
+      isLoading: true,
+    });
+  },
+
+  deleteFeedback(groupId, feedbackId) {
+    return BaseService.remove({
+      url: API.GROUP.FEEDBACK_DELETE(groupId, feedbackId),
+      isLoading: true,
+    });
+  },
+
+  // Close group APIs
+  closeGroup(groupId) {
+    return BaseService.post({
+      url: API.GROUP.CLOSE_GROUP(groupId),
+      isLoading: true,
+    });
+  },
+
+  confirmCloseGroup(groupId) {
+    return BaseService.post({
+      url: API.GROUP.CONFIRM_CLOSE(groupId),
+      isLoading: true,
+    });
+  },
+
+  rejectCloseGroup(groupId) {
+    return BaseService.post({
+      url: API.GROUP.REJECT_CLOSE(groupId),
+      isLoading: true,
+    });
+  },
 };
 

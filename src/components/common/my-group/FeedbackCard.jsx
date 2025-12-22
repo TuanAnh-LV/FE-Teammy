@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { Calendar, MessageSquare, Star, AlertTriangle, ArrowRight, CheckCircle, Clock } from "lucide-react";
+import { Calendar, MessageSquare, Star, AlertTriangle, ArrowRight, CheckCircle, Clock, User, Edit, Trash2 } from "lucide-react";
 import { Modal, Form, Input, Select, Button } from "antd";
 import { useTranslation } from "../../../hook/useTranslation";
 
 const { TextArea } = Input;
 
-export default function FeedbackCard({ feedback, isLeader, onUpdateStatus, groupId }) {
+export default function FeedbackCard({ feedback, isLeader, isMentor, onUpdateStatus, onEdit, onDelete, groupId }) {
   const { t } = useTranslation();
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [form] = Form.useForm();
@@ -28,13 +28,14 @@ export default function FeedbackCard({ feedback, isLeader, onUpdateStatus, group
     }
     if (statusLower === "follow_up_requested" || statusLower === "chờ xử lý") {
       return {
-        label: t("pendingStatus") || "Pending",
+        label: t("followUpRequestedStatus") || "Follow Up Requested",
         color: "bg-yellow-500 text-white",
         icon: <Clock className="w-3 h-3" />,
       };
     }
+    // Default to follow_up_requested if status is unknown
     return {
-      label: t("pendingStatus") || "Pending",
+      label: t("followUpRequestedStatus") || "Follow Up Requested",
       color: "bg-yellow-500 text-white",
       icon: <Clock className="w-3 h-3" />,
     };
@@ -85,13 +86,22 @@ export default function FeedbackCard({ feedback, isLeader, onUpdateStatus, group
   };
 
   const statusConfig = getStatusConfig(feedback.status);
-  const mentorName = feedback.mentor?.displayName || feedback.mentor?.name || feedback.mentor?.email || (t("mentor") || "Mentor");
-  const mentorEmail = feedback.mentor?.email || "";
+  // Support both nested mentor object and flat structure from backend
+  const mentorName = feedback.mentorName || feedback.mentor?.displayName || feedback.mentor?.name || feedback.mentor?.email || (t("mentor") || "Mentor");
+  const mentorEmail = feedback.mentorEmail || feedback.mentor?.email || "";
+  const mentorAvatar = feedback.mentorAvatar || feedback.mentor?.avatarUrl || feedback.mentor?.avatar;
   const mentorInitials = getInitials(mentorName);
 
   const handleStatusUpdate = async (values) => {
     if (onUpdateStatus) {
-      await onUpdateStatus(feedback.id, values);
+      // Try multiple possible ID fields - backend returns feedbackId
+      const feedbackId = feedback.feedbackId || feedback.id || feedback._id || feedback.feedback_id;
+      if (!feedbackId) {
+        console.error("Feedback ID is missing. Feedback object:", feedback);
+        console.error("Available keys:", Object.keys(feedback || {}));
+        return;
+      }
+      await onUpdateStatus(feedbackId, values);
       setStatusModalOpen(false);
       form.resetFields();
     }
@@ -103,11 +113,19 @@ export default function FeedbackCard({ feedback, isLeader, onUpdateStatus, group
         {/* Header: Mentor info and status */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-sm">
-              {mentorInitials}
-            </div>
+            {mentorAvatar ? (
+              <img
+                src={mentorAvatar}
+                alt={mentorName}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-sm">
+                {mentorInitials}
+              </div>
+            )}
             <div>
-              <p className="font-semibold text-gray-900">{mentorName} - {t("mentor") || "Mentor"}</p>
+              <p className="font-semibold text-gray-900">{mentorName}</p>
               <div className="flex items-center gap-1 text-sm text-gray-500">
                 <Calendar className="w-3 h-3" />
                 <span>{formatDate(feedback.createdAt)}</span>
@@ -173,25 +191,56 @@ export default function FeedbackCard({ feedback, isLeader, onUpdateStatus, group
           </div>
         )}
 
-        {/* Note from leader */}
-        {feedback.note && (
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <p className="text-xs font-medium text-gray-600 mb-1">{t("note") || "Note"}:</p>
-            <p className="text-sm text-gray-700">{feedback.note}</p>
+        {/* Note from leader/team - Comment style */}
+        {(feedback.acknowledgedNote || feedback.note) && (
+          <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-sm font-semibold text-blue-900">{t("teamResponse") || "Team Response"}</p>
+                  <span className="text-xs text-blue-600">•</span>
+                  <p className="text-xs text-blue-600">{t("note") || "Note"}</p>
+                </div>
+                <p className="text-sm text-blue-800 leading-relaxed">{feedback.acknowledgedNote || feedback.note}</p>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Status update button (Leader only) */}
-        {isLeader && (
-          <div className="pt-2 border-t border-gray-200">
+        {/* Action buttons */}
+        <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
+          {isLeader && (
             <button
               onClick={() => setStatusModalOpen(true)}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
               {t("updateStatus") || "Update Status"}
             </button>
-          </div>
-        )}
+          )}
+          {isMentor && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => onEdit && onEdit(feedback)}
+                className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                <Edit className="w-4 h-4" />
+                {t("edit") || "Edit"}
+              </button>
+              <button
+                onClick={() => onDelete && onDelete(feedback)}
+                className="inline-flex items-center gap-1.5 text-sm text-red-600 hover:text-red-700 font-medium"
+              >
+                <Trash2 className="w-4 h-4" />
+                {t("delete") || "Delete"}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Status Update Modal */}
@@ -219,7 +268,7 @@ export default function FeedbackCard({ feedback, isLeader, onUpdateStatus, group
           >
             <Select>
               <Select.Option value="acknowledged">{t("acknowledgedStatus") || "Acknowledged"}</Select.Option>
-              <Select.Option value="follow_up_requested">{t("pendingStatus") || "Pending"}</Select.Option>
+              <Select.Option value="follow_up_requested">{t("followUpRequestedStatus") || "Follow Up Requested"}</Select.Option>
               <Select.Option value="resolved">{t("resolvedStatus") || "Resolved"}</Select.Option>
             </Select>
           </Form.Item>

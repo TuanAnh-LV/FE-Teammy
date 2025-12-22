@@ -49,10 +49,7 @@ const LoadingState = ({ fullscreen = true, rows = 2 }) => {
         {/* Tabs */}
         <div className="flex gap-4 border-b border-gray-100 mb-6">
           {["Overview", "Team Members", "Workspace", "Files"].map((tab) => (
-            <div
-              key={tab}
-              className="h-9 w-24 rounded-full bg-gray-100"
-            />
+            <div key={tab} className="h-9 w-24 rounded-full bg-gray-100" />
           ))}
         </div>
 

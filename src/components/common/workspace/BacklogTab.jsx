@@ -60,6 +60,7 @@ export default function BacklogTab({
   groupMembers = [],
   onPromoteSuccess,
   readOnly = false,
+  groupStatus = "",
 }) {
   const { t } = useTranslation();
   const [items, setItems] = useState([]);
@@ -68,6 +69,12 @@ export default function BacklogTab({
   const [form, setForm] = useState(defaultForm);
   const [editingId, setEditingId] = useState(null);
   const fetchedRef = useRef(null);
+
+  const isGroupClosed = () => {
+    if (!groupStatus) return false;
+    const statusLower = (groupStatus || "").toLowerCase();
+    return statusLower.includes("closed");
+  };
 
   const memberMap = useMemo(() => {
     const map = new Map();
@@ -98,13 +105,13 @@ export default function BacklogTab({
   }, [columnOptions]);
 
   useEffect(() => {
-    if (!groupId || fetchedRef.current === groupId) return;
+    if (!groupId || fetchedRef.current === groupId || isGroupClosed()) return;
     fetchedRef.current = groupId;
     fetchItems();
-  }, [groupId]);
+  }, [groupId, groupStatus]);
 
   const fetchItems = async () => {
-    if (!groupId) return;
+    if (!groupId || isGroupClosed()) return;
     setLoading(true);
     try {
       const res = await BacklogService.getBacklog(groupId);
@@ -167,7 +174,7 @@ export default function BacklogTab({
   };
 
   const handleSubmit = async () => {
-    if (!groupId) return;
+    if (!groupId || isGroupClosed()) return;
     const trimmedTitle = (form.title || "").trim();
     if (!trimmedTitle) {
       notification.error({
@@ -228,7 +235,7 @@ export default function BacklogTab({
   };
 
   const archiveItem = async (id) => {
-    if (!groupId || !id) return;
+    if (!groupId || !id || isGroupClosed()) return;
     try {
       await BacklogService.archiveBacklogItem(groupId, id);
       notification.success({
@@ -246,7 +253,7 @@ export default function BacklogTab({
   };
 
   const handlePromote = async (item) => {
-    if (readOnly) return;
+    if (readOnly || isGroupClosed()) return;
     if (!groupId || !item) return;
     const backlogId = getItemId(item);
     if (!backlogId) return;

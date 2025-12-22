@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Star, Send } from "lucide-react";
 import { Form, Input, Select, Button } from "antd";
 import { useTranslation } from "../../../hook/useTranslation";
@@ -11,10 +11,11 @@ export default function SendFeedbackModal({
   onClose,
   onSubmit,
   groupName = "",
+  initialValues = null,
 }) {
   const { t } = useTranslation();
   const [form] = Form.useForm();
-  const [rating, setRating] = useState(0);
+  const [rating, setRating] = useState(initialValues?.rating || 0);
   const [hoverRating, setHoverRating] = useState(0);
 
   const handleBackdrop = (e) => {
@@ -25,10 +26,28 @@ export default function SendFeedbackModal({
 
   const handleClose = () => {
     form.resetFields();
-    setRating(0);
+    setRating(initialValues?.rating || 0);
     setHoverRating(0);
     onClose();
   };
+
+  // Update form when initialValues change (for edit mode)
+  useEffect(() => {
+    if (open && initialValues) {
+      form.setFieldsValue({
+        summary: initialValues.summary,
+        category: initialValues.category,
+        rating: initialValues.rating,
+        details: initialValues.details,
+        blockers: initialValues.blockers,
+        nextSteps: initialValues.nextSteps,
+      });
+      setRating(initialValues.rating || 0);
+    } else if (open && !initialValues) {
+      form.resetFields();
+      setRating(0);
+    }
+  }, [open, initialValues, form]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -79,10 +98,12 @@ export default function SendFeedbackModal({
         <div className="flex items-center justify-between border-b px-6 py-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
-              {t("sendFeedbackTitle") || "Send Feedback"}
+              {initialValues ? (t("editFeedback") || "Edit Feedback") : (t("sendFeedbackTitle") || "Send Feedback")}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
-              {t("sendFeedbackSubtitle") || "Send comments and evaluations for group"} {groupName || ""}
+              {initialValues 
+                ? (t("editFeedbackSubtitle") || "Edit feedback for group") 
+                : (t("sendFeedbackSubtitle") || "Send comments and evaluations for group")} {groupName || ""}
             </p>
           </div>
           <button
@@ -210,7 +231,9 @@ export default function SendFeedbackModal({
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
             <Send className="w-4 h-4" />
-            {submitting ? (t("sendingFeedback") || "Sending...") : (t("sendFeedback") || "Send Feedback")}
+            {submitting 
+              ? (initialValues ? (t("updatingFeedback") || "Updating...") : (t("sendingFeedback") || "Sending..."))
+              : (initialValues ? (t("updateFeedback") || "Update Feedback") : (t("sendFeedback") || "Send Feedback"))}
           </button>
         </div>
       </form>

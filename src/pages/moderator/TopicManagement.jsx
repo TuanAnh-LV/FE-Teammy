@@ -18,9 +18,7 @@ import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
-  CopyOutlined,
   UploadOutlined,
-  DownloadOutlined,
 } from "@ant-design/icons";
 import TopicDetailModal from "../../components/moderator/TopicDetailModal";
 import TopicAddModal from "../../components/moderator/TopicAddModal";
@@ -338,7 +336,6 @@ const TopicManagement = () => {
         </Card>
       </div>
 
-      {/* Modals */}
       <TopicAddModal
         open={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

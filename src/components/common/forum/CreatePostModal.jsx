@@ -207,6 +207,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           </Button>
         </div>
       }
+      styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
       open={isOpen}
       onCancel={() => {
         form.resetFields();
@@ -399,7 +400,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
                   )}
                 </div>
 
-                <div className="max-h-[200px] overflow-y-auto p-3 border border-gray-300 rounded-lg bg-white">
+                <div className="max-h-[300px] overflow-y-auto p-3 border border-gray-300 rounded-lg bg-white">
                   <p className="text-xs font-medium text-gray-700 mb-2">
                     {t("availableSkillsClickToAdd") ||
                       "Available Skills (Click to add)"}

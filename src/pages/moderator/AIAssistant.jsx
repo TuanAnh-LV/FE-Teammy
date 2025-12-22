@@ -191,7 +191,7 @@ export default function AIAssistantModerator() {
         await AiService.autoAssignTopic({
           groupId: null,
           majorId: null,
-          limitPerGroup: 3,
+          limitPerGroup: null,
         });
 
         notification.success({
@@ -251,7 +251,7 @@ export default function AIAssistantModerator() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
             {t("aiAssistant") || "AI Assistant"}
           </h1>
           <p className="text-gray-500 mt-2">
@@ -261,7 +261,6 @@ export default function AIAssistantModerator() {
         </div>
       </div>
 
-      {/* INSIGHTS SUMMARY */}
       <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-none shadow-md">
         <h4 className="font-semibold text-gray-900 mb-4 text-lg">
           {t("aiInsightsSummary") || "AI Insights Summary"}
@@ -320,7 +319,6 @@ export default function AIAssistantModerator() {
         </div>
       </Card>
 
-      {/* CONFIGURATION CARD */}
       <Card className="shadow-sm border border-gray-200">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div className="flex-1">
@@ -383,7 +381,6 @@ export default function AIAssistantModerator() {
         </div>
       </Card>
 
-      {/* FINDINGS & ACTIONS */}
       {analysisResults.length > 0 && (
         <Card className="shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-6">
@@ -403,7 +400,6 @@ export default function AIAssistantModerator() {
                 className="rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-blue-300"
               >
                 <div className="flex flex-col lg:flex-row justify-between gap-4">
-                  {/* Left Section */}
                   <div className="flex-1">
                     <div className="flex items-start gap-3 mb-3">
                       <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold flex-shrink-0">
@@ -492,13 +488,11 @@ export default function AIAssistantModerator() {
                       </div>
                     </div>
 
-                    {/* Suggestions */}
                     <div className="bg-gray-50 rounded-lg p-4 mt-3">
                       <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                         {t("aiRecommendations") || "AI Recommendations"}
                       </div>
                       <div className="space-y-2 text-sm text-gray-700">
-                        {/* Topics for missingTopics mode */}
                         {item.suggestions.topics &&
                           item.suggestions.topics.length > 0 && (
                             <div>
@@ -506,29 +500,26 @@ export default function AIAssistantModerator() {
                                 {t("suggestedTopics") || "Suggested Topics"}:
                               </span>
                               <div className="mt-2 space-y-2">
-                                {item.suggestions.topics
-                                  .slice(0, 3)
-                                  .map((topic, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex items-start gap-2 pl-4"
-                                    >
-                                      <CheckOutlined className="text-green-600 mt-0.5" />
-                                      <div className="flex-1">
-                                        <div className="text-blue-600 font-medium">
-                                          {topic.title}
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                          {topic.reason}
-                                        </div>
+                                {item.suggestions.topics.map((topic, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-start gap-2 pl-4"
+                                  >
+                                    <CheckOutlined className="text-green-600 mt-0.5" />
+                                    <div className="flex-1">
+                                      <div className="text-blue-600 font-medium">
+                                        {topic.title}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {topic.reason}
                                       </div>
                                     </div>
-                                  ))}
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           )}
 
-                        {/* Group for membersWithoutGroup mode */}
                         {item.suggestions.group && (
                           <div className="flex items-start gap-2">
                             <CheckOutlined className="text-green-600 mt-0.5" />
@@ -543,7 +534,6 @@ export default function AIAssistantModerator() {
                           </div>
                         )}
 
-                        {/* Members for groupsMissingMembers mode */}
                         {item.suggestions.members &&
                           item.suggestions.members.length > 0 && (
                             <div>
@@ -551,24 +541,37 @@ export default function AIAssistantModerator() {
                                 {t("suggestedMembers") || "Suggested Members"}:
                               </span>
                               <div className="mt-2 space-y-2">
-                                {item.suggestions.members
-                                  .slice(0, 3)
-                                  .map((member, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex items-start gap-2 pl-4"
-                                    >
-                                      <CheckOutlined className="text-green-600 mt-0.5" />
-                                      <div className="flex-1">
-                                        <div className="text-blue-600 font-medium">
+                                {item.suggestions.members.map((member, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-start gap-2 pl-4"
+                                  >
+                                    <CheckOutlined className="text-green-600 mt-0.5" />
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-blue-600 font-medium">
                                           {member.displayName}
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                          {member.primaryRole} • {member.reason}
-                                        </div>
+                                        </span>
+                                        <Tag
+                                          color={
+                                            member.score >= 80
+                                              ? "green"
+                                              : member.score >= 50
+                                              ? "blue"
+                                              : "orange"
+                                          }
+                                          className="rounded-full"
+                                        >
+                                          {t("score") || "Score"}:{" "}
+                                          {member.score}
+                                        </Tag>
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {member.primaryRole} • {member.reason}
                                       </div>
                                     </div>
-                                  ))}
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           )}
@@ -590,7 +593,6 @@ export default function AIAssistantModerator() {
                     </div>
                   </div>
 
-                  {/* Right Section - Confidence Score */}
                   <div className="flex lg:flex-col items-center lg:items-end justify-between lg:justify-start gap-2">
                     <div className="text-center lg:text-right">
                       <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">

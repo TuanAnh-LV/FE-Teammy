@@ -535,27 +535,29 @@ const Discover = () => {
           ) : (
             <div className="flex flex-col gap-4">
               {membership.hasGroup && isLoadingAI && (
-                <div className="mb-4 rounded-3xl bg-gradient-to-r from-fuchsia-400 via-indigo-400 to-cyan-400 p-[2px] shadow-[0_20px_60px_-20px_rgba(99,102,241,0.45)]">
-                  <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-50 via-indigo-50 to-cyan-50 p-8">
-                    {/* glow blobs */}
-                    <div className="pointer-events-none absolute -top-24 -left-24 h-64 w-64 rounded-full bg-gradient-to-br from-fuchsia-400/35 via-purple-400/20 to-indigo-400/20 blur-3xl animate-pulse" />
+                <div className="relative mb-4 rounded-3xl p-[2px] overflow-hidden shadow-[0_20px_60px_-20px_rgba(99,102,241,0.45)]">
+                  <div
+                    className="absolute inset-0 bg-[conic-gradient(from_180deg,#005BAA,#F37021,#00A94F,#005BAA)] animate-spin"
+                    style={{ animationDuration: "2.8s" }}
+                  />
+                  <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-50 via-orange-50 to-green-50 p-8">
+                    <div className="pointer-events-none absolute -top-24 -left-24 h-64 w-64 rounded-full bg-gradient-to-br from-[#005BAA]/30 via-[#F37021]/15 to-[#00A94F]/15 blur-3xl animate-pulse" />
                     <div
-                      className="pointer-events-none absolute -bottom-28 -right-28 h-72 w-72 rounded-full bg-gradient-to-br from-cyan-400/30 via-indigo-400/20 to-fuchsia-400/20 blur-3xl animate-pulse"
+                      className="pointer-events-none absolute -bottom-28 -right-28 h-72 w-72 rounded-full bg-gradient-to-br from-[#00A94F]/25 via-[#005BAA]/15 to-[#F37021]/15 blur-3xl animate-pulse"
                       style={{ animationDelay: "300ms" }}
                     />
-
-                    {/* subtle dots texture */}
                     <div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.35)_1px,transparent_0)] [background-size:14px_14px]" />
-
                     <div className="relative flex flex-col items-center justify-center text-center">
-                      {/* fancy spinner */}
                       <div className="relative mb-4 grid h-14 w-14 place-items-center">
-                        <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,rgba(236,72,153,0.95),rgba(99,102,241,0.95),rgba(6,182,212,0.95),rgba(236,72,153,0.95))] animate-spin" />
+                        <div
+                          className="absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,#005BAA,#F37021,#00A94F,#005BAA)] animate-spin"
+                          style={{ animationDuration: "1.2s" }}
+                        />
                         <div className="absolute inset-[4px] rounded-full bg-white/70 backdrop-blur" />
-                        <Sparkles className="relative h-6 w-6 text-fuchsia-600 animate-pulse drop-shadow" />
+                        <Sparkles className="relative h-6 w-6 text-[#005BAA] animate-pulse drop-shadow" />
                       </div>
 
-                      <p className="font-bold text-base bg-gradient-to-r from-fuchsia-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
+                      <p className="font-bold text-base bg-gradient-to-r from-[#005BAA] via-[#F37021] to-[#00A94F] bg-clip-text text-transparent">
                         {t("aiAnalyzing") || "AI is analyzing your group..."}
                       </p>
 
@@ -564,18 +566,17 @@ const Discover = () => {
                           "Finding the best topic matches"}
                       </p>
 
-                      {/* 3 dots loading */}
                       <div className="mt-3 flex items-center gap-1">
                         <span
-                          className="h-2 w-2 rounded-full bg-fuchsia-500 animate-bounce"
+                          className="h-2 w-2 rounded-full bg-[#005BAA] animate-bounce"
                           style={{ animationDelay: "0ms" }}
                         />
                         <span
-                          className="h-2 w-2 rounded-full bg-indigo-500 animate-bounce"
+                          className="h-2 w-2 rounded-full bg-[#F37021] animate-bounce"
                           style={{ animationDelay: "120ms" }}
                         />
                         <span
-                          className="h-2 w-2 rounded-full bg-cyan-500 animate-bounce"
+                          className="h-2 w-2 rounded-full bg-[#00A94F] animate-bounce"
                           style={{ animationDelay: "240ms" }}
                         />
                       </div>

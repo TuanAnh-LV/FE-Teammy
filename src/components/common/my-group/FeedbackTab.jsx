@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Search, Plus, MessageSquare, Filter } from "lucide-react";
-import { Input, Select, Spin } from "antd";
+import { Input, Select, Spin, notification, Modal } from "antd";
 import FeedbackCard from "./FeedbackCard";
 import SendFeedbackModal from "./SendFeedbackModal";
 import { GroupService } from "../../../services/group.service";
@@ -9,7 +9,7 @@ import { useTranslation } from "../../../hook/useTranslation";
 
 const { Search: SearchInput } = Input;
 
-export default function FeedbackTab({ groupId, isMentor = false, isLeader = false, groupName = "" }) {
+export default function FeedbackTab({ groupId, isMentor = false, isLeader = false, groupName = "", groupDetail = null }) {
   const { t } = useTranslation();
   const { userInfo } = useAuth();
   const [feedbackList, setFeedbackList] = useState([]);
@@ -17,7 +17,19 @@ export default function FeedbackTab({ groupId, isMentor = false, isLeader = fals
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sendModalOpen, setSendModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingFeedback, setEditingFeedback] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Verify if current user is the assigned mentor
+  const isAssignedMentor = React.useMemo(() => {
+    if (!isMentor || !groupDetail || !userInfo?.email) return false;
+    const mentor = groupDetail?.mentor || (Array.isArray(groupDetail?.mentors) ? groupDetail.mentors[0] : null);
+    if (!mentor) return false;
+    const mentorEmail = (mentor.email || mentor.userEmail || "").toLowerCase();
+    const currentUserEmail = userInfo.email.toLowerCase();
+    return mentorEmail === currentUserEmail;
+  }, [isMentor, groupDetail, userInfo]);
 
   useEffect(() => {
     if (groupId) {
@@ -30,7 +42,12 @@ export default function FeedbackTab({ groupId, isMentor = false, isLeader = fals
       setLoading(true);
       const response = await GroupService.getFeedbackList(groupId);
       const data = response?.data || [];
-      setFeedbackList(Array.isArray(data) ? data : []);
+      const feedbackArray = Array.isArray(data) ? data : [];
+      // Log để debug feedback structure
+      if (feedbackArray.length > 0) {
+        console.log("Feedback structure:", feedbackArray[0]);
+      }
+      setFeedbackList(feedbackArray);
     } catch (error) {
       console.error("Failed to fetch feedback:", error);
       setFeedbackList([]);
@@ -40,13 +57,36 @@ export default function FeedbackTab({ groupId, isMentor = false, isLeader = fals
   };
 
   const handleSendFeedback = async (values) => {
+    // Security check: Only assigned mentor can send feedback
+    if (!isAssignedMentor) {
+      notification.error({
+        message: t("unauthorized") || "Unauthorized",
+        description: t("onlyAssignedMentorCanSendFeedback") || "Only assigned mentor can send feedback",
+      });
+      return;
+    }
+    
     try {
       setSubmitting(true);
       await GroupService.createFeedback(groupId, values);
       await fetchFeedbackList();
       setSendModalOpen(false);
+      notification.success({
+        message: t("feedbackSent") || "Feedback sent successfully",
+      });
     } catch (error) {
       console.error("Failed to send feedback:", error);
+      const errorMessage = 
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        t("sendFeedbackFailed") || 
+        "Failed to send feedback";
+      
+      notification.error({
+        message: t("error") || "Error",
+        description: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage),
+      });
       throw error;
     } finally {
       setSubmitting(false);
@@ -57,28 +97,174 @@ export default function FeedbackTab({ groupId, isMentor = false, isLeader = fals
     try {
       await GroupService.updateFeedbackStatus(groupId, feedbackId, values);
       await fetchFeedbackList();
+      notification.success({
+        message: t("statusUpdated") || "Status updated successfully",
+      });
     } catch (error) {
       console.error("Failed to update feedback status:", error);
+      const errorMessage = 
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        t("updateStatusFailed") || 
+        "Failed to update status";
+      
+      notification.error({
+        message: t("error") || "Error",
+        description: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage),
+      });
       throw error;
     }
   };
 
-  const filteredFeedback = feedbackList.filter((feedback) => {
-    const matchesSearch =
-      !searchQuery ||
-      feedback.summary?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      feedback.details?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      feedback.category?.toLowerCase().includes(searchQuery.toLowerCase());
+  const handleEditFeedback = (feedback) => {
+    setEditingFeedback(feedback);
+    setEditModalOpen(true);
+  };
 
-    const matchesStatus =
-      statusFilter === "all" ||
-      (feedback.status?.toLowerCase() === statusFilter.toLowerCase()) ||
-      (statusFilter === "acknowledged" && 
-       (feedback.status?.toLowerCase() === "acknowledged" || feedback.status?.toLowerCase() === "đã xác nhận")) ||
-      (statusFilter === "follow_up_requested" && 
-       (feedback.status?.toLowerCase() === "follow_up_requested" || feedback.status?.toLowerCase() === "chờ xử lý")) ||
-      (statusFilter === "resolved" && 
-       (feedback.status?.toLowerCase() === "resolved" || feedback.status?.toLowerCase() === "đã giải quyết"));
+  const handleUpdateFeedback = async (values) => {
+    if (!editingFeedback) return;
+    
+    // Security check: Only assigned mentor can edit feedback
+    if (!isAssignedMentor) {
+      notification.error({
+        message: t("unauthorized") || "Unauthorized",
+        description: t("onlyAssignedMentorCanEditFeedback") || "Only assigned mentor can edit feedback",
+      });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const feedbackId = editingFeedback.feedbackId || editingFeedback.id || editingFeedback._id || editingFeedback.feedback_id;
+      await GroupService.updateFeedback(groupId, feedbackId, values);
+      await fetchFeedbackList();
+      setEditModalOpen(false);
+      setEditingFeedback(null);
+      notification.success({
+        message: t("feedbackUpdated") || "Feedback updated successfully",
+      });
+    } catch (error) {
+      console.error("Failed to update feedback:", error);
+      
+      // Handle 409 error specifically
+      if (error?.response?.status === 409) {
+        notification.error({
+          message: t("error") || "Error",
+          description: t("feedbackAlreadyResolved") || "Feedback already resolved",
+        });
+      } else {
+        const errorMessage = 
+          error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          t("updateFeedbackFailed") || 
+          "Failed to update feedback";
+        
+        notification.error({
+          message: t("error") || "Error",
+          description: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage),
+        });
+      }
+      throw error;
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteFeedback = (feedback) => {
+    Modal.confirm({
+      title: t("confirmDelete") || "Confirm Delete",
+      content: t("confirmDeleteFeedback") || "Are you sure you want to delete this feedback?",
+      okText: t("delete") || "Delete",
+      okType: "danger",
+      cancelText: t("cancel") || "Cancel",
+      onOk: async () => {
+        // Security check: Only assigned mentor can delete feedback
+        if (!isAssignedMentor) {
+          notification.error({
+            message: t("unauthorized") || "Unauthorized",
+            description: t("onlyAssignedMentorCanDeleteFeedback") || "Only assigned mentor can delete feedback",
+          });
+          return;
+        }
+
+        try {
+          setSubmitting(true);
+          const feedbackId = feedback.feedbackId || feedback.id || feedback._id || feedback.feedback_id;
+          await GroupService.deleteFeedback(groupId, feedbackId);
+          await fetchFeedbackList();
+          notification.success({
+            message: t("feedbackDeleted") || "Feedback deleted successfully",
+          });
+        } catch (error) {
+          console.error("Failed to delete feedback:", error);
+          
+          // Handle 409 error specifically
+          if (error?.response?.status === 409) {
+            notification.error({
+              message: t("error") || "Error",
+              description: t("onlySubmittedFeedbackCanBeDeleted") || "Only submitted feedback can be deleted",
+            });
+          } else {
+            const errorMessage = 
+              error?.response?.data?.message ||
+              error?.response?.data?.error ||
+              error?.message ||
+              t("deleteFeedbackFailed") || 
+              "Failed to delete feedback";
+            
+            notification.error({
+              message: t("error") || "Error",
+              description: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage),
+            });
+          }
+        } finally {
+          setSubmitting(false);
+        }
+      },
+    });
+  };
+
+  const filteredFeedback = feedbackList.filter((feedback) => {
+    // Search logic - search in multiple fields
+    const searchLower = searchQuery?.toLowerCase().trim() || "";
+    const matchesSearch = !searchLower || 
+      feedback.summary?.toLowerCase().includes(searchLower) ||
+      feedback.details?.toLowerCase().includes(searchLower) ||
+      feedback.category?.toLowerCase().includes(searchLower) ||
+      feedback.blockers?.toLowerCase().includes(searchLower) ||
+      feedback.nextSteps?.toLowerCase().includes(searchLower) ||
+      feedback.acknowledgedNote?.toLowerCase().includes(searchLower) ||
+      feedback.note?.toLowerCase().includes(searchLower) ||
+      feedback.mentorName?.toLowerCase().includes(searchLower) ||
+      (feedback.mentor?.displayName || feedback.mentor?.name || feedback.mentor?.email || "").toLowerCase().includes(searchLower);
+
+    // Status filter logic - normalize status values
+    const feedbackStatus = (feedback.status || "").toLowerCase().trim();
+    const filterStatus = (statusFilter || "").toLowerCase().trim();
+    
+    let matchesStatus = false;
+    
+    if (filterStatus === "all") {
+      matchesStatus = true;
+    } else if (filterStatus === "acknowledged") {
+      matchesStatus = feedbackStatus === "acknowledged" || feedbackStatus === "đã xác nhận";
+    } else if (filterStatus === "follow_up_requested") {
+      // Check multiple possible formats for follow_up_requested
+      // Normalize: remove spaces, dashes, underscores for comparison
+      const normalizedFeedbackStatus = feedbackStatus.replace(/[\s\-_]/g, "").toLowerCase();
+      
+      matchesStatus = 
+        feedbackStatus === "follow_up_requested" || 
+        feedbackStatus === "follow-up-requested" ||
+        feedbackStatus === "followuprequested" ||
+        feedbackStatus === "follow up requested" ||
+        feedbackStatus === "chờ xử lý" ||
+        normalizedFeedbackStatus === "followuprequested";
+    } else if (filterStatus === "resolved") {
+      matchesStatus = feedbackStatus === "resolved" || feedbackStatus === "đã giải quyết";
+    }
 
     return matchesSearch && matchesStatus;
   });
@@ -96,7 +282,7 @@ export default function FeedbackTab({ groupId, isMentor = false, isLeader = fals
             ({filteredFeedback.length} {t("feedbackCount") || "feedback"})
           </span>
         </div>
-        {isMentor && (
+        {isMentor && isAssignedMentor && (
           <button
             onClick={() => setSendModalOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
@@ -126,7 +312,7 @@ export default function FeedbackTab({ groupId, isMentor = false, isLeader = fals
             suffixIcon={<Filter className="w-4 h-4 text-gray-400" />}
           >
             <Select.Option value="all">{t("allStatuses") || "All statuses"}</Select.Option>
-            <Select.Option value="follow_up_requested">{t("pendingStatus") || "Pending"}</Select.Option>
+            <Select.Option value="follow_up_requested">{t("followUpRequestedStatus") || "Follow Up Requested"}</Select.Option>
             <Select.Option value="acknowledged">{t("acknowledgedStatus") || "Acknowledged"}</Select.Option>
             <Select.Option value="resolved">{t("resolvedStatus") || "Resolved"}</Select.Option>
           </Select>
@@ -149,15 +335,22 @@ export default function FeedbackTab({ groupId, isMentor = false, isLeader = fals
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredFeedback.map((feedback) => (
-            <FeedbackCard
-              key={feedback.id}
-              feedback={feedback}
-              isLeader={isLeader}
-              onUpdateStatus={handleUpdateStatus}
-              groupId={groupId}
-            />
-          ))}
+          {filteredFeedback.map((feedback) => {
+            // Backend returns feedbackId as the primary field
+            const feedbackId = feedback.feedbackId || feedback.id || feedback._id || feedback.feedback_id || `feedback-${Math.random()}`;
+            return (
+              <FeedbackCard
+                key={feedbackId}
+                feedback={feedback}
+                isLeader={isLeader}
+                isMentor={isMentor && isAssignedMentor}
+                onUpdateStatus={handleUpdateStatus}
+                onEdit={handleEditFeedback}
+                onDelete={handleDeleteFeedback}
+                groupId={groupId}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -170,6 +363,26 @@ export default function FeedbackTab({ groupId, isMentor = false, isLeader = fals
           setSendModalOpen(false);
         }}
         onSubmit={handleSendFeedback}
+      />
+
+      {/* Edit Feedback Modal */}
+      <SendFeedbackModal
+        open={editModalOpen}
+        submitting={submitting}
+        groupName={groupName}
+        onClose={() => {
+          setEditModalOpen(false);
+          setEditingFeedback(null);
+        }}
+        onSubmit={handleUpdateFeedback}
+        initialValues={editingFeedback ? {
+          summary: editingFeedback.summary,
+          category: editingFeedback.category,
+          rating: editingFeedback.rating,
+          details: editingFeedback.details,
+          blockers: editingFeedback.blockers,
+          nextSteps: editingFeedback.nextSteps,
+        } : undefined}
       />
     </div>
   );

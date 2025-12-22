@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { BoardService } from "../../../services/board.service";
 import { notification, Modal, Input } from "antd";
 import { useTranslation } from "../../../hook/useTranslation";
+import { useAuth } from "../../../context/AuthContext";
 
 const getAssigneeId = (assignee) => {
   if (!assignee) return "";
@@ -60,6 +61,7 @@ const TaskModal = ({
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { userInfo } = useAuth();
   const [text, setText] = useState("");
   const [detailForm, setDetailForm] = useState({
     title: "",
@@ -683,20 +685,37 @@ const TaskModal = ({
                                     {comment.createdAt && (
                                       <span>{formatTimestamp(comment.createdAt)}</span>
                                     )}
-                                    <button
-                                      type="button"
-                                      className="text-blue-600 hover:underline"
-                                      onClick={() => startEditComment(comment)}
-                                    >
-                                      {t("edit") || "Edit"}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="text-red-500 hover:underline"
-                                      onClick={() => handleDeleteComment(comment.id)}
-                                    >
-                                      {t("delete") || "Delete"}
-                                    </button>
+                                    {(() => {
+                                      // Check if current user is the author of the comment
+                                      const commentUserId = comment.userId || comment.authorId || comment.createdById || "";
+                                      const currentUserId = userInfo?.userId || userInfo?.id || userInfo?.accountId || "";
+                                      const isCommentOwner = commentUserId && currentUserId && (
+                                        commentUserId === currentUserId ||
+                                        String(commentUserId).toLowerCase() === String(currentUserId).toLowerCase()
+                                      );
+                                      
+                                      // Only show Edit/Delete buttons if user owns the comment
+                                      if (!isCommentOwner) return null;
+                                      
+                                      return (
+                                        <>
+                                          <button
+                                            type="button"
+                                            className="text-blue-600 hover:underline"
+                                            onClick={() => startEditComment(comment)}
+                                          >
+                                            {t("edit") || "Edit"}
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="text-red-500 hover:underline"
+                                            onClick={() => handleDeleteComment(comment.id)}
+                                          >
+                                            {t("delete") || "Delete"}
+                                          </button>
+                                        </>
+                                      );
+                                    })()}
                                   </div>
                                 </div>
                                 {editingCommentId === comment.id ? (

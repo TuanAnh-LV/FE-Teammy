@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import {
   LayoutDashboard,
   Users,
-  FolderKanban,
+  Briefcase,
   FileText,
   FolderOpen,
   MessageSquare,
+  Plus,
+  Mail,
   Menu,
   X,
 } from "lucide-react";
@@ -16,11 +18,11 @@ export default function SidebarNavigation({ activeTab, onChange, tabs, t }) {
   const iconMap = {
     overview: LayoutDashboard,
     members: Users,
-    workspace: FolderKanban,
+    workspace: Briefcase,
     feedback: MessageSquare,
     posts: FileText,
     files: FolderOpen,
-    invitations: Users,
+    invitations: Mail,
   };
 
   const handleTabChange = (tabKey) => {
@@ -89,11 +91,26 @@ export default function SidebarNavigation({ activeTab, onChange, tabs, t }) {
                     }
                   `}
                 >
-                  <Icon
-                    className={`w-5 h-5 flex-shrink-0 ${
-                      isActive ? "text-blue-600" : "text-gray-500"
-                    }`}
-                  />
+                  {tab.key === "feedback" ? (
+                    <div className="relative flex-shrink-0">
+                      <MessageSquare
+                        className={`w-5 h-5 ${
+                          isActive ? "text-blue-600" : "text-gray-500"
+                        }`}
+                      />
+                      <Plus 
+                        className={`absolute -top-1 -right-1 w-3 h-3 ${
+                          isActive ? "text-blue-600" : "text-gray-500"
+                        } bg-white rounded-full`} 
+                      />
+                    </div>
+                  ) : (
+                    <Icon
+                      className={`w-5 h-5 flex-shrink-0 ${
+                        isActive ? "text-blue-600" : "text-gray-500"
+                      }`}
+                    />
+                  )}
                   <span className="capitalize">{tab.label}</span>
                 </button>
               );

@@ -1,17 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { Card, Spin, notification } from "antd";
+import React, { useEffect, useMemo, useState } from "react";
+import { Card, Spin, notification, Tag } from "antd";
 import {
   UserOutlined,
   TeamOutlined,
   ProjectOutlined,
-  CheckCircleOutlined,
   UserAddOutlined,
   ClockCircleOutlined,
 } from "@ant-design/icons";
 import {
   BarChart,
   Bar,
-  Cell,
   Tooltip,
   XAxis,
   YAxis,
@@ -21,17 +19,6 @@ import {
 } from "recharts";
 import { AdminService } from "../../services/admin.service";
 import { useTranslation } from "../../hook/useTranslation";
-
-const COLORS = [
-  "#3B82F6",
-  "#22C55E",
-  "#F97316",
-  "#EAB308",
-  "#8B5CF6",
-  "#EC4899",
-  "#06B6D4",
-  "#CBD5E1",
-];
 
 const AdminDashboard = () => {
   const { t } = useTranslation();
@@ -49,37 +36,56 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       const response = await AdminService.getDashboardStats();
-      if (response?.data) {
-        setDashboardData(response.data);
-      }
+      if (response?.data) setDashboardData(response.data);
     } catch {
       notification.error({
-        message: t("error"),
+        message: t("error") || "Error",
         description: "Failed to load dashboard statistics",
       });
     } finally {
       setLoading(false);
     }
   };
+
   const fetchMajorsData = async () => {
     try {
       const response = await AdminService.getMajorStats(false);
-      if (response?.data) {
-        const stats = Array.isArray(response.data) ? response.data : [];
+      const stats = Array.isArray(response?.data) ? response.data : [];
 
-        const chartData = stats.map((major) => ({
+      const chartData = stats
+        .map((major) => ({
           name: major.majorName || "Unknown",
           studentCount: major.studentCount ?? 0,
           studentsWithoutGroup: major.studentsWithoutGroup ?? 0,
           groupCount: major.groupCount ?? 0,
-        }));
+        }))
+        .filter(
+          (x) =>
+            x.studentCount > 0 || x.studentsWithoutGroup > 0 || x.groupCount > 0
+        )
+        .sort((a, b) => b.studentCount - a.studentCount);
 
-        setMajorsData(chartData);
-      }
+      setMajorsData(chartData);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error("Failed to fetch majors stats:", error);
     }
   };
+
+  const cardThemes = useMemo(
+    () => [
+      { ring: "ring-blue-200/60", grad: "from-blue-500 to-indigo-500" },
+      { ring: "ring-emerald-200/60", grad: "from-emerald-500 to-teal-500" },
+      { ring: "ring-orange-200/60", grad: "from-orange-500 to-rose-500" },
+      { ring: "ring-violet-200/60", grad: "from-violet-500 to-fuchsia-500" },
+      { ring: "ring-cyan-200/60", grad: "from-cyan-500 to-sky-500" },
+      { ring: "ring-amber-200/60", grad: "from-amber-500 to-orange-500" },
+      { ring: "ring-slate-200/60", grad: "from-slate-600 to-slate-800" },
+      { ring: "ring-lime-200/60", grad: "from-lime-500 to-emerald-500" },
+      { ring: "ring-pink-200/60", grad: "from-pink-500 to-rose-500" },
+    ],
+    []
+  );
 
   const cards = [
     {
@@ -141,91 +147,123 @@ const AdminDashboard = () => {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold">
             {t("dashboard") || "Dashboard"}
           </h1>
         </div>
       </div>
 
-      {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cards.map((card, i) => (
-          <Card
-            key={i}
-            className="shadow-sm border-gray-100 hover:shadow-md transition-all"
-            style={{ padding: "20px" }}
-          >
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-gray-500 text-sm">{card.title}</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {typeof card.value === "number"
-                    ? card.value.toLocaleString()
-                    : card.value}
-                </p>
+        {cards.map((card, i) => {
+          const theme = cardThemes[i % cardThemes.length];
+
+          return (
+            <Card
+              key={i}
+              className={`relative overflow-hidden rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition-all`}
+              styles={{ body: { padding: 18 } }}
+            >
+              <div
+                className={`pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full opacity-20 blur-2xl bg-gradient-to-br ${theme.grad}`}
+              />
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-slate-500 text-sm">{card.title}</p>
+                  <p className="text-3xl font-extrabold text-slate-800 mt-1">
+                    {typeof card.value === "number"
+                      ? card.value.toLocaleString()
+                      : card.value}
+                  </p>
+                </div>
+
+                <div
+                  className={`h-11 w-11 rounded-2xl grid place-items-center text-white shadow-sm bg-gradient-to-br ${theme.grad} ring-4 ${theme.ring}`}
+                >
+                  <span className="text-xl">{card.icon}</span>
+                </div>
               </div>
-              <div className="text-blue-500 text-2xl">{card.icon}</div>
-            </div>
-          </Card>
-        ))}
+
+              <div className="mt-4 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                <div
+                  className={`h-full w-2/3 bg-gradient-to-r ${theme.grad}`}
+                />
+              </div>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 gap-6 mt-6">
-        {/* Pie Chart */}
+      <div className="grid grid-cols-1 gap-6">
         <Card
-          title={t("majorsDistribution") || "Majors Distribution"}
-          className="shadow-sm border-gray-100"
-          style={{ padding: "20px" }}
+          title={
+            <div className="flex items-center gap-2">
+              <span className="font-bold">
+                {t("majorsDistribution") || "Majors Distribution"}
+              </span>
+              <span className="text-xs text-slate-500">
+                •{" "}
+                {t("studentDistributionMajors") ||
+                  "Student & group statistics across majors"}
+              </span>
+            </div>
+          }
+          className="rounded-2xl border border-slate-100 shadow-sm"
+          styles={{
+            header: { borderBottom: "1px solid #f1f5f9" },
+            body: { padding: 16 },
+          }}
         >
-          <p className="text-gray-500 text-sm mb-3">
-            {t("studentDistributionMajors") ||
-              "Student & group statistics across majors"}
-          </p>
           {majorsData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart
-                data={majorsData}
-                margin={{ top: 20, right: 30, left: 0, bottom: 80 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="name"
-                  angle={-35}
-                  textAnchor="end"
-                  interval={0}
-                />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Legend />
+            <div className="rounded-2xl bg-gradient-to-br from-slate-50 via-white to-orange-50 p-3">
+              <ResponsiveContainer width="100%" height={480}>
+                <BarChart
+                  data={majorsData}
+                  layout="vertical"
+                  margin={{ top: 10, right: 24, left: 24, bottom: 10 }}
+                  barCategoryGap={14}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" allowDecimals={false} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={190}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip
+                    formatter={(value, name) => [value, name]}
+                    labelFormatter={(label) =>
+                      `${t("major") || "Major"}: ${label}`
+                    }
+                  />
+                  <Legend verticalAlign="top" height={36} />
 
-                {/* Tổng số sinh viên */}
-                <Bar
-                  dataKey="studentCount"
-                  name={t("students") || "Students"}
-                  barSize={18}
-                  fill={COLORS[0]}
-                />
-
-                {/* Số sinh viên chưa có nhóm */}
-                <Bar
-                  dataKey="studentsWithoutGroup"
-                  name={t("studentsWithoutGroup") || "Students without group"}
-                  barSize={18}
-                  fill={COLORS[2]}
-                />
-
-                {/* Số nhóm */}
-                <Bar
-                  dataKey="groupCount"
-                  name={t("groups") || "Groups"}
-                  barSize={18}
-                  fill={COLORS[1]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+                  <Bar
+                    dataKey="studentCount"
+                    name={t("students") || "Students"}
+                    fill="#3B82F6"
+                    radius={[8, 8, 8, 8]}
+                    barSize={14}
+                  />
+                  <Bar
+                    dataKey="studentsWithoutGroup"
+                    name={t("studentsWithoutGroup") || "Students without group"}
+                    fill="#F97316"
+                    radius={[8, 8, 8, 8]}
+                    barSize={14}
+                  />
+                  <Bar
+                    dataKey="groupCount"
+                    name={t("groups") || "Groups"}
+                    fill="#22C55E"
+                    radius={[8, 8, 8, 8]}
+                    barSize={14}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
-            <div className="flex justify-center items-center h-[400px] text-gray-400">
+            <div className="flex justify-center items-center h-[420px] text-slate-400">
               {t("noData") || "No data available"}
             </div>
           )}
