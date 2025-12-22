@@ -23,6 +23,25 @@ export default function MembersPanel({
   const [assignSubmitting, setAssignSubmitting] = useState(false);
   const navigate = useNavigate();
 
+  const groupStatus = (group?.status || "").toString();
+  const isGroupClosed = () => {
+    if (!groupStatus) return false;
+    const statusLower = groupStatus.toLowerCase();
+    // Pending close vẫn cho phép chỉnh sửa, chỉ trạng thái closed mới khóa
+    if (
+      statusLower.includes("pending_close") ||
+      statusLower.includes("pending-close")
+    ) {
+      return false;
+    }
+    return statusLower.includes("closed");
+  };
+
+  // Quyền chỉnh sửa nói chung (kick, change leader...) theo canEdit
+  const canEditMembers = !!group?.canEdit;
+  // Riêng invite + assign role sẽ bị khóa khi group CLOSED
+  const canInviteAndAssign = !!group?.canEdit && !isGroupClosed();
+
   // Calculate member contributions based on task assignments
   const calculateMemberContributions = () => {
     if (!board?.columns || !groupMembers?.length) return groupMembers || [];
@@ -179,7 +198,7 @@ export default function MembersPanel({
                 className="border border-gray-200 rounded-2xl bg-white shadow-sm p-5 flex flex-col gap-3 relative"
               >
                 {/* Kebab Menu */}
-                {group?.canEdit && (
+                {canEditMembers && (
                   <div className="absolute top-4 right-4">
                     <button
                       onClick={() => toggleMenu(getMemberId(member))}
@@ -189,12 +208,14 @@ export default function MembersPanel({
                     </button>
                     {openMenuId === getMemberId(member) && (
                       <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                        <button
-                          onClick={() => handleOpenAssignRole(member)}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          {t("assignRole") || "Assign Role"}
-                        </button>
+                        {canInviteAndAssign && (
+                          <button
+                            onClick={() => handleOpenAssignRole(member)}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            {t("assignRole") || "Assign Role"}
+                          </button>
+                        )}
                         {isCurrentUserLeader() && !isMemberLeader(member) && (
                           <button
                             onClick={() => {
@@ -206,7 +227,7 @@ export default function MembersPanel({
                             {t("changeLeader") || "Change Leader"}
                           </button>
                         )}
-                        {group?.canEdit && !isMemberLeader(member) && (
+                        {canEditMembers && !isMemberLeader(member) && (
                           <button
                             onClick={() => handleKickMember(member)}
                             className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
@@ -376,7 +397,7 @@ export default function MembersPanel({
                       </p>
                     </div>
                   </div>
-                  {group?.canEdit && (
+                  {canEditMembers && (
                     <div className="relative">
                       <button
                         type="button"
@@ -392,13 +413,15 @@ export default function MembersPanel({
                             onClick={() => setOpenMenuId(null)}
                           />
                           <div className="absolute right-0 top-8 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px]">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenAssignRole(member)}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                            >
-                              {t("assignRole") || "Assign Role"}
-                            </button>
+                            {canInviteAndAssign && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenAssignRole(member)}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              >
+                                {t("assignRole") || "Assign Role"}
+                              </button>
+                            )}
                             {isCurrentUserLeader() && !isMemberLeader(member) && (
                               <button
                                 type="button"
@@ -411,7 +434,7 @@ export default function MembersPanel({
                                 {t("changeLeader") || "Change Leader"}
                               </button>
                             )}
-                            {group?.canEdit && !isMemberLeader(member) && (
+                            {canEditMembers && !isMemberLeader(member) && (
                               <button
                                 type="button"
                                 onClick={() => handleKickMember(member)}
@@ -432,7 +455,7 @@ export default function MembersPanel({
                 {t("noMembersYet") || "No members yet."}
               </p>
             )}
-            {group?.canEdit && (
+            {canInviteAndAssign && (
               <button
                 type="button"
                 onClick={onInvite}

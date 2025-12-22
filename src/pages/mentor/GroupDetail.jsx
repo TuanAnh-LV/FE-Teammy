@@ -16,6 +16,7 @@ import MilestonesTab from "../../components/common/workspace/MilestonesTab";
 import ReportsTab from "../../components/common/workspace/ReportsTab";
 import TaskModal from "../../components/common/kanban/TaskModal";
 import { useAuth } from "../../context/AuthContext";
+import { subscribeGroupStatus } from "../../services/groupStatusHub";
 import { useTranslation } from "../../hook/useTranslation";
 
 export default function GroupDetail() {
@@ -25,6 +26,7 @@ export default function GroupDetail() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("overview");
   const [groupDetail, setGroupDetail] = useState(null);
+  const [groupMembersList, setGroupMembersList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState("kanban");
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
@@ -80,6 +82,75 @@ export default function GroupDetail() {
   useEffect(() => {
     fetchGroupDetail();
   }, [fetchGroupDetail]);
+
+  // Realtime: listen GroupStatusChanged và refetch nếu payload groupId trùng
+  useEffect(() => {
+    const handler = (payload) => {
+      if (!payload || !payload.groupId) return;
+      if (String(payload.groupId) === String(id)) {
+        fetchGroupDetail();
+      }
+    };
+
+    const unsubscribe = subscribeGroupStatus(handler);
+    return () => {
+      unsubscribe();
+    };
+  }, [id, fetchGroupDetail]);
+
+  // Fetch group members (independent of workspace / board status)
+  const fetchGroupMembers = useCallback(async () => {
+    if (!id) return;
+    try {
+      const res = await GroupService.getListMembers(id);
+      const membersRaw = Array.isArray(res?.data) ? res.data : [];
+
+      const normalizedMembers = membersRaw.map((m) => {
+        const email = m.email || "";
+        const avatarFromApi =
+          m.avatarUrl ||
+          m.avatarURL ||
+          m.avatar_url ||
+          m.avatar ||
+          m.imageUrl ||
+          m.imageURL ||
+          m.image_url ||
+          m.photoURL ||
+          m.photoUrl ||
+          m.photo_url ||
+          m.profileImage ||
+          m.user?.avatarUrl ||
+          m.user?.avatar ||
+          m.user?.photoURL ||
+          m.user?.photoUrl ||
+          m.user?.imageUrl ||
+          m.user?.profileImage ||
+          "";
+
+        const memberId =
+          m.id || m.memberId || m.userId || m.userID || m.accountId || "";
+
+        return {
+          id: memberId,
+          name: m.displayName || m.name || "",
+          email,
+          role: m.role || m.status || "",
+          joinedAt: m.joinedAt,
+          avatarUrl: avatarFromApi,
+          assignedRoles: m.assignedRoles || [],
+        };
+      });
+
+      setGroupMembersList(normalizedMembers);
+    } catch (error) {
+      console.error("Failed to fetch group members:", error);
+      setGroupMembersList([]);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchGroupMembers();
+  }, [fetchGroupMembers]);
 
   // Check mentor assignment after groupDetail is loaded
   useEffect(() => {
@@ -431,7 +502,9 @@ export default function GroupDetail() {
           {overviewGroup && (
             <InfoCard
               group={overviewGroup}
-              memberCount={groupDetail?.currentMembers || groupMembers.length}
+              memberCount={
+                groupDetail?.currentMembers || groupMembersList.length
+              }
               onBack={undefined}
               onEdit={null}
               onSelectTopic={null}
@@ -452,7 +525,7 @@ export default function GroupDetail() {
               t={t}
             />
             <MembersPanel
-              groupMembers={groupMembers}
+              groupMembers={groupMembersList}
               mentor={mentor}
               group={groupDetail}
               onInvite={null}
@@ -479,7 +552,7 @@ export default function GroupDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-3">
               <MembersPanel
-                groupMembers={groupMembers}
+                groupMembers={groupMembersList}
                 mentor={mentor}
                 group={groupDetail}
                 onInvite={null}
