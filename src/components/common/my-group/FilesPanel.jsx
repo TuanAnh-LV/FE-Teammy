@@ -3,7 +3,13 @@ import { FileText, Plus, Upload, X, MoreVertical, Download, Trash2 } from "lucid
 import { Modal, Input, notification, Dropdown } from "antd";
 import { BoardService } from "../../../services/board.service";
 
-export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
+export default function FilesPanel({
+  fileItems,
+  t,
+  groupId,
+  onUploadSuccess,
+  readOnly = false,
+}) {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [description, setDescription] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
@@ -14,6 +20,7 @@ export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
   const fileInputRef = useRef(null);
 
   const handleOpenUploadModal = () => {
+    if (readOnly) return;
     setUploadModalOpen(true);
     setDescription("");
     setSelectedFile(null);
@@ -27,6 +34,7 @@ export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
   };
 
   const handleUpload = async () => {
+    if (readOnly) return;
     if (!selectedFile) {
       notification.error({
         message: t("validationError") || "Validation error",
@@ -78,6 +86,7 @@ export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
   };
 
   const handleOpenDeleteConfirm = (file) => {
+    if (readOnly) return;
     setFileToDelete(file);
     setDeleteConfirmOpen(true);
   };
@@ -111,13 +120,13 @@ export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
     }
   };
 
-  const getFileMenuItems = (file) => [
-    {
-      key: 'download',
+  const getFileMenuItems = (file) => {
+    const baseDownload = {
+      key: "download",
       label: (
-        <a 
-          href={file.url} 
-          target="_blank" 
+        <a
+          href={file.url}
+          target="_blank"
           rel="noopener noreferrer"
           download={file.name}
           className="flex items-center gap-2 text-gray-700 capitalize"
@@ -126,20 +135,28 @@ export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
           {t("download") || "Download"}
         </a>
       ),
-    },
-    {
-      key: 'delete',
-      label: (
-        <div 
-          className="flex items-center gap-2 text-red-600 cursor-pointer"
-          onClick={() => handleOpenDeleteConfirm(file)}
-        >
-          <Trash2 className="w-4 h-4" />
-          {t("delete") || "Delete"}
-        </div>
-      ),
-    },
-  ];
+    };
+
+    if (readOnly) {
+      return [baseDownload];
+    }
+
+    return [
+      baseDownload,
+      {
+        key: "delete",
+        label: (
+          <div
+            className="flex items-center gap-2 text-red-600 cursor-pointer"
+            onClick={() => handleOpenDeleteConfirm(file)}
+          >
+            <Trash2 className="w-4 h-4" />
+            {t("delete") || "Delete"}
+          </div>
+        ),
+      },
+    ];
+  };
 
   return (
     <div className="space-y-3">
@@ -147,14 +164,16 @@ export default function FilesPanel({ fileItems, t, groupId, onUploadSuccess }) {
         <h3 className="text-lg font-semibold text-gray-900">
           {t("projectFiles") || "Project Files"}
         </h3>
-        <button
-          type="button"
-          onClick={handleOpenUploadModal}
-          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-sm text-white font-semibold p-2.5 rounded-lg shadow-sm transition"
-        >
-          <Plus className="w-4 h-4" />
-          {t("uploadFiles") || "Upload Files"}
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={handleOpenUploadModal}
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-sm text-white font-semibold p-2.5 rounded-lg shadow-sm transition"
+          >
+            <Plus className="w-4 h-4" />
+            {t("uploadFiles") || "Upload Files"}
+          </button>
+        )}
       </div>
 
       {fileItems.length ? (

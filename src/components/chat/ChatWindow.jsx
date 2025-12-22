@@ -21,7 +21,7 @@ import {
 const MAX_MESSAGES = 50;
 const TYPING_TIMEOUT_MS = 3000;
 
-const ChatWindow = ({ session, onBackClick, currentUser }) => {
+const ChatWindow = ({ session, onBackClick, currentUser, onNewMessage }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
@@ -240,10 +240,18 @@ const ChatWindow = ({ session, onBackClick, currentUser }) => {
       dispatch(
         addMessage({ sessionId: effectiveSessionId, message: normalizedMsg })
       );
+
+      // Thông báo cho parent (MessagesPage) để update sidebar (last message, sort, ...)
+      if (typeof onNewMessage === "function") {
+        onNewMessage({
+          sessionId: effectiveSessionId,
+          message: normalizedMsg,
+        });
+      }
     });
 
     return () => unsubMessage();
-  }, [effectiveSessionId, dispatch]);
+  }, [effectiveSessionId, dispatch, onNewMessage]);
 
   // Listen for typing events
   useEffect(() => {

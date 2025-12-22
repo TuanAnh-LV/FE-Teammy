@@ -132,6 +132,35 @@ const MessagesPage = () => {
     setTargetUserId(null);
   };
 
+  // Khi có tin nhắn mới (từ SignalR), cập nhật lastMessage cho sidebar
+  const handleNewMessage = ({ sessionId, message }) => {
+    if (!sessionId || !message) return;
+
+    setConversations((prev) =>
+      (prev || []).map((c) => {
+        const cSessionId = c.sessionId || c.id || c.groupId;
+        if (String(cSessionId) !== String(sessionId)) return c;
+        return {
+          ...c,
+          lastMessage: message.content,
+          lastMessageAt: message.createdAt || new Date().toISOString(),
+        };
+      })
+    );
+
+    // Đồng bộ luôn selectedSession để header bên phải không bị cũ
+    setSelectedSession((prev) => {
+      if (!prev) return prev;
+      const prevSessionId = prev.sessionId || prev.id || prev.groupId;
+      if (String(prevSessionId) !== String(sessionId)) return prev;
+      return {
+        ...prev,
+        lastMessage: message.content,
+        lastMessageAt: message.createdAt || new Date().toISOString(),
+      };
+    });
+  };
+
   const handleBackClick = () => {
     setShowChatView(false);
   };
@@ -173,6 +202,7 @@ const MessagesPage = () => {
               session={selectedSession}
               onBackClick={handleBackClick}
               currentUser={userInfo}
+              onNewMessage={handleNewMessage}
             />
           ) : (
             <div className="flex-1 flex items-center justify-center bg-gray-50">
