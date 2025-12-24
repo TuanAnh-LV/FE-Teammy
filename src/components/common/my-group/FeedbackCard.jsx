@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar, MessageSquare, Star, AlertTriangle, ArrowRight, CheckCircle, Clock, User, Edit, Trash2 } from "lucide-react";
+import { Calendar, MessageSquare, Star, AlertTriangle, ArrowRight, CheckCircle, Clock, User, Edit, Trash2, MoreVertical } from "lucide-react";
 import { Modal, Form, Input, Select, Button } from "antd";
 import { useTranslation } from "../../../hook/useTranslation";
 
@@ -9,6 +9,24 @@ export default function FeedbackCard({ feedback, isLeader, isMentor, onUpdateSta
   const { t } = useTranslation();
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [form] = Form.useForm();
+  const [kebabMenuOpen, setKebabMenuOpen] = useState(false);
+
+  const normalizeStatus = (status) => {
+    if (!status) return "follow_up_requested";
+    const statusLower = (status || "").toLowerCase();
+    // Map valid statuses
+    if (statusLower === "acknowledged" || statusLower === "đã xác nhận") {
+      return "acknowledged";
+    }
+    if (statusLower === "resolved" || statusLower === "đã giải quyết") {
+      return "resolved";
+    }
+    if (statusLower === "follow_up_requested" || statusLower === "chờ xử lý") {
+      return "follow_up_requested";
+    }
+    // Map invalid statuses (like "submitted") to default
+    return "follow_up_requested";
+  };
 
   const getStatusConfig = (status) => {
     const statusLower = (status || "").toLowerCase();
@@ -107,11 +125,42 @@ export default function FeedbackCard({ feedback, isLeader, isMentor, onUpdateSta
     }
   };
 
+  const handleDelete = () => {
+    Modal.confirm({
+      title: t("confirmDeleteFeedback") || "Delete this feedback?",
+      content: t("deleteFeedbackWarning") || "Are you sure you want to delete this feedback? This action cannot be undone.",
+      okText: t("delete") || "Delete",
+      okButtonProps: { danger: true },
+      cancelText: t("cancel") || "Cancel",
+      onOk: () => {
+        if (onDelete) {
+          onDelete(feedback);
+        }
+        setKebabMenuOpen(false);
+      },
+    });
+  };
+
+  // Close kebab menu when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.kebab-menu-container')) {
+        setKebabMenuOpen(false);
+      }
+    };
+    if (kebabMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [kebabMenuOpen]);
+
   return (
     <>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-4">
         {/* Header: Mentor info and status */}
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between relative">
           <div className="flex items-center gap-3">
             {mentorAvatar ? (
               <img
@@ -132,9 +181,54 @@ export default function FeedbackCard({ feedback, isLeader, isMentor, onUpdateSta
               </div>
             </div>
           </div>
-          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
-            {statusConfig.icon}
-            <span>{statusConfig.label}</span>
+          <div className="flex items-center gap-2">
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
+              {statusConfig.icon}
+              <span>{statusConfig.label}</span>
+            </div>
+            {isMentor && (
+              <div className="relative kebab-menu-container">
+                <button
+                  type="button"
+                  className="p-1 rounded hover:bg-gray-200 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setKebabMenuOpen(!kebabMenuOpen);
+                  }}
+                >
+                  <MoreVertical className="w-5 h-5 text-gray-600" />
+                </button>
+                {kebabMenuOpen && (
+                  <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[120px]">
+                    <button
+                      type="button"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onEdit) {
+                          onEdit(feedback);
+                        }
+                        setKebabMenuOpen(false);
+                      }}
+                    >
+                      <Edit className="w-4 h-4" />
+                      {t("edit") || "Edit"}
+                    </button>
+                    <button
+                      type="button"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 text-left"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete();
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      {t("delete") || "Delete"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -213,34 +307,16 @@ export default function FeedbackCard({ feedback, isLeader, isMentor, onUpdateSta
         )}
 
         {/* Action buttons */}
-        <div className="pt-2 border-t border-gray-200 flex items-center justify-end gap-3">
-          {isLeader && (
+        {isLeader && (
+          <div className="pt-2 border-t border-gray-200 flex items-center justify-end gap-3">
             <button
               onClick={() => setStatusModalOpen(true)}
               className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium border border-blue-500 px-3 py-1 rounded-lg hover:bg-blue-50 transition-colors"
             >
               {t("updateStatus") || "Update Status"}
             </button>
-          )}
-          {isMentor && (
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => onEdit && onEdit(feedback)}
-                className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium"
-              >
-                <Edit className="w-4 h-4" />
-                {t("edit") || "Edit"}
-              </button>
-              <button
-                onClick={() => onDelete && onDelete(feedback)}
-                className="inline-flex items-center gap-1.5 text-sm text-red-600 hover:text-red-700 font-medium"
-              >
-                <Trash2 className="w-4 h-4" />
-                {t("delete") || "Delete"}
-              </button>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Status Update Modal */}
@@ -258,7 +334,7 @@ export default function FeedbackCard({ feedback, isLeader, isMentor, onUpdateSta
           layout="vertical"
           onFinish={handleStatusUpdate}
           initialValues={{
-            status: feedback.status || "acknowledged",
+            status: normalizeStatus(feedback.status),
           }}
         >
           <Form.Item

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Tooltip } from "antd";
 import {
   MoreVertical,
   Users,
@@ -612,14 +613,23 @@ export default function MembersPanel({
               </p>
             )}
             {canInviteAndAssign && (
-              <button
-                type="button"
-                onClick={onInvite}
-                className="w-full inline-flex items-center justify-center gap-2 border border-dashed border-blue-400 rounded-xl py-2.5 text-sm font-semibold text-blue-600 bg-white hover:bg-blue-50 transition"
+              <Tooltip
+                title={!isCurrentUserLeader() ? (t("onlyLeaderCanInvite") || "Chỉ leader mới có thể mời thành viên") : ""}
               >
-                <UserPlus className="w-4 h-4" />
-                {t("inviteMembers") || "+ Invite Members"}
-              </button>
+                <button
+                  type="button"
+                  onClick={onInvite}
+                  disabled={!isCurrentUserLeader()}
+                  className={`w-full inline-flex items-center justify-center gap-2 border border-dashed rounded-xl py-2.5 text-sm font-semibold transition ${
+                    isCurrentUserLeader()
+                      ? "border-blue-400 text-blue-600 bg-white hover:bg-blue-50"
+                      : "border-gray-300 text-gray-400 bg-gray-50 cursor-not-allowed"
+                  }`}
+                >
+                  <UserPlus className="w-4 h-4" />
+                  {t("inviteMembers") || "+ Invite Members"}
+                </button>
+              </Tooltip>
             )}
           </div>
         </div>

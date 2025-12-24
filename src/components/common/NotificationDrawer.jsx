@@ -1,5 +1,5 @@
 import React from "react";
-import { X, UserRound } from "lucide-react";
+import { X, UserRound, Loader2 } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
 import { useNavigate } from "react-router-dom";
 
@@ -9,6 +9,8 @@ export default function NotificationDrawer({
   items = [],
   onAccept,
   onReject,
+  processingNotificationId = null,
+  getNotificationId = (n) => n.id,
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -99,17 +101,33 @@ export default function NotificationDrawer({
                         {n.actions?.includes("reject") && (
                           <button
                             onClick={() => onReject?.(n)}
-                            className="px-3 py-1.5 rounded-full text-sm border border-gray-300 text-gray-700 hover:bg-gray-100"
+                            disabled={processingNotificationId === getNotificationId(n)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {t("decline") || "Decline"}
+                            {processingNotificationId === getNotificationId(n) ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>{t("declining") || "Declining..."}</span>
+                              </>
+                            ) : (
+                              <span>{t("decline") || "Decline"}</span>
+                            )}
                           </button>
                         )}
                         {n.actions?.includes("accept") && (
                           <button
                             onClick={() => onAccept?.(n)}
-                            className="px-3 py-1.5 rounded-full text-sm bg-black text-white hover:bg-gray-900"
+                            disabled={processingNotificationId === getNotificationId(n)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-black text-white hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {t("accept") || "Accept"}
+                            {processingNotificationId === getNotificationId(n) ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>{t("accepting") || "Accepting..."}</span>
+                              </>
+                            ) : (
+                              <span>{t("accept") || "Accept"}</span>
+                            )}
                           </button>
                         )}
                       </div>

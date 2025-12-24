@@ -37,6 +37,8 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [groupNameMap, setGroupNameMap] = useState({});
   const groupNameRef = useRef({});
+  const [processingNotificationId, setProcessingNotificationId] = useState(null);
+  const processingRef = useRef(null); // Track processing state immediately
 
   const [notificationApi, contextHolder] = notification.useNotification();
   const { t } = useTranslation();
@@ -735,7 +737,17 @@ const Navbar = () => {
         open={notifOpen}
         onClose={() => setNotifOpen(false)}
         items={notifications}
+        processingNotificationId={processingNotificationId}
+        getNotificationId={getInviteKey}
         onAccept={async (n) => {
+          const notificationId = getInviteKey(n);
+          // Check ref immediately (synchronous) to prevent double click
+          if (processingRef.current === notificationId) return;
+          
+          // Set both ref and state immediately
+          processingRef.current = notificationId;
+          setProcessingNotificationId(notificationId);
+          
           try {
             if (n.type === "post") {
               // lời mời qua bài post
@@ -764,9 +776,20 @@ const Navbar = () => {
               message:
                 getTranslation("approveFailed", language) || "Accept failed",
             });
+          } finally {
+            processingRef.current = null;
+            setProcessingNotificationId(null);
           }
         }}
         onReject={async (n) => {
+          const notificationId = getInviteKey(n);
+          // Check ref immediately (synchronous) to prevent double click
+          if (processingRef.current === notificationId) return;
+          
+          // Set both ref and state immediately
+          processingRef.current = notificationId;
+          setProcessingNotificationId(notificationId);
+          
           try {
             if (n.type === "post") {
               await InvitationService.rejectProfilePostInvitation(
@@ -793,6 +816,9 @@ const Navbar = () => {
               message:
                 getTranslation("rejectFailed", language) || "Decline failed",
             });
+          } finally {
+            processingRef.current = null;
+            setProcessingNotificationId(null);
           }
         }}
       />

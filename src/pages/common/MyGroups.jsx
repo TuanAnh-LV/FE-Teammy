@@ -8,6 +8,7 @@ import {
   ArrowRight,
   FileText,
   Activity,
+  Loader2,
 } from "lucide-react";
 import { useTranslation } from "../../hook/useTranslation";
 import { useAuth } from "../../context/AuthContext";
@@ -77,6 +78,8 @@ export default function MyGroupsPage() {
     invitationsLoading,
     handleAcceptInvitation,
     handleDeclineInvitation,
+    acceptingInvitationId,
+    rejectingInvitationId,
     setOpen,
     handleFormChange,
     handleCreateGroup,
@@ -605,16 +608,24 @@ export default function MyGroupsPage() {
                       <button
                         type="button"
                         onClick={() => handleDeclineInvitation(invitation)}
-                        className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center rounded-full border border-red-200 px-3 md:px-4 text-xs md:text-sm font-semibold text-red-600 hover:bg-red-50"
+                        disabled={rejectingInvitationId === invitation.id || acceptingInvitationId === invitation.id}
+                        className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center gap-1.5 rounded-full border border-red-200 px-3 md:px-4 text-xs md:text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {t("reject") || "Reject"}
+                        {rejectingInvitationId === invitation.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : null}
+                        <span>{t("reject") || "Reject"}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleAcceptInvitation(invitation)}
-                        className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center rounded-full bg-emerald-500 px-3 md:px-4 text-xs md:text-sm font-semibold text-white hover:bg-emerald-600"
+                        disabled={acceptingInvitationId === invitation.id || rejectingInvitationId === invitation.id}
+                        className="flex-1 md:flex-initial inline-flex h-9 md:h-10 items-center justify-center gap-1.5 rounded-full bg-emerald-500 px-3 md:px-4 text-xs md:text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {t("accept") || "Accept"}
+                        {acceptingInvitationId === invitation.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : null}
+                        <span>{t("accept") || "Accept"}</span>
                       </button>
                     </div>
                   </div>

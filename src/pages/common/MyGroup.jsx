@@ -19,7 +19,7 @@ import {
   UserPlus,
   Clock,
 } from "lucide-react";
-import { Modal, Form, Input, InputNumber, message, notification, DatePicker, Button } from "antd";
+import { Modal, Form, Input, InputNumber, message, notification, DatePicker, Button, Tooltip } from "antd";
 import dayjs from "dayjs";
 import TaskModal from "../../components/common/kanban/TaskModal";
 import useKanbanBoard from "../../hook/useKanbanBoard";
@@ -1023,13 +1023,22 @@ export default function MyGroup() {
 
                     {/* Invite Members */}
                     {!isReadOnly && (
-                      <button
-                        onClick={() => setShowModal(true)}
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition"
+                      <Tooltip
+                        title={!isLeader ? (t("onlyLeaderCanInvite") || "Chỉ leader mới có thể mời thành viên") : ""}
                       >
-                        <UserPlus className="w-4 h-4" />
-                        {t("inviteMembers") || "Invite members"}
-                      </button>
+                        <button
+                          onClick={() => setShowModal(true)}
+                          disabled={!isLeader}
+                          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition ${
+                            isLeader
+                              ? "bg-blue-600 text-white hover:bg-blue-700"
+                              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                          }`}
+                        >
+                          <UserPlus className="w-4 h-4" />
+                          {t("inviteMembers") || "Invite members"}
+                        </button>
+                      </Tooltip>
                     )}
 
                     {/* New Column (Kanban only) */}
