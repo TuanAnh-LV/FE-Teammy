@@ -46,7 +46,9 @@ export default function FeedbackTab({
   // Verify if current user is the assigned mentor
   const isAssignedMentor = React.useMemo(() => {
     if (!isMentor || !groupDetail || !userInfo?.email) return false;
-    const mentor = groupDetail?.mentor || (Array.isArray(groupDetail?.mentors) ? groupDetail.mentors[0] : null);
+    const mentor = (Array.isArray(groupDetail?.mentors) && groupDetail.mentors.length > 0) 
+      ? groupDetail.mentors[0] 
+      : null;
     if (!mentor) return false;
     const mentorEmail = (mentor.email || mentor.userEmail || "").toLowerCase();
     const currentUserEmail = userInfo.email.toLowerCase();

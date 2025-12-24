@@ -318,7 +318,8 @@ export default function MyGroup() {
     .slice(0, 4);
 
   const descriptionText = (group?.description || "").trim();
-  const mentor = group?.mentor || null;
+  const mentors = Array.isArray(group?.mentors) ? group.mentors : [];
+  const mentor = mentors.length > 0 ? mentors[0] : null;
   const isLeader = React.useMemo(() => {
     if (!userInfo?.email || !Array.isArray(groupMembers)) return false;
     const currentEmail = userInfo.email.toLowerCase();
@@ -752,6 +753,7 @@ export default function MyGroup() {
                 <MembersPanel
                   groupMembers={groupMembers}
                   mentor={mentor}
+                  mentors={mentors}
                   group={group}
                   onInvite={isReadOnly ? null : () => setShowModal(true)}
                   onKickMember={handleKickMember}
@@ -854,6 +856,7 @@ export default function MyGroup() {
                   <MembersPanel
                     groupMembers={groupMembers}
                     mentor={mentor}
+                    mentors={mentors}
                     group={group}
                     onInvite={isReadOnly ? null : () => setShowModal(true)}
                     onKickMember={handleKickMember}

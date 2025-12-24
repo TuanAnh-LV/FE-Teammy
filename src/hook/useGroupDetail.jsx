@@ -144,7 +144,10 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
         end: rawEndDate ? rawEndDate.slice(0, 10) : "",
         semester: semesterLabel,
         progress: completionPercent,
-        mentor: d.mentor,
+        mentor: Array.isArray(d.mentors) && d.mentors.length > 0 
+          ? d.mentors[0] 
+          : null,
+        mentors: Array.isArray(d.mentors) ? d.mentors : [],
         status: d.status || "",
         statusText: d.status || "",
         maxMembers: Number(d.maxMembers || d.capacity || 5),

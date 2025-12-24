@@ -131,24 +131,28 @@ export default function GroupDetailModal({ group, open, onClose }) {
               </p>
             </div>
 
-            {detail.mentor && (
+            {Array.isArray(detail.mentors) && detail.mentors.length > 0 && (
               <div className="mt-4">
-                <h4 className="font-semibold text-gray-700 mb-2">Current Mentor</h4>
-                <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg">
-                  <Avatar
-                    src={detail.mentor.avatarUrl}
-                    icon={<UserOutlined />}
-                    size={40}
-                  />
-                  <div>
-                    <div className="font-medium text-gray-800">
-                      {detail.mentor.displayName || detail.mentor.name}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {detail.mentor.email}
+                <h4 className="font-semibold text-gray-700 mb-2">
+                  {detail.mentors.length > 1 ? "Current Mentors" : "Current Mentor"}
+                </h4>
+                {detail.mentors.map((mentor, idx) => (
+                  <div key={mentor.userId || idx} className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg mb-2">
+                    <Avatar
+                      src={mentor.avatarUrl}
+                      icon={<UserOutlined />}
+                      size={40}
+                    />
+                    <div>
+                      <div className="font-medium text-gray-800">
+                        {mentor.displayName || mentor.name}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {mentor.email}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
             )}
           </section>
@@ -213,7 +217,7 @@ export default function GroupDetailModal({ group, open, onClose }) {
           {/* SECTION: ACTIONS */}
           <div className="flex justify-end gap-3 mt-4">
             <Button onClick={onClose}>Close</Button>
-            {!detail.mentor && (
+            {(!Array.isArray(detail.mentors) || detail.mentors.length === 0) && (
               <Button
                 type="primary"
                 icon={<BookOutlined />}
