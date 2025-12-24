@@ -141,11 +141,8 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     if (!form.name.trim()) e.name = t("groupName") || "Group name is required";
 
     // Remove majorId validation - no longer required
+    // Remove maxMembers validation - let API handle validation
 
-    const mm = Number(form.maxMembers);
-    if (!mm || mm < 4 || mm > 6) {
-      e.maxMembers = "Max members must be between 4 and 6";
-    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -192,8 +189,17 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         await fetchMyGroups();
       }
     } catch (error) {
-      notification.error({
-        message: t("error") || "Failed to create group.",
+      // Extract error message from API response
+      // Handle both object response (error.response.data.message) and string response
+      const errorMessage = 
+        error?.response?.data?.message || 
+        error?.response?.data?.error ||
+        (typeof error?.response?.data === "string" ? error.response.data : "") ||
+        error?.message || 
+        t("error") || 
+        "Failed to create group.";
+      notification.warning({
+        message: errorMessage,
       });
     } finally {
       setSubmitting(false);
@@ -219,7 +225,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       onOk: async () => {
         // Check if group is active before attempting to leave
         if (isActiveGroup) {
-          notification.error({
+          notification.warning({
             message: t("cannotLeaveActiveGroup") || "Cannot leave active group",
             description:
               t("cannotLeaveActiveGroupDesc") ||
@@ -238,7 +244,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         } catch (error) {
           // Check if error is 409 Conflict (need to transfer leadership)
           if (error?.response?.status === 409) {
-            notification.error({
+            notification.warning({
               message: t("cannotLeaveAsLeader") || "Cannot leave as leader",
               description:
                 t("transferLeadershipFirst") ||
@@ -246,7 +252,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
               duration: 6,
             });
           } else {
-            notification.error({
+            notification.warning({
               message: t("error") || "Error",
               description:
                 error?.response?.data?.message ||
@@ -278,9 +284,9 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         message: t("approve") || "Approved",
       });
     } catch (error) {
-      notification.error({
-        message: t("approveFailed") || "Approve failed",
-      });
+          notification.warning({
+            message: t("approveFailed") || "Approve failed",
+          });
     }
   };
 
@@ -302,7 +308,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         message: t("reject") || "Rejected",
       });
     } catch (error) {
-      notification.error({
+      notification.warning({
         message: t("rejectFailed") || "Reject failed",
       });
     }
@@ -322,7 +328,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         message: t("accept") || "Accepted",
       });
     } catch (error) {
-      notification.error({
+      notification.warning({
         message: t("approveFailed") || "Approve failed",
       });
     }
@@ -341,7 +347,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
         message: t("reject") || "Rejected",
       });
     } catch (error) {
-      notification.error({
+      notification.warning({
         message: t("rejectFailed") || "Reject failed",
       });
     }
@@ -355,7 +361,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       const data = Array.isArray(res?.data) ? res.data : [];
       setMajors(data);
     } catch (error) {
-      notification.error({
+      notification.warning({
         message: t("error") || "Failed to load majors.",
       });
     } finally {

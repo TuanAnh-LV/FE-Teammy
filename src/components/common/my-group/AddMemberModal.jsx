@@ -64,7 +64,7 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
       return;
     }
     if (!groupId) {
-      notification.error({
+      notification.warning({
         message: t("missingGroupId") || "Missing group id",
       });
       return;
@@ -89,7 +89,7 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
         t("inviteFailed") ||
         "Failed to send invitation";
 
-      notification.error({
+      notification.warning({
         message:
           typeof errorMessage === "string"
             ? errorMessage

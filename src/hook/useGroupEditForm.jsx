@@ -44,13 +44,7 @@ export const useGroupEditForm = ({ group, groupMembers, userInfo, t, setGroup })
     if (!editForm.name.trim()) {
       errors.name = t("groupName") || "Group name is required";
     }
-    const max = Number(editForm.maxMembers);
-    const memberCount = groupMembers?.length ?? 0;
-    if (!max || max < memberCount) {
-      errors.maxMembers =
-        t("maxMembersValidation") ||
-        "Max members must be at least current member count.";
-    }
+    // Remove maxMembers validation - let API handle validation
     setEditErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -146,9 +140,18 @@ export const useGroupEditForm = ({ group, groupMembers, userInfo, t, setGroup })
       );
 
       setEditOpen(false);
-    } catch {
-      notification.error({
-        message: t("error") || "Failed to update group.",
+    } catch (error) {
+      // Extract error message from API response
+      // Handle both object response (error.response.data.message) and string response
+      const errorMessage = 
+        error?.response?.data?.message || 
+        error?.response?.data?.error ||
+        (typeof error?.response?.data === "string" ? error.response.data : "") ||
+        error?.message || 
+        t("error") || 
+        "Failed to update group.";
+      notification.warning({
+        message: errorMessage,
       });
     } finally {
       setEditSubmitting(false);

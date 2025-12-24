@@ -12,6 +12,7 @@ const ProfileSettings = ({ profile, onUpdate }) => {
     fullName: "",
     phone: "",
     gender: "",
+    desiredPositionId: "",
     skills: [],
     skillsCompleted: false,
     portfolioUrl: "",
@@ -20,6 +21,8 @@ const ProfileSettings = ({ profile, onUpdate }) => {
   const [saving, setSaving] = useState(false);
   const [availableSkills, setAvailableSkills] = useState([]);
   const [skillsLoading, setSkillsLoading] = useState(false);
+  const [positions, setPositions] = useState([]);
+  const [positionsLoading, setPositionsLoading] = useState(false);
 
   // filter theo role giống CreateGroup / EditGroup
   const [skillFilter, setSkillFilter] = useState("all"); // all, frontend, backend, mobile, devops, qa
@@ -40,10 +43,50 @@ const ProfileSettings = ({ profile, onUpdate }) => {
       phone: profile.phone || "",
       gender: profile.gender || "",
       skills: skillsArray,
+      desiredPositionId: profile.desiredPositionId || "",
       skillsCompleted: Boolean(profile.skillsCompleted),
       portfolioUrl: profile.portfolioUrl || "",
     });
   }, [profile]);
+
+  // Fetch available positions by major
+  useEffect(() => {
+    const majorId = profile?.majorId || userInfo?.majorId || profile?.majorID;
+    if (!majorId) {
+      setPositions([]);
+      setSettingsForm((prev) => ({ ...prev, desiredPositionId: "" }));
+      return;
+    }
+
+    let active = true;
+    const fetchPositions = async () => {
+      try {
+        setPositionsLoading(true);
+        const res = await UserService.getPositions(majorId, false);
+        const list = Array.isArray(res?.data) ? res.data : [];
+        if (!active) return;
+        setPositions(list);
+        const ids = new Set(list.map((p) => p.positionId ?? p.id));
+        setSettingsForm((prev) => {
+          if (prev.desiredPositionId && !ids.has(prev.desiredPositionId)) {
+            return { ...prev, desiredPositionId: "" };
+          }
+          return prev;
+        });
+      } catch {
+        if (!active) return;
+        setPositions([]);
+        setSettingsForm((prev) => ({ ...prev, desiredPositionId: "" }));
+      } finally {
+        if (active) setPositionsLoading(false);
+      }
+    };
+
+    fetchPositions();
+    return () => {
+      active = false;
+    };
+  }, [profile?.majorId, profile?.majorID, userInfo?.majorId]);
 
   // Fetch available skills
   useEffect(() => {
@@ -83,6 +126,13 @@ const ProfileSettings = ({ profile, onUpdate }) => {
   }, [availableSkills, skillFilter]);
 
   const handleChange = (field, value) => {
+    // Enforce digits-only for phone
+    if (field === "phone") {
+      const digitsOnly = (value || "").replace(/\D+/g, "");
+      setSettingsForm((prev) => ({ ...prev, phone: digitsOnly }));
+      return;
+    }
+
     setSettingsForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -147,6 +197,7 @@ const ProfileSettings = ({ profile, onUpdate }) => {
       fullName: profile.name || "",
       phone: profile.phone || "",
       gender: profile.gender || "",
+      desiredPositionId: profile.desiredPositionId || "",
       skills: skillsArray,
       skillsCompleted: Boolean(profile.skillsCompleted),
       portfolioUrl: profile.portfolioUrl || "",
@@ -178,6 +229,7 @@ const ProfileSettings = ({ profile, onUpdate }) => {
         displayName: settingsForm.fullName.trim(),
         phone: settingsForm.phone.trim(),
         gender: settingsForm.gender,
+        desiredPositionId: settingsForm.desiredPositionId || null,
         // Send skills as an array (same style as group creation / complete profile)
         skills: skillsArray,
         skillsCompleted: settingsForm.skillsCompleted,
@@ -225,9 +277,11 @@ const ProfileSettings = ({ profile, onUpdate }) => {
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-gray-600">Phone</label>
           <input
-            type="text"
+            type="tel"
             value={settingsForm.phone}
             onChange={(e) => handleChange("phone", e.target.value)}
+            inputMode="numeric"
+            pattern="[0-9]*"
             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -245,6 +299,33 @@ const ProfileSettings = ({ profile, onUpdate }) => {
             <option value="Female">Female</option>
             <option value="Other">Other</option>
           </select>
+        </div>
+
+        {/* Desired Position */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-gray-600">
+            Desired Position
+          </label>
+          <select
+            value={settingsForm.desiredPositionId}
+            onChange={(e) => handleChange("desiredPositionId", e.target.value)}
+            disabled={positionsLoading || positions.length === 0}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+          >
+            <option value="">
+              {positionsLoading
+                ? "Loading positions..."
+                : positions.length === 0
+                ? "No positions available"
+                : "Select position"}
+            </option>
+            {positions.map((pos) => (
+              <option key={pos.positionId || pos.id} value={pos.positionId || pos.id}>
+                {pos.positionName || pos.name}
+              </option>
+            ))}
+          </select>
+
         </div>
 
         {/* Portfolio URL */}

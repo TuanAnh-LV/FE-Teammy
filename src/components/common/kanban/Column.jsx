@@ -245,7 +245,7 @@ const Column = ({
                       cancelText: t?.("cancel") || "Cancel",
                       onOk: () => {
                         if (inputValue.toLowerCase() !== "delete") {
-                          notification.error({
+                          notification.warning({
                             message: t?.("validationError") || "Validation Error",
                             description: t?.("mustTypeDelete") || "You must type 'delete' to confirm.",
                           });
@@ -288,6 +288,7 @@ const Column = ({
                 type="date"
                 value={quickDueDate}
                 onChange={(e) => setQuickDueDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
                 className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-blue-200"
               />
             </div>

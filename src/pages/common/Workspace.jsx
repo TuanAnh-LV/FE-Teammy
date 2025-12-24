@@ -8,7 +8,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
-import { Modal, Input, Form } from "antd";
+import { Modal, Input, Form, InputNumber, notification } from "antd";
 
 import Column from "../../components/common/kanban/Column";
 import TaskModal from "../../components/common/kanban/TaskModal";
@@ -83,9 +83,20 @@ const Workspace = () => {
     value.toLowerCase().replace(/\s+/g, "_");
   const handleCreateColumn = () => {
     columnForm.validateFields().then((values) => {
+      const positionValue = Number(values.position);
+      
+      // Validate position: must be a valid number >= 0 and <= 1000
+      if (isNaN(positionValue) || positionValue < 0 || positionValue > 1000) {
+        notification.warning({
+          message: t("validationError") || "Validation Error",
+          description: t("positionMustBeValidNumber") || "Position must be a valid number between 0 and 1000.",
+        });
+        return;
+      }
+      
       const payload = {
         columnName: values.columnName,
-        position: Number(values.position) || 0,
+        position: positionValue,
       };
       createColumn(payload);
       setIsColumnModalOpen(false);
@@ -730,9 +741,41 @@ const Workspace = () => {
           <Form.Item
             name="position"
             label={t("position") || "Position"}
-            initialValue={0}
+            initialValue={Object.keys(columnMeta || {}).length}
+            rules={[
+              {
+                required: false,
+                validator: (_, value) => {
+                  if (value === undefined || value === null || value === "") {
+                    return Promise.resolve();
+                  }
+                  const numValue = Number(value);
+                  if (isNaN(numValue)) {
+                    return Promise.reject(
+                      new Error(t("positionMustBeNumber") || "Position must be a number")
+                    );
+                  }
+                  if (numValue < 0) {
+                    return Promise.reject(
+                      new Error(t("positionMustBePositive") || "Position must be greater than or equal to 0")
+                    );
+                  }
+                  if (numValue > 1000) {
+                    return Promise.reject(
+                      new Error(t("positionTooLarge") || "Position must be less than or equal to 1000")
+                    );
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
           >
-            <Input type="number" placeholder="0" />
+            <InputNumber
+              min={0}
+              max={1000}
+              placeholder={String(Object.keys(columnMeta || {}).length)}
+              className="w-full"
+            />
           </Form.Item>
         </Form>
       </Modal>

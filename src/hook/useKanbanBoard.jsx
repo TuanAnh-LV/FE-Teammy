@@ -6,6 +6,8 @@ import {
 } from "../utils/kanbanUtils";
 import { BoardService } from "../services/board.service";
 import { GroupService } from "../services/group.service";
+import { notification } from "antd";
+import { useTranslation } from "./useTranslation";
 
 const extractPersonId = (entity) => {
   if (!entity) return "";
@@ -217,6 +219,7 @@ const commentsMetaEqual = (a = [], b = []) => {
 
 export function useKanbanBoard(groupId, options = {}) {
   const { skipApiCalls = false, groupStatus } = options;
+  const { t } = useTranslation();
   const [columns, setColumns] = useState({});
   const [columnMeta, setColumnMeta] = useState({});
   const [groupMembers, setGroupMembers] = useState([]);
@@ -295,7 +298,7 @@ export function useKanbanBoard(groupId, options = {}) {
   const fetchGroupMembers = async () => {
     if (!groupId || isGroupClosed()) {
       setGroupMembers([]);
-      return;
+      return [];
     }
     try {
       const res = await GroupService.getListMembers(groupId);
@@ -310,10 +313,13 @@ export function useKanbanBoard(groupId, options = {}) {
       } else if (Array.isArray(payload?.results)) {
         rawList = payload.results;
       }
-      setGroupMembers(normalizePersonList(rawList));
+      const normalized = normalizePersonList(rawList);
+      setGroupMembers(normalized);
+      return normalized;
     } catch (err) {
 
       setGroupMembers([]);
+      return [];
     }
   };
 
@@ -505,23 +511,26 @@ export function useKanbanBoard(groupId, options = {}) {
 
   const executeMove = async (payload) => {
     if (!groupId || !payload?.taskId || !payload?.columnId || isGroupClosed()) return;
+    
     dragProcessingRef.current = true;
     try {
-      await BoardService.moveTask(groupId, payload.taskId, {
+      // Build move payload - only include fields that have values
+      const movePayload = {
         columnId: payload.columnId,
-        prevTaskId: payload.prevTaskId,
-        nextTaskId: payload.nextTaskId,
-      });
-
-      if (payload.targetStatus) {
-        await updateTaskFields(
-          payload.taskId,
-          { status: payload.targetStatus },
-          { skipMove: true }
-        );
+      };
+      
+      // Only include prevTaskId and nextTaskId if they have values (not null/undefined)
+      if (payload.prevTaskId) {
+        movePayload.prevTaskId = payload.prevTaskId;
       }
+      if (payload.nextTaskId) {
+        movePayload.nextTaskId = payload.nextTaskId;
+      }
+      
+      // moveTask API already handles status update based on column, no need to call updateTaskFields
+      await BoardService.moveTask(groupId, payload.taskId, movePayload);
     } catch (err) {
-
+      console.error("Error moving task:", err);
       fetchBoard();
     } finally {
       dragProcessingRef.current = false;
@@ -547,6 +556,10 @@ export function useKanbanBoard(groupId, options = {}) {
     if (!groupId || !columnId || isGroupClosed()) return;
     try {
       await BoardService.deleteColumn(groupId, columnId);
+      notification.success({
+        message: t("columnDeletedSuccess") || "Column deleted successfully",
+        duration: 2,
+      });
       fetchBoard({ showLoading: false });
     } catch (err) {
 
@@ -556,18 +569,49 @@ export function useKanbanBoard(groupId, options = {}) {
   const createTask = async (payload) => {
     if (!groupId || isGroupClosed()) return;
     const tempId = `temp-${Date.now()}`;
+    
+    // Ensure groupMembers are loaded before processing assignees
+    let membersToUse = groupMembers;
+    if (groupMembers.length === 0) {
+      membersToUse = await fetchGroupMembers();
+    }
+    
+    // If payload.assignees is an array of IDs, map them to member objects
+    let assigneeObjects = [];
+    if (Array.isArray(payload.assignees) && payload.assignees.length > 0) {
+      if (typeof payload.assignees[0] === 'string' || typeof payload.assignees[0] === 'number') {
+        // It's an array of IDs, find the corresponding members
+        assigneeObjects = payload.assignees
+          .map(id => {
+            const member = membersToUse.find(m => 
+              normalizeKey(m.id) === normalizeKey(id) ||
+              normalizeKey(m.userId) === normalizeKey(id) ||
+              normalizeKey(m.email) === normalizeKey(id)
+            );
+            return member || { id: String(id), name: String(id), email: "", avatarUrl: "" };
+          })
+          .filter(Boolean);
+      } else {
+        // It's already an array of objects
+        assigneeObjects = normalizePersonList(payload.assignees);
+      }
+    }
+    
     const normalizedAssignees = mapAssigneesWithMembers(
-      normalizePersonList(payload.assignees),
-      groupMembers
+      assigneeObjects,
+      membersToUse
     );
+    const normalizedDueDate = normalizeDueDate(payload.dueDate);
+    const assigneeIds = normalizedAssignees.map((a) => a.id).filter(Boolean);
+    const taskTitle = payload.title || "New Task";
     const optimisticTask = {
       id: tempId,
       columnId: payload.columnId,
-      title: payload.title || "New Task",
+      title: taskTitle,
       description: payload.description || "",
       priority: (payload.priority || "medium").toLowerCase(),
       status: payload.status || "todo",
-      dueDate: payload.dueDate || null,
+      dueDate: normalizedDueDate,
       assignees: normalizedAssignees,
       comments: [],
     };
@@ -576,14 +620,78 @@ export function useKanbanBoard(groupId, options = {}) {
       [payload.columnId]: [...(prev[payload.columnId] || []), optimisticTask],
     }));
     try {
-      const assigneeIds = normalizedAssignees.map((a) => a.id);
       await BoardService.createTask(groupId, {
         ...payload,
+        dueDate: normalizedDueDate,
         assignees: assigneeIds,
       });
-      fetchBoard({ showLoading: false });
+      // Ensure groupMembers are loaded before fetching board to properly map assignees
+      let finalMembers = membersToUse;
+      if (groupMembers.length === 0) {
+        finalMembers = await fetchGroupMembers();
+      } else {
+        finalMembers = groupMembers;
+      }
+      
+      // Store assignee IDs to restore after fetchBoard if needed
+      const savedAssigneeIds = assigneeIds;
+      await fetchBoard({ showLoading: false });
+      
+      // After fetchBoard, find the newly created task and ensure assignees are set
+      // The task will have a real ID now, find it by matching title and columnId
+      if (savedAssigneeIds.length > 0) {
+        // Use finalMembers which we know is the latest fetched members
+        setColumns((prev) => {
+          const targetColumn = prev[payload.columnId];
+          if (!targetColumn || !Array.isArray(targetColumn)) return prev;
+          
+          // Find the task that was just created (likely the one with matching title in this column)
+          // and check if it has missing assignees
+          const newlyCreatedTask = targetColumn.find(
+            t => t.title === taskTitle && 
+                 t.columnId === payload.columnId &&
+                 (!t.assignees || t.assignees.length === 0)
+          );
+          
+          if (newlyCreatedTask) {
+            // Map the saved assignee IDs to member objects
+            const restoredAssignees = mapAssigneesWithMembers(
+              savedAssigneeIds.map(id => ({ id: String(id) })),
+              finalMembers
+            );
+            
+            return {
+              ...prev,
+              [payload.columnId]: targetColumn.map(t =>
+                t.id === newlyCreatedTask.id ? { ...t, assignees: restoredAssignees } : t
+              ),
+            };
+          }
+          return prev;
+        });
+        
+        // Also update selectedTask if it's the newly created one
+        setSelectedTask((prev) => {
+          if (!prev || prev.title !== taskTitle || prev.columnId !== payload.columnId) return prev;
+          if (prev.assignees && prev.assignees.length > 0) return prev;
+          
+          const restoredAssignees = mapAssigneesWithMembers(
+            savedAssigneeIds.map(id => ({ id: String(id) })),
+            finalMembers
+          );
+          return { ...prev, assignees: restoredAssignees };
+        });
+      }
     } catch (err) {
-
+      // On error, remove optimistic task
+      setColumns((prev) => {
+        const colId = payload.columnId;
+        if (!prev[colId]) return prev;
+        return {
+          ...prev,
+          [colId]: prev[colId].filter((t) => t.id !== tempId),
+        };
+      });
     }
   };
 
@@ -640,6 +748,12 @@ export function useKanbanBoard(groupId, options = {}) {
       normalizedChanges.dueDate = normalizeDueDate(normalizedChanges.dueDate);
     }
     const snapshot = getTaskSnapshot(taskId) || {};
+    
+    // If status (columnId) is changing, update columnId in the changes
+    if (normalizedChanges.status && normalizedChanges.status !== snapshot.status) {
+      normalizedChanges.columnId = normalizedChanges.status;
+    }
+    
     patchTaskState(taskId, () => normalizedChanges);
     try {
       await BoardService.updateTask(groupId, taskId, {
@@ -712,6 +826,13 @@ export function useKanbanBoard(groupId, options = {}) {
       };
       return newState;
     });
+    
+    // Update selectedTask if it's the moved task
+    setSelectedTask((prev) => {
+      if (!prev || prev.id !== taskId) return prev;
+      return { ...prev, columnId: targetColumnId };
+    });
+    
     const targetList = newState?.[targetColumnId] || [];
     const prevTaskId =
       targetList.length > 1 ? targetList[targetList.length - 2].id : null;
@@ -742,6 +863,10 @@ export function useKanbanBoard(groupId, options = {}) {
     });
     try {
       await BoardService.deleteTask(groupId, taskId);
+      notification.success({
+        message: t("taskDeletedSuccess") || "Task deleted successfully",
+        duration: 2,
+      });
     } catch (err) {
 
       fetchBoard({ showLoading: false });

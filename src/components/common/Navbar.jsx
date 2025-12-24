@@ -20,6 +20,8 @@ import { InvitationService } from "../../services/invitation.service";
 import { useSelector, useDispatch } from "react-redux";
 import { useInvitationRealtime } from "../../hook/useInvitationRealtime";
 import { removeInvitation } from "../../app/invitationSlice";
+import { subscribeGroupStatus } from "../../services/groupStatusHub";
+import { GroupService } from "../../services/group.service";
 
 const Navbar = () => {
   const location = useLocation();
@@ -33,6 +35,8 @@ const Navbar = () => {
   const dropdownRef = useRef(null);
   const inviteFetchTokenRef = useRef(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [groupNameMap, setGroupNameMap] = useState({});
+  const groupNameRef = useRef({});
 
   const [notificationApi, contextHolder] = notification.useNotification();
   const { t } = useTranslation();
@@ -67,6 +71,96 @@ const Navbar = () => {
   }, [userInfo]);
 
   // Debug logs removed for production
+
+  // Realtime: push group close/confirm/reject events into the bell notifications
+  useEffect(() => {
+    const getDisplayName = async (groupId) => {
+      if (groupNameRef.current[groupId]) return groupNameRef.current[groupId];
+      try {
+        const res = await GroupService.getGroupDetail(groupId);
+        const name =
+          res?.data?.name ||
+          res?.data?.title ||
+          res?.data?.groupName ||
+          `Group ${groupId}`;
+        setGroupNameMap((prev) => ({ ...prev, [groupId]: name }));
+        groupNameRef.current = { ...groupNameRef.current, [groupId]: name };
+        return name;
+      } catch {
+        return `Group ${groupId}`;
+      }
+    };
+
+    const buildMessage = (action, groupId, groupName) => {
+      if (action === "close_requested") {
+        return `${groupName} đã gửi yêu cầu đóng nhóm`;
+      }
+      if (action === "close_confirmed") {
+        return `Mentor đã chấp nhận đóng nhóm ${groupName}`;
+      }
+      return `Mentor đã từ chối đóng nhóm ${groupName}`;
+    };
+
+    const handler = (payload) => {
+      if (!payload) return;
+      const { action, groupId } = payload;
+      if (
+        action !== "close_requested" &&
+        action !== "close_confirmed" &&
+        action !== "close_rejected"
+      ) {
+        return;
+      }
+
+      const currentRole = (role || "").toLowerCase();
+      const isMentor = currentRole === "mentor";
+      let title = "";
+      let messageBody = "";
+
+      if (action === "close_requested") {
+        // Leader/student requests close -> notify mentor
+        if (!isMentor) return; // only mentor needs the request notification
+        title = "Close request received";
+      } else if (action === "close_confirmed") {
+        // Mentor accepted -> notify student/leader (not mentor)
+        if (isMentor) return;
+        title = "Close request accepted";
+      } else if (action === "close_rejected") {
+        // Mentor rejected -> notify student/leader (not mentor)
+        if (isMentor) return;
+        title = "Close request rejected";
+      }
+
+      // Resolve group name (async) and update notification
+      (async () => {
+        const groupName = await getDisplayName(groupId);
+        messageBody = buildMessage(action, groupId, groupName);
+
+        setNotifications((prev) => {
+          const id = `group-status-${groupId}-${action}-${Date.now()}`;
+          return [
+            {
+              id,
+              groupId,
+              action,
+              type: "group_status",
+              title,
+              message: messageBody,
+              time: "just now",
+              actions: [],
+            },
+            ...prev,
+          ];
+        });
+      })();
+
+      // quick log to confirm realtime trigger
+      console.log("[Navbar][GroupStatusChanged]", payload);
+    };
+
+    const unsubscribe = subscribeGroupStatus(handler);
+    return () => unsubscribe();
+  }, [t, role]);
 
   useEffect(() => {
     const formatRelative = (iso) => {

@@ -179,7 +179,7 @@ const TaskCard = ({ task, onOpen, onDelete, columnMeta = {} }) => {
                       cancelText: t?.("cancel") || "Cancel",
                       onOk: () => {
                         if (inputValue.toLowerCase() !== "delete") {
-                          notification.error({
+                          notification.warning({
                             message: t?.("validationError") || "Validation Error",
                             description: t?.("mustTypeDelete") || "You must type 'delete' to confirm.",
                           });

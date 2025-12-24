@@ -9,4 +9,11 @@ export const ReportService = {
       isLoading: true,
     });
   },
+  getContributionScores(groupId, params = {}) {
+    return BaseService.get({
+      url: API.REPORT.SCORES(groupId),
+      params,
+      isLoading: true,
+    });
+  },
 };

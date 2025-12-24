@@ -32,6 +32,18 @@ export const getRoleMenus = (role, language = "EN") => {
         icon: <HomeOutlined />,
       },
       {
+        key: "invitations",
+        label: getTranslation("invitations", language),
+        path: "/mentor/invitations",
+        icon: <BellOutlined />,
+      },
+      {
+        key: "my-topics",
+        label: getTranslation("topics", language),
+        path: "/mentor/my-topics",
+        icon: <TagsOutlined />,
+      },
+      {
         key: "my-groups",
         label: getTranslation("myGroups", language),
         path: "/mentor/my-groups",
