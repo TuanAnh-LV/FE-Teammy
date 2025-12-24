@@ -63,24 +63,20 @@ const Discover = () => {
     const topicDescription = g.topic?.description || "";
     const topicSkills = Array.isArray(g.topic?.skills) ? g.topic.skills : [];
     const mentorName =
-      g.mentor?.displayName ||
-      g.mentor?.fullName ||
-      g.mentor?.name ||
-      g.mentorName ||
       (Array.isArray(g.mentors) && g.mentors[0]
-        ? g.mentors[0].mentorName ||
+        ? g.mentors[0].displayName ||
+          g.mentors[0].mentorName ||
           g.mentors[0].name ||
-          g.mentors[0].displayName
+          ""
         : "") ||
+      g.mentorName ||
       "";
     const mentorAvatarUrl =
-      g.mentor?.avatarUrl ||
-      g.mentor?.avatar ||
-      g.mentor?.profilePicture ||
       (Array.isArray(g.mentors) && g.mentors[0]
         ? g.mentors[0].avatarUrl ||
           g.mentors[0].avatar ||
-          g.mentors[0].profilePicture
+          g.mentors[0].profilePicture ||
+          ""
         : "") ||
       "";
     const semesterEnd = g.semester?.endDate
@@ -194,6 +190,27 @@ const Discover = () => {
       });
     } finally {
       setLoadingGroupMembers(false);
+    }
+  };
+
+  const openRequestModal = async (group) => {
+    if (!group?.id) return;
+    setRequestingGroup(group);
+    setRequestTopicId("");
+    setRequestMessage("");
+    setTopicSearch("");
+    setRequestModalOpen(true);
+    
+    // Fetch owned topics for the mentor
+    try {
+      const res = await TopicService.getOwnedOpenTopics();
+      const topics = Array.isArray(res?.data) ? res.data : [];
+      setOwnedTopics(topics);
+    } catch (error) {
+      setOwnedTopics([]);
+      notificationApi.warning({
+        message: t("loadTopicsFailed") || "Không tải được danh sách topics",
+      });
     }
   };
 
@@ -332,21 +349,21 @@ const Discover = () => {
                 >
                   <span className="truncate">{t("viewGroupDetails")}</span>
                 </button>
-                {/** Mentor request button: disabled if group already has topic & mentor */}
+                {/** Mentor request button: disabled if group already has topic */}
                 <button
                   type="button"
                   onClick={() => {
-                    if (group.hasTopic && group.hasMentor) return;
+                    if (group.hasTopic) return;
                     openRequestModal(group);
                   }}
-                  disabled={group.hasTopic && group.hasMentor}
+                  disabled={group.hasTopic}
                   className={`inline-flex items-center justify-center gap-1.5 xl:gap-2 w-full xl:w-1/2 rounded-lg border text-xs sm:text-sm font-medium py-2 sm:py-2.5 px-3 sm:px-4 md:px-5 shadow-sm transition whitespace-nowrap ${
-                    group.hasTopic && group.hasMentor
+                    group.hasTopic
                       ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
                       : "border-orange-400 text-orange-600 hover:bg-orange-50"
                   }`}
                 >
-                  {!group.hasTopic || !group.hasMentor ? (
+                  {!group.hasTopic ? (
                     <>
                       <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                       <span className="truncate">
@@ -355,7 +372,7 @@ const Discover = () => {
                     </>
                   ) : (
                     <span className="truncate">
-                      {t("mentorAssigned") || "Mentor already assigned"}
+                      {t("topicAssigned") || "Topic already assigned"}
                     </span>
                   )}
                 </button>

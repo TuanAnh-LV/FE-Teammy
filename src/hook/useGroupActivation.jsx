@@ -12,10 +12,11 @@ export const useGroupActivation = ({ group, groupMembers, t, id, setGroup }) => 
   const handleActivateGroup = useCallback(() => {
     if (!group || !canActivateGroup) return;
 
-    const mentor = group?.mentor || null;
+    const mentors = Array.isArray(group?.mentors) ? group.mentors : [];
+    const hasMentor = mentors.length > 0;
 
     // FE guard: must have topic + mentor before calling API
-    if (!group.topicId || !mentor) {
+    if (!group.topicId || !hasMentor) {
       notification.warning({
         message: t("cannotActivateGroup") || "Cannot activate group",
         description:

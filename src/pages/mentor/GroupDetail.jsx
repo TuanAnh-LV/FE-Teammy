@@ -227,12 +227,16 @@ export default function GroupDetail() {
   // Check mentor assignment after groupDetail is loaded
   useEffect(() => {
     if (groupDetail && userInfo?.email) {
-      const mentor = groupDetail?.mentor || (Array.isArray(groupDetail?.mentors) ? groupDetail.mentors[0] : null);
-      if (mentor) {
-        const mentorEmail = (mentor.email || mentor.userEmail || "").toLowerCase();
+      const mentors = Array.isArray(groupDetail?.mentors) ? groupDetail.mentors : [];
+      if (mentors.length > 0) {
         const currentUserEmail = userInfo.email.toLowerCase();
+        // Kiểm tra xem user hiện tại có trong danh sách mentors không
+        const isAssignedMentor = mentors.some((mentor) => {
+          const mentorEmail = (mentor.email || mentor.userEmail || "").toLowerCase();
+          return mentorEmail === currentUserEmail;
+        });
         
-        if (mentorEmail !== currentUserEmail) {
+        if (!isAssignedMentor) {
           // Not the assigned mentor, redirect to my-groups
           navigate("/mentor/my-groups");
         }
@@ -241,9 +245,8 @@ export default function GroupDetail() {
   }, [groupDetail, userInfo, navigate]);
 
   const descriptionText = (groupDetail?.description || "").trim();
-  const mentor =
-    groupDetail?.mentor ||
-    (Array.isArray(groupDetail?.mentors) ? groupDetail.mentors[0] : null);
+  const mentors = Array.isArray(groupDetail?.mentors) ? groupDetail.mentors : [];
+  const mentor = mentors.length > 0 ? mentors[0] : null;
 
   const contributionStats = useMemo(() => {
     const memberMap = new Map();
@@ -275,11 +278,14 @@ export default function GroupDetail() {
   }, [contributionScores, groupMembersList]);
 
   const isMentor = React.useMemo(() => {
-    if (!userInfo?.email || !mentor) return false;
+    if (!userInfo?.email || mentors.length === 0) return false;
     const currentEmail = userInfo.email.toLowerCase();
-    const mentorEmail = (mentor.email || mentor.userEmail || "").toLowerCase();
-    return mentorEmail === currentEmail;
-  }, [mentor, userInfo]);
+    // Kiểm tra xem user hiện tại có trong danh sách mentors không
+    return mentors.some((m) => {
+      const mentorEmail = (m.email || m.userEmail || "").toLowerCase();
+      return mentorEmail === currentEmail;
+    });
+  }, [mentors, userInfo]);
 
   const isPendingClose = () => {
     if (!groupStatus) return false;
@@ -628,6 +634,7 @@ export default function GroupDetail() {
             <MembersPanel
               groupMembers={groupMembersList}
               mentor={mentor}
+              mentors={mentors}
               group={groupDetail}
               onInvite={null}
               onKickMember={null}
@@ -737,6 +744,7 @@ export default function GroupDetail() {
               <MembersPanel
                 groupMembers={groupMembersList}
                 mentor={mentor}
+                mentors={mentors}
                 group={groupDetail}
                 onInvite={null}
                 onKickMember={null}

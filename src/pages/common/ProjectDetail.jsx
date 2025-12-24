@@ -80,7 +80,10 @@ const ProjectDetail = () => {
                   <b>End:</b> {project.endDate}
                 </p>
                 <p>
-                  <b>Mentor:</b> {project.mentor}
+                  <b>Mentor:</b>{" "}
+                  {Array.isArray(project.mentors) && project.mentors.length > 0
+                    ? project.mentors.map((m, idx) => m.displayName || m.name || m.mentorName || m.email).join(", ")
+                    : project.mentor || "N/A"}
                 </p>
               </div>
             </div>
@@ -127,19 +130,48 @@ const ProjectDetail = () => {
                   <Users className="!text-amber-600 !w-5 !h-5" />
                 </span>
                 Mentor
+                {Array.isArray(project.mentors) && project.mentors.length > 1 && (
+                  <span className="!text-sm !font-normal !text-gray-500">
+                    ({project.mentors.length})
+                  </span>
+                )}
               </h3>
 
-              <div className="!bg-amber-50 !rounded-xl !border !border-amber-100 !p-4 !flex !items-center !gap-4">
-                <img
-                  src="https://i.pravatar.cc/80?img=12"
-                  alt="mentor"
-                  className="!w-12 !h-12 !rounded-full !object-cover !border !border-white !shadow"
-                />
-                <div>
-                  <p className="!font-semibold !text-gray-800">{project.mentor}</p>
-                  <p className="!text-sm !text-amber-700 !font-medium">Project Mentor</p>
+              {Array.isArray(project.mentors) && project.mentors.length > 0 ? (
+                <div className="space-y-3">
+                  {project.mentors.map((mentor, idx) => (
+                    <div key={mentor.userId || mentor.id || idx} className="!bg-amber-50 !rounded-xl !border !border-amber-100 !p-4 !flex !items-center !gap-4">
+                      <img
+                        src={mentor.avatarUrl || "https://i.pravatar.cc/80?img=12"}
+                        alt={mentor.displayName || mentor.name || "mentor"}
+                        className="!w-12 !h-12 !rounded-full !object-cover !border !border-white !shadow"
+                      />
+                      <div>
+                        <p className="!font-semibold !text-gray-800">
+                          {mentor.displayName || mentor.name || mentor.mentorName || mentor.email}
+                        </p>
+                        <p className="!text-sm !text-amber-700 !font-medium">Project Mentor</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              ) : project.mentor ? (
+                <div className="!bg-amber-50 !rounded-xl !border !border-amber-100 !p-4 !flex !items-center !gap-4">
+                  <img
+                    src="https://i.pravatar.cc/80?img=12"
+                    alt="mentor"
+                    className="!w-12 !h-12 !rounded-full !object-cover !border !border-white !shadow"
+                  />
+                  <div>
+                    <p className="!font-semibold !text-gray-800">{project.mentor}</p>
+                    <p className="!text-sm !text-amber-700 !font-medium">Project Mentor</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="!bg-gray-50 !rounded-xl !border !border-gray-100 !p-4 !text-center">
+                  <p className="!text-gray-500">No mentor assigned</p>
+                </div>
+              )}
             </div>
 
             {/* --- Members --- */}

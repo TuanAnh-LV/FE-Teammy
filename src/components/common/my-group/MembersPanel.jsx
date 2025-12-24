@@ -16,6 +16,7 @@ import {
 export default function MembersPanel({
   groupMembers,
   mentor,
+  mentors,
   group,
   onInvite,
   onKickMember,
@@ -639,9 +640,55 @@ export default function MembersPanel({
             <GraduationCap className="w-5 h-5 text-gray-600" />
             <h3 className="text-lg font-semibold text-gray-900">
               {t("projectMentor") || "Mentor"}
+              {Array.isArray(mentors) && mentors.length > 1 && (
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  ({mentors.length})
+                </span>
+              )}
             </h3>
           </div>
-          {mentor ? (
+          {Array.isArray(mentors) && mentors.length > 0 ? (
+            <div className="space-y-3">
+              {mentors.map((mentorItem, idx) => (
+                <div
+                  key={mentorItem.userId || mentorItem.id || idx}
+                  className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                  onClick={() => openProfile(mentorItem)}
+                >
+                  {mentorItem.avatarUrl ? (
+                    <img
+                      src={mentorItem.avatarUrl}
+                      alt={mentorItem.displayName || mentorItem.name || "mentor"}
+                      className="w-12 h-12 rounded-full object-cover bg-white flex-shrink-0"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        const fallbackName =
+                          mentorItem.displayName || mentorItem.name || "Mentor";
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          fallbackName
+                        )}`;
+                      }}
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-semibold flex-shrink-0">
+                      {(mentorItem.displayName || mentorItem.name || "M")
+                        .slice(0, 2)
+                        .toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-800 truncate">
+                      {mentorItem.displayName || mentorItem.name}
+                    </p>
+                    <p className="text-sm text-gray-500 truncate">
+                      {mentorItem.email || t("mentor") || "Mentor"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : mentor ? (
             <div
               className="flex items-center gap-3 cursor-pointer"
               onClick={() => openProfile(mentor)}

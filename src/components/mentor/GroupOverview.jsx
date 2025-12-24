@@ -147,7 +147,9 @@ export default function GroupOverview({ groupId, groupDetail }) {
     description: groupDetail?.description || "No description available.",
     tags: groupDetail?.topicName ? [groupDetail.topicName] : [],
     major: groupDetail?.major?.majorName || "N/A",
-    mentor: groupDetail?.mentor?.displayName || "No mentor assigned",
+    mentor: (Array.isArray(groupDetail?.mentors) && groupDetail.mentors.length > 0)
+      ? groupDetail.mentors[0].displayName || groupDetail.mentors[0].name || "Mentor"
+      : "No mentor assigned",
     members: totalMembers,
     progress: progress,
     activeWeeks: groupDetail?.activeWeeks || 0,

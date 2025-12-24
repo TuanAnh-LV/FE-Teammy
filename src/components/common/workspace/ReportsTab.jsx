@@ -256,9 +256,22 @@ export default function ReportsTab({ groupId, groupStatus }) {
                 {u.displayName}
               </div>
             ))}
-            <div className="font-semibold text-gray-900 mt-2">{t("mentor") || "Mentor"}</div>
-            {team.mentor ? (
-              <div className="text-gray-700">{team.mentor.displayName}</div>
+            <div className="font-semibold text-gray-900 mt-2">
+              {t("mentor") || "Mentor"}
+              {Array.isArray(team.mentors) && team.mentors.length > 1 && (
+                <span className="ml-2 text-xs font-normal text-gray-500">
+                  ({team.mentors.length})
+                </span>
+              )}
+            </div>
+            {Array.isArray(team.mentors) && team.mentors.length > 0 ? (
+              team.mentors.map((mentor, idx) => (
+                <div key={mentor.userId || mentor.id || idx} className="text-gray-700">
+                  {mentor.displayName || mentor.name}
+                </div>
+              ))
+            ) : team.mentor ? (
+              <div className="text-gray-700">{team.mentor.displayName || team.mentor.name}</div>
             ) : (
               <div className="text-gray-500">{t("noMentor") || "No mentor"}</div>
             )}

@@ -307,8 +307,15 @@ export default function MyGroups() {
                   <div className="pt-2 mt-auto">
                     <Button
                       type="primary"
+                      htmlType="button"
                       className="!rounded-lg !w-full !h-10 !font-medium !bg-[#4264d7] hover:!bg-[#3651b8] !border-none"
-                      onClick={() => navigate(`/mentor/my-groups/${g.id}`)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (g.id) {
+                          navigate(`/mentor/my-groups/${g.id}`);
+                        }
+                      }}
                     >
                       {t("viewDetails") || "View Details"}
                     </Button>
