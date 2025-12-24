@@ -1461,7 +1461,7 @@
     descriptionPost: "Mô tả bài viết",
     descriptionGroup: "Mô tả nhóm",
     loadingPosts: "Đang tải bài viết...",
-    noPostsYet: "Chua co bai dang",
+    noPostsYet: "Chưa có bài đăng",
     aiAnalyzingProfiles: "AI Đang Phân Tích Hồ Sơ...",
     findingBestProfileMatch: "Đang tìm kiếm sự phù hợp tốt nhất cho bạn...",
     aiAnalyzingGroups: "AI Đang Phân Tích Nhóm...",
