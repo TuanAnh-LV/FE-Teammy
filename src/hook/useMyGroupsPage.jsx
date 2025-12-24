@@ -22,6 +22,8 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
   const [pendingLoading, setPendingLoading] = useState(false);
   const [invitations, setInvitations] = useState([]);
   const [invitationsLoading, setInvitationsLoading] = useState(false);
+  const [acceptingInvitationId, setAcceptingInvitationId] = useState(null);
+  const [rejectingInvitationId, setRejectingInvitationId] = useState(null);
 
   const reduxApplications = useSelector(
     (state) => state.invitation?.applications || []
@@ -317,7 +319,10 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
   // Accept / reject mentor invitations (type: mentor_invitation)
   const handleAcceptInvitation = async (invitation) => {
     if (!invitation?.groupId || !invitation?.id) return;
+    if (acceptingInvitationId === invitation.id) return; // Prevent double click
+    
     try {
+      setAcceptingInvitationId(invitation.id);
       await GroupService.acceptJoinRequest(invitation.groupId, invitation.id, {
         type: "mentor_invitation",
       });
@@ -331,12 +336,17 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       notification.warning({
         message: t("approveFailed") || "Approve failed",
       });
+    } finally {
+      setAcceptingInvitationId(null);
     }
   };
 
   const handleDeclineInvitation = async (invitation) => {
     if (!invitation?.groupId || !invitation?.id) return;
+    if (rejectingInvitationId === invitation.id) return; // Prevent double click
+    
     try {
+      setRejectingInvitationId(invitation.id);
       await GroupService.rejectJoinRequest(invitation.groupId, invitation.id, {
         type: "mentor_invitation",
       });
@@ -350,6 +360,8 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
       notification.warning({
         message: t("rejectFailed") || "Reject failed",
       });
+    } finally {
+      setRejectingInvitationId(null);
     }
   };
 
@@ -563,5 +575,7 @@ export const useMyGroupsPage = (t, navigate, userInfo) => {
     getAllTasksFromBoard,
     handleAcceptInvitation,
     handleDeclineInvitation,
+    acceptingInvitationId,
+    rejectingInvitationId,
   };
 };

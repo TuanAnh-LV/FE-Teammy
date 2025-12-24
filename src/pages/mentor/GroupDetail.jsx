@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Tabs, Breadcrumb, Skeleton, Card, DatePicker, Button } from "antd";
+import { Tabs, Breadcrumb, Skeleton, Card, DatePicker, Button, InputNumber } from "antd";
 import dayjs from "dayjs";
 import { BarChartOutlined, HomeOutlined, FileTextOutlined, TeamOutlined, AppstoreOutlined } from "@ant-design/icons";
 import InfoCard from "../../components/common/my-group/InfoCard";
@@ -37,6 +37,9 @@ export default function GroupDetail() {
   const [contributionScores, setContributionScores] = useState([]);
   const [scoreFrom, setScoreFrom] = useState(dayjs());
   const [scoreTo, setScoreTo] = useState(dayjs());
+  const [scoreHigh, setScoreHigh] = useState(5);
+  const [scoreMedium, setScoreMedium] = useState(3);
+  const [scoreLow, setScoreLow] = useState(1);
   const readOnlyWorkspace = true;
 
   // Get group status - only check if groupDetail is loaded
@@ -115,10 +118,26 @@ export default function GroupDetail() {
     const params = {};
     if (scoreFrom) params.From = scoreFrom.format("YYYY-MM-DD");
     if (scoreTo) params.To = scoreTo.format("YYYY-MM-DD");
-    params.High = 5;
-    params.Medium = 3;
-    params.Low = 1;
+    if (Number.isFinite(scoreHigh)) params.High = scoreHigh;
+    if (Number.isFinite(scoreMedium)) params.Medium = scoreMedium;
+    if (Number.isFinite(scoreLow)) params.Low = scoreLow;
     fetchContributionScores(params);
+  };
+
+  const clearScoreFilter = () => {
+    const today = dayjs();
+    setScoreFrom(today);
+    setScoreTo(today);
+    setScoreHigh(5);
+    setScoreMedium(3);
+    setScoreLow(1);
+    fetchContributionScores({
+      From: today.format("YYYY-MM-DD"),
+      To: today.format("YYYY-MM-DD"),
+      High: 5,
+      Medium: 3,
+      Low: 1,
+    });
   };
 
   // Realtime: listen GroupStatusChanged và refetch nếu payload groupId trùng
@@ -632,36 +651,88 @@ export default function GroupDetail() {
         <div className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-3">
-              <div className="flex flex-col sm:flex-row sm:items-end gap-3 mb-4">
-                <div className="flex flex-col">
-                  <label className="text-xs font-semibold text-gray-500 uppercase mb-1">
-                    {t("from") || "From"}
-                  </label>
-                  <DatePicker
-                    value={scoreFrom}
-                    inputReadOnly
-                    onChange={setScoreFrom}
-                    disabledDate={(current) =>
-                      scoreTo && current && current > scoreTo.endOf("day")
-                    }
-                  />
+              <div className="!bg-white !rounded-2xl !border !border-gray-200 !p-5 !mb-4">
+                <p className="!text-sm !font-semibold !text-gray-900 !mb-4">
+                  {t("filters") || "Filters"}
+                </p>
+                <div className="!grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-5 !gap-3">
+                  <div className="!flex !flex-col">
+                    <label className="!text-xs !font-semibold !text-gray-500 !uppercase !mb-1">
+                      {t("from") || "From"}
+                    </label>
+                    <DatePicker
+                      value={scoreFrom}
+                      inputReadOnly
+                      onChange={setScoreFrom}
+                      disabledDate={(current) =>
+                        scoreTo && current && current > scoreTo.endOf("day")
+                      }
+                      className="!w-full"
+                    />
+                  </div>
+                  <div className="!flex !flex-col">
+                    <label className="!text-xs !font-semibold !text-gray-500 !uppercase !mb-1">
+                      {t("to") || "To"}
+                    </label>
+                    <DatePicker
+                      value={scoreTo}
+                      inputReadOnly
+                      onChange={setScoreTo}
+                      disabledDate={(current) =>
+                        scoreFrom && current && current < scoreFrom.startOf("day")
+                      }
+                      className="!w-full"
+                    />
+                  </div>
+                  <div className="!flex !flex-col">
+                    <label className="!text-xs !font-semibold !text-gray-500 !uppercase !mb-1">
+                      {t("high") || "High"}
+                    </label>
+                    <InputNumber
+                      min={0}
+                      value={scoreHigh}
+                      onChange={(value) => setScoreHigh(Number(value || 0))}
+                      className="!w-full"
+                    />
+                  </div>
+                  <div className="!flex !flex-col">
+                    <label className="!text-xs !font-semibold !text-gray-500 !uppercase !mb-1">
+                      {t("medium") || "Medium"}
+                    </label>
+                    <InputNumber
+                      min={0}
+                      value={scoreMedium}
+                      onChange={(value) => setScoreMedium(Number(value || 0))}
+                      className="!w-full"
+                    />
+                  </div>
+                  <div className="!flex !flex-col">
+                    <label className="!text-xs !font-semibold !text-gray-500 !uppercase !mb-1">
+                      {t("low") || "Low"}
+                    </label>
+                    <InputNumber
+                      min={0}
+                      value={scoreLow}
+                      onChange={(value) => setScoreLow(Number(value || 0))}
+                      className="!w-full"
+                    />
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <label className="text-xs font-semibold text-gray-500 uppercase mb-1">
-                    {t("to") || "To"}
-                  </label>
-                  <DatePicker
-                    value={scoreTo}
-                    inputReadOnly
-                    onChange={setScoreTo}
-                    disabledDate={(current) =>
-                      scoreFrom && current && current < scoreFrom.startOf("day")
-                    }
-                  />
+                <div className="!flex !flex-col sm:!flex-row !gap-3 !mt-4">
+                  <Button
+                    type="primary"
+                    onClick={applyScoreFilter}
+                    className="!flex-1 !h-10 !rounded-lg"
+                  >
+                    {t("execute") || "Execute"}
+                  </Button>
+                  <Button
+                    onClick={clearScoreFilter}
+                    className="!flex-1 !h-10 !rounded-lg"
+                  >
+                    {t("clear") || "Clear"}
+                  </Button>
                 </div>
-                <Button type="primary" onClick={applyScoreFilter}>
-                  {t("apply") || "Apply"}
-                </Button>
               </div>
               <MembersPanel
                 groupMembers={groupMembersList}

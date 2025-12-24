@@ -135,6 +135,14 @@ const normalizeCommentsList = (data) => {
       comment.createdBy ||
       "",
     content: comment.content || comment.text || "",
+    displayName:
+      comment.displayName ||
+      comment.user?.displayName ||
+      comment.user?.name ||
+      comment.createdBy ||
+      comment.author ||
+      comment.userName ||
+      "",
     createdBy:
       comment.createdBy ||
       comment.author ||
@@ -147,6 +155,13 @@ const normalizeCommentsList = (data) => {
       comment.created_at ||
       comment.when ||
       comment.updatedAt ||
+      "",
+    avatarUrl:
+      comment.avatarUrl ||
+      comment.avatarURL ||
+      comment.authorAvatar ||
+      comment.user?.avatarUrl ||
+      comment.user?.avatarURL ||
       "",
     authorAvatar:
       comment.avatarUrl ||
@@ -180,24 +195,37 @@ const enrichCommentsWithMembers = (comments = [], members = []) => {
   if (!Array.isArray(comments)) return [];
   return comments.map((comment) => {
     const member = findMemberByUserId(members, comment.userId);
+    // Prioritize displayName and avatarUrl from comment data
+    const displayName = comment.displayName || comment.createdBy || "";
+    const avatarUrl = comment.avatarUrl || comment.authorAvatar || "";
+    
     if (!member) {
       return {
         ...comment,
-        createdBy: comment.createdBy || comment.userId || "Unknown",
-        authorAvatar: comment.authorAvatar || "",
+        displayName: displayName || comment.userId || "Unknown",
+        createdBy: displayName || comment.userId || "Unknown",
+        avatarUrl: avatarUrl,
+        authorAvatar: avatarUrl,
       };
     }
     return {
       ...comment,
-      createdBy:
+      displayName: displayName || 
         member.name ||
         member.displayName ||
         member.fullName ||
         member.email ||
-        comment.createdBy ||
         comment.userId ||
         "Unknown",
-      authorAvatar: member.avatarUrl || comment.authorAvatar || "",
+      createdBy: displayName ||
+        member.name ||
+        member.displayName ||
+        member.fullName ||
+        member.email ||
+        comment.userId ||
+        "Unknown",
+      avatarUrl: avatarUrl || member.avatarUrl || "",
+      authorAvatar: avatarUrl || member.avatarUrl || "",
       authorEmail: member.email || "",
     };
   });
