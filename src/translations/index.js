@@ -285,11 +285,7 @@
     showDetails: "Show details",
     hideDetails: "Hide details",
     byPriority: "By Priority",
-    tasksAssigned: "Tasks Assigned",
     tasksDone: "Tasks Done",
-    tasks: "Tasks",
-    noTasks: "No tasks",
-    inProgress: "In progress",
     totalScore: "Total Score",
     totalAssigned: "Total Assigned",
     projectFiles: "Project Files",
@@ -451,7 +447,6 @@
 
     // Workspace
     todo: "To Do",
-    review: "Review",
     done: "Done",
     frontend: "Frontend",
     backend: "Backend",
@@ -969,7 +964,6 @@
     updatingFeedback: "Updating...",
     feedbackAlreadyResolved: "Feedback already resolved",
     onlySubmittedFeedbackCanBeDeleted: "Only submitted feedback can be deleted",
-    confirmDelete: "Confirm Delete",
     confirmDeleteFeedback: "Are you sure you want to delete this feedback?",
     updateStatusFailed: "Failed to update status",
 
@@ -1073,7 +1067,7 @@
     pleaseEnterYear: "Please enter year",
     pleaseSelectStartDate: "Please select start date",
     pleaseSelectEndDate: "Please select end date",
-    close: "Close",
+    
 
     // Page Titles & Actions
     mapColumns: "Map Columns",
@@ -1381,8 +1375,45 @@
     minPrimarySkillsRequired: "You need to select at least {min} skills in {role} (according to your selected position).",
     enableRoleToPickSkill: "This skill belongs to \"{role}\". Please enable the \"{role}\" role in \"I can also work on\" section to select it.",
     updateProfileFailed: "Failed to update profile",
+    filterByGroupType: "Filter by Group Type",
+    selectGroupsToNotify :"Select groups to notify",
+    selectStudentsToNotify: "Select students to notify",
+    sendNow: "Send Now",
+    failedToFetchData: "Failed to fetch data",
+    pleaseSelectAtLeastOne: "Please select at least one student or group to notify",
+    messageRequired: "Message is required",
+    sentSuccessfully: "Sent successfully",
+    failedToSendNotification: "Failed to send notification",
+    resetTemplate: "Reset Template",
+    enterNotificationTitle: "Enter your notification title...",
+    message: "Message",
+    filterByScope: "Filter by Scope",
+    dateMustBeBeforeSemesterStart: "Date must be before semester start date",
+    positionNeeded: "Position Needed",
+    expiresAt: "Expires At",
+    more: "more",
+    match: "Match",
+    ai:"AI"
   },
   VIE: {
+    ai:"AI",
+    match: "Phù Hợp",
+    more: "thêm",
+    expiresAt: "Ngày Hết Hạn",
+    positionNeeded: "Vị Trí Cần Thiết",
+    dateMustBeBeforeSemesterStart: "Ngày phải trước ngày bắt đầu học kỳ",
+    filterByScope: "Lọc theo Phạm Vi",
+    message: "Nội dung",
+    resetTemplate: "Đặt lại Mẫu",
+    failedToSendNotification: "Gửi thông báo thất bại",
+    sentSuccessfully: "Gửi thành công",
+    messageRequired: "Nội dung là bắt buộc",
+    pleaseSelectAtLeastOne: "Vui lòng chọn ít nhất một sinh viên hoặc nhóm để thông báo",
+    failedToFetchData: "Lấy dữ liệu thất bại",
+    sendNow: "Gửi Ngay",
+    selectStudentsToNotify :"Chọn sinh viên để thông báo",
+    selectGroupsToNotify :"Chọn nhóm để thông báo",
+    filterByGroupType: "Lọc theo Loại Nhóm",
     rejected: "Từ chối",
     noMembersInGroup: "Nhóm hiện chưa có thành viên.",
     from: "Từ",
@@ -1474,7 +1505,7 @@
     groupsSelecting: "nhóm đang chọn chủ đề này",
     loadingDetails: "Đang tải chi tiết...",
     hasPendingInvitation: "Đang chờ xử lý lời mời khác",
-    pendingInvitation: "Lời Mời Đang Chờ Xử Lý",
+    pendingInvitation: "Đang Chờ Xử Lý",
     groupsMissingTopic: "Nhóm Thiếu Chủ Đề",
     recruiting: "Đang Tuyển Thành Viên",
     semesterAlreadyExists: "Học kỳ đã tồn tại",
@@ -1793,7 +1824,6 @@
     ifRejected: "Nếu từ chối:",
     groupStatusWillReturnToActive: "Trạng thái nhóm sẽ trở lại 'đang hoạt động'",
     reviewCloseRequest: "Xem xét yêu cầu đóng",
-    review: "Xem xét",
     close: "Đóng",
     closeGroupRequested: "Yêu cầu đóng nhóm đã được gửi thành công",
     closeGroupConfirmed: "Yêu cầu đóng nhóm đã được xác nhận thành công",
@@ -1804,7 +1834,6 @@
     processing: "Đang xử lý...",
 
     // Tasks
-    tasks: "Nhiệm vụ",
     task: "Nhiệm vụ",
     createTask: "Tạo nhiệm vụ",
     editTask: "Chỉnh sửa nhiệm vụ",
@@ -1822,7 +1851,6 @@
     pending: "Chờ xử lý",
     completed: "Hoàn thành",
     cancelled: "Đã hủy",
-    inProgress: "Đang thực hiện",
 
     // Priority
     low: "Thấp",
@@ -2565,10 +2593,7 @@
     nextDigest: "Bản tóm tắt tiếp theo:",
     taskEvents: "Sự kiện nhiệm vụ",
     weeklyDigest: "Tóm tắt tuần",
-    sendMentorRequest: "Gửi yêu cầu mentor",
     sendMentorRequestTitle: "Gửi yêu cầu mentor",
-    sendMentorRequestSubtitle:
-      "Chọn một topic và viết lời nhắn để gửi yêu cầu mentor cho nhóm",
     selectTopicForGroup: "Chọn chủ đề để hướng dẫn nhóm này",
 
     // AI Assistant
@@ -2647,8 +2672,7 @@
     pleaseEnterYear: "Vui lòng nhập năm",
     pleaseSelectStartDate: "Vui lòng chọn ngày bắt đầu",
     pleaseSelectEndDate: "Vui lòng chọn ngày kết thúc",
-    close: "Đóng",
-
+  
     // Page Titles & Actions
     exportTemplate: "Xuất mẫu",
     createdDate: "Ngày Tạo",
@@ -2706,7 +2730,6 @@
 
     // Additional missing keys in Vietnamese
     invite: "Mời",
-    confirmDelete: "Xóa",
     create: "Tạo",
     totalGroupsLabel: "Tổng Số Nhóm",
     groupsBeingMentored: "Nhóm Đang Tuyển Mentor",
@@ -2714,7 +2737,6 @@
     recruitingGroupsSubtitle:
       "Danh sách các nhóm sinh viên đang tuyển mentor. Hãy gửi yêu cầu nếu bạn phù hợp.",
     sendMentorRequest: "Mentor ngay",
-    sendMentorRequestTitle: "Mentor ngay",
     sendMentorRequestSubtitle:
       "Chọn chủ đề và viết lời nhắn ngắn để nhận mentor cho nhóm",
     noGroupsBeingMentored: "Chưa có nhóm hướng dẫn",
@@ -2738,7 +2760,6 @@
     dateRange: "Khoảng Thời Gian",
     listView: "Chế Độ Danh Sách",
     untitledTask: "Nhiệm vụ chưa có tiêu đề",
-    noTasks: "Chưa có nhiệm vụ. Chuyển sang Kanban để tạo cột trước.",
     deleteColumn: "Xóa Cột",
     deleteColumnConfirm: "Xóa cột?",
     typeDeleteToConfirm: "Nhập 'delete' để xác nhận.",

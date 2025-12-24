@@ -95,7 +95,7 @@ const ProjectCard = ({
             ))}
             {(project.topicSkills || []).length > 10 && (
               <span className="text-xs text-gray-500 px-2 py-1">
-                +{(project.topicSkills || []).length - 10} more
+                +{(project.topicSkills || []).length - 10} {t("more") || "more"}
               </span>
             )}
           </div>
