@@ -106,7 +106,14 @@ export const normalizeGroup = (group, idx = 0) => {
       ? 0
       : Math.min(100, Math.max(0, progress)),
     memberPreview: normalizedMembers,
-    mentor: group.mentor?.displayName || group.mentorName || "",
+    mentor: 
+      (Array.isArray(group.mentors) && group.mentors.length > 0
+        ? group.mentors[0].displayName || 
+          group.mentors[0].mentorName || 
+          group.mentors[0].name || 
+          ""
+        : "") || group.mentorName || "",
+    mentors: Array.isArray(group.mentors) ? group.mentors : [],
     skills: group.skills 
       ? (Array.isArray(group.skills) 
           ? group.skills 
