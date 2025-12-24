@@ -50,7 +50,7 @@ export const API = {
     LIST: "/invitations",
     ACCEPT: (id) => `/invitations/${id}/accept`,
     DECLINE: (id) => `/invitations/${id}/decline`,
-     MY_PROFILE_POSTS: "/profile-posts/my/invitations",
+    MY_PROFILE_POSTS: "/profile-posts/my/invitations",
     PROFILE_POST_ACCEPT: (postId, candidateId) =>
       `/profile-posts/${postId}/invitations/${candidateId}/accept`,
     PROFILE_POST_REJECT: (postId, candidateId) =>
@@ -77,78 +77,78 @@ export const API = {
       `/groups/${groupId}/pending/${requestId}/accept`,
     REJECT_JOIN: (groupId, requestId) =>
       `/groups/${groupId}/pending/${requestId}/reject`,
-        LEAVE_GROUP: (id) => `/groups/${id}/members/me`,
-        JOIN_POST_TO_GROUP: (id) => `recruitment-posts/${id}/applications`,
-        FEEDBACK_LIST: (groupId) => `/groups/${groupId}/feedback`,
-        FEEDBACK_CREATE: (groupId) => `/groups/${groupId}/feedback`,
-        FEEDBACK_UPDATE_STATUS: (groupId, feedbackId) => `/groups/${groupId}/feedback/${feedbackId}/status`,
-        FEEDBACK_UPDATE: (groupId, feedbackId) => `/groups/${groupId}/feedback/${feedbackId}`,
-        FEEDBACK_DELETE: (groupId, feedbackId) => `/groups/${groupId}/feedback/${feedbackId}`,
-        CLOSE_GROUP: (groupId) => `/groups/${groupId}/close`,
-        CONFIRM_CLOSE: (groupId) => `/groups/${groupId}/close/confirm`,
-        REJECT_CLOSE: (groupId) => `/groups/${groupId}/close/reject`,
-    },
-    TOPICS: {
-        LIST: "/topics",
-        LIST_OWNED_OPEN: "/topics?ownedBy=me&status=open",
-        CREATE: "/topics",
-        DETAIL_TOPIC: (id) => `/topics/${id}`,
-        UPDATE: (id) => `/topics/${id}`,
-        DELETE: (id) => `/topics/${id}`,
-        EXPORT_TOPICS: "/topics/template",
-        IMPORT_TOPICS: "/topics/import",
-        VALIDATE_IMPORT: "/topics/import/validate",
-    },
-    MAJORS: {
-        LIST: "/majors",
-    },
-    SKILLS: {
-        LIST: "/skills",
-        CREATE: "/skills",
-        DETAIL: (token) => `/skills/${token}`,
-        UPDATE: (token) => `/skills/${token}`,
-        DELETE: (token) => `/skills/${token}`,
-    },
-    BOARD: {
-        DETAIL: (groupId) => `/groups/${groupId}/board`,
-        CREATE_COLUMN: (groupId) => `/groups/${groupId}/board/columns`,
-        UPDATE_COLUMN: (groupId, columnId) =>
-            `/groups/${groupId}/board/columns/${columnId}`,
-        DELETE_COLUMN: (groupId, columnId) =>
-            `/groups/${groupId}/board/columns/${columnId}`,
-        CREATE_TASK: (groupId) => `/groups/${groupId}/board/tasks`,
-        UPDATE_TASK: (groupId, taskId) =>
-            `/groups/${groupId}/board/tasks/${taskId}`,
-        DELETE_TASK: (groupId, taskId) =>
-            `/groups/${groupId}/board/tasks/${taskId}`,
-        MOVE_TASK: (groupId, taskId) =>
-            `/groups/${groupId}/board/tasks/${taskId}/move`,
-        REPLACE_ASSIGNEES: (groupId, taskId) =>
-            `/groups/${groupId}/board/tasks/${taskId}/assignees`,
-        LIST_COMMENTS: (groupId, taskId) =>
-            `/groups/${groupId}/board/tasks/${taskId}/comments`,
-        CREATE_COMMENT: (groupId, taskId) =>
-            `/groups/${groupId}/board/tasks/${taskId}/comments`,
-        UPDATE_COMMENT: (groupId, commentId) =>
-            `/groups/${groupId}/board/comments/${commentId}`,
-        DELETE_COMMENT: (groupId, commentId) =>
-            `/groups/${groupId}/board/comments/${commentId}`,
-        GROUP_FILES: (groupId) => `/groups/${groupId}/board/files`,
-        TASK_FILES: (groupId, taskId) =>
-            `/groups/${groupId}/board/tasks/${taskId}/files`,
-        UPLOAD_FILE: (groupId) => `/groups/${groupId}/board/files/upload`,
-        DELETE_FILE: (groupId, fileId) =>
-            `/groups/${groupId}/board/files/${fileId}`,
-   },
-    BACKLOG: {
-      LIST: (groupId) => `/groups/${groupId}/tracking/backlog`,
-      CREATE: (groupId) => `/groups/${groupId}/tracking/backlog`,
-      UPDATE: (groupId, backlogId) =>
-        `/groups/${groupId}/tracking/backlog/${backlogId}`,
-      ARCHIVE: (groupId, backlogId) =>
-        `/groups/${groupId}/tracking/backlog/${backlogId}`,
-      PROMOTE: (groupId, backlogId) =>
-        `/groups/${groupId}/tracking/backlog/${backlogId}/promote`,
+    LEAVE_GROUP: (id) => `/groups/${id}/members/me`,
+    JOIN_POST_TO_GROUP: (id) => `recruitment-posts/${id}/applications`,
+    FEEDBACK_LIST: (groupId) => `/groups/${groupId}/feedback`,
+    FEEDBACK_CREATE: (groupId) => `/groups/${groupId}/feedback`,
+    FEEDBACK_UPDATE_STATUS: (groupId, feedbackId) => `/groups/${groupId}/feedback/${feedbackId}/status`,
+    FEEDBACK_UPDATE: (groupId, feedbackId) => `/groups/${groupId}/feedback/${feedbackId}`,
+    FEEDBACK_DELETE: (groupId, feedbackId) => `/groups/${groupId}/feedback/${feedbackId}`,
+    CLOSE_GROUP: (groupId) => `/groups/${groupId}/close`,
+    CONFIRM_CLOSE: (groupId) => `/groups/${groupId}/close/confirm`,
+    REJECT_CLOSE: (groupId) => `/groups/${groupId}/close/reject`,
+  },
+  TOPICS: {
+    LIST: "/topics",
+    LIST_OWNED_OPEN: "/topics?ownedBy=me&status=open",
+    CREATE: "/topics",
+    DETAIL_TOPIC: (id) => `/topics/${id}`,
+    UPDATE: (id) => `/topics/${id}`,
+    DELETE: (id) => `/topics/${id}`,
+    EXPORT_TOPICS: "/topics/template",
+    IMPORT_TOPICS: "/topics/import",
+    VALIDATE_IMPORT: "/topics/import/validate",
+  },
+  MAJORS: {
+    LIST: "/majors",
+  },
+  SKILLS: {
+    LIST: "/skills",
+    CREATE: "/skills",
+    DETAIL: (token) => `/skills/${token}`,
+    UPDATE: (token) => `/skills/${token}`,
+    DELETE: (token) => `/skills/${token}`,
+  },
+  BOARD: {
+    DETAIL: (groupId) => `/groups/${groupId}/board`,
+    CREATE_COLUMN: (groupId) => `/groups/${groupId}/board/columns`,
+    UPDATE_COLUMN: (groupId, columnId) =>
+      `/groups/${groupId}/board/columns/${columnId}`,
+    DELETE_COLUMN: (groupId, columnId) =>
+      `/groups/${groupId}/board/columns/${columnId}`,
+    CREATE_TASK: (groupId) => `/groups/${groupId}/board/tasks`,
+    UPDATE_TASK: (groupId, taskId) =>
+      `/groups/${groupId}/board/tasks/${taskId}`,
+    DELETE_TASK: (groupId, taskId) =>
+      `/groups/${groupId}/board/tasks/${taskId}`,
+    MOVE_TASK: (groupId, taskId) =>
+      `/groups/${groupId}/board/tasks/${taskId}/move`,
+    REPLACE_ASSIGNEES: (groupId, taskId) =>
+      `/groups/${groupId}/board/tasks/${taskId}/assignees`,
+    LIST_COMMENTS: (groupId, taskId) =>
+      `/groups/${groupId}/board/tasks/${taskId}/comments`,
+    CREATE_COMMENT: (groupId, taskId) =>
+      `/groups/${groupId}/board/tasks/${taskId}/comments`,
+    UPDATE_COMMENT: (groupId, commentId) =>
+      `/groups/${groupId}/board/comments/${commentId}`,
+    DELETE_COMMENT: (groupId, commentId) =>
+      `/groups/${groupId}/board/comments/${commentId}`,
+    GROUP_FILES: (groupId) => `/groups/${groupId}/board/files`,
+    TASK_FILES: (groupId, taskId) =>
+      `/groups/${groupId}/board/tasks/${taskId}/files`,
+    UPLOAD_FILE: (groupId) => `/groups/${groupId}/board/files/upload`,
+    DELETE_FILE: (groupId, fileId) =>
+      `/groups/${groupId}/board/files/${fileId}`,
+  },
+  BACKLOG: {
+    LIST: (groupId) => `/groups/${groupId}/tracking/backlog`,
+    CREATE: (groupId) => `/groups/${groupId}/tracking/backlog`,
+    UPDATE: (groupId, backlogId) =>
+      `/groups/${groupId}/tracking/backlog/${backlogId}`,
+    ARCHIVE: (groupId, backlogId) =>
+      `/groups/${groupId}/tracking/backlog/${backlogId}`,
+    PROMOTE: (groupId, backlogId) =>
+      `/groups/${groupId}/tracking/backlog/${backlogId}/promote`,
   },
   MILESTONES: {
     LIST: (groupId) => `/groups/${groupId}/tracking/milestones`,
@@ -164,8 +164,9 @@ export const API = {
   },
   REPORT: {
     PROJECT: (groupId) => `/groups/${groupId}/tracking/reports/project`,
+    SCORES: (groupId) => `/groups/${groupId}/tracking/scores`,
     EXPORT: "/reports/export",
-     OPTIONS: "/reports/options",
+    OPTIONS: "/reports/options",
   },
   CHAT: {
     CONVERSATIONS: "/chat/conversations",
@@ -183,7 +184,7 @@ export const API = {
     OPTIONS: "/ai/options",
     AUTO_RESOLVE: "/ai/auto-resolve",
     GENERATE_POST_GROUP: (groupId) => `/ai-gateway/generate-post/group/${groupId}`,
-  GENERATE_POST_PERSONAL: "/ai-gateway/generate-post/personal",
+    GENERATE_POST_PERSONAL: "/ai-gateway/generate-post/personal",
 
   },
   SEMESTERS: {
@@ -198,4 +199,4 @@ export const API = {
   },
 }
 
-    
+

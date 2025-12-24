@@ -1,14 +1,22 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MoreVertical, Users, GraduationCap, UserPlus } from "lucide-react";
-import AssignRoleModal from "./AssignRoleModal";
+import {
+  MoreVertical,
+  Users,
+  GraduationCap,
+  UserPlus,
+  Trophy,
+  ClipboardCheck,
+  ListChecks,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 
 export default function MembersPanel({
   groupMembers,
   mentor,
   group,
   onInvite,
-  onAssignRole,
   onKickMember,
   onTransferLeader,
   currentUserEmail,
@@ -17,10 +25,8 @@ export default function MembersPanel({
   contributionStats = [],
   board = null,
 }) {
-  const [assignRoleOpen, setAssignRoleOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
-  const [assignSubmitting, setAssignSubmitting] = useState(false);
+  const [expandedIds, setExpandedIds] = useState(new Set());
   const navigate = useNavigate();
 
   const groupStatus = (group?.status || "").toString();
@@ -88,10 +94,12 @@ export default function MembersPanel({
     });
   };
 
-  // Use calculated contributions if board data is available
-  const memberStats = board
-    ? calculateMemberContributions()
-    : contributionStats;
+  const memberStats =
+    contributionStats && contributionStats.length
+      ? contributionStats
+      : board
+      ? calculateMemberContributions()
+      : groupMembers || [];
   const openProfile = (member = {}) => {
     const memberId =
       member.id ||
@@ -118,25 +126,16 @@ export default function MembersPanel({
     );
   };
 
-  const handleOpenAssignRole = (member) => {
-    setSelectedMember(member);
-    setAssignRoleOpen(true);
-    setOpenMenuId(null);
+
+  const toggleDetails = (memberId) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(memberId)) next.delete(memberId);
+      else next.add(memberId);
+      return next;
+    });
   };
 
-  const handleAssignRole = async (memberId, role) => {
-    if (onAssignRole) {
-      setAssignSubmitting(true);
-      try {
-        await onAssignRole(memberId, role);
-        setAssignRoleOpen(false);
-        setSelectedMember(null);
-      } catch (error) {
-      } finally {
-        setAssignSubmitting(false);
-      }
-    }
-  };
 
   const toggleMenu = (memberId) => {
     setOpenMenuId(openMenuId === memberId ? null : memberId);
@@ -172,11 +171,77 @@ export default function MembersPanel({
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-gray-600" />
             <h3 className="text-lg font-semibold text-gray-900">
-              {t("teamMembers") || "Team Members"}
+              {t("contributeScore") || "Contribute Score"}
             </h3>
           </div>
         </div>
         <div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            {(() => {
+              const totalScore = memberStats.reduce(
+                (sum, m) => sum + (Number(m.scoreTotal) || 0),
+                0
+              );
+              const totalAssigned = memberStats.reduce(
+                (sum, m) => sum + (Number(m.tasks?.assigned) || 0),
+                0
+              );
+              const totalDone = memberStats.reduce(
+                (sum, m) => sum + (Number(m.tasks?.done) || 0),
+                0
+              );
+              const teamCount = memberStats.length;
+
+              const cards = [
+                {
+                  label: t("totalScore") || "Total Score",
+                  value: totalScore,
+                  icon: Trophy,
+                  tone: "bg-blue-50 text-blue-600",
+                },
+                {
+                  label: t("teamMembers") || "Team Members",
+                  value: teamCount,
+                  icon: Users,
+                  tone: "bg-emerald-50 text-emerald-600",
+                },
+                {
+                  label: t("tasksDone") || "Tasks Done",
+                  value: totalDone,
+                  icon: ClipboardCheck,
+                  tone: "bg-purple-50 text-purple-600",
+                },
+                {
+                  label: t("totalAssigned") || "Total Assigned",
+                  value: totalAssigned,
+                  icon: ListChecks,
+                  tone: "bg-gray-100 text-gray-600",
+                },
+              ];
+
+              return cards.map((card) => {
+                const Icon = card.icon;
+                return (
+                  <div
+                    key={card.label}
+                    className="border border-gray-200 rounded-2xl bg-white p-4 flex items-center gap-3"
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${card.tone}`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-lg font-semibold text-gray-900">
+                        {card.value}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {card.label}
+                      </div>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
           <h4 className="text-sm font-semibold text-gray-500 uppercase mb-4">
             {t("contribution") || "Contribution"}
           </h4>
@@ -190,12 +255,21 @@ export default function MembersPanel({
               .join("")
               .slice(0, 2)
               .toUpperCase();
-            const contribution = member.contribution || 0;
-            const tasksCompleted = member.taskCount || 0;
+            const contribution =
+              member.scoreTotal ?? member.contribution ?? 0;
+            const tasksCompleted =
+              member.tasks?.done ?? member.taskCount ?? 0;
+            const tasksAssigned =
+              member.tasks?.assigned ?? member.tasksAssigned ?? 0;
+            const memberId = getMemberId(member) || member.memberId || member.id;
+            const showDetails = expandedIds.has(memberId);
+            const progressPercent = tasksAssigned
+              ? Math.round((tasksCompleted / tasksAssigned) * 100)
+              : 0;
             return (
               <div
                 key={member.id || member.email}
-                className="border border-gray-200 rounded-2xl bg-white shadow-sm p-5 flex flex-col gap-3 relative"
+                className="border border-gray-200 rounded-2xl bg-white shadow-sm p-5 flex flex-col gap-4 relative"
               >
                 {/* Kebab Menu */}
                 {canEditMembers && (
@@ -208,14 +282,6 @@ export default function MembersPanel({
                     </button>
                     {openMenuId === getMemberId(member) && (
                       <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                        {canInviteAndAssign && (
-                          <button
-                            onClick={() => handleOpenAssignRole(member)}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          >
-                            {t("assignRole") || "Assign Role"}
-                          </button>
-                        )}
                         {isCurrentUserLeader() && !isMemberLeader(member) && (
                           <button
                             onClick={() => {
@@ -239,73 +305,172 @@ export default function MembersPanel({
                     )}
                   </div>
                 )}
-                <div
-                  className="flex items-center gap-3 cursor-pointer"
-                  onClick={() => openProfile(member)}
-                >
-                  {member.avatarUrl ? (
-                    <img
-                      src={member.avatarUrl}
-                      alt={member.name || "avatar"}
-                      className="w-10 h-10 rounded-full object-cover"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        const fallbackName =
-                          member.name || member.displayName || "User";
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          fallbackName
-                        )}`;
-                      }}
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-semibold">
-                      {initials || "U"}
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      {member.name || member.displayName || "Unknown"}
-                    </p>
-                    <p className="text-xs text-gray-500 capitalize">
-                      {(member.assignedRoles && member.assignedRoles.length > 0
-                        ? member.assignedRoles.join(", ")
-                        : member.role) ||
-                        t("member") ||
-                        "Member"}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-700">
-                  <div className="flex justify-between">
-                    <span>{t("tasksCompleted") || "Tasks Completed"}</span>
-                    <span className="font-semibold">{tasksCompleted}</span>
-                  </div>
-                  <div className="mt-3">
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
-                      {t("contribution") || "Contribution"}
-                    </h4>
-                    <div className="flex justify-between mb-2">
-                      <span>
-                        {t("contributionScore") || "Contribution Score"}
-                      </span>
-                      <span className="font-semibold">{contribution}%</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
-                      <div
-                        className="h-2 rounded-full bg-blue-500"
-                        style={{ width: `${Math.min(contribution, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-                {member.email && (
-                  <a
-                    className="text-xs text-blue-600 mt-1 break-all"
-                    href={`mailto:${member.email}`}
+                <div className="flex items-start justify-between gap-3">
+                  <div
+                    className="flex items-center gap-3 cursor-pointer"
+                    onClick={() => openProfile(member)}
                   >
-                    {member.email}
-                  </a>
+                    {member.avatarUrl ? (
+                      <img
+                        src={member.avatarUrl}
+                        alt={member.name || "avatar"}
+                        className="w-12 h-12 rounded-full object-cover"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          const fallbackName =
+                            member.name || member.displayName || "User";
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                            fallbackName
+                          )}`;
+                        }}
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
+                        {initials || "U"}
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {member.name || member.displayName || "Unknown"}
+                      </p>
+                      <p className="text-xs text-gray-500 capitalize">
+                        {(member.assignedRoles && member.assignedRoles.length > 0
+                          ? member.assignedRoles.join(", ")
+                          : member.role) ||
+                          t("member") ||
+                          "Member"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xl font-semibold text-blue-600">
+                      {contribution}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {t("totalScore") || "Total Score"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <span>
+                      {tasksCompleted}/{tasksAssigned} {t("tasks") || "tasks"}
+                    </span>
+                  </div>
+                  <span className="font-medium text-gray-700">
+                    {progressPercent}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2">
+                  <div
+                    className="h-2 rounded-full bg-blue-500"
+                    style={{ width: `${Math.min(progressPercent, 100)}%` }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-xs text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <span>{t("deliveryScore") || "Delivery"}</span>
+                    <span className="ml-auto text-gray-700 font-medium">
+                      {member.deliveryScore ?? 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span>{t("qualityScore") || "Quality"}</span>
+                    <span className="ml-auto text-gray-700 font-medium">
+                      {member.qualityScore ?? 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                    <span>{t("collabScore") || "Collab"}</span>
+                    <span className="ml-auto text-gray-700 font-medium">
+                      {member.collabScore ?? 0}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleDetails(memberId)}
+                  className="mt-2 w-full text-sm text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2 border-t border-gray-100 pt-3"
+                >
+                  {showDetails ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                  <span>
+                    {showDetails
+                      ? t("hideDetails") || "Hide details"
+                      : t("showDetails") || "Show details"}
+                  </span>
+                </button>
+                {showDetails && (
+                  <div className="mt-4 space-y-4 border-t border-gray-100 pt-4">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                        {t("byPriority") || "By Priority"}
+                      </p>
+                      <div className="grid grid-cols-3 gap-2 text-xs text-gray-600">
+                        {["high", "medium", "low"].map((level) => {
+                          const priority = member.byPriority?.[level] || {};
+                          return (
+                            <div
+                              key={level}
+                              className="rounded-xl bg-gray-50 border border-gray-200 p-3 text-center"
+                            >
+                              <div className="text-sm font-semibold text-gray-800 capitalize">
+                                {t(level) || level}
+                              </div>
+                              <div className="mt-1 text-lg font-bold text-gray-900">
+                                {priority.score ?? 0}
+                              </div>
+                              <div className="text-[11px] text-gray-500">
+                                {priority.done ?? 0} {t("tasksDone") || "done"}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                        {t("tasks") || "Tasks"}
+                      </p>
+                      {(member.taskDetails || []).length ? (
+                        <div className="space-y-2">
+                          {member.taskDetails.map((task) => (
+                            <div
+                              key={task.taskId}
+                              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                            >
+                              <div>
+                                <div className="font-medium text-gray-800">
+                                  {task.title || "Untitled"}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {(task.priority || "").toLowerCase()}
+                                </div>
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {task.completedAt
+                                  ? t("done") || "Done"
+                                  : t("inProgress") || "In progress"}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-500">
+                          {t("noTasks") || "No tasks"}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             );
@@ -413,15 +578,6 @@ export default function MembersPanel({
                             onClick={() => setOpenMenuId(null)}
                           />
                           <div className="absolute right-0 top-8 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px]">
-                            {canInviteAndAssign && (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenAssignRole(member)}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                              >
-                                {t("assignRole") || "Assign Role"}
-                              </button>
-                            )}
                             {isCurrentUserLeader() && !isMemberLeader(member) && (
                               <button
                                 type="button"
@@ -524,17 +680,6 @@ export default function MembersPanel({
         </div>
       </div>
 
-      <AssignRoleModal
-        isOpen={assignRoleOpen}
-        onClose={() => {
-          setAssignRoleOpen(false);
-          setSelectedMember(null);
-        }}
-        member={selectedMember}
-        onAssign={handleAssignRole}
-        t={t}
-        submitting={assignSubmitting}
-      />
     </>
   );
 }

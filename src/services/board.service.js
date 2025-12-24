@@ -56,9 +56,22 @@ export const BoardService = {
   },
 
   moveTask(groupId, taskId, payload) {
+    // API expects columnId, prevTaskId, nextTaskId directly (not wrapped in req)
+    const requestPayload = {
+      columnId: payload.columnId,
+    };
+    
+    // Only include prevTaskId and nextTaskId if they have values (not null/undefined)
+    if (payload.prevTaskId) {
+      requestPayload.prevTaskId = payload.prevTaskId;
+    }
+    if (payload.nextTaskId) {
+      requestPayload.nextTaskId = payload.nextTaskId;
+    }
+    
     return BaseService.post({
       url: API.BOARD.MOVE_TASK(groupId, taskId),
-      payload,
+      payload: requestPayload,
       isLoading: true,
     });
   },

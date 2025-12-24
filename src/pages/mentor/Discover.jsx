@@ -4,17 +4,14 @@ import {
   Users,
   Calendar,
   Filter,
-  UserPlus,
   Loader2,
   X,
-  Check,
   Send,
   MessageSquare,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Modal, notification } from "antd";
 import { GroupService } from "../../services/group.service";
-import { InvitationService } from "../../services/invitation.service";
 import { TopicService } from "../../services/topic.service";
 import { useTranslation } from "../../hook/useTranslation";
 
@@ -22,16 +19,12 @@ const Discover = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
-  const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
-  const [acceptModalVisible, setAcceptModalVisible] = useState(false);
-  const [acceptedGroupName, setAcceptedGroupName] = useState("");
   const [groupDetailModalVisible, setGroupDetailModalVisible] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [groupMembers, setGroupMembers] = useState([]);
   const [loadingGroupMembers, setLoadingGroupMembers] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
   const [notificationApi, contextHolder] = notification.useNotification();
 
   // Mentor request modal state
@@ -45,7 +38,6 @@ const Discover = () => {
 
   useEffect(() => {
     fetchAvailableGroups();
-    fetchPendingInvitations();
   }, []);
 
   const fetchAvailableGroups = async () => {
@@ -63,46 +55,6 @@ const Discover = () => {
       setGroups([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchPendingInvitations = async () => {
-    try {
-      const res = await InvitationService.list();
-      const data = Array.isArray(res?.data) ? res.data : [];
-      setInvitations(data);
-    } catch {
-      setInvitations([]);
-    }
-  };
-
-  const handleAcceptInvitation = async (invitation) => {
-    try {
-      await InvitationService.accept(invitation.invitationId || invitation.id);
-      setAcceptedGroupName(invitation.groupName || "nhóm");
-      setAcceptModalVisible(true);
-      setInvitations((prev) => prev.filter((x) => x.id !== invitation.id));
-      fetchAvailableGroups();
-    } catch {
-      notificationApi.error({
-        message: t("acceptInvitationFailed") || "Chấp nhận lời mời thất bại",
-        description: t("pleaseTryAgainLater") || "Vui lòng thử lại sau.",
-      });
-    }
-  };
-
-  const handleRejectInvitation = async (invitation) => {
-    try {
-      await InvitationService.decline(invitation.invitationId || invitation.id);
-      setInvitations((prev) => prev.filter((x) => x.id !== invitation.id));
-      notificationApi.info({
-        message: t("invitationRejected") || "Đã từ chối lời mời",
-      });
-    } catch {
-      notificationApi.error({
-        message: t("rejectInvitationFailed") || "Từ chối lời mời thất bại",
-        description: t("pleaseTryAgainLater") || "Vui lòng thử lại sau.",
-      });
     }
   };
 
@@ -190,35 +142,6 @@ const Discover = () => {
       g.expertiseNeeded.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  const filteredInvitations = invitations.filter((inv) => {
-    if (activeTab === "all") return true;
-    if (activeTab === "pending") return inv.status === "pending";
-    if (activeTab === "accepted") return inv.status === "accepted";
-    return true;
-  });
-
-  const pendingCount = invitations.filter(
-    (inv) => inv.status === "pending"
-  ).length;
-  const acceptedCount = invitations.filter(
-    (inv) => inv.status === "accepted"
-  ).length;
-
-  const openRequestModal = async (group) => {
-    setRequestingGroup(group);
-    setRequestTopicId("");
-    setRequestMessage("");
-    setOwnedTopics([]);
-    setRequestModalOpen(true);
-    try {
-      const res = await TopicService.getOwnedOpenTopics();
-      const data = Array.isArray(res?.data) ? res.data : [];
-      setOwnedTopics(data);
-    } catch {
-      setOwnedTopics([]);
-    }
-  };
-
   const handleSendMentorRequest = async () => {
     if (!requestingGroup?.id || !requestTopicId || !requestMessage.trim())
       return;
@@ -233,7 +156,7 @@ const Discover = () => {
       });
       setRequestModalOpen(false);
     } catch (error) {
-      notificationApi.error({
+      notificationApi.warning({
         message: t("inviteFailed") || "Failed to send mentor request",
         description:
           error?.response?.data?.message ||
@@ -266,7 +189,7 @@ const Discover = () => {
       setGroupMembers(members);
     } catch (error) {
       setGroupMembers([]);
-      notificationApi.error({
+      notificationApi.warning({
         message: t("loadGroupMembersFailed") || "Không tải được danh sách thành viên",
       });
     } finally {
@@ -288,157 +211,6 @@ const Discover = () => {
             "Danh sách các nhóm đang ở trạng thái recruiting để bạn gửi yêu cầu mentor."}
         </p>
       </div>
-
-      {/* Invitations Section */}
-      {invitations.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <UserPlus className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">
-              {t("mentoringInvitations")}
-            </h2>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex items-center gap-2 mb-4 border-b border-gray-200">
-            <button
-              type="button"
-              onClick={() => setActiveTab("all")}
-              className={`px-4 py-2 text-sm font-medium transition relative ${
-                activeTab === "all"
-                  ? "text-blue-600 border-b-2 border-blue-600 -mb-px"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              {t("all")} ({invitations.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("pending")}
-              className={`px-4 py-2 text-sm font-medium transition relative ${
-                activeTab === "pending"
-                  ? "text-blue-600 border-b-2 border-blue-600 -mb-px"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              {t("pending")} ({pendingCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("accepted")}
-              className={`px-4 py-2 text-sm font-medium transition relative ${
-                activeTab === "accepted"
-                  ? "text-blue-600 border-b-2 border-blue-600 -mb-px"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              {t("accepted")} ({acceptedCount})
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {filteredInvitations.map((inv) => (
-              <div
-                key={inv.id}
-                className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-gray-900">
-                        {inv.groupName || t("groupUnnamed") || "Nhóm không tên"}
-                      </h3>
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${
-                          inv.status === t("accepted")
-                            ? "bg-green-50 text-green-600 border border-green-200"
-                            : inv.status === t("pending")
-                            ? "bg-yellow-50 text-yellow-600 border border-yellow-200"
-                            : "bg-gray-50 text-gray-600 border border-gray-200"
-                        }`}
-                      >
-                        {inv.status === t("accepted")
-                          ? "Đã chấp nhận"
-                          : inv.status === t("pending")
-                          ? "Đang chờ"
-                          : inv.status}
-                      </span>
-                    </div>
-                    {inv.type === "mentor_request" ? (
-                      <p className="text-sm text-gray-600">
-                        {t("youSentMentorRequest") ||
-                          "You sent a mentor request for this group with the topic below."}
-                        {inv.topicTitle && (
-                          <>
-                            {" "}
-                            <span className="font-medium">
-                              {inv.topicTitle ||
-                                t("topicUndefined") ||
-                                "chưa xác định"}
-                            </span>
-                          </>
-                        )}
-                      </p>
-                    ) : (
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">
-                          {inv.invitedByName || t("invitedBy") || "Người mời"}
-                        </span>{" "}
-                        {t("invitedYouToMentorGroup") ||
-                          "mời bạn hướng dẫn nhóm cho đề tài"}{" "}
-                        <span className="font-medium">
-                          {inv.topicTitle ||
-                            t("topicUndefined") ||
-                            "chưa xác định"}
-                        </span>
-                      </p>
-                    )}
-
-                    {/* Optional message from student/group leader */}
-                    {inv.message && (
-                      <p className="mt-2 text-sm text-gray-700 bg-white border border-blue-100 rounded-lg px-3 py-2 shadow-sm">
-                        <span className="text-xs uppercase tracking-wide text-blue-500 font-semibold">
-                          {t("message") || "Message"}
-                        </span>
-                        <br />
-                        <span className="italic break-words">{inv.message}</span>
-                      </p>
-                    )}
-
-                    {inv.createdAt && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        {getRelativeTime(inv.createdAt)}
-                      </p>
-                    )}
-                  </div>
-                  {inv.status === "pending" && inv.type !== "mentor_request" && (
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleAcceptInvitation(inv)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition"
-                      >
-                        <Check className="w-4 h-4" />
-                        <span>{t("accept") || "Chấp nhận"}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRejectInvitation(inv)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium transition"
-                      >
-                        <X className="w-4 h-4" />
-                        <span>{t("reject") || "Từ chối"}</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Search & Filter Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search input */}
@@ -591,52 +363,7 @@ const Discover = () => {
             </div>
           ))}
         </div>
-      )}
-
-      {/* Success Modal */}
-      <Modal
-        open={acceptModalVisible}
-        onCancel={() => setAcceptModalVisible(false)}
-        footer={null}
-        centered
-        width={400}
-        closeIcon={<X className="w-5 h-5" />}
-      >
-        <div className="text-center py-6">
-          <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <svg
-              className="w-8 h-8 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            {t("acceptSuccess") || "Chấp nhận thành công!"}
-          </h3>
-          <p className="text-gray-600 mb-6">
-            {t("acceptSuccessMessage") ||
-              `Bạn đã chấp nhận lời mời hướng dẫn nhóm `}
-            <span className="font-semibold">{acceptedGroupName}</span>
-          </p>
-          <button
-            type="button"
-            onClick={() => setAcceptModalVisible(false)}
-            className="w-full rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 transition"
-          >
-            {t("close") || "Đóng"}
-          </button>
-        </div>
-      </Modal>
-
-      {/* Group detail modal */}
+      )}\r\n\r\n      {/* Group detail modal */}
       <Modal
         open={groupDetailModalVisible}
         onCancel={() => setGroupDetailModalVisible(false)}
@@ -940,3 +667,7 @@ const Discover = () => {
 };
 
 export default Discover;
+
+
+
+

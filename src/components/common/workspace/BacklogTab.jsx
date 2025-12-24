@@ -124,7 +124,7 @@ export default function BacklogTab({
       setItems(list);
     } catch (err) {
 
-      notification.error({
+      notification.warning({
         message: t("failedLoadBacklog") || "Failed to load backlog",
         description:
           err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
@@ -177,9 +177,28 @@ export default function BacklogTab({
     if (!groupId || isGroupClosed()) return;
     const trimmedTitle = (form.title || "").trim();
     if (!trimmedTitle) {
-      notification.error({
+      notification.warning({
         message: t("validationError") || "Missing title",
         description: t("titleRequired") || "Please enter a backlog title.",
+      });
+      return;
+    }
+
+    // Validate story points - must be a valid number >= 0
+    const storyPointsValue = Number(form.storyPoints);
+    if (isNaN(storyPointsValue) || storyPointsValue < 0) {
+      notification.warning({
+        message: t("validationError") || "Validation Error",
+        description: t("storyPointsMustBeNumber") || "Story points must be a valid number greater than or equal to 0.",
+      });
+      return;
+    }
+
+    // Validate due date - cannot be in the past
+    if (form.dueDate && dayjs(form.dueDate).isBefore(dayjs().startOf('day'))) {
+      notification.warning({
+        message: t("validationError") || "Validation Error",
+        description: t("dueDateCannotBePast") || "Due date cannot be in the past.",
       });
       return;
     }
@@ -189,7 +208,7 @@ export default function BacklogTab({
       description: (form.description || "").trim(),
       priority: form.priority || "medium",
       category: form.category || "feature",
-      storyPoints: Number(form.storyPoints) || 0,
+      storyPoints: storyPointsValue,
       dueDate: form.dueDate ? dayjs(form.dueDate).toISOString() : null,
       ownerUserId: form.ownerUserId || null,
     };
@@ -213,7 +232,7 @@ export default function BacklogTab({
       fetchItems();
     } catch (err) {
 
-      notification.error({
+      notification.warning({
         message: t("actionFailed") || "Action failed",
         description:
           err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
@@ -221,30 +240,55 @@ export default function BacklogTab({
     }
   };
 
-  const confirmArchive = (item) => {
+  const confirmDelete = (item) => {
     if (readOnly) return;
     const id = getItemId(item);
     if (!id) return;
+    let inputValue = "";
     Modal.confirm({
-      title: t("confirmArchive") || "Archive backlog item?",
-      content: item?.title || "",
-      okText: t("archive") || "Archive",
+      title: t("deleteBacklogItemTitle") || "Delete backlog item",
+      content: (
+        <div className="space-y-2">
+          <p className="text-sm text-gray-600">
+            {t("typeDeleteToConfirm") || "Type 'delete' to confirm."}
+          </p>
+          <Input
+            placeholder={t("deletePlaceholder") || "delete"}
+            onChange={(ev) => {
+              inputValue = ev.target.value;
+            }}
+          />
+        </div>
+      ),
+      okText: t("delete") || "Delete",
+      okButtonProps: { danger: true },
       cancelText: t("cancel") || "Cancel",
-      onOk: () => archiveItem(id),
+      onOk: () => {
+        if (inputValue.toLowerCase() !== "delete") {
+          notification.warning({
+            message: t("validationError") || "Validation Error",
+            description: t("mustTypeDelete") || "You must type 'delete' to confirm.",
+          });
+          return Promise.reject();
+        }
+        deleteItem(id);
+        return Promise.resolve();
+      },
     });
   };
 
-  const archiveItem = async (id) => {
+  const deleteItem = async (id) => {
     if (!groupId || !id || isGroupClosed()) return;
     try {
       await BacklogService.archiveBacklogItem(groupId, id);
       notification.success({
-        message: t("archived") || "Item archived",
+        message: t("backlogItemDeletedSuccess") || "Backlog item deleted successfully",
+        duration: 2,
       });
       fetchItems();
     } catch (err) {
 
-      notification.error({
+      notification.warning({
         message: t("actionFailed") || "Action failed",
         description:
           err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
@@ -275,7 +319,7 @@ export default function BacklogTab({
       }
     } catch (err) {
 
-      notification.error({
+      notification.warning({
         message: t("actionFailed") || "Action failed",
         description:
           err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
@@ -332,20 +376,43 @@ export default function BacklogTab({
   const visibleItems = useMemo(() => items || [], [items]);
 
   const renderOwnerAvatar = (ownerId) => {
-    const name = getOwnerName(ownerId);
+    const member = memberMap.get(String(ownerId));
+    const name =
+      member?.displayName ||
+      member?.name ||
+      member?.fullName ||
+      member?.email ||
+      getOwnerName(ownerId);
+
     if (!name || name === "--") return null;
-    const initials = name
+
+    const initialsText = name
       .split(" ")
       .filter(Boolean)
       .map((n) => n[0])
       .join("")
       .slice(0, 2)
       .toUpperCase();
+
+    const avatarUrl =
+      member?.avatarUrl ||
+      member?.avatar ||
+      member?.photoUrl ||
+      member?.photoURL;
+
     return (
       <div className="inline-flex items-center gap-2 text-xs text-gray-600">
-        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700 font-semibold">
-          {initials || "U"}
-        </span>
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={name}
+            className="w-8 h-8 rounded-full object-cover"
+          />
+        ) : (
+          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700 font-semibold">
+            {initialsText || "U"}
+          </span>
+        )}
         <span className="text-sm text-gray-700">{name}</span>
       </div>
     );
@@ -409,10 +476,10 @@ export default function BacklogTab({
                               onClick: () => openEdit(item),
                             },
                             {
-                              key: "archive",
-                              label: t("archive") || "Archive",
+                              key: "delete",
+                              label: t("delete") || "Delete",
                               danger: true,
-                              onClick: () => confirmArchive(item),
+                              onClick: () => confirmDelete(item),
                             },
                           ],
                         }}
@@ -547,9 +614,24 @@ export default function BacklogTab({
               min={0}
               value={form.storyPoints}
               aria-label={t("storyPoints") || "Story Points"}
-              onChange={(value) =>
-                setForm((prev) => ({ ...prev, storyPoints: Number(value) || 0 }))
-              }
+              parser={(value) => {
+                // Only allow digits, remove any non-digit characters
+                return value.replace(/\D/g, '');
+              }}
+              formatter={(value) => {
+                // Format to show only digits
+                if (!value) return '';
+                return value.toString().replace(/\D/g, '');
+              }}
+              onChange={(value) => {
+                // Ensure only numbers are set
+                const numValue = Number(value);
+                if (!isNaN(numValue) && numValue >= 0) {
+                  setForm((prev) => ({ ...prev, storyPoints: numValue }));
+                } else {
+                  setForm((prev) => ({ ...prev, storyPoints: 0 }));
+                }
+              }}
             />
           </div>
           <div>
@@ -560,6 +642,12 @@ export default function BacklogTab({
               className="w-full"
               value={form.dueDate}
               aria-label={t("dueDate") || "Due date"}
+              inputReadOnly={true}
+              disabledDate={(current) => {
+                // Disable dates before today (past dates)
+                if (!current) return false;
+                return current && current < dayjs().startOf('day');
+              }}
               onChange={(value) => setForm((prev) => ({ ...prev, dueDate: value }))}
             />
           </div>

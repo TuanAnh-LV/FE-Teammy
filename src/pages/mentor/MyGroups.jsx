@@ -309,7 +309,6 @@ export default function MyGroups() {
                       type="primary"
                       className="!rounded-lg !w-full !h-10 !font-medium !bg-[#4264d7] hover:!bg-[#3651b8] !border-none"
                       onClick={() => navigate(`/mentor/my-groups/${g.id}`)}
-                      icon={<span>👁</span>}
                     >
                       {t("viewDetails") || "View Details"}
                     </Button>

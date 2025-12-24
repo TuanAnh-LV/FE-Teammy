@@ -24,7 +24,7 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
         prev ? { ...prev, progress: completionPercent } : prev
       );
     } catch {
-      notification.error({
+      notification.warning({
         message: t("error") || "Error",
         description:
           t("failedToFetchProgress") || "Failed to fetch project progress.",
@@ -183,7 +183,7 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
         setGroupSkillsWithRole([]);
       }
     } catch {
-      notification.error({
+      notification.warning({
         message: t("error") || "Error",
         description:
           t("failedToLoadGroupData") || "Failed to load group data.",
@@ -204,7 +204,7 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
       const list = Array.isArray(res?.data) ? res.data : res?.items || [];
       setGroupFiles(list);
     } catch {
-      notification.error({
+      notification.warning({
         message: t("error") || "Error",
         description:
           t("failedToLoadGroupFiles") || "Failed to load group files.",
@@ -250,7 +250,7 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
 
               resolve(true);
             } catch (error) {
-              notification.error({
+              notification.warning({
                 message: t("error") || "Error",
                 description:
                   error?.response?.data?.message ||
@@ -270,77 +270,6 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
     [groupId, t, userInfo]
   );
 
-  const handleAssignRole = useCallback(
-    async (memberId, roleName) => {
-      if (!groupId || !memberId || !roleName) return;
-
-      try {
-        await GroupService.assignMemberRole(groupId, memberId, roleName);
-
-        notification.success({
-          message: t("success") || "Success",
-          description:
-            t("roleAssignedSuccessfully") || "Role assigned successfully.",
-        });
-
-        const membersRes = await GroupService.getListMembers(groupId);
-        const members = Array.isArray(membersRes?.data)
-          ? membersRes.data
-          : [];
-
-        const normalizedMembers = members.map((m) => {
-          const email = m.email || "";
-          const normalizedEmail = email.toLowerCase();
-          const currentEmail = (userInfo?.email || "").toLowerCase();
-
-          const avatarFromApi =
-            m.avatarUrl ||
-            m.avatarURL ||
-            m.avatar_url ||
-            m.avatar ||
-            m.imageUrl ||
-            m.imageURL ||
-            m.image_url ||
-            m.photoURL ||
-            m.photoUrl ||
-            m.photo_url ||
-            m.profileImage ||
-            m.user?.avatarUrl ||
-            m.user?.avatar ||
-            m.user?.photoURL ||
-            m.user?.photoUrl ||
-            m.user?.imageUrl ||
-            m.user?.profileImage ||
-            "";
-
-          const memberIdValue =
-            m.id || m.memberId || m.userId || m.userID || m.accountId || "";
-
-          return {
-            id: memberIdValue,
-            name: m.displayName || m.name || "",
-            email,
-            role: m.role || m.status || "",
-            joinedAt: m.joinedAt,
-            avatarUrl:
-              avatarFromApi ||
-              (currentEmail && normalizedEmail === currentEmail
-                ? userInfo?.photoURL || ""
-                : ""),
-          };
-        });
-
-        setGroupMembers(normalizedMembers);
-      } catch (err) {
-        notification.error({
-          message: t("error") || "Error",
-          description: t("failedToAssignRole") || "Failed to assign role.",
-        });
-        throw err;
-      }
-    },
-    [groupId, t, userInfo]
-  );
 
   const handleTransferLeader = useCallback(
     (member) => {
@@ -381,7 +310,7 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
               );
             }
           } catch (error) {
-            notification.error({
+            notification.warning({
               message:
                 t("failedToTransferLeader") ||
                 "Failed to transfer leadership",
@@ -409,7 +338,6 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
     loadGroupFiles,
     fetchCompletionPercent,
     handleKickMember,
-    handleAssignRole,
     handleTransferLeader,
     fetchGroupDetail,
   };
