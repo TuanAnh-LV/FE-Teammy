@@ -3,6 +3,7 @@ import { useRoutes } from "react-router-dom";
 import routes from "./routes/app.routes";
 import LoadingState from "./components/common/LoadingState";
 import RealtimeInvitationListener from "./components/realtime/RealtimeInvitationListener";
+import RoleBasedRedirect from "./routes/protected/RoleBasedRedirect";
 
 export default function App() {
   const element = useRoutes(routes);
@@ -17,8 +18,10 @@ export default function App() {
         />
       }
     >
-      <RealtimeInvitationListener />
-      {element}
+      <RoleBasedRedirect>
+        <RealtimeInvitationListener />
+        {element}
+      </RoleBasedRedirect>
     </Suspense>
   );
 }

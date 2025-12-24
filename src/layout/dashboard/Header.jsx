@@ -66,12 +66,8 @@ const HeaderBar = ({ collapsed, onToggle }) => {
           </span>
         </button>
 
-        <BellOutlined className="text-gray-500 text-lg cursor-pointer hover:text-blue-600 transition" />
-        <Avatar 
-          size="medium" 
-          icon={<UserOutlined />}
-          src={avatarUrl}
-        />
+        {/* <BellOutlined className="text-gray-500 text-lg cursor-pointer hover:text-blue-600 transition" /> */}
+        <Avatar size="medium" icon={<UserOutlined />} src={avatarUrl} />
       </div>
     </Header>
   );

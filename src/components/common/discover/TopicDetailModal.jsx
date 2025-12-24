@@ -100,7 +100,6 @@ const TopicDetailModal = ({
         </div>
       ) : (
         <div className="p-6">
-          {/* Header */}
           <div className="mb-6">
             <div className="flex items-start justify-between gap-4 mb-4">
               <div className="flex-1">
@@ -111,18 +110,17 @@ const TopicDetailModal = ({
                   <div className="flex items-center gap-2 mb-3">
                     <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-sm font-bold rounded-full">
                       <Sparkles className="w-4 h-4 fill-white" />
-                      AI Recommended
+                      {t("aiRecommended") || "aiRecommended"}
                     </div>
                     <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-sm font-bold rounded-full">
                       <Award className="w-4 h-4 fill-white" />
-                      {topic.score}% Match
+                      {topic.score}% {t("match") || "Match"}
                     </div>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Major and Status */}
             <div className="flex flex-wrap gap-2 mb-4">
               <span className="inline-flex items-center px-3 py-1.5 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg">
                 {topic.domain}
@@ -143,7 +141,6 @@ const TopicDetailModal = ({
               })()}
             </div>
 
-            {/* Description */}
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-gray-700 mb-2">
                 {t("description") || "Description"}
@@ -153,7 +150,6 @@ const TopicDetailModal = ({
               </p>
             </div>
 
-            {/* Skills */}
             {(topic.topicSkills || []).length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">
@@ -172,7 +168,6 @@ const TopicDetailModal = ({
               </div>
             )}
 
-            {/* Matching Skills for AI suggestions */}
             {isAISuggestion && (topic.matchingSkills || []).length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">
@@ -206,7 +201,6 @@ const TopicDetailModal = ({
               </div>
             )}
 
-            {/* Mentors */}
             {topic.mentor && (
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">
@@ -221,7 +215,6 @@ const TopicDetailModal = ({
               </div>
             )}
 
-            {/* Groups Selecting This Topic */}
             {otherGroupsSelecting.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">
@@ -248,7 +241,6 @@ const TopicDetailModal = ({
               </div>
             )}
 
-            {/* Created Date */}
             {formattedDate && (
               <div className="mb-6">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -260,7 +252,6 @@ const TopicDetailModal = ({
               </div>
             )}
 
-            {/* Registration File */}
             {topic.registrationFile && (
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">
@@ -300,7 +291,6 @@ const TopicDetailModal = ({
               </div>
             )}
 
-            {/* Attached Files */}
             {(topic.attachedFiles || []).length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">
@@ -332,7 +322,6 @@ const TopicDetailModal = ({
               </div>
             )}
 
-            {/* Reference Docs */}
             {(topic.referenceDocs || []).length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">

@@ -113,4 +113,18 @@ export const AdminService = {
       isLoading,
     });
   },
+  getPlanningOverview(params = {}, isLoading = true) {
+    return BaseService.get({
+      url: API.ADMIN.PLANNING_OVERVIEW,
+      params,
+      isLoading,
+    });
+  },
+  createAnnouncement(payload = {}, isLoading = true) {
+  return BaseService.post({
+    url: API.ADMIN.CREATE_ANNOUNCEMENT,
+    payload,
+    isLoading,
+  });
+},
 };

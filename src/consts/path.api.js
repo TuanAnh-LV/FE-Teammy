@@ -19,6 +19,8 @@ export const API = {
     ACTIVITY_LOGS: "/admin/activity-logs",
     MAJOR_STATS: "/users/admin/major-stats",
     DASHBOARD_MODERATOR: "/dashboard/moderator",
+    PLANNING_OVERVIEW: "/announcements/planning-overview",
+    CREATE_ANNOUNCEMENT: "/announcements",
   },
   POST: {
     GET_PERSONAL: "/profile-posts",

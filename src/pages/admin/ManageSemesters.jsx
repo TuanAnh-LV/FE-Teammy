@@ -252,11 +252,9 @@ const ManageSemesters = () => {
       setIsPolicyModalOpen(false);
       policyForm.resetFields();
       fetchSemesters();
-    } catch {
-      notification.error({
-        message: t("error") || "Error",
-        description: t("failedToUpdatePolicy") || "Failed to update policy",
-      });
+      // eslint-disable-next-line no-useless-catch
+    } catch (error) {
+      throw error;
     } finally {
       setSavingPolicy(false);
     }
@@ -470,6 +468,7 @@ const ManageSemesters = () => {
         form={policyForm}
         onSubmit={handlePolicySubmit}
         okLoading={savingPolicy}
+        semester={selectedSemester}
         onCancel={() => {
           setIsPolicyModalOpen(false);
           policyForm.resetFields();

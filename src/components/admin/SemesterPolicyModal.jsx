@@ -2,6 +2,7 @@ import React from "react";
 import { Modal, Form, DatePicker, InputNumber } from "antd";
 import { SettingOutlined } from "@ant-design/icons";
 import { useTranslation } from "../../hook/useTranslation";
+import { getErrorMessage } from "../../utils/helpers";
 import dayjs from "dayjs";
 
 const SemesterPolicyModal = ({
@@ -11,8 +12,56 @@ const SemesterPolicyModal = ({
   onCancel,
   okLoading = false,
   width = 700,
+  semester = null,
 }) => {
   const { t } = useTranslation();
+
+  const handleSubmit = async () => {
+    try {
+      await onSubmit();
+    } catch (error) {
+      const errorMessage = getErrorMessage(error);
+
+      // Map các field name từ error message
+      const fieldMapping = {
+        teamSelfSelectStart: /teamselfselectstart|team self-select start/i,
+        teamSelfSelectEnd: /teamselfselectend|team self-select end/i,
+        teamSuggestStart: /teamsuggeststart|team suggest start/i,
+        topicSelfSelectStart: /topicselfselectstart|topic self-select start/i,
+        topicSelfSelectEnd: /topicselfselectend|topic self-select end/i,
+        topicSuggestStart: /topicsuggeststart|topic suggest start/i,
+        desiredGroupSizeMin: /desiredgroupsizemin|desired group size min/i,
+        desiredGroupSizeMax: /desiredgroupsizemax|desired group size max/i,
+      };
+
+      // Tìm field tương ứng với lỗi
+      let matchedField = null;
+      for (const [field, pattern] of Object.entries(fieldMapping)) {
+        if (pattern.test(errorMessage)) {
+          matchedField = field;
+          break;
+        }
+      }
+
+      // Hiển thị lỗi dưới field tương ứng hoặc field đầu tiên
+      if (matchedField) {
+        form.setFields([
+          {
+            name: matchedField,
+            errors: [errorMessage],
+          },
+        ]);
+      } else {
+        // Nếu không match được field cụ thể, hiển thị ở field đầu tiên
+        form.setFields([
+          {
+            name: "teamSelfSelectStart",
+            errors: [errorMessage],
+          },
+        ]);
+      }
+    }
+  };
 
   return (
     <Modal
@@ -23,7 +72,7 @@ const SemesterPolicyModal = ({
         </div>
       }
       open={open}
-      onOk={onSubmit}
+      onOk={handleSubmit}
       onCancel={onCancel}
       okText={t("save") || "Save"}
       cancelText={t("cancel") || "Cancel"}
@@ -48,11 +97,19 @@ const SemesterPolicyModal = ({
               {
                 validator: (_, value) => {
                   if (!value) return Promise.resolve();
-                  if (value.isBefore(dayjs(), "day")) {
+                  if (semester?.year && value.year() !== semester.year) {
+                    return Promise.reject(
+                      new Error("TeamSelfSelectStart must be semester year.")
+                    );
+                  }
+                  if (
+                    semester?.startDate &&
+                    value.isAfter(dayjs(semester.startDate), "day")
+                  ) {
                     return Promise.reject(
                       new Error(
-                        t("startDateCannotBeInThePast") ||
-                          "Start date cannot be a past date"
+                        t("dateMustBeBeforeSemesterStart") ||
+                          "Date must be before semester start date"
                       )
                     );
                   }
@@ -61,7 +118,20 @@ const SemesterPolicyModal = ({
               },
             ]}
           >
-            <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+            <DatePicker
+              style={{ width: "100%" }}
+              format="YYYY-MM-DD"
+              disabledDate={(current) => {
+                if (!current) return false;
+                if (semester?.year && current.year() !== semester.year) {
+                  return true;
+                }
+                if (semester?.startDate) {
+                  return current.isAfter(dayjs(semester.startDate), "day");
+                }
+                return false;
+              }}
+            />
           </Form.Item>
 
           <Form.Item
@@ -72,6 +142,11 @@ const SemesterPolicyModal = ({
               {
                 validator: (_, value) => {
                   if (!value) return Promise.resolve();
+                  if (semester?.year && value.year() !== semester.year) {
+                    return Promise.reject(
+                      new Error("TeamSelfSelectEnd must be semester year.")
+                    );
+                  }
                   const startDate = form.getFieldValue("teamSelfSelectStart");
                   if (startDate && value.isBefore(startDate, "day")) {
                     return Promise.reject(
@@ -81,12 +156,36 @@ const SemesterPolicyModal = ({
                       )
                     );
                   }
+                  if (
+                    semester?.startDate &&
+                    value.isAfter(dayjs(semester.startDate), "day")
+                  ) {
+                    return Promise.reject(
+                      new Error(
+                        t("dateMustBeBeforeSemesterStart") ||
+                          "Date must be before semester start date"
+                      )
+                    );
+                  }
                   return Promise.resolve();
                 },
               },
             ]}
           >
-            <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+            <DatePicker
+              style={{ width: "100%" }}
+              format="YYYY-MM-DD"
+              disabledDate={(current) => {
+                if (!current) return false;
+                if (semester?.year && current.year() !== semester.year) {
+                  return true;
+                }
+                if (semester?.startDate) {
+                  return current.isAfter(dayjs(semester.startDate), "day");
+                }
+                return false;
+              }}
+            />
           </Form.Item>
         </div>
 
@@ -98,11 +197,19 @@ const SemesterPolicyModal = ({
             {
               validator: (_, value) => {
                 if (!value) return Promise.resolve();
-                if (value.isBefore(dayjs(), "day")) {
+                if (semester?.year && value.year() !== semester.year) {
+                  return Promise.reject(
+                    new Error("TeamSuggestStart must be semester year.")
+                  );
+                }
+                if (
+                  semester?.startDate &&
+                  value.isAfter(dayjs(semester.startDate), "day")
+                ) {
                   return Promise.reject(
                     new Error(
-                      t("startDateCannotBeInThePast") ||
-                        "Start date cannot be a past date"
+                      t("dateMustBeBeforeSemesterStart") ||
+                        "Date must be before semester start date"
                     )
                   );
                 }
@@ -111,7 +218,20 @@ const SemesterPolicyModal = ({
             },
           ]}
         >
-          <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+          <DatePicker
+            style={{ width: "100%" }}
+            format="YYYY-MM-DD"
+            disabledDate={(current) => {
+              if (!current) return false;
+              if (semester?.year && current.year() !== semester.year) {
+                return true;
+              }
+              if (semester?.startDate) {
+                return current.isAfter(dayjs(semester.startDate), "day");
+              }
+              return false;
+            }}
+          />
         </Form.Item>
 
         <div className="grid grid-cols-2 gap-4">
@@ -123,11 +243,19 @@ const SemesterPolicyModal = ({
               {
                 validator: (_, value) => {
                   if (!value) return Promise.resolve();
-                  if (value.isBefore(dayjs(), "day")) {
+                  if (semester?.year && value.year() !== semester.year) {
+                    return Promise.reject(
+                      new Error("TopicSelfSelectStart must be semester year.")
+                    );
+                  }
+                  if (
+                    semester?.startDate &&
+                    value.isAfter(dayjs(semester.startDate), "day")
+                  ) {
                     return Promise.reject(
                       new Error(
-                        t("startDateCannotBeInThePast") ||
-                          "Start date cannot be a past date"
+                        t("dateMustBeBeforeSemesterStart") ||
+                          "Date must be before semester start date"
                       )
                     );
                   }
@@ -136,7 +264,20 @@ const SemesterPolicyModal = ({
               },
             ]}
           >
-            <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+            <DatePicker
+              style={{ width: "100%" }}
+              format="YYYY-MM-DD"
+              disabledDate={(current) => {
+                if (!current) return false;
+                if (semester?.year && current.year() !== semester.year) {
+                  return true;
+                }
+                if (semester?.startDate) {
+                  return current.isAfter(dayjs(semester.startDate), "day");
+                }
+                return false;
+              }}
+            />
           </Form.Item>
 
           <Form.Item
@@ -147,6 +288,11 @@ const SemesterPolicyModal = ({
               {
                 validator: (_, value) => {
                   if (!value) return Promise.resolve();
+                  if (semester?.year && value.year() !== semester.year) {
+                    return Promise.reject(
+                      new Error("TopicSelfSelectEnd must be semester year.")
+                    );
+                  }
                   const startDate = form.getFieldValue("topicSelfSelectStart");
                   if (startDate && value.isBefore(startDate, "day")) {
                     return Promise.reject(
@@ -156,12 +302,36 @@ const SemesterPolicyModal = ({
                       )
                     );
                   }
+                  if (
+                    semester?.startDate &&
+                    value.isAfter(dayjs(semester.startDate), "day")
+                  ) {
+                    return Promise.reject(
+                      new Error(
+                        t("dateMustBeBeforeSemesterStart") ||
+                          "Date must be before semester start date"
+                      )
+                    );
+                  }
                   return Promise.resolve();
                 },
               },
             ]}
           >
-            <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+            <DatePicker
+              style={{ width: "100%" }}
+              format="YYYY-MM-DD"
+              disabledDate={(current) => {
+                if (!current) return false;
+                if (semester?.year && current.year() !== semester.year) {
+                  return true;
+                }
+                if (semester?.startDate) {
+                  return current.isAfter(dayjs(semester.startDate), "day");
+                }
+                return false;
+              }}
+            />
           </Form.Item>
         </div>
 
@@ -173,11 +343,19 @@ const SemesterPolicyModal = ({
             {
               validator: (_, value) => {
                 if (!value) return Promise.resolve();
-                if (value.isBefore(dayjs(), "day")) {
+                if (semester?.year && value.year() !== semester.year) {
+                  return Promise.reject(
+                    new Error("TopicSuggestStart must be semester year.")
+                  );
+                }
+                if (
+                  semester?.startDate &&
+                  value.isAfter(dayjs(semester.startDate), "day")
+                ) {
                   return Promise.reject(
                     new Error(
-                      t("startDateCannotBeInThePast") ||
-                        "Start date cannot be a past date"
+                      t("dateMustBeBeforeSemesterStart") ||
+                        "Date must be before semester start date"
                     )
                   );
                 }
@@ -186,7 +364,20 @@ const SemesterPolicyModal = ({
             },
           ]}
         >
-          <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+          <DatePicker
+            style={{ width: "100%" }}
+            format="YYYY-MM-DD"
+            disabledDate={(current) => {
+              if (!current) return false;
+              if (semester?.year && current.year() !== semester.year) {
+                return true;
+              }
+              if (semester?.startDate) {
+                return current.isAfter(dayjs(semester.startDate), "day");
+              }
+              return false;
+            }}
+          />
         </Form.Item>
 
         <div className="grid grid-cols-2 gap-4">

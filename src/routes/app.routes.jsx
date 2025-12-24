@@ -30,6 +30,7 @@ const MessagesPage = lazy(() => import("../pages/MessagesPage"));
 
 const MyGroupsPage = lazy(() => import("../pages/common/MyGroups"));
 const MyGroup = lazy(() => import("../pages/common/MyGroup"));
+const Unauthorized = lazy(() => import("../pages/common/Unauthorized"));
 
 // Moderator
 const Dashboard = lazy(() => import("../pages/moderator/Dashboard"));
@@ -55,13 +56,9 @@ const routes = [
     ],
   },
 
-  // Protected - Requires profile completion for students
   {
     element: (
-      <ProtectedRoute
-        allowedRoles={["student", "admin", "moderator", "mentor"]}
-        requiresProfile={true}
-      />
+      <ProtectedRoute allowedRoles={["student"]} requiresProfile={true} />
     ),
     children: [
       {
@@ -143,11 +140,7 @@ const routes = [
   // Fallback
   {
     path: "/unauthorize",
-    element: (
-      <div className="text-center text-red-500 text-xl mt-20">
-        403 – Không có quyền truy cập
-      </div>
-    ),
+    element: <Unauthorized />,
   },
 ];
 

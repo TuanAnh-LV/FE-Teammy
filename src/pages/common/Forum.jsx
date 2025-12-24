@@ -146,7 +146,6 @@ const Forum = () => {
     onInvitationStatusChanged: handleInvitationStatusChanged,
   });
 
-  /** 1) Lấy membership khi mount */
   useEffect(() => {
     if (membershipFetchedRef.current) return;
     membershipFetchedRef.current = true;
@@ -171,7 +170,6 @@ const Forum = () => {
       } catch {
         // Ignore membership fetch error
       } finally {
-        // Mark membership as loaded regardless of success/failure
         setMembershipLoaded(true);
       }
     })();
@@ -183,7 +181,6 @@ const Forum = () => {
     (async () => {
       const q = debouncedQuery.trim();
 
-      // Nếu không có query, load tất cả posts ban đầu
       if (!q) {
         setUseServerSearch(false);
 
@@ -213,7 +210,6 @@ const Forum = () => {
         return;
       }
 
-      // Có query - search trên server
       try {
         setIsLoadingPosts(true);
 
@@ -255,7 +251,6 @@ const Forum = () => {
 
   /** 3) Khi activeTab thay đổi, CHỈ filter data từ allPostsData nếu KHÔNG đang search */
   useEffect(() => {
-    // Nếu đang search trên server, không override postsData
     if (useServerSearch) return;
 
     const groupArr = allPostsData.filter((x) => x?.type === "group_hiring");
@@ -264,7 +259,6 @@ const Forum = () => {
   }, [activeTab, allPostsData, useServerSearch]);
 
   /** 4) Gọi AI suggestions khi chuyển sang tab individuals */
-  // Extract values to avoid re-running when myGroupDetails reference changes
   const groupCurrentMembers =
     myGroupDetails?.currentMembers || myGroupDetails?.members?.length || 0;
   const groupMaxMembers =
@@ -272,7 +266,6 @@ const Forum = () => {
   const groupTopicId = myGroupDetails?.topicId || "";
 
   useEffect(() => {
-    // Wait for membership to be loaded first
     if (!membershipLoaded) {
       return;
     }
@@ -288,11 +281,9 @@ const Forum = () => {
       return;
     }
 
-    // Calculate eligibility once
     const hasTopic = !!(groupTopicId && String(groupTopicId).trim() !== "");
     const eligible = !(groupCurrentMembers >= groupMaxMembers && hasTopic);
 
-    // If group is full AND has topic, don't show AI suggestions
     if (!eligible) {
       aiProfilesFetchedKeyRef.current = null;
       aiProfilesNotificationShownRef.current = false;
@@ -300,7 +291,6 @@ const Forum = () => {
       return;
     }
 
-    // key để tránh gọi lại khi myGroupDetails đổi reference
     const key = `individuals-${membership.groupId}-${eligible ? 1 : 0}`;
     if (aiProfilesFetchedKeyRef.current === key) return;
     aiProfilesFetchedKeyRef.current = key;
@@ -314,7 +304,6 @@ const Forum = () => {
           limit: 10,
         });
 
-        // Check if response is successful
         if (!aiResponse || aiResponse.success === false || !aiResponse.data) {
           if (mounted) setAiSuggestedPosts([]);
           return;
@@ -336,7 +325,6 @@ const Forum = () => {
 
         if (mounted && suggestions.length > 0) {
           setAiSuggestedPosts(suggestions);
-          // Only show notification once
           if (!aiProfilesNotificationShownRef.current) {
             notification.info({
               message:
@@ -372,7 +360,6 @@ const Forum = () => {
 
   /** 5) Gọi AI suggestions khi chuyển sang tab groups */
   useEffect(() => {
-    // Wait for membership to be loaded first
     if (!membershipLoaded) {
       return;
     }
@@ -385,7 +372,6 @@ const Forum = () => {
       return;
     }
 
-    // Only call API if user doesn't have a group
     if (membership.hasGroup) {
       aiGroupsFetchedKeyRef.current = null;
       aiGroupsNotificationShownRef.current = false;
@@ -409,12 +395,10 @@ const Forum = () => {
           limit: 10,
         });
 
-        // Check if response is successful
         if (!aiResponse || aiResponse.success === false || !aiResponse.data) {
           if (mounted) setAiSuggestedGroupPosts([]);
           return;
         }
-        // Handle array response structure with post wrapper
         let suggestions = [];
 
         if (Array.isArray(aiResponse.data.data)) {
@@ -430,7 +414,6 @@ const Forum = () => {
 
         if (mounted && suggestions.length > 0) {
           setAiSuggestedGroupPosts(suggestions);
-          // Only show notification once
           if (!aiGroupsNotificationShownRef.current) {
             notification.info({
               message:
@@ -457,7 +440,6 @@ const Forum = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, savedUser?.majorId, membership.hasGroup, membershipLoaded]);
 
-  /** refetch sau khi tạo post - GỌI LẠI API để có data mới nhất */
   const handleCreated = async () => {
     try {
       const [groupRes, individualRes] = await Promise.all([
@@ -471,7 +453,6 @@ const Forum = () => {
         (x) => x?.type === "individual"
       );
 
-      // Cập nhật lại tất cả data
       setAllPostsData([...groupArr, ...individualArr]);
       setPostsData(activeTab === "groups" ? groupArr : individualArr);
     } catch {
@@ -484,7 +465,6 @@ const Forum = () => {
     }
   };
 
-  /** Create sets of AI suggested IDs to filter duplicates */
   const aiGroupPostIds = useMemo(() => {
     return new Set(
       aiSuggestedGroupPosts.map((item) => item.post?.id).filter(Boolean)
@@ -497,7 +477,6 @@ const Forum = () => {
     );
   }, [aiSuggestedPosts]);
 
-  /** filter */
   const filtered = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase();
 
@@ -623,8 +602,6 @@ const Forum = () => {
       notification.success({
         message: t("inviteRequestSent") || "Invite request sent!",
       });
-
-      // Close detail modal if open
       setDetailOpen(false);
     } catch {
       notification.error({
@@ -642,7 +619,6 @@ const Forum = () => {
     try {
       await PostService.inviteProfilePost(postId);
 
-      // Update main lists
       setAllPostsData((prev) =>
         prev.map((item) =>
           item.id === postId
@@ -658,7 +634,6 @@ const Forum = () => {
         )
       );
 
-      // 👉 Update AI recommended profiles
       setAiSuggestedPosts((prev) =>
         (prev || []).map((s) => {
           const profilePost = s.profilePost || {};
@@ -711,7 +686,6 @@ const Forum = () => {
     navigate(`/profile/${id}`);
   };
 
-  // Handler for AI recommended groups
   const handleAIGroupApply = (detail, postId, groupId) => {
     const fullPost = postsData.find((p) => p.groupId === groupId) || {
       ...detail,
@@ -722,25 +696,21 @@ const Forum = () => {
     onClickOpenApply(fullPost);
   };
 
-  // Handler for opening group detail
   const handleOpenGroupDetail = (postId) => {
     setDetailGroupId(postId);
     setDetailOpen(true);
   };
 
-  // Handler for editing personal post
   const handleEditPersonalPost = (post) => {
     setEditingPost(post);
     setIsEditPersonalPostModalOpen(true);
   };
 
-  // Handler for editing recruitment post
   const handleEditRecruitmentPost = (post) => {
     setEditingPost(post);
     setIsEditRecruitmentPostModalOpen(true);
   };
 
-  // Handler for deleting personal post
   const handleDeletePersonalPost = (postId) => {
     confirm({
       centered: true,
@@ -905,7 +875,6 @@ const Forum = () => {
           </div>
         </div>
 
-        {/* Search */}
         <div className="mb-4 md:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative w-full">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -922,7 +891,6 @@ const Forum = () => {
           </div>
         </div>
 
-        {/* Segmented Tabs vẫn giữ để người dùng chuyển view */}
         <div className="mb-4 md:mb-6">
           <div className="inline-flex w-full md:w-auto rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
             <button
@@ -948,7 +916,6 @@ const Forum = () => {
           </div>
         </div>
 
-        {/* LISTS */}
         <div className="space-y-4">
           {isLoadingPosts ? (
             <div className="flex flex-col items-center justify-center py-20">

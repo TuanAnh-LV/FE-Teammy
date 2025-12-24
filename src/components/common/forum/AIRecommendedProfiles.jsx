@@ -48,12 +48,11 @@ export function AIRecommendedProfiles({
       </p>
 
       {aiSuggestedPosts.map((suggestion, idx) => {
-        // Extract data from new API structure
         const profilePost = suggestion.profilePost || {};
         const user = profilePost.user || {};
         const major = profilePost.major || {};
 
-        const postId = profilePost.id; // Post ID for invite
+        const postId = profilePost.id;
         const userName = user.displayName || "User";
         const userId = user.userId || user.id || profilePost.userId || null;
         const matchScore = suggestion.scorePercent || 0;
@@ -82,14 +81,12 @@ export function AIRecommendedProfiles({
             key={idx}
             className="relative rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-50/50 via-indigo-50/30 to-white p-4 md:p-5 shadow-sm hover:shadow-lg hover:border-blue-300 transition-all"
           >
-            {/* Match Score Badge */}
             <div className="absolute -top-2 -right-2 flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg z-10">
               <Star className="w-3 h-3 fill-white" />
-              {matchScore}% Match
+              {matchScore}% {t("match") || "Match"}
             </div>
 
             <div className="flex items-start gap-3">
-              {/* Avatar */}
               <div className="relative h-10 w-10 shrink-0">
                 {avatarUrl && (
                   <img
@@ -118,12 +115,10 @@ export function AIRecommendedProfiles({
                 </div>
               </div>
 
-              {/* Name & Time */}
               <div className="flex-1">
                 <h3 className="text-base font-semibold text-gray-900">
                   {title}
                 </h3>
-
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
                   <span className="font-medium text-gray-700">{userName}</span>
                   <span>•</span>
