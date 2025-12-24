@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Search,
   Users,
@@ -193,7 +193,7 @@ const Discover = () => {
     }
   };
 
-  const openRequestModal = async (group) => {
+  const openRequestModal = useCallback(async (group) => {
     if (!group?.id) return;
     setRequestingGroup(group);
     setRequestTopicId("");
@@ -212,7 +212,7 @@ const Discover = () => {
         message: t("loadTopicsFailed") || "Không tải được danh sách topics",
       });
     }
-  };
+  }, [t, notificationApi]);
 
   return (
     <div className="space-y-6 min-h-screen">
