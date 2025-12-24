@@ -165,6 +165,13 @@ const Profile = () => {
     skills: normalizedSkills.length ? normalizedSkills : null,
     major: profileData?.majorName || "Software Engineering",
     majorId: profileData?.majorId || baseUser?.majorId || null,
+    desiredPositionId:
+      profileData?.desiredPositionId || baseUser?.desiredPositionId || null,
+    desiredPositionName:
+      profileData?.desiredPositionName ||
+      profileData?.desiredPosition ||
+      baseUser?.desiredPositionName ||
+      null,
     university: "FPT University",
     joined: "Jan 2024",
     activeProjects: 1,

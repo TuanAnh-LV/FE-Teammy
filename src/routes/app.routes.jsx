@@ -7,6 +7,8 @@ import ProtectedRoute from "./protected/ProtectedRoute";
 const MentorDashboard = lazy(() => import("../pages/mentor/MentorDashboard"));
 const MyGroups = lazy(() => import("../pages/mentor/MyGroups"));
 const Discover = lazy(() => import("../pages/mentor/Discover"));
+const Invitations = lazy(() => import("../pages/mentor/Invitations"));
+const MyTopics = lazy(() => import("../pages/mentor/MyTopics"));
 const Notifications = lazy(() => import("../pages/mentor/Notifications"));
 const GroupDetail = lazy(() => import("../pages/mentor/GroupDetail"));
 
@@ -111,6 +113,8 @@ const routes = [
           { index: true, element: <MentorDashboard /> },
           { path: "dashboard", element: <MentorDashboard /> },
           { path: "discover", element: <Discover /> },
+          { path: "invitations", element: <Invitations /> },
+          { path: "my-topics", element: <MyTopics /> },
           { path: "my-groups", element: <MyGroups /> },
           { path: "notifications", element: <Notifications /> },
           { path: "my-groups/:id", element: <GroupDetail /> },

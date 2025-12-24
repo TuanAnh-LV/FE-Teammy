@@ -90,8 +90,7 @@ export default function CreateGroupModal({
             </label>
             <input
               type="number"
-              min={4}
-              max={6}
+              min={1}
               value={form.maxMembers}
               onChange={(e) => onChange("maxMembers", e.target.value)}
               className={`w-40 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-4 transition ${

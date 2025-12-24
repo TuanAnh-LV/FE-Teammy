@@ -153,6 +153,20 @@ export const AuthProvider = ({ children }) => {
 
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Reconnect SignalR on page refresh when token is already in storage
+  useEffect(() => {
+    if (!token) return;
+    connectGroupStatusHub(token)
+      .then(() => {
+        console.log("[AuthContext] GroupStatus hub connected (rehydrated token)");
+      })
+      .catch((err) => {
+        console.warn("[AuthContext] Failed to reconnect GroupStatus hub", err);
+      });
+    // No cleanup here because logout already disconnects; this avoids duplicate stop/start churn.
+  }, [token]);
+
   return (
     <AuthContext.Provider
       value={{

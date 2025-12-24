@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Tabs, Breadcrumb, Skeleton, Card } from "antd";
+import { Tabs, Breadcrumb, Skeleton, Card, DatePicker, Button } from "antd";
+import dayjs from "dayjs";
 import { BarChartOutlined, HomeOutlined, FileTextOutlined, TeamOutlined, AppstoreOutlined } from "@ant-design/icons";
 import InfoCard from "../../components/common/my-group/InfoCard";
 import OverviewSection from "../../components/common/my-group/OverviewSection";
@@ -8,6 +9,7 @@ import MembersPanel from "../../components/common/my-group/MembersPanel";
 import FeedbackTab from "../../components/common/my-group/FeedbackTab";
 import CloseGroupModal from "../../components/common/my-group/CloseGroupModal";
 import { GroupService } from "../../services/group.service";
+import { ReportService } from "../../services/report.service";
 import { message } from "antd";
 import useKanbanBoard from "../../hook/useKanbanBoard";
 import KanbanTab from "../../components/common/workspace/KanbanTab";
@@ -32,6 +34,9 @@ export default function GroupDetail() {
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const [closeGroupModalOpen, setCloseGroupModalOpen] = useState(false);
   const [closeGroupLoading, setCloseGroupLoading] = useState(false);
+  const [contributionScores, setContributionScores] = useState([]);
+  const [scoreFrom, setScoreFrom] = useState(dayjs());
+  const [scoreTo, setScoreTo] = useState(dayjs());
   const readOnlyWorkspace = true;
 
   // Get group status - only check if groupDetail is loaded
@@ -79,16 +84,64 @@ export default function GroupDetail() {
     }
   }, [id]);
 
+  const fetchContributionScores = useCallback(async (range = {}) => {
+    if (!id) return;
+    try {
+      const res = await ReportService.getContributionScores(id, range);
+      const payload = res?.data ?? res;
+      const members = Array.isArray(payload?.members) ? payload.members : [];
+      setContributionScores(members);
+    } catch (error) {
+      console.error("Failed to fetch contribution scores:", error);
+      setContributionScores([]);
+    }
+  }, [id]);
+
   useEffect(() => {
     fetchGroupDetail();
   }, [fetchGroupDetail]);
+
+  useEffect(() => {
+    fetchContributionScores({
+      From: dayjs().format("YYYY-MM-DD"),
+      To: dayjs().format("YYYY-MM-DD"),
+      High: 5,
+      Medium: 3,
+      Low: 1,
+    });
+  }, [fetchContributionScores]);
+
+  const applyScoreFilter = () => {
+    const params = {};
+    if (scoreFrom) params.From = scoreFrom.format("YYYY-MM-DD");
+    if (scoreTo) params.To = scoreTo.format("YYYY-MM-DD");
+    params.High = 5;
+    params.Medium = 3;
+    params.Low = 1;
+    fetchContributionScores(params);
+  };
 
   // Realtime: listen GroupStatusChanged và refetch nếu payload groupId trùng
   useEffect(() => {
     const handler = (payload) => {
       if (!payload || !payload.groupId) return;
-      if (String(payload.groupId) === String(id)) {
+      if (String(payload.groupId) !== String(id)) return;
+
+      console.log("[GroupStatusChanged][mentor-view]", payload);
+      const { action } = payload;
+      if (
+        action === "close_requested" ||
+        action === "close_confirmed" ||
+        action === "close_rejected"
+      ) {
         fetchGroupDetail();
+        message.info(
+          action === "close_requested"
+            ? t("closeGroupRequested") || "Close group requested"
+            : action === "close_confirmed"
+            ? t("closeGroupConfirmed") || "Close group confirmed"
+            : t("closeGroupRejected") || "Close group rejected"
+        );
       }
     };
 
@@ -173,6 +226,35 @@ export default function GroupDetail() {
     groupDetail?.mentor ||
     (Array.isArray(groupDetail?.mentors) ? groupDetail.mentors[0] : null);
 
+  const contributionStats = useMemo(() => {
+    const memberMap = new Map();
+    (groupMembersList || []).forEach((member) => {
+      const key =
+        member.id ||
+        member.userId ||
+        member.memberId ||
+        member.accountId ||
+        member.email;
+      if (key) memberMap.set(String(key), member);
+    });
+
+    return (contributionScores || []).map((score) => {
+      const member = memberMap.get(String(score.memberId)) || {};
+      return {
+        ...member,
+        ...score,
+        name:
+          score.memberName ||
+          member.displayName ||
+          member.name ||
+          "Unknown",
+        avatarUrl: member.avatarUrl,
+        email: member.email,
+        role: member.role,
+      };
+    });
+  }, [contributionScores, groupMembersList]);
+
   const isMentor = React.useMemo(() => {
     if (!userInfo?.email || !mentor) return false;
     const currentEmail = userInfo.email.toLowerCase();
@@ -200,7 +282,7 @@ export default function GroupDetail() {
       await fetchGroupDetail();
     } catch (error) {
       console.error("Failed to confirm close group:", error);
-      message.error(
+      message.warning(
         error?.response?.data?.message ||
           t("failedToConfirmClose") ||
           "Failed to confirm close group"
@@ -220,7 +302,7 @@ export default function GroupDetail() {
       await fetchGroupDetail();
     } catch (error) {
       console.error("Failed to reject close group:", error);
-      message.error(
+      message.warning(
         error?.response?.data?.message ||
           t("failedToRejectClose") ||
           "Failed to reject close group"
@@ -529,7 +611,6 @@ export default function GroupDetail() {
               mentor={mentor}
               group={groupDetail}
               onInvite={null}
-              onAssignRole={null}
               onKickMember={null}
               onTransferLeader={null}
               currentUserEmail={userInfo?.email}
@@ -551,18 +632,49 @@ export default function GroupDetail() {
         <div className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-3">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3 mb-4">
+                <div className="flex flex-col">
+                  <label className="text-xs font-semibold text-gray-500 uppercase mb-1">
+                    {t("from") || "From"}
+                  </label>
+                  <DatePicker
+                    value={scoreFrom}
+                    inputReadOnly
+                    onChange={setScoreFrom}
+                    disabledDate={(current) =>
+                      scoreTo && current && current > scoreTo.endOf("day")
+                    }
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-xs font-semibold text-gray-500 uppercase mb-1">
+                    {t("to") || "To"}
+                  </label>
+                  <DatePicker
+                    value={scoreTo}
+                    inputReadOnly
+                    onChange={setScoreTo}
+                    disabledDate={(current) =>
+                      scoreFrom && current && current < scoreFrom.startOf("day")
+                    }
+                  />
+                </div>
+                <Button type="primary" onClick={applyScoreFilter}>
+                  {t("apply") || "Apply"}
+                </Button>
+              </div>
               <MembersPanel
                 groupMembers={groupMembersList}
                 mentor={mentor}
                 group={groupDetail}
                 onInvite={null}
-                onAssignRole={null}
                 onKickMember={null}
                 onTransferLeader={null}
                 currentUserEmail={userInfo?.email}
                 t={t}
                 showStats
                 board={boardForStats}
+                contributionStats={contributionStats}
               />
             </div>
           </div>

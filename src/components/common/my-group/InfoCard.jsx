@@ -115,7 +115,7 @@ export default function InfoCard({
           </p>
         </div>
         <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-          {onEdit && !isActiveStatus() && (
+          {onEdit && !isActiveStatus() && !isPendingCloseStatus() && (
             <button
               type="button"
               onClick={onEdit}
@@ -148,7 +148,7 @@ export default function InfoCard({
               </span>
             </button>
           )}
-          {onActivate && (
+          {onActivate && !isPendingCloseStatus() && (
             <button
               type="button"
               onClick={onActivate}

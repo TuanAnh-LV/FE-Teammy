@@ -1,5 +1,5 @@
 import React from "react";
-import { Code } from "lucide-react";
+import { Code, Briefcase } from "lucide-react";
 import { useTranslation } from "../../../hook/useTranslation";
 
 const ProfileOverview = ({ profile }) => {

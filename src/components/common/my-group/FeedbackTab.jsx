@@ -131,7 +131,7 @@ export default function FeedbackTab({
   const handleSendFeedback = async (values) => {
     // Security check: Only assigned mentor can send feedback
     if (!isAssignedMentor) {
-      notification.error({
+      notification.warning({
         message: t("unauthorized") || "Unauthorized",
         description: t("onlyAssignedMentorCanSendFeedback") || "Only assigned mentor can send feedback",
       });
@@ -155,7 +155,7 @@ export default function FeedbackTab({
         t("sendFeedbackFailed") || 
         "Failed to send feedback";
       
-      notification.error({
+      notification.warning({
         message: t("error") || "Error",
         description: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage),
       });
@@ -181,7 +181,7 @@ export default function FeedbackTab({
         t("updateStatusFailed") || 
         "Failed to update status";
       
-      notification.error({
+      notification.warning({
         message: t("error") || "Error",
         description: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage),
       });
@@ -199,7 +199,7 @@ export default function FeedbackTab({
     
     // Security check: Only assigned mentor can edit feedback
     if (!isAssignedMentor) {
-      notification.error({
+      notification.warning({
         message: t("unauthorized") || "Unauthorized",
         description: t("onlyAssignedMentorCanEditFeedback") || "Only assigned mentor can edit feedback",
       });
@@ -221,7 +221,7 @@ export default function FeedbackTab({
       
       // Handle 409 error specifically
       if (error?.response?.status === 409) {
-        notification.error({
+        notification.warning({
           message: t("error") || "Error",
           description: t("feedbackAlreadyResolved") || "Feedback already resolved",
         });
@@ -233,7 +233,7 @@ export default function FeedbackTab({
           t("updateFeedbackFailed") || 
           "Failed to update feedback";
         
-        notification.error({
+        notification.warning({
           message: t("error") || "Error",
           description: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage),
         });
@@ -254,7 +254,7 @@ export default function FeedbackTab({
       onOk: async () => {
         // Security check: Only assigned mentor can delete feedback
         if (!isAssignedMentor) {
-          notification.error({
+          notification.warning({
             message: t("unauthorized") || "Unauthorized",
             description: t("onlyAssignedMentorCanDeleteFeedback") || "Only assigned mentor can delete feedback",
           });
@@ -274,7 +274,7 @@ export default function FeedbackTab({
           
           // Handle 409 error specifically
           if (error?.response?.status === 409) {
-            notification.error({
+            notification.warning({
               message: t("error") || "Error",
               description: t("onlySubmittedFeedbackCanBeDeleted") || "Only submitted feedback can be deleted",
             });
@@ -286,7 +286,7 @@ export default function FeedbackTab({
               t("deleteFeedbackFailed") || 
               "Failed to delete feedback";
             
-            notification.error({
+            notification.warning({
               message: t("error") || "Error",
               description: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage),
             });

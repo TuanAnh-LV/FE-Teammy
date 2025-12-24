@@ -105,15 +105,18 @@ const ConversationList = ({
           </div>
         ) : (
           filteredConversations.map((conv) => {
-            const sessionKey = conv.sessionId || conv.id || conv.groupId;
             const rawType = conv?.type || conv?.sessionType || "";
             const type = rawType.toLowerCase().includes("group")
               ? "group"
               : rawType.toLowerCase().includes("dm") || rawType.toLowerCase().includes("direct")
               ? "dm"
               : "dm";
-            const isSelected = selectedSessionId === sessionKey;
-            const isHighlighted = highlightedConversation?.sessionId === sessionKey;
+            // Use normalized sessionId from merged conversations (already normalized in MessagesPage)
+            const sessionKey = conv.sessionId || conv.originalSessionId || conv.id || conv.groupId;
+            // Also check against originalSessionId for backward compatibility
+            const originalSessionId = conv.originalSessionId || conv.sessionId || conv.id || conv.groupId;
+            const isSelected = selectedSessionId === sessionKey || selectedSessionId === originalSessionId;
+            const isHighlighted = highlightedConversation?.sessionId === sessionKey || highlightedConversation?.sessionId === originalSessionId;
 
             return (
               <button
