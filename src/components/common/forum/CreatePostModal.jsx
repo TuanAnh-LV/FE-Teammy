@@ -10,13 +10,12 @@ import {
   Tag,
   Select,
 } from "antd";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { PostService } from "../../../services/post.service";
 import { SkillService } from "../../../services/skill.service";
 import { UserService } from "../../../services/user.service";
-import moment from "moment";
+import dayjs from "dayjs";
 import { AiService } from "../../../services/ai.service";
-
 const { TextArea } = Input;
 
 const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
@@ -120,6 +119,10 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
   };
 
   const filteredSkills = availableSkills.filter((skill) => {
+    const isSelected = selectedSkills.some(
+      (selected) => selected.toLowerCase() === skill.token.toLowerCase()
+    );
+    if (isSelected) return false;
     if (skillFilter === "all") return true;
     return skill.role === skillFilter;
   });
@@ -195,12 +198,20 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
 
       const nextExpires = draft.expiresAt || draft.expires_at || null;
 
+      let validExpiresDate = null;
+      if (nextExpires) {
+        const parsedDate = dayjs(nextExpires);
+        if (parsedDate.isValid() && parsedDate.isAfter(dayjs())) {
+          validExpiresDate = parsedDate;
+        }
+      }
+
       form.setFieldsValue({
         title: nextTitle,
         description: nextDescription,
         position_needed: nextPosition,
         required_skills: Array.isArray(nextSkills) ? nextSkills : [],
-        expiresAt: nextExpires ? moment(nextExpires) : null,
+        expiresAt: validExpiresDate,
       });
 
       if (Array.isArray(nextSkills)) setSelectedSkills(nextSkills);
@@ -234,7 +245,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
             disabled={isGeneratingAI || isSubmitting}
             className="!border-orange-400 !text-orange-500"
           >
-            {t("generateWithAI") || "Generate with AI"}
+            <Sparkles className="w-4 h-4 text-[#FF7A00] animate-pulse" />
           </Button>
         </div>
       }
@@ -269,7 +280,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           <Input value={groupName || defaultGroupId || ""} disabled />
         </Form.Item>
         <Form.Item
-          label={t("pleaseEnterTitle") ? "Title" : "Title"}
+          label={t("pleaseEnterTitle") ? t("title") : "Title"}
           name="title"
           rules={[
             {
@@ -283,7 +294,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           />
         </Form.Item>
         <Form.Item
-          label={t("pleaseEnterDescription") ? "Description" : "Description"}
+          label={t("pleaseEnterDescription") ? t("description") : "Description"}
           name="description"
           rules={[
             {
@@ -302,7 +313,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
         </Form.Item>
         <Form.Item
           label={
-            t("pleaseEnterPosition") ? "Position Needed" : "Position Needed"
+            t("pleaseEnterPosition") ? t("positionNeeded") : "Position Needed"
           }
           name="position_needed"
           rules={[
@@ -324,7 +335,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           />
         </Form.Item>
         <Form.Item
-          label={t("pleaseSelectDeadline") ? "Expires At" : "Expires At"}
+          label={t("pleaseSelectDeadline") ? t("expiresAt") : "Expires At"}
           name="expiresAt"
           rules={[
             {
@@ -333,7 +344,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
             },
             {
               validator: (_, value) =>
-                value && value.isAfter(moment())
+                value && value.isAfter(dayjs())
                   ? Promise.resolve()
                   : Promise.reject(
                       t("deadlineMustBeFuture") ||
@@ -345,7 +356,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
           <DatePicker
             style={{ width: "100%" }}
             disabledDate={(current) =>
-              current && current < moment().endOf("day")
+              current && current < dayjs().endOf("day")
             }
             placeholder="Chọn ngày hết hạn"
           />
@@ -446,26 +457,15 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {filteredSkills.map((skill) => {
-                      const isSelected = selectedSkills.includes(skill.token);
                       return (
                         <Tag
                           key={skill.token}
-                          color={
-                            isSelected ? "default" : getRoleColor(skill.role)
-                          }
-                          className={`cursor-pointer transition text-xs ${
-                            isSelected
-                              ? "opacity-40 cursor-not-allowed"
-                              : "hover:scale-105"
-                          }`}
-                          onClick={() =>
-                            !isSelected && handleAddSkill(skill.token)
-                          }
+                          color={getRoleColor(skill.role)}
+                          className="cursor-pointer transition text-xs hover:scale-105"
+                          onClick={() => handleAddSkill(skill.token)}
                         >
                           {skill.token}
-                          {!isSelected && (
-                            <Plus className="inline-block w-3 h-3 ml-1" />
-                          )}
+                          <Plus className="inline-block w-3 h-3 ml-1" />
                         </Tag>
                       );
                     })}

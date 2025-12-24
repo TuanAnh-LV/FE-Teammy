@@ -1,266 +1,710 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Card,
   Select,
   Input,
   Button,
-  Switch,
-  List,
-  Radio,
   Tag,
   Space,
   notification,
+  Spin,
+  List,
+  Avatar,
+  Checkbox,
+  Typography,
+  Divider,
+  Modal,
 } from "antd";
-import { useTranslation } from "../../hook/useTranslation";
 import {
   BellOutlined,
   ExclamationCircleOutlined,
   TeamOutlined,
   SendOutlined,
   FieldTimeOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
+import { useTranslation } from "../../hook/useTranslation";
+import { AdminService } from "../../services/admin.service";
 
 const { Option } = Select;
 const { TextArea } = Input;
+const { Text } = Typography;
 
-const MOCK = {
-  withoutTopic: [{ id: 1, name: "Gamma Force", major: "Computer Science" }],
-  withoutGroups: [{ id: 2, name: "Beta Squad", major: "Engineering" }],
-  missingMembers: [{ id: 3, name: "Delta Group", major: "IT" }],
+const scopeMap = {
+  withoutTopic: "groups_without_topic",
+  withoutMembers: "groups_understaffed",
+  withoutGroups: "students_without_group",
+};
+
+const formatDateDMY = (dateStr) => {
+  if (!dateStr || typeof dateStr !== "string") return "";
+  const parts = dateStr.split("-");
+  if (parts.length !== 3) return dateStr;
+  const [y, m, d] = parts;
+  return `${d}/${m}/${y}`;
 };
 
 export default function ModeratorNotifications() {
   const { t } = useTranslation();
-  const [autoRemind, setAutoRemind] = useState(true);
-  const [filterType, setFilterType] = useState("withoutTopic");
-  const [selected, setSelected] = useState(null);
-  const [msg, setMsg] = useState("");
 
-  const list = useMemo(() => MOCK[filterType] || [], [filterType]);
+  const [filterType, setFilterType] = useState("withoutTopic");
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [title, setTitle] = useState("");
+  const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [overview, setOverview] = useState(null);
+
+  const [isDirty, setIsDirty] = useState(false);
+
+  const savedUser = JSON.parse(localStorage.getItem("userInfo") || "{}");
+
+  useEffect(() => {
+    const fetchOverview = async () => {
+      try {
+        setLoading(true);
+        const res = await AdminService.getPlanningOverview({
+          majorId: savedUser?.majorId,
+        });
+        setOverview(res?.data || null);
+      } catch (error) {
+        notification.error({
+          message: t("error") || "Error",
+          description:
+            error?.response?.data?.message ||
+            t("failedToFetchData") ||
+            "Failed to fetch data",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (savedUser?.majorId) fetchOverview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedUser?.majorId]);
+
+  const semesterObj = overview?.semester;
+  const semesterId = semesterObj?.semesterId || overview?.semesterId;
+  const semesterLabel =
+    overview?.semesterLabel ||
+    (semesterObj?.season && semesterObj?.year
+      ? `${semesterObj.season} ${semesterObj.year}`
+      : "this semester");
+
+  const majorLabel = overview?.majorName || "this major";
 
   const counts = {
-    withoutTopic: MOCK.withoutTopic.length,
-    withoutGroups: MOCK.withoutGroups.length,
-    missingMembers: MOCK.missingMembers.length,
+    withoutTopic: overview?.groupsWithoutTopicCount || 0,
+    withoutMembers: overview?.groupsWithoutMemberCount || 0,
+    withoutGroups: overview?.studentsWithoutGroupCount || 0,
   };
 
-  const sendNow = () => {
-    if (!selected)
-      return notification.warning({
-        message: t("pleaseSelectGroup") || "Please select a group.",
+  const list = useMemo(() => {
+    if (!overview) return [];
+
+    if (filterType === "withoutTopic") {
+      return (overview.groupsWithoutTopic || []).map((g) => ({
+        type: "group",
+        id: g.groupId,
+        name: g.name,
+        description: g.description,
+        currentMembers: g.currentMembers,
+        maxMembers: g.maxMembers,
+        status: g.status,
+      }));
+    }
+
+    if (filterType === "withoutMembers") {
+      return (overview.groupsWithoutMember || []).map((g) => ({
+        type: "group",
+        id: g.groupId,
+        name: g.name,
+        description: g.description,
+        currentMembers: g.currentMembers,
+        maxMembers: g.maxMembers,
+        status: g.status,
+      }));
+    }
+
+    return (overview.studentsWithoutGroup || []).map((s) => ({
+      type: "student",
+      id: s.studentId,
+      name: s.displayName,
+      primaryRole: s.primaryRole,
+      skillTags: s.skillTags || [],
+    }));
+  }, [overview, filterType]);
+
+  const selectedItems = useMemo(() => {
+    if (!selectedIds?.length) return [];
+    return list.filter((x) => selectedIds.includes(x.id));
+  }, [list, selectedIds]);
+
+  const selectedCount = selectedIds.length;
+
+  const selectionLabel =
+    filterType === "withoutGroups"
+      ? t("selectStudentsToNotify") || "Select students to notify"
+      : t("selectGroupsToNotify") || "Select groups to notify";
+
+  const getAnnouncementTemplate = (type, ov, picked) => {
+    const prefix = `[Teammy][${semesterLabel} - ${majorLabel}]`;
+
+    const startDate = semesterObj?.startDate;
+    const endDate = semesterObj?.endDate;
+
+    const teamSelfSelectEnd = semesterObj?.policy?.teamSelfSelectEnd;
+    const topicSelfSelectEnd = semesterObj?.policy?.topicSelfSelectEnd;
+
+    const semesterLine =
+      startDate && endDate
+        ? `Semester period: ${formatDateDMY(startDate)} → ${formatDateDMY(
+            endDate
+          )}`
+        : "";
+
+    const deadlineLine =
+      type === "withoutTopic"
+        ? topicSelfSelectEnd
+          ? `Topic registration closes on: ${formatDateDMY(topicSelfSelectEnd)}`
+          : ""
+        : teamSelfSelectEnd
+        ? `Team self-selection closes on: ${formatDateDMY(teamSelfSelectEnd)}`
+        : "";
+
+    const infoBlock =
+      semesterLine || deadlineLine
+        ? `\n\n${[semesterLine, deadlineLine].filter(Boolean).join("\n")}`
+        : "";
+
+    const selCount = picked?.length || 0;
+    const one = selCount === 1 ? picked[0] : null;
+
+    const closing = `\n\nRegards,\nTeammy Moderator`;
+
+    if (type === "withoutTopic") {
+      const oneExtra =
+        selCount === 1
+          ? `\n\nRecipient group: ${one?.name || "N/A"}\nMembers: ${
+              one?.currentMembers ?? 0
+            }/${one?.maxMembers ?? 0}`
+          : "";
+
+      return {
+        title:
+          selCount === 1
+            ? `${prefix} Topic pending — ${one?.name || "Selected group"}`
+            : `${prefix} Topic pending`,
+        content: `Hello,${infoBlock}
+
+We noticed that a project topic has not been registered in Teammy yet.${oneExtra}
+
+Please complete the topic registration before the deadline.${closing}`,
+      };
+    }
+
+    if (type === "withoutMembers") {
+      const oneExtra =
+        selCount === 1
+          ? `\n\nRecipient group: ${one?.name || "N/A"}\nMembers: ${
+              one?.currentMembers ?? 0
+            }/${one?.maxMembers ?? 0}`
+          : "";
+
+      return {
+        title:
+          selCount === 1
+            ? `${prefix} Team incomplete — ${one?.name || "Selected group"}`
+            : `${prefix} Team incomplete`,
+        content: `Hello,${infoBlock}
+
+Your team is currently below the required member count for this semester.${oneExtra}
+
+Please ensure your team reaches the expected size before the deadline.${closing}`,
+      };
+    }
+
+    const oneExtra =
+      selCount === 1
+        ? `\n\nRecipient student: ${one?.name || "N/A"}\nRole: ${
+            one?.primaryRole || "N/A"
+          }`
+        : "";
+
+    return {
+      title:
+        selCount === 1
+          ? `${prefix} No team selected — ${one?.name || "Selected student"}`
+          : `${prefix} No team selected`,
+      content: `Hello,${infoBlock}
+
+Our records show that you have not joined a project team in Teammy yet.${oneExtra}
+
+Please make sure you are part of a team before the deadline.${closing}`,
+    };
+  };
+
+  useEffect(() => {
+    setSelectedIds([]);
+    setIsDirty(false);
+  }, [filterType]);
+
+  useEffect(() => {
+    if (!overview) return;
+    if (isDirty) return;
+
+    const tpl = getAnnouncementTemplate(filterType, overview, selectedItems);
+    setTitle(tpl.title);
+    setMsg(tpl.content);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterType, overview, selectedItems, isDirty]);
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => setSelectedIds(list.map((x) => x.id));
+  const handleClear = () => setSelectedIds([]);
+
+  const handleResetTemplate = () => {
+    if (!overview) return;
+
+    const doReset = () => {
+      const tpl = getAnnouncementTemplate(filterType, overview, selectedItems);
+      setTitle(tpl.title);
+      setMsg(tpl.content);
+      setIsDirty(false);
+    };
+
+    if (isDirty) {
+      Modal.confirm({
+        title: "Reset to template?",
+        content:
+          "Your current edits will be overwritten by the default template.",
+        okText: "Reset",
+        cancelText: "Cancel",
+        onOk: doReset,
       });
-    const sentMsgTemplate = t("sentToGroup") || "Sent to {name}";
-    const final = sentMsgTemplate.replace("{name}", selected.name);
-    notification.success({ message: final });
-    setMsg("");
+    } else {
+      doReset();
+    }
   };
 
-  const schedule = () =>
-    notification.info({
-      message:
-        t("scheduledReminderInfo") ||
-        "Scheduled reminder for tomorrow 9:00 AM (mock)",
-    });
+  const sendNow = async () => {
+    if (!selectedCount) {
+      return notification.warning({
+        message:
+          t("pleaseSelectAtLeastOne") ||
+          "Please select at least one recipient.",
+      });
+    }
+    if (!title.trim()) {
+      return notification.warning({
+        message: t("titleRequired") || "Please enter a title.",
+      });
+    }
+    if (!msg.trim()) {
+      return notification.warning({
+        message: t("messageRequired") || "Please enter a message.",
+      });
+    }
+
+    try {
+      setSending(true);
+
+      const scope = scopeMap[filterType];
+
+      const payload = {
+        semesterId,
+        scope,
+        title: title.trim(),
+        content: msg.trim(),
+        targetRole: null,
+        pinned: false,
+      };
+
+      if (scope === "students_without_group") {
+        payload.targetUserIds = selectedIds;
+      } else {
+        payload.targetGroupIds = selectedIds;
+      }
+
+      await AdminService.createAnnouncement(payload, false);
+
+      notification.success({
+        message: t("sentSuccessfully") || "Sent successfully.",
+      });
+
+      setSelectedIds([]);
+      setIsDirty(false);
+    } catch (error) {
+      notification.error({
+        message: t("error") || "Error",
+        description:
+          error?.response?.data?.message ||
+          t("failedToSendNotification") ||
+          "Failed to send notification",
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const getInitials = (name = "") => {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    const a = parts[0]?.[0] || "";
+    const b = parts[1]?.[0] || "";
+    return (a + b).toUpperCase() || "?";
+  };
+
+  const renderExtraTag = () => {
+    if (filterType === "withoutTopic") return <Tag color="error">No Topic</Tag>;
+    if (filterType === "withoutMembers")
+      return <Tag color="warning">Understaffed</Tag>;
+    if (filterType === "withoutGroups")
+      return <Tag color="processing">Student</Tag>;
+    return null;
+  };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold">
-          Notifications
-        </h1>
-        <p className="text-gray-600">
-          Send reminders and manage communication with groups and mentors
-        </p>
+    <div className="space-y-4">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="inline-block text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900">
+            {t("notifications") || "Notifications"}
+          </h1>
+          <div className="mt-1 text-sm text-slate-500">
+            {t("composeNotification") || "Compose notification"} •{" "}
+            <span className="font-medium text-slate-700">{semesterLabel}</span>
+          </div>
+        </div>
       </div>
 
-      {/* Cards: counters */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card
-          className="shadow-sm border-gray-100 rounded-lg"
-          style={{ padding: 16 }}
+          className="border-0 rounded-2xl shadow-[0_10px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_14px_40px_rgba(15,23,42,0.10)] transition-shadow"
+          styles={{ body: { padding: 16 } }}
         >
           <div className="flex items-center justify-between">
             <Space>
-              <ExclamationCircleOutlined className="text-orange-500" />
-              <span className="font-medium">
-                {t("groupsWithoutTopics") || "Groups Without Topics"}
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-orange-500/10">
+                <ExclamationCircleOutlined className="text-orange-500 text-lg" />
+              </span>
+              <span className="font-semibold text-slate-800">
+                {t("groupsWithoutTopics") || "Groups without topic"}
               </span>
             </Space>
-            <Tag color="red-inverse">{counts.withoutTopic}</Tag>
+            <Tag
+              className="!m-0 !rounded-full !px-3 !py-1 !font-semibold"
+              color="red-inverse"
+            >
+              {counts.withoutTopic}
+            </Tag>
           </div>
-          <div className="text-xs text-gray-500 mt-1">e.g., Gamma Force</div>
         </Card>
 
         <Card
-          className="shadow-sm border-gray-100 rounded-lg"
-          style={{ padding: 16 }}
+          className="border-0 rounded-2xl shadow-[0_10px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_14px_40px_rgba(15,23,42,0.10)] transition-shadow"
+          styles={{ body: { padding: 16 } }}
         >
           <div className="flex items-center justify-between">
             <Space>
-              <TeamOutlined className="text-rose-500" />
-              <span className="font-medium">
-                {t("studentWithoutGroups") || "Students Without Groups"}
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-rose-500/10">
+                <TeamOutlined className="text-rose-500 text-lg" />
+              </span>
+              <span className="font-semibold text-slate-800">
+                {t("studentsWithoutGroup") || "Students without group"}
               </span>
             </Space>
-            <Tag color="red-inverse">{counts.withoutMentor}</Tag>
+            <Tag
+              className="!m-0 !rounded-full !px-3 !py-1 !font-semibold"
+              color="red-inverse"
+            >
+              {counts.withoutGroups}
+            </Tag>
           </div>
-          <div className="text-xs text-gray-500 mt-1">e.g., Beta Squad</div>
         </Card>
 
         <Card
-          className="shadow-sm border-gray-100 rounded-lg"
-          style={{ padding: 16 }}
+          className="border-0 rounded-2xl shadow-[0_10px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_14px_40px_rgba(15,23,42,0.10)] transition-shadow"
+          styles={{ body: { padding: 16 } }}
         >
           <div className="flex items-center justify-between">
             <Space>
-              <BellOutlined className="text-indigo-500" />
-              <span className="font-medium">{t("groupsMissingMembers")}</span>
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-500/10">
+                <BellOutlined className="text-indigo-500 text-lg" />
+              </span>
+              <span className="font-semibold text-slate-800">
+                {t("groupsMissingMembers") || "Groups missing members"}
+              </span>
             </Space>
-            <Tag color="red-inverse">{counts.missingMembers}</Tag>
+            <Tag
+              className="!m-0 !rounded-full !px-3 !py-1 !font-semibold"
+              color="red-inverse"
+            >
+              {counts.withoutMembers}
+            </Tag>
           </div>
-          <div className="text-xs text-gray-500 mt-1">e.g., Delta Group</div>
         </Card>
       </div>
 
-      {/* Compose + Settings */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Compose */}
-        <Card
-          className="xl:col-span-2 shadow-sm border-gray-100 rounded-lg"
-          style={{ padding: 20 }}
-          title={
-            <span className="font-semibold">{t("composeNotification")}</span>
-          }
-        >
-          {/* Filters */}
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-              <span className="text-sm text-gray-600 min-w-[130px]">
-                Filter by Group Type
+      <Card
+        className="xl:col-span-2 border-0 rounded-2xl overflow-hidden shadow-[0_12px_40px_rgba(15,23,42,0.08)]"
+        styles={{
+          header: {
+            padding: "14px 20px",
+            borderBottom: "1px solid rgba(226,232,240,0.9)",
+          },
+          body: { padding: 20 },
+        }}
+        title={
+          <span className="font-semibold text-slate-900">
+            {t("composeNotification") || "Compose notification"}
+          </span>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <span className="text-sm font-medium text-slate-600 min-w-[140px]">
+              {t("filterByScope") || "Scope"}
+            </span>
+            <Select
+              value={filterType}
+              onChange={(v) => setFilterType(v)}
+              className="w-full sm:w-96"
+              disabled={loading}
+              size="large"
+            >
+              <Option value="withoutTopic">
+                {t("groupsWithoutTopics") || "Groups without topic"} (
+                {counts.withoutTopic})
+              </Option>
+              <Option value="withoutGroups">
+                {t("studentsWithoutGroup") || "Students without group"} (
+                {counts.withoutGroups})
+              </Option>
+              <Option value="withoutMembers">
+                {t("groupsMissingMembers") || "Groups missing members"} (
+                {counts.withoutMembers})
+              </Option>
+            </Select>
+          </div>
+
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+              <span className="text-sm font-medium text-slate-600">
+                {selectionLabel}
               </span>
-              <Select
-                value={filterType}
-                onChange={(v) => {
-                  setFilterType(v);
-                  setSelected(null);
-                }}
-                className="w-full sm:w-64"
+
+              <Space wrap>
+                <Button
+                  size="middle"
+                  onClick={handleSelectAll}
+                  disabled={loading || !list.length}
+                  className="!rounded-xl !border-slate-200 hover:!border-slate-300"
+                >
+                  {t("selectAll") || "Select all"}
+                </Button>
+                <Button
+                  size="middle"
+                  onClick={handleClear}
+                  disabled={loading || !selectedCount}
+                  className="!rounded-xl"
+                >
+                  {t("clear") || "Clear"}
+                </Button>
+              </Space>
+            </div>
+
+            <Spin spinning={loading}>
+              <div
+                className="rounded-2xl border border-slate-200/70 bg-slate-50/60 p-2 sm:p-3"
+                style={{ maxHeight: 420, overflow: "auto" }}
               >
-                <Option value="withoutTopic">
-                  {t("groupsWithoutTopics") || "Groups Without Topics"}
-                </Option>
-                <Option value="withoutGroups">
-                  {t("studentWithoutGroups") || "Students Without Groups"}
-                </Option>
-                <Option value="missingMembers">
-                  {t("groupsMissingMembers") || "Groups Missing Members"}
-                </Option>
-              </Select>
-            </div>
+                <List
+                  split={false}
+                  dataSource={list}
+                  locale={{
+                    emptyText: loading
+                      ? t("loading") || "Loading..."
+                      : t("noData") || "No data available",
+                  }}
+                  renderItem={(item) => {
+                    const checked = selectedIds.includes(item.id);
 
-            {/* List group để chọn */}
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="text-sm text-gray-600">
-                  Select Groups to Notify ({selected ? 1 : 0} selected)
-                </span>
-                <Space>
-                  <Button size="small">{t("selectAll")}</Button>
-                  <Button size="small">{t("clear")}</Button>
-                </Space>
+                    const subtitleParts = [];
+                    if (item.currentMembers !== undefined) {
+                      subtitleParts.push(
+                        `${item.currentMembers}/${item.maxMembers} members`
+                      );
+                    }
+                    if (item.primaryRole) subtitleParts.push(item.primaryRole);
+
+                    return (
+                      <List.Item
+                        className={`!px-3 !py-3 !mb-2 !rounded-2xl cursor-pointer border transition-all ${
+                          checked
+                            ? "bg-blue-50 border-blue-200 shadow-[0_8px_20px_rgba(59,130,246,0.10)]"
+                            : "bg-white border-slate-200/70 hover:border-slate-300 hover:shadow-[0_10px_30px_rgba(15,23,42,0.06)]"
+                        }`}
+                        onClick={() => toggleSelect(item.id)}
+                      >
+                        <div className="w-full flex items-start gap-3">
+                          <Checkbox
+                            checked={checked}
+                            onChange={() => toggleSelect(item.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1"
+                          />
+
+                          <List.Item.Meta
+                            avatar={
+                              <Avatar
+                                size={42}
+                                className="!shadow-sm"
+                                icon={
+                                  item.type === "student" ? (
+                                    <UserOutlined />
+                                  ) : undefined
+                                }
+                              >
+                                {getInitials(item.name)}
+                              </Avatar>
+                            }
+                            title={
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <Text
+                                    strong
+                                    className="block truncate !text-slate-900"
+                                  >
+                                    {item.name}
+                                  </Text>
+                                  {subtitleParts.length ? (
+                                    <Text type="secondary" className="text-xs">
+                                      {subtitleParts.join(" • ")}
+                                    </Text>
+                                  ) : null}
+                                </div>
+                                <div className="shrink-0">
+                                  {renderExtraTag()}
+                                </div>
+                              </div>
+                            }
+                            description={
+                              item.type === "student" &&
+                              item.skillTags?.length ? (
+                                <div className="mt-2 flex flex-wrap gap-1">
+                                  {item.skillTags.slice(0, 8).map((s) => (
+                                    <Tag
+                                      key={s}
+                                      className="m-0 !rounded-full"
+                                      color="geekblue"
+                                    >
+                                      {s}
+                                    </Tag>
+                                  ))}
+                                  {item.skillTags.length > 8 && (
+                                    <Tag className="m-0 !rounded-full">
+                                      +{item.skillTags.length - 8}
+                                    </Tag>
+                                  )}
+                                </div>
+                              ) : item.description ? (
+                                <div className="mt-1 text-xs text-slate-500 line-clamp-2">
+                                  {item.description}
+                                </div>
+                              ) : null
+                            }
+                          />
+                        </div>
+                      </List.Item>
+                    );
+                  }}
+                />
               </div>
+            </Spin>
+          </div>
 
-              <List
-                dataSource={list}
-                className="rounded-lg border border-gray-100"
-                renderItem={(g) => (
-                  <List.Item className="px-3">
-                    <Radio
-                      checked={selected?.id === g.id}
-                      onChange={() => setSelected(g)}
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-medium">{g.name}</span>
-                        <span className="text-xs text-gray-500">{g.major}</span>
-                      </div>
-                    </Radio>
-                    {filterType === "withoutTopic" && (
-                      <Tag color="error" className="ml-auto">
-                        No Topic
-                      </Tag>
-                    )}
-                  </List.Item>
-                )}
-              />
-            </div>
+          <Divider className="!my-3" />
 
-            {/* Message */}
-            <div>
-              <span className="text-sm text-gray-600">Message</span>
-              <TextArea
-                className="mt-1"
-                autoSize={{ minRows: 4, maxRows: 8 }}
-                value={msg}
-                onChange={(e) => setMsg(e.target.value)}
-                placeholder={
-                  t("enterNotificationMessage") ||
-                  "Enter your notification message..."
-                }
-              />
-            </div>
+          {/* Title + Reset */}
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-600">
+                {t("title") || "Title"} <span className="text-red-500">*</span>
+              </span>
 
-            {/* Actions */}
-            <Space className="mt-2">
               <Button
-                type="primary"
-                icon={<SendOutlined />}
-                className="!bg-blue-600 hover:!bg-blue-700"
-                onClick={sendNow}
+                size="middle"
+                onClick={handleResetTemplate}
+                disabled={!overview}
+                className="!px-3 !rounded-xl"
               >
-                Send Now
+                {t("resetTemplate") || "Reset to template"}
               </Button>
-              <Button icon={<FieldTimeOutlined />} onClick={schedule}>
-                Schedule
-              </Button>
-            </Space>
-          </div>
-        </Card>
-
-        {/* Settings */}
-        <Card
-          className="shadow-sm border-gray-100 rounded-lg"
-          style={{ padding: 20 }}
-          title={<span className="font-semibold">{t("settings")}</span>}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium">{t("autoReminders")}</div>
-              <div className="text-xs text-gray-500">
-                Send weekly reminders automatically
-              </div>
             </div>
-            <Switch checked={autoRemind} onChange={setAutoRemind} />
+
+            {isDirty ? (
+              <div className="text-xs text-slate-500 mt-1">(edited)</div>
+            ) : null}
+
+            <Input
+              className="mt-2 !rounded-2xl"
+              size="large"
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                setIsDirty(true);
+              }}
+              placeholder={
+                t("enterNotificationTitle") || "Enter notification title..."
+              }
+              maxLength={100}
+            />
           </div>
 
-          <div className="mt-6">
-            <div className="text-sm font-medium mb-2">
-              {t("quickStats") || "Quick Stats"}
-            </div>
-            <div className="text-sm text-gray-700 space-y-1">
-              <div className="flex justify-between">
-                <span>{t("sentToday") || "Sent Today"}</span> <span>12</span>
-              </div>
-              <div className="flex justify-between">
-                <span>{t("thisWeek") || "This Week"}</span> <span>47</span>
-              </div>
-              <div className="flex justify-between">
-                <span>{t("pending") || "Pending"}</span> <span>3</span>
-              </div>
-            </div>
+          {/* Message */}
+          <div>
+            <span className="text-sm font-medium text-slate-600">
+              {t("message") || "Message"}{" "}
+              <span className="text-red-500">*</span>
+            </span>
+            <TextArea
+              className="mt-2 !rounded-2xl"
+              autoSize={{ minRows: 5, maxRows: 10 }}
+              value={msg}
+              onChange={(e) => {
+                setMsg(e.target.value);
+                setIsDirty(true);
+              }}
+              placeholder={
+                t("enterNotificationMessage") ||
+                "Enter your notification message..."
+              }
+              maxLength={500}
+            />
           </div>
-        </Card>
-      </div>
+
+          <Space className="mt-2 sticky bottom-4" wrap>
+            <Button
+              size="large"
+              type="primary"
+              shape="round"
+              icon={<SendOutlined />}
+              className="!bg-[#FF7A00] hover:!opacity-90 !text-white !shadow-[0_12px_30px_rgba(255,122,0,0.25)]"
+              onClick={sendNow}
+              disabled={!selectedCount || sending}
+              loading={sending}
+            >
+              {t("sendNow") || "Send now"}
+            </Button>
+          </Space>
+        </div>
+      </Card>
     </div>
   );
 }

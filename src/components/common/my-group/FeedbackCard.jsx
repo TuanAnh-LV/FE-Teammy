@@ -213,11 +213,11 @@ export default function FeedbackCard({ feedback, isLeader, isMentor, onUpdateSta
         )}
 
         {/* Action buttons */}
-        <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
+        <div className="pt-2 border-t border-gray-200 flex items-center justify-end gap-3">
           {isLeader && (
             <button
               onClick={() => setStatusModalOpen(true)}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium border border-blue-500 px-3 py-1 rounded-lg hover:bg-blue-50 transition-colors"
             >
               {t("updateStatus") || "Update Status"}
             </button>

@@ -58,13 +58,6 @@ const HeroSection = () => {
                   <span>{t("startMatching") || "Start Matching"}</span>
                   <span className="ml-2">→</span>
                 </Link>
-
-                <Link
-                  to="/how-it-works"
-                  className="text-gray-700 text-sm md:text-base !font-medium !font-sans hover:text-blue-600 transition-colors duration-200 text-center"
-                >
-                  {t("seeHowItWorks") || "See How It Works"}
-                </Link>
               </div>
 
               {/* Stats */}

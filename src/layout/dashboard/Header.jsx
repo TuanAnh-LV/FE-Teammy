@@ -56,8 +56,14 @@ const HeaderBar = ({ collapsed, onToggle }) => {
       }
 
       const currentRole = (role || "").toLowerCase();
-      // Mentor only for request; accept/reject can also be shown but this header is used in mentor layout.
-      if (action === "close_requested" && currentRole !== "mentor") return;
+      const isMentor = currentRole === "mentor";
+      // Only show requests to mentor; hide accept/reject from mentor dashboard to avoid self-notifications.
+      if (action === "close_requested" && !isMentor) return;
+      if (
+        (action === "close_confirmed" || action === "close_rejected") &&
+        isMentor
+      )
+        return;
 
       const fetchGroupName = async (gid) => {
         if (groupNameRef.current[gid]) return groupNameRef.current[gid];
@@ -77,7 +83,7 @@ const HeaderBar = ({ collapsed, onToggle }) => {
       };
 
       const buildMessage = (act, gid, name) => {
-        const displayName = name || ("Group " + gid);
+        const displayName = name || "Group " + gid;
         if (act === "close_requested")
           return displayName + " sent a close request";
         if (act === "close_confirmed")
@@ -169,11 +175,7 @@ const HeaderBar = ({ collapsed, onToggle }) => {
             </span>
           )}
         </button>
-        <Avatar 
-          size="medium" 
-          icon={<UserOutlined />}
-          src={avatarUrl}
-        />
+        <Avatar size="medium" icon={<UserOutlined />} src={avatarUrl} />
       </div>
 
       <NotificationDrawer
@@ -186,4 +188,3 @@ const HeaderBar = ({ collapsed, onToggle }) => {
 };
 
 export default HeaderBar;
-
