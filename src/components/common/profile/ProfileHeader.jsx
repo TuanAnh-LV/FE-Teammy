@@ -1,5 +1,16 @@
 import React, { useMemo } from "react";
-import { Mail, Calendar, Phone, User, MessageSquare, ExternalLink } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  User,
+  MessageSquare,
+  ExternalLink,
+  Sparkles,
+  Briefcase,
+  GraduationCap,
+  ShieldCheck,
+  Hash,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const ProfileHeader = ({ profile, isOwnProfile = false }) => {
@@ -43,19 +54,39 @@ const ProfileHeader = ({ profile, isOwnProfile = false }) => {
 
           {/* Info block */}
           <div className="space-y-3">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
-                {profile.name}
-              </h1>
-              <p className="mt-2 text-sm text-gray-500">
-                {profile.major || "Software Engineering"}
-                {" • "}
-                {profile.role || "Student"}
-              </p>
-              {profile.studentCode && (
-                <p className="mt-1 text-xs text-gray-400">
-                  Student ID: {profile.studentCode}
-                </p>
+            <div className="flex flex-col gap-2">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
+                  {profile.name}
+                </h1>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs md:text-sm">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-blue-700 font-semibold">
+                    <GraduationCap className="w-4 h-4" />
+                    {profile.major || "Software Engineering"}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700 font-semibold">
+                    <ShieldCheck className="w-4 h-4" />
+                    {profile.role || "Student"}
+                  </span>
+                  {profile.studentCode && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-indigo-700 font-semibold">
+                      <Hash className="w-4 h-4" />
+                      {profile.studentCode}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Desired position pill */}
+              {profile.desiredPositionId && (
+                <div className="inline-flex items-center gap-2 self-start rounded-full border border-amber-300 bg-amber-50 text-amber-800 px-3 py-1 text-xs font-semibold shadow-sm">
+                  <Briefcase className="w-4 h-4" />
+                  <span>
+                    {profile.desiredPositionName ||
+                      profile.desiredPositionId ||
+                      "Desired Position"}
+                  </span>
+                </div>
               )}
             </div>
 

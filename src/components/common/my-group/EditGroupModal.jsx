@@ -78,7 +78,7 @@ export default function EditGroupModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
       role="dialog"
       aria-modal="true"
       onClick={handleBackdrop}
@@ -86,14 +86,15 @@ export default function EditGroupModal({
       <div className="absolute inset-0 bg-black/40" />
       <form
         onSubmit={onSubmit}
-        className="relative z-10 w-full max-w-2xl rounded-2xl bg-white shadow-xl"
+        className="relative z-10 w-full max-w-2xl rounded-lg sm:rounded-2xl bg-white shadow-xl my-4 sm:my-8 max-h-[95vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <div>
+        <div className="flex items-start sm:items-center justify-between border-b px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex-1 min-w-0 pr-2">
             <p className="text-xs font-semibold uppercase text-blue-500">
               {label("editGroup", "Edit group")}
             </p>
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 break-words">
               {label("updateGroupDetails", "Update group details")}
             </h3>
           </div>
@@ -101,13 +102,13 @@ export default function EditGroupModal({
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="rounded p-1 text-gray-500 hover:bg-gray-100"
+            className="rounded p-1 text-gray-500 hover:bg-gray-100 flex-shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="space-y-5 px-6 py-6">
+        <div className="space-y-4 sm:space-y-5 px-4 sm:px-6 py-4 sm:py-6">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
               {label("groupName", "Group name")}
@@ -132,10 +133,10 @@ export default function EditGroupModal({
               {label("description", "Description")}
             </label>
             <textarea
-              rows={4}
+              rows={3}
               value={form.description}
               onChange={(e) => onChange("description", e.target.value)}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none ring-blue-100 transition focus:border-blue-400 focus:ring-4"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none ring-blue-100 transition focus:border-blue-400 focus:ring-4 resize-y"
               placeholder={label(
                 "updateGroupPlaceholder",
                 "Share the latest direction, scope, or constraints."
@@ -150,22 +151,15 @@ export default function EditGroupModal({
             </label>
             <input
               type="number"
-              min={memberCount || 1}
+              min={1}
               value={form.maxMembers}
               onChange={(e) => onChange("maxMembers", e.target.value)}
-              className={`w-40 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-4 transition ${
+              className={`w-full sm:w-40 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-4 transition ${
                 errors.maxMembers
                   ? "border-red-400 ring-red-100"
                   : "border-gray-200 focus:border-blue-400 ring-blue-100"
               }`}
             />
-            <p className="mt-1 text-xs text-gray-500">
-              {label(
-                "maxMembersHint",
-                "Cannot be lower than current member count"
-              )}{" "}
-              ({memberCount})
-            </p>
             {errors.maxMembers && (
               <p className="mt-1 text-xs text-red-600">{errors.maxMembers}</p>
             )}
@@ -178,12 +172,12 @@ export default function EditGroupModal({
             </label>
 
             {/* Selected Skills */}
-            <div className="min-h-[90px] p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
+            <div className="min-h-[80px] sm:min-h-[90px] p-2 sm:p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
               <p className="text-xs font-medium text-gray-700 mb-2">
                 {t("yourSelectedSkills") || "Your selected skills"} (
                 {(form.skills || []).length})
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {!form.skills || form.skills.length === 0 ? (
                   <p className="text-gray-400 text-xs">
                     {t("clickSkillsBelowToAdd") ||
@@ -212,11 +206,11 @@ export default function EditGroupModal({
             </div>
 
             {/* Role Filter */}
-            <div className="flex gap-2 flex-wrap mt-3">
+            <div className="flex gap-1.5 sm:gap-2 flex-wrap mt-3">
               <button
                 type="button"
                 onClick={() => setSkillFilter("all")}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                className={`px-2.5 sm:px-3 py-1 rounded-full text-xs font-medium transition ${
                   skillFilter === "all"
                     ? "bg-gray-800 text-white"
                     : "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -243,7 +237,7 @@ export default function EditGroupModal({
             </div>
 
             {/* Available Skills */}
-            <div className="max-h-48 mt-3 overflow-y-auto p-3 border border-gray-300 rounded-lg bg-white">
+            <div className="max-h-40 sm:max-h-48 mt-3 overflow-y-auto p-2 sm:p-3 border border-gray-300 rounded-lg bg-white">
               <p className="text-xs font-medium text-gray-700 mb-2">
                 {t("availableSkills") || "Available skills"}
               </p>
@@ -257,7 +251,7 @@ export default function EditGroupModal({
                   {t("noSkillsFound") || "No skills found"}
                 </p>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {filteredSkills.map((skill) => {
                     const isSelected = (form.skills || []).includes(
                       skill.token
@@ -290,19 +284,19 @@ export default function EditGroupModal({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t px-6 py-4">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 border-t px-4 sm:px-6 py-3 sm:py-4">
           <button
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="rounded-lg border border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all  px-4 py-2.5 text-sm font-medium text-gray-700 "
+            className="rounded-lg border border-gray-300 hover:!border-orange-400 hover:!text-orange-400 transition-all px-4 py-2.5 text-sm font-medium text-gray-700 w-full sm:w-auto"
           >
             {label("cancel", "Cancel")}
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex items-center justify-center rounded-lg !bg-[#FF7A00] hover:!opacity-90 px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-lg !bg-[#FF7A00] hover:!opacity-90 px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-60 w-full sm:w-auto"
           >
             {submitting
               ? label("saving", "Saving...")

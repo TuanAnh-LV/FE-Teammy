@@ -19,7 +19,8 @@ import {
   UserPlus,
   Clock,
 } from "lucide-react";
-import { Modal, Form, Input, message } from "antd";
+import { Modal, Form, Input, InputNumber, message, notification, DatePicker, Button } from "antd";
+import dayjs from "dayjs";
 import TaskModal from "../../components/common/kanban/TaskModal";
 import useKanbanBoard from "../../hook/useKanbanBoard";
 import { filterColumns } from "../../utils/kanbanUtils";
@@ -38,7 +39,9 @@ import { useGroupActivation } from "../../hook/useGroupActivation";
 import { useGroupDetail } from "../../hook/useGroupDetail";
 import { useGroupEditForm } from "../../hook/useGroupEditForm";
 import { GroupService } from "../../services/group.service";
+import { ReportService } from "../../services/report.service";
 import { avatarFromEmail } from "../../utils/helpers";
+import { subscribeGroupStatus } from "../../services/groupStatusHub";
 
 export default function MyGroup() {
   const { id } = useParams();
@@ -57,7 +60,6 @@ export default function MyGroup() {
     loadGroupFiles,
     fetchCompletionPercent,
     handleKickMember,
-    handleAssignRole,
     handleTransferLeader,
     fetchGroupDetail,
   } = useGroupDetail({ groupId: id, t, userInfo });
@@ -71,6 +73,12 @@ export default function MyGroup() {
   const [pendingLoading, setPendingLoading] = useState(false);
   const [closeGroupModalOpen, setCloseGroupModalOpen] = useState(false);
   const [closeGroupLoading, setCloseGroupLoading] = useState(false);
+  const [contributionScores, setContributionScores] = useState([]);
+  const [scoreFrom, setScoreFrom] = useState(dayjs());
+  const [scoreTo, setScoreTo] = useState(dayjs());
+  const [scoreHigh, setScoreHigh] = useState(5);
+  const [scoreMedium, setScoreMedium] = useState(3);
+  const [scoreLow, setScoreLow] = useState(1);
 
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const [columnForm] = Form.useForm();
@@ -128,6 +136,37 @@ export default function MyGroup() {
     }
   }, [activeTab, id]);
 
+  // Realtime close-group status: refresh group detail when mentor/leader acts
+  useEffect(() => {
+    const handler = (payload) => {
+      if (!payload || !payload.groupId) return;
+      if (String(payload.groupId) !== String(id)) return;
+
+      console.log("[GroupStatusChanged][leader-view]", payload);
+
+      const { action } = payload;
+      if (
+        action === "close_requested" ||
+        action === "close_confirmed" ||
+        action === "close_rejected"
+      ) {
+        fetchGroupDetail();
+        message.info({
+          content:
+            action === "close_requested"
+              ? t("closeGroupRequested") || "Close group requested"
+              : action === "close_confirmed"
+              ? t("closeGroupConfirmed") || "Close group confirmed"
+              : t("closeGroupRejected") || "Close group rejected",
+          duration: 3,
+        });
+      }
+    };
+
+    const unsubscribe = subscribeGroupStatus(handler);
+    return () => unsubscribe();
+  }, [id, fetchGroupDetail, t]);
+
   const handleAddMember = (user) => {
     setShowModal(false);
   };
@@ -158,6 +197,18 @@ export default function MyGroup() {
     updateColumnPositionOptimistic,
   } = useKanbanBoard(id);
 
+  const fetchContributionScores = async (range = {}) => {
+    if (!id) return;
+    try {
+      const res = await ReportService.getContributionScores(id, range);
+      const payload = res?.data ?? res;
+      const members = Array.isArray(payload?.members) ? payload.members : [];
+      setContributionScores(members);
+    } catch {
+      setContributionScores([]);
+    }
+  };
+
   useEffect(() => {
     if (filteredColumns) {
       const boardData = {
@@ -171,6 +222,42 @@ export default function MyGroup() {
       fetchCompletionPercent();
     }
   }, [filteredColumns]);
+
+  useEffect(() => {
+    fetchContributionScores({
+      From: dayjs().format("YYYY-MM-DD"),
+      To: dayjs().format("YYYY-MM-DD"),
+      High: 5,
+      Medium: 3,
+      Low: 1,
+    });
+  }, [id]);
+
+  const applyScoreFilter = () => {
+    const params = {};
+    if (scoreFrom) params.From = scoreFrom.format("YYYY-MM-DD");
+    if (scoreTo) params.To = scoreTo.format("YYYY-MM-DD");
+    if (Number.isFinite(scoreHigh)) params.High = scoreHigh;
+    if (Number.isFinite(scoreMedium)) params.Medium = scoreMedium;
+    if (Number.isFinite(scoreLow)) params.Low = scoreLow;
+    fetchContributionScores(params);
+  };
+
+  const clearScoreFilter = () => {
+    const today = dayjs();
+    setScoreFrom(today);
+    setScoreTo(today);
+    setScoreHigh(5);
+    setScoreMedium(3);
+    setScoreLow(1);
+    fetchContributionScores({
+      From: today.format("YYYY-MM-DD"),
+      To: today.format("YYYY-MM-DD"),
+      High: 5,
+      Medium: 3,
+      Low: 1,
+    });
+  };
 
   const normalizeTitle = (value = "") =>
     value.toLowerCase().replace(/\s+/g, "_");
@@ -290,7 +377,7 @@ export default function MyGroup() {
       await fetchGroupDetail();
     } catch (error) {
       console.error("Failed to request close group:", error);
-      message.error(
+      message.warning(
         error?.response?.data?.message ||
           t("failedToRequestClose") ||
           "Failed to request close group"
@@ -391,38 +478,51 @@ export default function MyGroup() {
     }
   };
 
-  // Contribution statistics
-  const contributionStats = (() => {
-    const total = tasks.length || 1;
-    return groupMembers.map((m) => {
-      const emailLower = (m.email || "").toLowerCase();
-      const matches = tasks.filter((task) =>
-        findAssignees(task).some((assignee) => {
-          const rendered = renderAssignee(assignee);
-          return (rendered.name || "").toLowerCase() === emailLower;
-        })
-      );
-      const completed = matches.filter((task) => {
-        const status = (task.status || "").toLowerCase();
-        return status === "done" || status === "completed";
-      }).length;
+  const contributionStats = useMemo(() => {
+    const memberMap = new Map();
+    (groupMembers || []).forEach((member) => {
+      const key =
+        member.id ||
+        member.userId ||
+        member.memberId ||
+        member.accountId ||
+        member.email;
+      if (key) memberMap.set(String(key), member);
+    });
 
-      const percent = Math.round((matches.length / total) * 100);
-
+    return (contributionScores || []).map((score) => {
+      const member = memberMap.get(String(score.memberId)) || {};
       return {
-        ...m,
-        taskCount: matches.length,
-        completed,
-        contribution: percent,
+        ...member,
+        ...score,
+        name:
+          score.memberName ||
+          member.displayName ||
+          member.name ||
+          "Unknown",
+        avatarUrl: member.avatarUrl,
+        email: member.email,
+        role: member.role,
       };
     });
-  })();
+  }, [contributionScores, groupMembers]);
 
   const handleCreateColumn = () => {
     columnForm.validateFields().then((values) => {
+      const positionValue = Number(values.position);
+      
+      // Validate position: must be a valid number >= 0 and <= 1000
+      if (isNaN(positionValue) || positionValue < 0 || positionValue > 1000) {
+        notification.warning({
+          message: t("validationError") || "Validation Error",
+          description: t("positionMustBeValidNumber") || "Position must be a valid number between 0 and 1000.",
+        });
+        return;
+      }
+      
       const payload = {
         columnName: values.columnName,
-        position: Number(values.position) || 0,
+        position: positionValue,
       };
       createColumn(payload);
       setIsColumnModalOpen(false);
@@ -557,7 +657,7 @@ export default function MyGroup() {
   const tabs = React.useMemo(() => {
     const base = [
       { key: "overview", label: t("overview") || "Overview" },
-      { key: "members", label: t("teamMembers") || "Members" },
+      { key: "members", label: t("contributeScore") || "Contribute Score" },
     ];
     if (isLeader && !isReadOnly) {
       base.push({
@@ -654,7 +754,6 @@ export default function MyGroup() {
                   mentor={mentor}
                   group={group}
                   onInvite={isReadOnly ? null : () => setShowModal(true)}
-                  onAssignRole={isReadOnly ? null : handleAssignRole}
                   onKickMember={handleKickMember}
                   onTransferLeader={handleTransferLeader}
                   currentUserEmail={userInfo?.email}
@@ -669,12 +768,94 @@ export default function MyGroup() {
             {activeTab === "members" && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-3">
+                  <div className="!bg-white !rounded-2xl !border !border-gray-200 !p-5 !mb-4">
+                    <p className="!text-sm !font-semibold !text-gray-900 !mb-4">
+                      {t("filters") || "Filters"}
+                    </p>
+                    <div className="!grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-5 !gap-3">
+                      <div className="!flex !flex-col">
+                        <label className="!text-xs !font-semibold !text-gray-500 !uppercase !mb-1">
+                          {t("from") || "From"}
+                        </label>
+                        <DatePicker
+                          value={scoreFrom}
+                          inputReadOnly
+                          onChange={setScoreFrom}
+                          disabledDate={(current) =>
+                            scoreTo && current && current > scoreTo.endOf("day")
+                          }
+                          className="!w-full"
+                        />
+                      </div>
+                      <div className="!flex !flex-col">
+                        <label className="!text-xs !font-semibold !text-gray-500 !uppercase !mb-1">
+                          {t("to") || "To"}
+                        </label>
+                        <DatePicker
+                          value={scoreTo}
+                          inputReadOnly
+                          onChange={setScoreTo}
+                          disabledDate={(current) =>
+                            scoreFrom && current && current < scoreFrom.startOf("day")
+                          }
+                          className="!w-full"
+                        />
+                      </div>
+                      <div className="!flex !flex-col">
+                        <label className="!text-xs !font-semibold !text-gray-500 !uppercase !mb-1">
+                          {t("high") || "High"}
+                        </label>
+                        <InputNumber
+                          min={0}
+                          value={scoreHigh}
+                          onChange={(value) => setScoreHigh(Number(value || 0))}
+                          className="!w-full"
+                        />
+                      </div>
+                      <div className="!flex !flex-col">
+                        <label className="!text-xs !font-semibold !text-gray-500 !uppercase !mb-1">
+                          {t("medium") || "Medium"}
+                        </label>
+                        <InputNumber
+                          min={0}
+                          value={scoreMedium}
+                          onChange={(value) => setScoreMedium(Number(value || 0))}
+                          className="!w-full"
+                        />
+                      </div>
+                      <div className="!flex !flex-col">
+                        <label className="!text-xs !font-semibold !text-gray-500 !uppercase !mb-1">
+                          {t("low") || "Low"}
+                        </label>
+                        <InputNumber
+                          min={0}
+                          value={scoreLow}
+                          onChange={(value) => setScoreLow(Number(value || 0))}
+                          className="!w-full"
+                        />
+                      </div>
+                    </div>
+                    <div className="!flex !flex-col sm:!flex-row !gap-3 !mt-4">
+                      <Button
+                        type="primary"
+                        onClick={applyScoreFilter}
+                        className="!flex-1 !h-10 !rounded-lg"
+                      >
+                        {t("execute") || "Execute"}
+                      </Button>
+                      <Button
+                        onClick={clearScoreFilter}
+                        className="!flex-1 !h-10 !rounded-lg"
+                      >
+                        {t("clear") || "Clear"}
+                      </Button>
+                    </div>
+                  </div>
                   <MembersPanel
                     groupMembers={groupMembers}
                     mentor={mentor}
                     group={group}
                     onInvite={isReadOnly ? null : () => setShowModal(true)}
-                    onAssignRole={isReadOnly ? null : handleAssignRole}
                     onKickMember={handleKickMember}
                     onTransferLeader={handleTransferLeader}
                     currentUserEmail={userInfo?.email}
@@ -1137,9 +1318,41 @@ export default function MyGroup() {
           <Form.Item
             name="position"
             label={t("position") || "Position"}
-            initialValue={0}
+            initialValue={Object.keys(columnMeta || {}).length}
+            rules={[
+              {
+                required: false,
+                validator: (_, value) => {
+                  if (value === undefined || value === null || value === "") {
+                    return Promise.resolve();
+                  }
+                  const numValue = Number(value);
+                  if (isNaN(numValue)) {
+                    return Promise.reject(
+                      new Error(t("positionMustBeNumber") || "Position must be a number")
+                    );
+                  }
+                  if (numValue < 0) {
+                    return Promise.reject(
+                      new Error(t("positionMustBePositive") || "Position must be greater than or equal to 0")
+                    );
+                  }
+                  if (numValue > 1000) {
+                    return Promise.reject(
+                      new Error(t("positionTooLarge") || "Position must be less than or equal to 1000")
+                    );
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
           >
-            <Input type="number" placeholder="0" />
+            <InputNumber
+              min={0}
+              max={1000}
+              placeholder={String(Object.keys(columnMeta || {}).length)}
+              className="w-full"
+            />
           </Form.Item>
         </Form>
       </Modal>

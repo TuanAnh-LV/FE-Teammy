@@ -40,6 +40,19 @@ const formatColumnName = (name) => {
     .join(" ");
 };
 
+const formatStatus = (status) => {
+  if (!status) return "";
+  return status
+    .split("_")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
+
+const formatPriority = (priority) => {
+  if (!priority) return "";
+  return priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase();
+};
+
 const normalizeStatusKey = (value = "") =>
   value.toLowerCase().replace(/[\s_]+/g, "");
 
@@ -169,18 +182,8 @@ const TaskModal = ({
   const allMembers = React.useMemo(() => {
     const peopleList = [...members];
     
+    // Only add leader, NOT mentor (mentor should not be assignable)
     if (groupDetail) {
-      if (groupDetail.mentor) {
-        peopleList.push({
-          id: groupDetail.mentor.userId,
-          userId: groupDetail.mentor.userId,
-          displayName: groupDetail.mentor.displayName,
-          email: groupDetail.mentor.email,
-          avatarUrl: groupDetail.mentor.avatarUrl,
-          role: 'mentor'
-        });
-      }
-      
       if (groupDetail.leader) {
         peopleList.push({
           id: groupDetail.leader.userId,
@@ -310,7 +313,7 @@ const TaskModal = ({
       await fetchTaskFiles();
     } catch (error) {
 
-      notification.error({
+      notification.warning({
         message: t("failedUploadFiles") || "Failed to upload files",
         description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
         duration: 2,
@@ -340,7 +343,7 @@ const TaskModal = ({
       setFiles(prev => prev.filter(f => f.id !== fileId));
     } catch (error) {
 
-      notification.error({
+      notification.warning({
         message: t("failedDeleteFile") || "Failed to delete file",
         description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
         duration: 2,
@@ -441,10 +444,10 @@ const TaskModal = ({
             <div className="space-y-2 w-full">
               <div className="flex items-center gap-2 mb-1">
                 <span className={`text-xs px-2 py-1 rounded-full ${priorityClass}`}>
-                  {task.priority}
+                  {formatPriority(task.priority)}
                 </span>
                 <span className={`text-xs px-2 py-1 rounded-full ${statusClass}`}>
-                  {task.status}
+                  {formatStatus(task.status)}
                 </span>
               </div>
               <input
@@ -484,7 +487,7 @@ const TaskModal = ({
                       cancelText: t("cancel") || "Cancel",
                       onOk: () => {
                         if (inputValue.toLowerCase() !== "delete") {
-                          notification.error({
+                          notification.warning({
                             message: t("validationError") || "Validation Error",
                             description: t("mustTypeDelete") || "You must type 'delete' to confirm.",
                           });
@@ -901,6 +904,7 @@ const TaskModal = ({
                             onUpdateTask(task.id, { dueDate: dateValue });
                           }
                         }}
+                        min={new Date().toISOString().split('T')[0]}
                         className="w-full px-3 py-2 text-sm outline-none pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-200"
                         disabled={readOnly}
                       />
@@ -911,15 +915,15 @@ const TaskModal = ({
                     <label className="text-sm font-medium text-[#292A2E] w-24">{t("status") || "Status"}</label>
                     <select
                       value={detailForm.status}
-                      onChange={(e) =>
-                        setDetailForm((prev) => {
-                          const value = e.target.value;
-                          if (!readOnly) {
-                            onUpdateTask(task.id, { status: value });
-                          }
-                          return { ...prev, status: value };
-                        })
-                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (!readOnly && task?.id) {
+                          // Update form state immediately
+                          setDetailForm((prev) => ({ ...prev, status: value }));
+                          // Update task via API
+                          onUpdateTask(task.id, { status: value });
+                        }
+                      }}
                       className="w-full  px-3 py-2 text-sm  bg-white"
                       disabled={readOnly}
                     >
@@ -947,9 +951,9 @@ const TaskModal = ({
                       className="w-full px-3 py-2 text-sm bg-white"
                       disabled={readOnly}
                     >
-                      <option value="high">{t("high") || "High"}</option>
-                      <option value="medium">{t("medium") || "Medium"}</option>
-                      <option value="low">{t("low") || "Low"}</option>
+                      <option value="high">{formatPriority(t("high") || "High")}</option>
+                      <option value="medium">{formatPriority(t("medium") || "Medium")}</option>
+                      <option value="low">{formatPriority(t("low") || "Low")}</option>
                     </select>
                   </div>
                 </div>

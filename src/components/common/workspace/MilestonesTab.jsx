@@ -78,7 +78,7 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
       setList(items);
     } catch (err) {
 
-      notification.error({
+      notification.warning({
         message: t("error") || "Error",
         description: t("failedLoadMilestones") || "Failed to load milestones",
       });
@@ -149,12 +149,22 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
   const handleSave = async () => {
     if (readOnly || !groupId || isGroupClosed()) return;
     if (!form.name.trim()) {
-      notification.error({
+      notification.warning({
         message: t("validationError") || "Validation error",
         description: t("pleaseEnterTitle") || "Please enter title",
       });
       return;
     }
+
+    // Validate target date: cannot be in the past
+    if (form.targetDate && dayjs(form.targetDate).isBefore(dayjs().startOf("day"))) {
+      notification.warning({
+        message: t("validationError") || "Validation error",
+        description: t("dueDateCannotBePast") || "Due date cannot be in the past.",
+      });
+      return;
+    }
+
     const payload = {
       name: form.name.trim(),
       description: (form.description || "").trim(),
@@ -178,7 +188,7 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
       fetchMilestones();
     } catch (err) {
 
-      notification.error({
+      notification.warning({
         message: t("actionFailed") || "Action failed",
         description: err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
       });
@@ -189,19 +199,39 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
     if (readOnly || isGroupClosed()) return;
     const id = item?.milestoneId || item?.id;
     if (!id) return;
+    let inputValue = "";
     Modal.confirm({
       title: t("delete") || "Delete",
-      content: t("confirm") || "Confirm delete?",
+      content: (
+        <div className="space-y-2">
+          <p className="text-sm text-gray-600">
+            {t("typeDeleteToConfirm") || "Type 'delete' to confirm."}
+          </p>
+          <Input
+            placeholder={t("deletePlaceholder") || "delete"}
+            onChange={(ev) => {
+              inputValue = ev.target.value;
+            }}
+          />
+        </div>
+      ),
       okText: t("delete") || "Delete",
       cancelText: t("cancel") || "Cancel",
       onOk: async () => {
+        if (inputValue.toLowerCase() !== "delete") {
+          notification.warning({
+            message: t("validationError") || "Validation Error",
+            description: t("mustTypeDelete") || "You must type 'delete' to confirm.",
+          });
+          return Promise.reject();
+        }
         try {
           await MilestoneService.remove(groupId, id);
           notification.success({ message: t("deleted") || "Deleted" });
           fetchMilestones();
         } catch (err) {
 
-          notification.error({
+          notification.warning({
             message: t("actionFailed") || "Action failed",
             description: err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
           });
@@ -219,7 +249,7 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
 
   const handleAssign = async () => {
     if (readOnly || !groupId || !assignMilestoneId || !assignBacklogIds.length || isGroupClosed()) {
-      notification.error({
+      notification.warning({
         message: t("validationError") || "Validation error",
         description: t("pleaseSelectItems") || "Please select backlog items.",
       });
@@ -233,7 +263,7 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
       fetchMilestones();
     } catch (err) {
 
-      notification.error({
+      notification.warning({
         message: t("actionFailed") || "Action failed",
         description: err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
       });
@@ -256,7 +286,7 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
           fetchBacklogOptions();
         } catch (err) {
 
-          notification.error({
+          notification.warning({
             message: t("actionFailed") || "Action failed",
             description: err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
           });
@@ -378,14 +408,16 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
                                 <span className={done ? "text-gray-800" : "text-gray-700"}>
                                   {bi.title || "Backlog item"}
                                 </span>
-                                <Button
-                                  size="small"
-                                  type="text"
-                                  danger
-                                  onClick={() => handleRemoveItem(mId, backlogId)}
-                                >
-                                  {t("remove") || "Remove"}
-                                </Button>
+                                {!readOnly && (
+                                  <Button
+                                    size="small"
+                                    type="text"
+                                    danger
+                                    onClick={() => handleRemoveItem(mId, backlogId)}
+                                  >
+                                    {t("remove") || "Remove"}
+                                  </Button>
+                                )}
                               </li>
                             );
                           })}
@@ -491,6 +523,8 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
             <DatePicker
               className="w-full"
               value={form.targetDate}
+              inputReadOnly
+              disabledDate={(current) => current && current < dayjs().startOf("day")}
               onChange={(value) => setForm((prev) => ({ ...prev, targetDate: value }))}
             />
           </div>
@@ -518,6 +552,10 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
                 <DatePicker
                   className="w-full"
                   value={form.completedAt}
+                  inputReadOnly
+                  disabledDate={(current) =>
+                    current && current < dayjs().startOf("day")
+                  }
                   onChange={(value) => setForm((prev) => ({ ...prev, completedAt: value }))}
                 />
               </div>

@@ -354,7 +354,7 @@ const ChatWindow = ({ session, onBackClick, currentUser, onNewMessage }) => {
 
   if (!session) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
+      <div className="flex-1 flex items-center justify-center bg-gray-50 h-full">
         <div className="text-center">
           <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500">

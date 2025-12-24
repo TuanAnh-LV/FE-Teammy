@@ -1,32 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { Card, Button, Progress, Tag, Spin } from "antd";
+import { Card, Button, Progress } from "antd";
 import { useNavigate } from "react-router-dom";
 import {
   Users,
   TrendingUp,
-  Clock,
   MessageSquare,
   FileText,
-  Send,
-  Target,
-  Bookmark,
   Loader2,
 } from "lucide-react";
 import { GroupService } from "../../services/group.service";
 import { ReportService } from "../../services/report.service";
 import { BoardService } from "../../services/board.service";
-import { useAuth } from "../../context/AuthContext";
 import { useTranslation } from "../../hook/useTranslation";
 
 export default function MentorDashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { userInfo } = useAuth();
   const [mentoringGroups, setMentoringGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
     totalGroups: 0,
-    needAttention: 0,
     avgProgress: 0,
     feedbackCount: 0,
   });
@@ -44,13 +37,30 @@ export default function MentorDashboard() {
 
       let totalFeedbackCount = 0;
 
-      // Fetch progress, board data and calculate feedback for each group
+      const extractFeedbackCount = (payload) => {
+        if (!payload) return 0;
+        const totalFromPayload =
+          payload?.totalItems ||
+          payload?.total ||
+          payload?.totalCount ||
+          payload?.page?.totalElements ||
+          payload?.meta?.total ||
+          0;
+        if (Number(totalFromPayload)) return Number(totalFromPayload);
+        if (Array.isArray(payload?.data)) return payload.data.length;
+        if (Array.isArray(payload?.items)) return payload.items.length;
+        if (Array.isArray(payload)) return payload.length;
+        return 0;
+      };
+
+      // Fetch progress, board data and feedback for each group
       const groupsWithProgress = await Promise.all(
         groups.map(async (g) => {
           try {
-            const [reportRes, boardRes] = await Promise.all([
+            const [reportRes, boardRes, feedbackRes] = await Promise.all([
               ReportService.getProjectReport(g.id),
               BoardService.getBoard(g.id),
+              GroupService.getFeedbackList(g.id, { page: 1, pageSize: 1 }),
             ]);
 
             const progress = reportRes?.data?.project?.completionPercent ?? 0;
@@ -75,39 +85,9 @@ export default function MentorDashboard() {
               )
               .slice(0, 1)[0]; // Get most recent task
 
-            // Count mentor's comments across all tasks by loading comments from API
-            let mentorCommentCount = 0;
-            if (tasks.length > 0) {
-              try {
-                const commentPromises = tasks.map((task) =>
-                  BoardService.getTaskComments(g.id, task.taskId, false)
-                    .then((res) => {
-                      return { taskId: task.taskId, comments: res?.data || [] };
-                    })
-                    .catch((err) => {
-                      return { taskId: task.taskId, comments: [] };
-                    })
-                );
-
-                const commentResults = await Promise.all(commentPromises);
-
-                if (userInfo?.userId) {
-                  commentResults.forEach((result) => {
-                    const comments = Array.isArray(result.comments)
-                      ? result.comments
-                      : [];
-                    const mentorComments = comments.filter(
-                      (comment) => comment.userId === userInfo.userId
-                    );
-
-                    mentorCommentCount += mentorComments.length;
-                  });
-                } else {
-                }
-              } catch {}
-            }
-
-            totalFeedbackCount += mentorCommentCount;
+            const feedbackPayload = feedbackRes?.data ?? feedbackRes;
+            const feedbackCount = extractFeedbackCount(feedbackPayload);
+            totalFeedbackCount += feedbackCount;
 
             return {
               id: g.id,
@@ -115,7 +95,6 @@ export default function MentorDashboard() {
               topic: g.topic?.title || "Chưa có topic",
               members: g.currentMembers || 0,
               progress: progress,
-              status: progress >= 50 ? "on_track" : "need_attention",
               lastUpdate: recentActivity?.updatedAt
                 ? new Date(recentActivity.updatedAt).toLocaleDateString("vi-VN")
                 : g.updatedAt
@@ -130,7 +109,6 @@ export default function MentorDashboard() {
               topic: g.topic?.title || "Chưa có topic",
               members: g.currentMembers || 0,
               progress: 0,
-              status: "need_attention",
               lastUpdate: g.updatedAt
                 ? new Date(g.updatedAt).toLocaleDateString("vi-VN")
                 : "N/A",
@@ -144,9 +122,6 @@ export default function MentorDashboard() {
 
       // Calculate stats
       const totalGroups = groupsWithProgress.length;
-      const needAttention = groupsWithProgress.filter(
-        (g) => g.status === "need_attention"
-      ).length;
       const avgProgress =
         totalGroups > 0
           ? Math.round(
@@ -157,7 +132,6 @@ export default function MentorDashboard() {
 
       setStats({
         totalGroups,
-        needAttention,
         avgProgress,
         feedbackCount: totalFeedbackCount,
       });
@@ -166,11 +140,6 @@ export default function MentorDashboard() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const statusMap = {
-    on_track: { color: "green", text: "Đúng tiến độ" },
-    need_attention: { color: "orange", text: "Cần theo dõi" },
   };
 
   return (
@@ -186,7 +155,7 @@ export default function MentorDashboard() {
       </div>
 
       {/* STATISTICS */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card className="rounded-xl shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-blue-100 rounded-xl">
@@ -195,18 +164,6 @@ export default function MentorDashboard() {
             <div>
               <p className="text-sm text-gray-500">{t("totalGroupsLabel")}</p>
               <h2 className="text-2xl font-semibold">{stats.totalGroups}</h2>
-            </div>
-          </div>
-        </Card>
-
-        <Card bordered={false} className="rounded-xl shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-amber-100 rounded-xl">
-              <Clock className="w-6 h-6 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500"> {t("needAttention")}</p>
-              <h2 className="text-2xl font-semibold">{stats.needAttention}</h2>
             </div>
           </div>
         </Card>
@@ -237,9 +194,9 @@ export default function MentorDashboard() {
       </div>
 
       {/* CONTENT AREA */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* GROUP LIST */}
-        <div className="lg:col-span-2">
+        <div>
           <Card
             title={
               <div className="flex items-center gap-2">
@@ -271,28 +228,18 @@ export default function MentorDashboard() {
                 <p>{t("noGroupsBeingMentored")}</p>
               </div>
             ) : (
-              mentoringGroups.map((group) => {
-                const s = statusMap[group.status];
-
-                return (
-                  <div key={group.id} className="mb-5">
-                    <Card className="border border-gray-200 rounded-xl shadow-sm">
-                      {/* Header */}
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h3 className="font-semibold text-gray-900 text-base">
-                            {group.name}
-                          </h3>
-                          <p className="text-sm text-gray-500">{group.topic}</p>
-                        </div>
-
-                        <Tag
-                          color={s.color}
-                          className="text-xs !rounded-full px-3 py-1"
-                        >
-                          {s.text}
-                        </Tag>
+              mentoringGroups.map((group) => (
+                <div key={group.id} className="mb-5">
+                  <Card className="border border-gray-200 rounded-xl shadow-sm">
+                    {/* Header */}
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 text-base">
+                          {group.name}
+                        </h3>
+                        <p className="text-sm text-gray-500">{group.topic}</p>
                       </div>
+                    </div>
 
                       {/* Progress */}
                       <div>
@@ -337,72 +284,15 @@ export default function MentorDashboard() {
                           {group.recentActivity}
                         </p>
                       </div>
-                    </Card>
-                  </div>
-                );
-              })
+                  </Card>
+                </div>
+              ))
             )}
           </Card>
         </div>
 
-        {/* QUICK ACTIONS */}
-        <div className="lg:col-span-1">
-          <Card
-            title={
-              <span className="font-semibold text-gray-800 text-lg">
-                {t("quickActions")}
-              </span>
-            }
-            className="rounded-2xl shadow-sm"
-            style={{ padding: "20px" }}
-          >
-            <div className="space-y-3">
-              {/* Item 1 */}
-              <button
-                onClick={() => navigate("/mentor/discover")}
-                className="
-        w-full flex items-center gap-3 p-3 
-        bg-white border border-gray-200 
-        rounded-lg hover:bg-gray-50 transition
-      "
-              >
-                <Target className="w-5 h-5 text-gray-700" />
-                <span className="text-gray-800 font-medium text-sm">
-                  {t("findNewGroups")}
-                </span>
-              </button>
-
-              {/* Item 2 */}
-              <button
-                className="
-        w-full flex items-center gap-3 p-3 
-        bg-white border border-gray-200 
-        rounded-lg hover:bg-gray-50 transition
-      "
-              >
-                <MessageSquare className="w-5 h-5 text-gray-700" />
-                <span className="text-gray-800 font-medium text-sm">
-                  {t("messages")}
-                </span>
-              </button>
-
-              {/* Item 3 */}
-              <button
-                className="
-        w-full flex items-center gap-3 p-3 
-        bg-white border border-gray-200 
-        rounded-lg hover:bg-gray-50 transition
-      "
-              >
-                <Bookmark className="w-5 h-5 text-gray-700" />
-                <span className="text-gray-800 font-medium text-sm">
-                  {t("groupReviews")}
-                </span>
-              </button>
-            </div>
-          </Card>
-        </div>
       </div>
     </div>
   );
 }
+

@@ -36,7 +36,7 @@ export default function FilesPanel({
   const handleUpload = async () => {
     if (readOnly) return;
     if (!selectedFile) {
-      notification.error({
+      notification.warning({
         message: t("validationError") || "Validation error",
         description: t("pleaseSelectFile") || "Please select a file",
       });
@@ -44,7 +44,7 @@ export default function FilesPanel({
     }
 
     if (!groupId) {
-      notification.error({
+      notification.warning({
         message: t("error") || "Error",
         description: t("groupIdRequired") || "Group ID is required",
       });
@@ -76,7 +76,7 @@ export default function FilesPanel({
       }
     } catch (error) {
 
-      notification.error({
+      notification.warning({
         message: t("uploadFailed") || "Upload failed",
         description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
       });
@@ -110,7 +110,7 @@ export default function FilesPanel({
       }
     } catch (error) {
 
-      notification.error({
+      notification.warning({
         message: t("deleteFailed") || "Delete failed",
         description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
       });

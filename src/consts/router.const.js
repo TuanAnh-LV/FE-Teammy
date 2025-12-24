@@ -17,6 +17,8 @@ export const ROUTER_URL = {
     BASE: "/mentor",
     MY_GROUPS: "/mentor/my-groups",
     DISCOVER: "/mentor/discover",
+    INVITATIONS: "/mentor/invitations",
+    MY_TOPICS: "/mentor/my-topics",
   },
   MODERATOR: {
     TOPICS: "/moderator/topics",

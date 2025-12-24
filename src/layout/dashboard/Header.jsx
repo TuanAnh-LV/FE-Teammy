@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Layout, Avatar } from "antd";
 import {
   BellOutlined,
@@ -9,12 +9,23 @@ import {
 import { Globe } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { AuthService } from "../../services/auth.service";
+import { useAuth } from "../../context/AuthContext";
+import { subscribeGroupStatus } from "../../services/groupStatusHub";
+import NotificationDrawer from "../../components/common/NotificationDrawer";
+import { GroupService } from "../../services/group.service";
 
 const { Header } = Layout;
 
 const HeaderBar = ({ collapsed, onToggle }) => {
   const { language, toggleLanguage } = useLanguage();
   const [avatarUrl, setAvatarUrl] = useState(null);
+  // Unread bell badge for realtime group close events (mentor view)
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [groupNameMap, setGroupNameMap] = useState({});
+  const groupNameRef = useRef({});
+  const { role } = useAuth();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -30,6 +41,82 @@ const HeaderBar = ({ collapsed, onToggle }) => {
 
     fetchUserData();
   }, []);
+
+  // Listen to GroupStatusChanged and push into bell drawer (mentor-focused)
+  useEffect(() => {
+    const handler = (payload) => {
+      if (!payload) return;
+      const { action, groupId } = payload;
+      if (
+        action !== "close_requested" &&
+        action !== "close_confirmed" &&
+        action !== "close_rejected"
+      ) {
+        return;
+      }
+
+      const currentRole = (role || "").toLowerCase();
+      // Mentor only for request; accept/reject can also be shown but this header is used in mentor layout.
+      if (action === "close_requested" && currentRole !== "mentor") return;
+
+      const fetchGroupName = async (gid) => {
+        if (groupNameRef.current[gid]) return groupNameRef.current[gid];
+        try {
+          const res = await GroupService.getGroupDetail(gid);
+          const name =
+            res?.data?.name ||
+            res?.data?.title ||
+            res?.data?.groupName ||
+            `Group ${gid}`;
+          setGroupNameMap((prev) => ({ ...prev, [gid]: name }));
+          groupNameRef.current = { ...groupNameRef.current, [gid]: name };
+          return name;
+        } catch {
+          return `Group ${gid}`;
+        }
+      };
+
+      const buildMessage = (act, gid, name) => {
+        const displayName = name || ("Group " + gid);
+        if (act === "close_requested")
+          return displayName + " sent a close request";
+        if (act === "close_confirmed")
+          return "Mentor accepted closing " + displayName;
+        return "Mentor rejected closing " + displayName;
+      };
+
+      (async () => {
+        const groupName = await fetchGroupName(groupId);
+        const title =
+          action === "close_requested"
+            ? "Close request received"
+            : action === "close_confirmed"
+            ? "Close request accepted"
+            : "Close request rejected";
+
+        const message = buildMessage(action, groupId, groupName);
+
+        setNotifications((prev) => [
+          {
+            id: `group-status-${groupId}-${action}-${Date.now()}`,
+            groupId,
+            action,
+            type: "group_status",
+            title,
+            message,
+            time: "just now",
+          },
+          ...prev,
+        ]);
+
+        setUnreadCount((prev) => (Number.isFinite(prev) ? prev + 1 : 1));
+        console.log("[Dashboard Header][GroupStatusChanged]", payload);
+      })();
+    };
+
+    const unsubscribe = subscribeGroupStatus(handler);
+    return () => unsubscribe();
+  }, [role]);
 
   return (
     <Header
@@ -66,15 +153,37 @@ const HeaderBar = ({ collapsed, onToggle }) => {
           </span>
         </button>
 
-        <BellOutlined className="text-gray-500 text-lg cursor-pointer hover:text-blue-600 transition" />
+        <button
+          type="button"
+          className="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition"
+          title="Notifications"
+          onClick={() => {
+            setNotifOpen(true);
+            setUnreadCount(0);
+          }}
+        >
+          <BellOutlined className="text-gray-500 text-lg hover:text-blue-600 transition" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 text-[11px] font-bold bg-red-500 text-white rounded-full flex items-center justify-center">
+              {unreadCount}
+            </span>
+          )}
+        </button>
         <Avatar 
           size="medium" 
           icon={<UserOutlined />}
           src={avatarUrl}
         />
       </div>
+
+      <NotificationDrawer
+        open={notifOpen}
+        onClose={() => setNotifOpen(false)}
+        items={notifications}
+      />
     </Header>
   );
 };
 
 export default HeaderBar;
+

@@ -61,7 +61,7 @@ export const useGroupActivation = ({ group, groupMembers, t, id, setGroup }) => 
 
           if (statusCode === 409) {
             if (serverMessage.includes("member")) {
-              notification.error({
+              notification.warning({
                 message:
                   t("groupNotEnoughMembersToActivateTitle") ||
                   (groupMembers?.length
@@ -75,7 +75,7 @@ export const useGroupActivation = ({ group, groupMembers, t, id, setGroup }) => 
                 duration: 6,
               });
             } else {
-              notification.error({
+              notification.warning({
                 message: t("cannotActivateGroup") || "Cannot activate group",
                 description:
                   rawMessage ||
@@ -86,7 +86,7 @@ export const useGroupActivation = ({ group, groupMembers, t, id, setGroup }) => 
               });
             }
           } else {
-            notification.error({
+            notification.warning({
               message: t("error") || "Error",
               description:
                 rawMessage ||
