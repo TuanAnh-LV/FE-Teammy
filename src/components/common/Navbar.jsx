@@ -113,16 +113,21 @@ const Navbar = () => {
       }
 
       const currentRole = (role || "").toLowerCase();
+      const isMentor = currentRole === "mentor";
       let title = "";
       let messageBody = "";
 
       if (action === "close_requested") {
         // Leader/student requests close -> notify mentor
+        if (!isMentor) return; // only mentor needs the request notification
         title = "Close request received";
-        if (currentRole !== "mentor") return; // only mentor cares for the request
       } else if (action === "close_confirmed") {
+        // Mentor accepted -> notify student/leader (not mentor)
+        if (isMentor) return;
         title = "Close request accepted";
       } else if (action === "close_rejected") {
+        // Mentor rejected -> notify student/leader (not mentor)
+        if (isMentor) return;
         title = "Close request rejected";
       }
 

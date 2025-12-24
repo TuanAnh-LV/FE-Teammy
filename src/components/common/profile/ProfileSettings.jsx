@@ -126,6 +126,13 @@ const ProfileSettings = ({ profile, onUpdate }) => {
   }, [availableSkills, skillFilter]);
 
   const handleChange = (field, value) => {
+    // Enforce digits-only for phone
+    if (field === "phone") {
+      const digitsOnly = (value || "").replace(/\D+/g, "");
+      setSettingsForm((prev) => ({ ...prev, phone: digitsOnly }));
+      return;
+    }
+
     setSettingsForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -270,9 +277,11 @@ const ProfileSettings = ({ profile, onUpdate }) => {
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-gray-600">Phone</label>
           <input
-            type="text"
+            type="tel"
             value={settingsForm.phone}
             onChange={(e) => handleChange("phone", e.target.value)}
+            inputMode="numeric"
+            pattern="[0-9]*"
             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>

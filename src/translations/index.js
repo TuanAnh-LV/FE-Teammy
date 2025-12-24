@@ -988,8 +988,8 @@
     recruitingGroupsHeader: "Recruiting groups",
     recruitingGroupsSubtitle:
       "Browse student groups that are currently recruiting and send a mentor request.",
-    sendMentorRequest: "Send mentor request",
-    sendMentorRequestTitle: "Send mentor request",
+    sendMentorRequest: "Mentor now",
+    sendMentorRequestTitle: "Mentor now",
     sendMentorRequestSubtitle:
       "Select a topic and write a short message to ask to mentor this group",
     selectTopicForGroup: "Select a topic to mentor this group",
@@ -2713,6 +2713,10 @@
     recruitingGroupsHeader: "Nhóm Đang Tuyển Mentor",
     recruitingGroupsSubtitle:
       "Danh sách các nhóm sinh viên đang tuyển mentor. Hãy gửi yêu cầu nếu bạn phù hợp.",
+    sendMentorRequest: "Mentor ngay",
+    sendMentorRequestTitle: "Mentor ngay",
+    sendMentorRequestSubtitle:
+      "Chọn chủ đề và viết lời nhắn ngắn để nhận mentor cho nhóm",
     noGroupsBeingMentored: "Chưa có nhóm hướng dẫn",
     mentoringInvitations: "Lời Mời Hướng Dẫn",
     accepted: "Đã chấp nhận",
