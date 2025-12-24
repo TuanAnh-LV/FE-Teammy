@@ -10,6 +10,8 @@ const Invitations = () => {
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [acceptingInvitationId, setAcceptingInvitationId] = useState(null);
+  const [rejectingInvitationId, setRejectingInvitationId] = useState(null);
 
   useEffect(() => {
     fetchInvitations();
@@ -29,8 +31,12 @@ const Invitations = () => {
   };
 
   const handleAcceptInvitation = async (invitation) => {
+    const invitationId = invitation.invitationId || invitation.id;
+    if (acceptingInvitationId === invitationId) return; // Prevent double click
+    
     try {
-      await InvitationService.accept(invitation.invitationId || invitation.id);
+      setAcceptingInvitationId(invitationId);
+      await InvitationService.accept(invitationId);
       setInvitations((prev) => prev.filter((x) => x.id !== invitation.id));
       notificationApi.success({
         message: t("accepted") || "Accepted",
@@ -40,12 +46,18 @@ const Invitations = () => {
         message: t("acceptInvitationFailed") || "Accept invitation failed",
         description: t("pleaseTryAgainLater") || "Please try again later.",
       });
+    } finally {
+      setAcceptingInvitationId(null);
     }
   };
 
   const handleRejectInvitation = async (invitation) => {
+    const invitationId = invitation.invitationId || invitation.id;
+    if (rejectingInvitationId === invitationId) return; // Prevent double click
+    
     try {
-      await InvitationService.decline(invitation.invitationId || invitation.id);
+      setRejectingInvitationId(invitationId);
+      await InvitationService.decline(invitationId);
       setInvitations((prev) => prev.filter((x) => x.id !== invitation.id));
       notificationApi.info({
         message: t("invitationRejected") || "Invitation rejected",
@@ -55,6 +67,8 @@ const Invitations = () => {
         message: t("rejectInvitationFailed") || "Reject invitation failed",
         description: t("pleaseTryAgainLater") || "Please try again later.",
       });
+    } finally {
+      setRejectingInvitationId(null);
     }
   };
 
@@ -261,17 +275,27 @@ const Invitations = () => {
                       <button
                         type="button"
                         onClick={() => handleAcceptInvitation(inv)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition"
+                        disabled={acceptingInvitationId === (inv.invitationId || inv.id) || rejectingInvitationId === (inv.invitationId || inv.id)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Check className="w-4 h-4" />
+                        {acceptingInvitationId === (inv.invitationId || inv.id) ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Check className="w-4 h-4" />
+                        )}
                         <span>{t("accept") || "Accept"}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleRejectInvitation(inv)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium transition"
+                        disabled={rejectingInvitationId === (inv.invitationId || inv.id) || acceptingInvitationId === (inv.invitationId || inv.id)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <X className="w-4 h-4" />
+                        {rejectingInvitationId === (inv.invitationId || inv.id) ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <X className="w-4 h-4" />
+                        )}
                         <span>{t("reject") || "Reject"}</span>
                       </button>
                     </div>

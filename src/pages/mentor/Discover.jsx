@@ -363,7 +363,7 @@ const Discover = () => {
             </div>
           ))}
         </div>
-      )}\r\n\r\n      {/* Group detail modal */}
+      )}
       <Modal
         open={groupDetailModalVisible}
         onCancel={() => setGroupDetailModalVisible(false)}

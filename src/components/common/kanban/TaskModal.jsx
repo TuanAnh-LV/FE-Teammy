@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { MessageSquare, Upload, X, FileIcon } from "lucide-react";
+import { MessageSquare, Upload, X, FileIcon, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { priorityStyles, statusStyles, initials } from "../../../utils/kanbanHelpers";
 import { useNavigate } from "react-router-dom";
 import { BoardService } from "../../../services/board.service";
@@ -90,6 +90,7 @@ const TaskModal = ({
   const [editingContent, setEditingContent] = useState("");
   const [assigneeMenuOpenMain, setAssigneeMenuOpenMain] = useState(false);
   const [assigneeMenuOpenDetails, setAssigneeMenuOpenDetails] = useState(false);
+  const [openKebabMenuId, setOpenKebabMenuId] = useState(null);
   const [files, setFiles] = useState([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
@@ -172,6 +173,11 @@ const TaskModal = ({
       if (clickedInsideMain || clickedInsideDetails) return;
       setAssigneeMenuOpenMain(false);
       setAssigneeMenuOpenDetails(false);
+      
+      // Close kebab menu if clicking outside
+      if (!event.target.closest('.kebab-menu-container')) {
+        setOpenKebabMenuId(null);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
@@ -237,11 +243,20 @@ const TaskModal = ({
   };
   const handleDeleteComment = (commentId) => {
     if (!commentId) return;
-    if (!window.confirm(t("confirmDeleteComment") || "Delete this comment?")) return;
-    onDeleteComment(task.id, commentId);
-    if (editingCommentId === commentId) {
-      cancelEditComment();
-    }
+    Modal.confirm({
+      title: t("confirmDeleteComment") || "Delete this comment?",
+      content: t("deleteCommentWarning") || "Are you sure you want to delete this comment? This action cannot be undone.",
+      okText: t("delete") || "Delete",
+      okButtonProps: { danger: true },
+      cancelText: t("cancel") || "Cancel",
+      onOk: () => {
+        onDeleteComment(task.id, commentId);
+        if (editingCommentId === commentId) {
+          cancelEditComment();
+        }
+        setOpenKebabMenuId(null);
+      },
+    });
   };
   
   const fetchTaskFiles = async () => {
@@ -416,8 +431,9 @@ const TaskModal = ({
       m.accountId === userId
     );
     
-    const avatarUrl = member?.avatarUrl || member?.avatar || member?.photoURL || comment.authorAvatar;
-    const displayName = member?.displayName || member?.name || comment.createdBy || t("user") || "User";
+    // Prioritize displayName and avatarUrl from comment data
+    const avatarUrl = comment.avatarUrl || member?.avatarUrl || member?.avatar || member?.photoURL || comment.authorAvatar;
+    const displayName = comment.displayName || member?.displayName || member?.name || comment.createdBy || t("user") || "User";
     
     if (avatarUrl) {
       return (
@@ -675,13 +691,14 @@ const TaskModal = ({
                                     }
                                   >
                                     {(() => {
+                                      // Prioritize displayName from comment data
                                       const userId = comment.userId || comment.authorId || comment.createdById || "";
                                       const member = allMembers?.find(m => 
                                         m.id === userId || 
                                         m.userId === userId || 
                                         m.accountId === userId
                                       );
-                                      return member?.displayName || member?.name || comment.createdBy || t("unknown") || "Unknown";
+                                      return comment.displayName || member?.displayName || member?.name || comment.createdBy || t("unknown") || "Unknown";
                                     })()}
                                   </span>
                                   <div className="flex items-center gap-2">
@@ -697,26 +714,51 @@ const TaskModal = ({
                                         String(commentUserId).toLowerCase() === String(currentUserId).toLowerCase()
                                       );
                                       
-                                      // Only show Edit/Delete buttons if user owns the comment
+                                      // Only show kebab menu if user owns the comment
                                       if (!isCommentOwner) return null;
                                       
+                                      const isMenuOpen = openKebabMenuId === comment.id;
+                                      
                                       return (
-                                        <>
+                                        <div className="relative kebab-menu-container">
                                           <button
                                             type="button"
-                                            className="text-blue-600 hover:underline"
-                                            onClick={() => startEditComment(comment)}
+                                            className="p-1 rounded hover:bg-gray-200 transition-colors"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setOpenKebabMenuId(isMenuOpen ? null : comment.id);
+                                            }}
                                           >
-                                            {t("edit") || "Edit"}
+                                            <MoreVertical className="w-4 h-4 text-gray-600" />
                                           </button>
-                                          <button
-                                            type="button"
-                                            className="text-red-500 hover:underline"
-                                            onClick={() => handleDeleteComment(comment.id)}
-                                          >
-                                            {t("delete") || "Delete"}
-                                          </button>
-                                        </>
+                                          {isMenuOpen && (
+                                            <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[120px]">
+                                              <button
+                                                type="button"
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  startEditComment(comment);
+                                                  setOpenKebabMenuId(null);
+                                                }}
+                                              >
+                                                <Edit className="w-4 h-4" />
+                                                {t("edit") || "Edit"}
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 text-left"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleDeleteComment(comment.id);
+                                                }}
+                                              >
+                                                <Trash2 className="w-4 h-4" />
+                                                {t("delete") || "Delete"}
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
                                       );
                                     })()}
                                   </div>
