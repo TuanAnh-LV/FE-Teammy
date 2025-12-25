@@ -122,6 +122,8 @@ const routes = [
           { path: "notifications", element: <Notifications /> },
           { path: "my-groups/:id", element: <GroupDetail /> },
           { path: "messages", element: <MessagesPage /> },
+          { path: "messages/:userId", element: <MessagesPage /> },
+          { path: "profile/:userId", element: <Profile /> },
         ],
       },
     ],

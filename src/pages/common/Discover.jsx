@@ -390,7 +390,7 @@ const Discover = () => {
       const st = String(p.status || p.tags?.[0] || "").toLowerCase();
 
       if (st !== "open") {
-        notification.warning({
+        notification.info({
           message: t("topicNotOpen") || "Topic không ở trạng thái Open",
           description:
             t("onlyOpenTopicSelectable") ||
@@ -655,7 +655,7 @@ const Discover = () => {
             await GroupService.assignTopic(groupId, topic.topicId);
             const mentorCandidate = (topic.mentorsRaw || [])[0];
             if (!mentorCandidate) {
-              notification.warning({
+              notification.info({
                 message: t("noMentorFound") || "Không tìm thấy mentor",
                 description:
                   t("topicHasNoMentor") || "Topic này không có mentor gắn kèm",
@@ -771,3 +771,4 @@ const Discover = () => {
 };
 
 export default Discover;
+

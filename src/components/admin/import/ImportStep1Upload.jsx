@@ -109,7 +109,7 @@ export default function ImportStep1Upload({
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Template");
       XLSX.writeFile(wb, "UserImportTemplate.xlsx");
-      notification.warning({
+      notification.info({
         message:
           t("templateGeneratedLocally") ||
           "Template generated locally (API error)",
@@ -168,3 +168,4 @@ export default function ImportStep1Upload({
     </div>
   );
 }
+

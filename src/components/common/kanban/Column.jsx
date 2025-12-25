@@ -245,7 +245,7 @@ const Column = ({
                       cancelText: t?.("cancel") || "Cancel",
                       onOk: () => {
                         if (inputValue.toLowerCase() !== "delete") {
-                          notification.warning({
+                          notification.info({
                             message: t?.("validationError") || "Validation Error",
                             description: t?.("mustTypeDelete") || "You must type 'delete' to confirm.",
                           });
@@ -409,3 +409,4 @@ const Column = ({
 };
 
 export default Column;
+

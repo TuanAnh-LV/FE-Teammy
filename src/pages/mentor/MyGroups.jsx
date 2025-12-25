@@ -12,7 +12,6 @@ export default function MyGroups() {
 
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     fetchMyGroups();
   }, []);

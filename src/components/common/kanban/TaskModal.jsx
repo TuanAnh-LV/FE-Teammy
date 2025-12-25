@@ -328,7 +328,7 @@ const TaskModal = ({
       await fetchTaskFiles();
     } catch (error) {
 
-      notification.warning({
+      notification.info({
         message: t("failedUploadFiles") || "Failed to upload files",
         description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
         duration: 2,
@@ -358,7 +358,7 @@ const TaskModal = ({
       setFiles(prev => prev.filter(f => f.id !== fileId));
     } catch (error) {
 
-      notification.warning({
+      notification.info({
         message: t("failedDeleteFile") || "Failed to delete file",
         description: error?.response?.data?.message || t("pleaseTryAgain") || "Please try again",
         duration: 2,
@@ -503,7 +503,7 @@ const TaskModal = ({
                       cancelText: t("cancel") || "Cancel",
                       onOk: () => {
                         if (inputValue.toLowerCase() !== "delete") {
-                          notification.warning({
+                          notification.info({
                             message: t("validationError") || "Validation Error",
                             description: t("mustTypeDelete") || "You must type 'delete' to confirm.",
                           });
@@ -1009,3 +1009,4 @@ const TaskModal = ({
 };
 
 export default TaskModal;
+
