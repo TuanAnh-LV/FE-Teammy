@@ -1,17 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { Check, Loader2, UserPlus, X } from "lucide-react";
-import { notification } from "antd";
+import { Check, Loader2, UserPlus, X, Users } from "lucide-react";
+import { Modal, notification } from "antd";
 import { InvitationService } from "../../services/invitation.service";
 import { useTranslation } from "../../hook/useTranslation";
+import { GroupService } from "../../services/group.service";
+import { useNavigate } from "react-router-dom";
 
 const Invitations = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [notificationApi, contextHolder] = notification.useNotification();
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [acceptingInvitationId, setAcceptingInvitationId] = useState(null);
   const [rejectingInvitationId, setRejectingInvitationId] = useState(null);
+  const [groupDetailModalVisible, setGroupDetailModalVisible] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [groupMembers, setGroupMembers] = useState([]);
+  const [loadingGroupDetail, setLoadingGroupDetail] = useState(false);
+  const [loadingGroupMembers, setLoadingGroupMembers] = useState(false);
 
   useEffect(() => {
     fetchInvitations();
@@ -127,6 +135,78 @@ const Invitations = () => {
     isRejectedStatus(inv.status)
   ).length;
 
+  const openMemberProfile = (member) => {
+    const memberId =
+      member.id || member.userId || member.userID || member.memberId;
+    if (!memberId) return;
+    setGroupDetailModalVisible(false);
+    navigate(`/mentor/profile/${memberId}`);
+  };
+
+  const openGroupDetailModal = async (invitation) => {
+    if (!invitation?.groupId) return;
+    setSelectedGroup({
+      id: invitation.groupId,
+      name:
+        invitation.groupName || t("groupUnnamed") || "Unnamed group",
+      topic:
+        invitation.topicTitle || t("topicUndefined") || "Topic not set",
+      description: invitation.description || "",
+      members: invitation.currentMembers || 0,
+      maxMembers: invitation.maxMembers || 0,
+      skills: invitation.skills || [],
+      topicSkills: invitation.topicSkills || [],
+    });
+    setGroupMembers([]);
+    setGroupDetailModalVisible(true);
+
+    try {
+      setLoadingGroupDetail(true);
+      const res = await GroupService.getGroupDetail(invitation.groupId);
+      const g = res?.data || res || {};
+      setSelectedGroup({
+        id: g.id || invitation.groupId,
+        name:
+          g.name ||
+          g.title ||
+          invitation.groupName ||
+          t("groupUnnamed") ||
+          "Unnamed group",
+        topic:
+          g.topic?.title ||
+          g.topicName ||
+          invitation.topicTitle ||
+          t("topicUndefined") ||
+          "Topic not set",
+        description: g.description || "",
+        members: g.currentMembers || g.memberCount || 0,
+        maxMembers: g.maxMembers || g.capacity || 0,
+        skills: Array.isArray(g.skills) ? g.skills : [],
+        topicSkills: Array.isArray(g.topic?.skills) ? g.topic.skills : [],
+      });
+    } catch {
+      setSelectedGroup((prev) => prev || null);
+    } finally {
+      setLoadingGroupDetail(false);
+    }
+
+    try {
+      setLoadingGroupMembers(true);
+      const res = await GroupService.getListMembers(invitation.groupId);
+      const members = Array.isArray(res?.data) ? res.data : [];
+      setGroupMembers(members);
+    } catch {
+      setGroupMembers([]);
+      notificationApi.warning({
+        message:
+          t("loadGroupMembersFailed") ||
+          "Failed to load group members",
+      });
+    } finally {
+      setLoadingGroupMembers(false);
+    }
+  };
+
   return (
     <div className="space-y-6 min-h-screen">
       {contextHolder}
@@ -209,7 +289,8 @@ const Invitations = () => {
             {filteredInvitations.map((inv) => (
               <div
                 key={inv.id}
-                className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition"
+                className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition cursor-pointer"
+                onClick={() => openGroupDetailModal(inv)}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -288,7 +369,10 @@ const Invitations = () => {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => handleAcceptInvitation(inv)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAcceptInvitation(inv);
+                        }}
                         disabled={acceptingInvitationId === (inv.invitationId || inv.id) || rejectingInvitationId === (inv.invitationId || inv.id)}
                         className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -301,7 +385,10 @@ const Invitations = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleRejectInvitation(inv)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRejectInvitation(inv);
+                        }}
                         disabled={rejectingInvitationId === (inv.invitationId || inv.id) || acceptingInvitationId === (inv.invitationId || inv.id)}
                         className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -320,6 +407,160 @@ const Invitations = () => {
           </div>
         )}
       </div>
+      <Modal
+        open={groupDetailModalVisible}
+        onCancel={() => setGroupDetailModalVisible(false)}
+        footer={null}
+        width={520}
+        centered
+        closeIcon={<X className="w-5 h-5" />}
+      >
+        {loadingGroupDetail ? (
+          <div className="flex flex-col items-center justify-center py-10">
+            <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+            <p className="text-sm text-gray-500 mt-3">
+              {t("loadingDetails") || "Loading details..."}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {selectedGroup && (
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {selectedGroup.name}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {selectedGroup.members || 0}/
+                    {selectedGroup.maxMembers || 0}{" "}
+                    {t("thanh_vien") || "members"}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {selectedGroup && (
+              <div className="space-y-4 text-sm">
+                {selectedGroup.topic && (
+                  <div>
+                    <p className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase">
+                      {t("topic") || "Topic"}
+                    </p>
+                    <p className="mt-1 text-gray-900">
+                      {selectedGroup.topic}
+                    </p>
+                  </div>
+                )}
+
+                {selectedGroup.description && (
+                  <div>
+                    <p className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase">
+                      {t("description") || "Description"}
+                    </p>
+                    <p className="mt-1 text-gray-700">
+                      {selectedGroup.description}
+                    </p>
+                  </div>
+                )}
+
+                {(selectedGroup.skills?.length > 0 ||
+                  selectedGroup.topicSkills?.length > 0) && (
+                  <div>
+                    <p className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase">
+                      {t("skills") || "Skills"}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {[
+                        ...(selectedGroup.skills || []),
+                        ...(selectedGroup.topicSkills || []),
+                      ].map((skill, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-0.5 rounded-full bg-gray-100 text-xs text-gray-800"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="pt-3 border-t border-gray-100">
+              <p className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase mb-2">
+                {t("members") || "Members"}
+              </p>
+              {loadingGroupMembers ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                </div>
+              ) : groupMembers.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  {t("noMembersInGroup") ||
+                    "No members in group."}
+                </p>
+              ) : (
+                <ul className="divide-y divide-gray-100">
+                  {groupMembers.map((member) => (
+                    <li
+                      key={member.id || member.userId}
+                      className="flex items-center gap-3 py-3 cursor-pointer hover:bg-gray-50"
+                      onClick={() => openMemberProfile(member)}
+                    >
+                      <div className="w-9 h-9 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+                        {member.avatarUrl ? (
+                          <img
+                            src={member.avatarUrl}
+                            alt={member.fullName || member.name || "avatar"}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-xs font-semibold text-gray-600">
+                            {(member.fullName || member.name || "?")
+                              .charAt(0)
+                              .toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {member.displayName ||
+                              member.fullName ||
+                              member.name ||
+                              t("unknownUser") ||
+                              "Unknown"}
+                          </p>
+                          {member.role && (
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[11px] border ${
+                                String(member.role).toLowerCase() === "mentor"
+                                  ? "bg-blue-50 text-blue-700 border-blue-200"
+                                  : "bg-gray-100 text-gray-700 border-gray-200"
+                              }`}
+                            >
+                              {String(member.role).toLowerCase()}
+                            </span>
+                          )}
+                        </div>
+                        {member.email && (
+                          <p className="text-xs text-gray-500 truncate">
+                            {member.email}
+                          </p>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

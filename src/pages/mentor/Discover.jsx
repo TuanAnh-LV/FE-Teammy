@@ -152,13 +152,20 @@ const Discover = () => {
       });
       setRequestModalOpen(false);
     } catch (error) {
-      notificationApi.warning({
-        message: t("inviteFailed") || "Failed to send mentor request",
-        description:
-          error?.response?.data?.message ||
-          t("pleaseTryAgainLater") ||
-          "Please try again later",
-      });
+      const errorDetail =
+        error?.response?.data?.message ||
+        (typeof error?.response?.data === "string"
+          ? error.response.data
+          : "");
+      if (errorDetail) {
+        notificationApi.info({ message: errorDetail });
+      } else {
+        notificationApi.info({
+          message: t("inviteFailed") || "Failed to send mentor request",
+          description:
+            t("pleaseTryAgainLater") || "Please try again later",
+        });
+      }
     } finally {
       setSendingRequest(false);
     }
@@ -244,14 +251,6 @@ const Discover = () => {
             />
           </div>
 
-          {/* Filter button */}
-          <button
-            type="button"
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition sm:w-auto"
-          >
-            <Filter className="w-4 h-4" />
-            <span>{t("filters")}</span>
-          </button>
         </div>
 
         <div className="flex items-center gap-4 mt-4 text-sm text-gray-600">

@@ -11,10 +11,11 @@ import {
   ShieldCheck,
   Hash,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const ProfileHeader = ({ profile, isOwnProfile = false }) => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const initials = useMemo(() => {
     const full = profile.name || "User";
@@ -132,7 +133,13 @@ const ProfileHeader = ({ profile, isOwnProfile = false }) => {
         {/* Right: Send Message button - hide when viewing own profile */}
         {profile.userId && !isOwnProfile && (
           <button
-            onClick={() => navigate(`/messages/${profile.userId}`)}
+            onClick={() => {
+              if (location.pathname.startsWith("/mentor")) {
+                navigate(`/mentor/messages/${profile.userId}`);
+              } else {
+                navigate(`/messages/${profile.userId}`);
+              }
+            }}
             className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             <MessageSquare className="w-4 h-4" />

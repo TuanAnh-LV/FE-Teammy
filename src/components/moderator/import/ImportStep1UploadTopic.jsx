@@ -217,7 +217,7 @@ export default function ImportStep1UploadTopic({
       const zipBlob = await zip.generateAsync({ type: "blob" });
       downloadBlob(zipBlob, "TopicRegistrationPackage.zip");
 
-      notification.warning({
+      notification.info({
         message:
           t("templateGeneratedLocally") ||
           "Template generated locally (API error)",
@@ -282,3 +282,4 @@ export default function ImportStep1UploadTopic({
     </div>
   );
 }
+

@@ -295,19 +295,19 @@ Please make sure you are part of a team before the deadline.${closing}`,
 
   const sendNow = async () => {
     if (!selectedCount) {
-      return notification.warning({
+      return notification.info({
         message:
           t("pleaseSelectAtLeastOne") ||
           "Please select at least one recipient.",
       });
     }
     if (!title.trim()) {
-      return notification.warning({
+      return notification.info({
         message: t("titleRequired") || "Please enter a title.",
       });
     }
     if (!msg.trim()) {
-      return notification.warning({
+      return notification.info({
         message: t("messageRequired") || "Please enter a message.",
       });
     }
@@ -708,3 +708,4 @@ Please make sure you are part of a team before the deadline.${closing}`,
     </div>
   );
 }
+

@@ -330,6 +330,8 @@ export const translations = {
     chooseTopicForGroup: "Choose a topic for your group",
     topicRequirement: "Topic can be selected when the group is full.",
     inviteMembers: "Invite Members",
+    inviteDisabledSemesterStart:
+      "Invitations are closed on the semester start date.",
     members: "members",
     Members: "Members",
     totalMembers: "Total",
@@ -581,6 +583,7 @@ export const translations = {
     noTopicAssigned: "No topic assigned yet",
     searchTopicPlaceholder: "Search by keyword or lecturer",
     noTopicsFound: "No topics found for this filter",
+    noTopics: "No topics available.",
     assignTopic: "Assign topic",
     approveFailed: "Approve failed",
     rejectFailed: "Reject failed",
@@ -2027,6 +2030,8 @@ export const translations = {
     chooseTopicForGroup: "Chọn đề tài cho nhóm",
     topicRequirement: "Chỉ chọn đề tài khi nhóm đủ thành viên.",
     inviteMembers: "Mời thành viên",
+    inviteDisabledSemesterStart:
+      "Kh�ng th? m?i th�nh vi�n v�o ng�y b?t d?u h?c k?.",
     members: "Thành viên",
     Members: "Thành Viên",
     totalMembers: "Tổng",
@@ -2271,6 +2276,7 @@ export const translations = {
     noTopicAssigned: "Chưa gán chủ đề",
     searchTopicPlaceholder: "Tìm theo từ khóa hoặc giảng viên",
     noTopicsFound: "Không có chủ đề phù hợp",
+    noTopics: "Không có chủ đề.",
     noDescription: "Không có mô tả",
     assignTopic: "Gán chủ đề",
     approveFailed: "Chấp nhận thất bại",
@@ -2845,3 +2851,5 @@ export const translations = {
 export const getTranslation = (key, language = "VIE") => {
   return translations[language]?.[key] || key;
 };
+
+

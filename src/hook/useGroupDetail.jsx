@@ -24,7 +24,7 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
         prev ? { ...prev, progress: completionPercent } : prev
       );
     } catch {
-      notification.warning({
+      notification.info({
         message: t("error") || "Error",
         description:
           t("failedToFetchProgress") || "Failed to fetch project progress.",
@@ -186,7 +186,7 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
         setGroupSkillsWithRole([]);
       }
     } catch {
-      notification.warning({
+      notification.info({
         message: t("error") || "Error",
         description:
           t("failedToLoadGroupData") || "Failed to load group data.",
@@ -207,7 +207,7 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
       const list = Array.isArray(res?.data) ? res.data : res?.items || [];
       setGroupFiles(list);
     } catch {
-      notification.warning({
+      notification.info({
         message: t("error") || "Error",
         description:
           t("failedToLoadGroupFiles") || "Failed to load group files.",
@@ -253,7 +253,7 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
 
               resolve(true);
             } catch (error) {
-              notification.warning({
+              notification.info({
                 message: t("error") || "Error",
                 description:
                   error?.response?.data?.message ||
@@ -313,7 +313,7 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
               );
             }
           } catch (error) {
-            notification.warning({
+            notification.info({
               message:
                 t("failedToTransferLeader") ||
                 "Failed to transfer leadership",
@@ -345,5 +345,6 @@ export const useGroupDetail = ({ groupId, t, userInfo }) => {
     fetchGroupDetail,
   };
 };
+
 
 

@@ -124,7 +124,7 @@ export default function BacklogTab({
       setItems(list);
     } catch (err) {
 
-      notification.warning({
+      notification.info({
         message: t("failedLoadBacklog") || "Failed to load backlog",
         description:
           err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
@@ -177,7 +177,7 @@ export default function BacklogTab({
     if (!groupId || isGroupClosed()) return;
     const trimmedTitle = (form.title || "").trim();
     if (!trimmedTitle) {
-      notification.warning({
+      notification.info({
         message: t("validationError") || "Missing title",
         description: t("titleRequired") || "Please enter a backlog title.",
       });
@@ -187,7 +187,7 @@ export default function BacklogTab({
     // Validate story points - must be a valid number >= 0
     const storyPointsValue = Number(form.storyPoints);
     if (isNaN(storyPointsValue) || storyPointsValue < 0) {
-      notification.warning({
+      notification.info({
         message: t("validationError") || "Validation Error",
         description: t("storyPointsMustBeNumber") || "Story points must be a valid number greater than or equal to 0.",
       });
@@ -196,7 +196,7 @@ export default function BacklogTab({
 
     // Validate due date - cannot be in the past
     if (form.dueDate && dayjs(form.dueDate).isBefore(dayjs().startOf('day'))) {
-      notification.warning({
+      notification.info({
         message: t("validationError") || "Validation Error",
         description: t("dueDateCannotBePast") || "Due date cannot be in the past.",
       });
@@ -232,7 +232,7 @@ export default function BacklogTab({
       fetchItems();
     } catch (err) {
 
-      notification.warning({
+      notification.info({
         message: t("actionFailed") || "Action failed",
         description:
           err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
@@ -265,7 +265,7 @@ export default function BacklogTab({
       cancelText: t("cancel") || "Cancel",
       onOk: () => {
         if (inputValue.toLowerCase() !== "delete") {
-          notification.warning({
+          notification.info({
             message: t("validationError") || "Validation Error",
             description: t("mustTypeDelete") || "You must type 'delete' to confirm.",
           });
@@ -288,7 +288,7 @@ export default function BacklogTab({
       fetchItems();
     } catch (err) {
 
-      notification.warning({
+      notification.info({
         message: t("actionFailed") || "Action failed",
         description:
           err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
@@ -319,7 +319,7 @@ export default function BacklogTab({
       }
     } catch (err) {
 
-      notification.warning({
+      notification.info({
         message: t("actionFailed") || "Action failed",
         description:
           err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
@@ -708,3 +708,4 @@ export default function BacklogTab({
     </div>
   );
 }
+

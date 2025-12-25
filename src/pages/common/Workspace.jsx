@@ -87,7 +87,7 @@ const Workspace = () => {
       
       // Validate position: must be a valid number >= 0 and <= 1000
       if (isNaN(positionValue) || positionValue < 0 || positionValue > 1000) {
-        notification.warning({
+        notification.info({
           message: t("validationError") || "Validation Error",
           description: t("positionMustBeValidNumber") || "Position must be a valid number between 0 and 1000.",
         });
@@ -784,3 +784,4 @@ const Workspace = () => {
 };
 
 export default Workspace;
+
