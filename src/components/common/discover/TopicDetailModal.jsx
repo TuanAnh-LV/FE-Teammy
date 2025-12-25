@@ -31,6 +31,14 @@ const TopicDetailModal = ({
 
   const myGroupId =
     membership?.groupId || myGroupDetails?.groupId || myGroupDetails?.id;
+  const mentorNames = (topic.mentors || [])
+    .map((m) => m.mentorName)
+    .filter(Boolean);
+  const displayMentors = mentorNames.length
+    ? mentorNames
+    : topic.mentor
+      ? [topic.mentor]
+      : [];
   const rawTopicGroups = topic.groups || topic.detail?.groups || [];
   const topicGroups = rawTopicGroups.filter(
     (g, idx, arr) =>
@@ -208,7 +216,7 @@ const TopicDetailModal = ({
               </div>
             )}
 
-            {topic.mentor && (
+            {displayMentors.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">
                   {t("mentor") || "Mentor"}
@@ -216,7 +224,7 @@ const TopicDetailModal = ({
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <Users className="w-5 h-5 text-gray-500" />
                   <span className="text-gray-800 font-medium">
-                    {topic.mentor}
+                    {displayMentors.join(", ")}
                   </span>
                 </div>
               </div>
