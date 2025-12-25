@@ -73,7 +73,7 @@ export default function SelectTopicModal({
       
       // Validate: check if topic has mentor
       if (!selectedTopic || (!selectedTopic.mentorId && !selectedTopic.mentor)) {
-        notification.warning({
+        notification.info({
           message: t("topicNoMentor") || "Topic Error",
           description: "Selected topic does not have an assigned mentor",
         });
@@ -236,4 +236,5 @@ export default function SelectTopicModal({
     </div>
   );
 }
+
 

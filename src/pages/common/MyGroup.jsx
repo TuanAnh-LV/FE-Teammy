@@ -363,6 +363,16 @@ export default function MyGroup() {
     return statusLower.includes("closed");
   };
   const isReadOnly = isGroupClosed();
+  const semesterStartDate =
+    group?.semester?.startDate ||
+    group?.semesterStartDate ||
+    group?.startDate ||
+    group?.start;
+  const isInviteLockedBySemesterStart = useMemo(() => {
+    if (!semesterStartDate) return false;
+    const parsed = dayjs(semesterStartDate);
+    return parsed.isValid() && parsed.isSame(dayjs(), "day");
+  }, [semesterStartDate]);
 
   const handleCloseGroupClick = () => {
     setCloseGroupModalOpen(true);
@@ -514,7 +524,7 @@ export default function MyGroup() {
       
       // Validate position: must be a valid number >= 0 and <= 1000
       if (isNaN(positionValue) || positionValue < 0 || positionValue > 1000) {
-        notification.warning({
+        notification.info({
           message: t("validationError") || "Validation Error",
           description: t("positionMustBeValidNumber") || "Position must be a valid number between 0 and 1000.",
         });
@@ -755,7 +765,7 @@ export default function MyGroup() {
                   mentor={mentor}
                   mentors={mentors}
                   group={group}
-                  onInvite={isReadOnly ? null : () => setShowModal(true)}
+                  onInvite={isReadOnly || isInviteLockedBySemesterStart ? null : () => setShowModal(true)}
                   onKickMember={handleKickMember}
                   onTransferLeader={handleTransferLeader}
                   currentUserEmail={userInfo?.email}
@@ -858,7 +868,7 @@ export default function MyGroup() {
                     mentor={mentor}
                     mentors={mentors}
                     group={group}
-                    onInvite={isReadOnly ? null : () => setShowModal(true)}
+                    onInvite={isReadOnly || isInviteLockedBySemesterStart ? null : () => setShowModal(true)}
                     onKickMember={handleKickMember}
                     onTransferLeader={handleTransferLeader}
                     currentUserEmail={userInfo?.email}
@@ -1027,13 +1037,20 @@ export default function MyGroup() {
                     {/* Invite Members */}
                     {!isReadOnly && (
                       <Tooltip
-                        title={!isLeader ? (t("onlyLeaderCanInvite") || "Chỉ leader mới có thể mời thành viên") : ""}
+                        title={
+                          !isLeader
+                            ? t("onlyLeaderCanInvite") || "Only leader can invite members"
+                            : isInviteLockedBySemesterStart
+                            ? t("inviteDisabledSemesterStart") ||
+                              "Invitations are closed on the semester start date."
+                            : ""
+                        }
                       >
                         <button
                           onClick={() => setShowModal(true)}
-                          disabled={!isLeader}
+                          disabled={!isLeader || isInviteLockedBySemesterStart}
                           className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition ${
-                            isLeader
+                            isLeader && !isInviteLockedBySemesterStart
                               ? "bg-blue-600 text-white hover:bg-blue-700"
                               : "bg-gray-300 text-gray-500 cursor-not-allowed"
                           }`}
@@ -1251,7 +1268,7 @@ export default function MyGroup() {
            MODALS
       ---------------------- */}
       <AddMemberModal
-        open={showModal && !isReadOnly}
+        open={showModal && !isReadOnly && !isInviteLockedBySemesterStart}
         onClose={() => setShowModal(false)}
         onAdd={handleAddMember}
         t={t}
@@ -1371,3 +1388,9 @@ export default function MyGroup() {
     </>
   );
 }
+
+
+
+
+
+

@@ -17,7 +17,7 @@ export const useGroupActivation = ({ group, groupMembers, t, id, setGroup }) => 
 
     // FE guard: must have topic + mentor before calling API
     if (!group.topicId || !hasMentor) {
-      notification.warning({
+      notification.info({
         message: t("cannotActivateGroup") || "Cannot activate group",
         description:
           t("groupMustSelectTopicAndMentor") ||
@@ -62,7 +62,7 @@ export const useGroupActivation = ({ group, groupMembers, t, id, setGroup }) => 
 
           if (statusCode === 409) {
             if (serverMessage.includes("member")) {
-              notification.warning({
+              notification.info({
                 message:
                   t("groupNotEnoughMembersToActivateTitle") ||
                   (groupMembers?.length
@@ -76,7 +76,7 @@ export const useGroupActivation = ({ group, groupMembers, t, id, setGroup }) => 
                 duration: 6,
               });
             } else {
-              notification.warning({
+              notification.info({
                 message: t("cannotActivateGroup") || "Cannot activate group",
                 description:
                   rawMessage ||
@@ -87,7 +87,7 @@ export const useGroupActivation = ({ group, groupMembers, t, id, setGroup }) => 
               });
             }
           } else {
-            notification.warning({
+            notification.info({
               message: t("error") || "Error",
               description:
                 rawMessage ||
@@ -104,5 +104,6 @@ export const useGroupActivation = ({ group, groupMembers, t, id, setGroup }) => 
 
   return { canActivateGroup, handleActivateGroup };
 };
+
 
 

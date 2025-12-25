@@ -46,13 +46,14 @@ export default function FeedbackTab({
   // Verify if current user is the assigned mentor
   const isAssignedMentor = React.useMemo(() => {
     if (!isMentor || !groupDetail || !userInfo?.email) return false;
-    const mentor = (Array.isArray(groupDetail?.mentors) && groupDetail.mentors.length > 0) 
-      ? groupDetail.mentors[0] 
-      : null;
-    if (!mentor) return false;
-    const mentorEmail = (mentor.email || mentor.userEmail || "").toLowerCase();
+    const mentors = Array.isArray(groupDetail?.mentors) ? groupDetail.mentors : [];
+    if (mentors.length === 0) return false;
     const currentUserEmail = userInfo.email.toLowerCase();
-    return mentorEmail === currentUserEmail;
+    // Kiểm tra xem user hiện tại có trong danh sách mentors không
+    return mentors.some((mentor) => {
+      const mentorEmail = (mentor.email || mentor.userEmail || "").toLowerCase();
+      return mentorEmail === currentUserEmail;
+    });
   }, [isMentor, groupDetail, userInfo]);
 
   const fetchFeedbackList = async (
@@ -133,7 +134,7 @@ export default function FeedbackTab({
   const handleSendFeedback = async (values) => {
     // Security check: Only assigned mentor can send feedback
     if (!isAssignedMentor) {
-      notification.warning({
+      notification.info({
         message: t("unauthorized") || "Unauthorized",
         description: t("onlyAssignedMentorCanSendFeedback") || "Only assigned mentor can send feedback",
       });
@@ -157,7 +158,7 @@ export default function FeedbackTab({
         t("sendFeedbackFailed") || 
         "Failed to send feedback";
       
-      notification.warning({
+      notification.info({
         message: t("error") || "Error",
         description: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage),
       });
@@ -183,7 +184,7 @@ export default function FeedbackTab({
         t("updateStatusFailed") || 
         "Failed to update status";
       
-      notification.warning({
+      notification.info({
         message: t("error") || "Error",
         description: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage),
       });
@@ -201,7 +202,7 @@ export default function FeedbackTab({
     
     // Security check: Only assigned mentor can edit feedback
     if (!isAssignedMentor) {
-      notification.warning({
+      notification.info({
         message: t("unauthorized") || "Unauthorized",
         description: t("onlyAssignedMentorCanEditFeedback") || "Only assigned mentor can edit feedback",
       });
@@ -223,7 +224,7 @@ export default function FeedbackTab({
       
       // Handle 409 error specifically
       if (error?.response?.status === 409) {
-        notification.warning({
+        notification.info({
           message: t("error") || "Error",
           description: t("feedbackAlreadyResolved") || "Feedback already resolved",
         });
@@ -235,7 +236,7 @@ export default function FeedbackTab({
           t("updateFeedbackFailed") || 
           "Failed to update feedback";
         
-        notification.warning({
+        notification.info({
           message: t("error") || "Error",
           description: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage),
         });
@@ -256,7 +257,7 @@ export default function FeedbackTab({
       onOk: async () => {
         // Security check: Only assigned mentor can delete feedback
         if (!isAssignedMentor) {
-          notification.warning({
+          notification.info({
             message: t("unauthorized") || "Unauthorized",
             description: t("onlyAssignedMentorCanDeleteFeedback") || "Only assigned mentor can delete feedback",
           });
@@ -276,7 +277,7 @@ export default function FeedbackTab({
           
           // Handle 409 error specifically
           if (error?.response?.status === 409) {
-            notification.warning({
+            notification.info({
               message: t("error") || "Error",
               description: t("onlySubmittedFeedbackCanBeDeleted") || "Only submitted feedback can be deleted",
             });
@@ -288,7 +289,7 @@ export default function FeedbackTab({
               t("deleteFeedbackFailed") || 
               "Failed to delete feedback";
             
-            notification.warning({
+            notification.info({
               message: t("error") || "Error",
               description: typeof errorMessage === "string" ? errorMessage : JSON.stringify(errorMessage),
             });
@@ -498,4 +499,5 @@ export default function FeedbackTab({
     </div>
   );
 }
+
 

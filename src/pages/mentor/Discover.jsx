@@ -152,13 +152,20 @@ const Discover = () => {
       });
       setRequestModalOpen(false);
     } catch (error) {
-      notificationApi.warning({
-        message: t("inviteFailed") || "Failed to send mentor request",
-        description:
-          error?.response?.data?.message ||
-          t("pleaseTryAgainLater") ||
-          "Please try again later",
-      });
+      const errorDetail =
+        error?.response?.data?.message ||
+        (typeof error?.response?.data === "string"
+          ? error.response.data
+          : "");
+      if (errorDetail) {
+        notificationApi.info({ message: errorDetail });
+      } else {
+        notificationApi.info({
+          message: t("inviteFailed") || "Failed to send mentor request",
+          description:
+            t("pleaseTryAgainLater") || "Please try again later",
+        });
+      }
     } finally {
       setSendingRequest(false);
     }
@@ -244,14 +251,6 @@ const Discover = () => {
             />
           </div>
 
-          {/* Filter button */}
-          <button
-            type="button"
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition sm:w-auto"
-          >
-            <Filter className="w-4 h-4" />
-            <span>{t("filters")}</span>
-          </button>
         </div>
 
         <div className="flex items-center gap-4 mt-4 text-sm text-gray-600">
@@ -301,10 +300,12 @@ const Discover = () => {
               </div>
 
               {/* Description */}
-              <p className="text-sm text-gray-600">{group.description}</p>
+              <p className="text-sm text-gray-600 line-clamp-1 overflow-hidden text-ellipsis mb-0">
+                {group.description}
+              </p>
 
               {/* Info */}
-              <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+              <div className="flex items-center justify-between text-xs text-gray-500">
                 <div className="flex items-center gap-1">
                   <Users className="w-3.5 h-3.5" />
                   <span>
@@ -340,7 +341,7 @@ const Discover = () => {
                 </p>
               </div>
 
-              <div className="mt-3 flex flex-col xl:flex-row gap-2 md:gap-2.5">
+              <div className="mt-auto pt-3 flex flex-col xl:flex-row gap-2 md:gap-2.5">
                 {/** View details button */}
                 <button
                   type="button"

@@ -177,7 +177,7 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
   const handleGenerateWithAI = async () => {
     const gid = defaultGroupId || form.getFieldValue("groupId");
     if (!gid) {
-      notification.warning({
+      notification.info({
         message: t("groupNotFound") || "Group not found",
       });
       return;
@@ -509,3 +509,4 @@ const CreatePostModal = ({ isOpen, closeModal, onCreated, defaultGroupId }) => {
 };
 
 export default CreatePostModal;
+

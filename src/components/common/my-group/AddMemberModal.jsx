@@ -58,13 +58,13 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
 
   const handleAddClick = async () => {
     if (!selected) {
-      notification.warning({
+      notification.info({
         message: t("pleaseSelectUser") || "Please select a user first",
       });
       return;
     }
     if (!groupId) {
-      notification.warning({
+      notification.info({
         message: t("missingGroupId") || "Missing group id",
       });
       return;
@@ -89,7 +89,7 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
         t("inviteFailed") ||
         "Failed to send invitation";
 
-      notification.warning({
+      notification.info({
         message:
           typeof errorMessage === "string"
             ? errorMessage
@@ -185,3 +185,4 @@ export default function AddMemberModal({ open, onClose, onAdd, t }) {
     </div>
   );
 }
+
