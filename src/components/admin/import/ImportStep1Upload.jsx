@@ -23,6 +23,7 @@ export default function ImportStep1Upload({
       gender: row.Gender || "",
       studentCode: row.StudentCode || "",
       gpa: row.GPA || "",
+      semesterCode: row.SemesterCode || "",
     }));
 
   const handleFile = async (file) => {
@@ -103,6 +104,7 @@ export default function ImportStep1Upload({
           Gender: "female",
           StudentCode: "SE150001",
           GPA: "3.2",
+          SemesterCode: "FALL2025",
         },
       ];
       const ws = XLSX.utils.json_to_sheet(template);

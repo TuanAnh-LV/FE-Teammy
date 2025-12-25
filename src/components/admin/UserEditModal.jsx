@@ -11,6 +11,7 @@ import {
 } from "antd";
 import { AdminService } from "../../services/admin.service";
 import { MajorService } from "../../services/major.service";
+import { SemesterService } from "../../services/semester.service";
 import { useTranslation } from "../../hook/useTranslation";
 
 const { Option } = Select;
@@ -19,6 +20,8 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
   const [form] = Form.useForm();
   const [majors, setMajors] = useState([]);
   const [majorsLoading, setMajorsLoading] = useState(false);
+  const [semesters, setSemesters] = useState([]);
+  const [semestersLoading, setSemestersLoading] = useState(false);
   const { t } = useTranslation();
   const [submitting, setSubmitting] = useState(false);
 
@@ -32,6 +35,9 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
 
       const gpa = user?.raw?.gpa ?? user?.gpa;
       if (gpa != null) initial.gpa = gpa;
+
+      const semesterId = user?.raw?.semesterId ?? user?.semesterId;
+      if (semesterId != null) initial.semesterId = semesterId;
 
       if (user?.raw?.isActive !== undefined) {
         initial.isActive = user.raw.isActive;
@@ -84,6 +90,28 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
       mounted = false;
     };
   }, [open, user, form]);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchSemesters = async () => {
+      setSemestersLoading(true);
+      try {
+        const res = await SemesterService.list();
+        const payload = res?.data ?? res;
+        const list = Array.isArray(payload) ? payload : payload?.data ?? [];
+        if (mounted) setSemesters(list);
+      } catch {
+        // ignore errors
+      } finally {
+        if (mounted) setSemestersLoading(false);
+      }
+    };
+
+    if (open) fetchSemesters();
+    return () => {
+      mounted = false;
+    };
+  }, [open]);
 
   const handleSubmit = async () => {
     try {
@@ -381,6 +409,36 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
                           min="0"
                           max="10"
                         />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item
+                        label={t("semester") || "Semester"}
+                        name="semesterId"
+                        rules={[
+                          {
+                            required: true,
+                            message:
+                              t("pleaseSelectSemester") ||
+                              "Please select semester",
+                          },
+                        ]}
+                      >
+                        <Select
+                          placeholder={t("selectSemester") || "Select semester"}
+                          loading={semestersLoading}
+                        >
+                          {semesters.map((sem) => (
+                            <Option
+                              key={sem.semesterId ?? sem.id}
+                              value={sem.semesterId ?? sem.id}
+                            >
+                              {[sem.season, sem.year]
+                                .filter(Boolean)
+                                .join(" ")}
+                            </Option>
+                          ))}
+                        </Select>
                       </Form.Item>
                     </Col>
                   </Row>
