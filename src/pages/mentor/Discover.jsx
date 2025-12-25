@@ -301,10 +301,12 @@ const Discover = () => {
               </div>
 
               {/* Description */}
-              <p className="text-sm text-gray-600">{group.description}</p>
+              <p className="text-sm text-gray-600 line-clamp-1 overflow-hidden text-ellipsis mb-0">
+                {group.description}
+              </p>
 
               {/* Info */}
-              <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+              <div className="flex items-center justify-between text-xs text-gray-500">
                 <div className="flex items-center gap-1">
                   <Users className="w-3.5 h-3.5" />
                   <span>
@@ -340,7 +342,7 @@ const Discover = () => {
                 </p>
               </div>
 
-              <div className="mt-3 flex flex-col xl:flex-row gap-2 md:gap-2.5">
+              <div className="mt-auto pt-3 flex flex-col xl:flex-row gap-2 md:gap-2.5">
                 {/** View details button */}
                 <button
                   type="button"
