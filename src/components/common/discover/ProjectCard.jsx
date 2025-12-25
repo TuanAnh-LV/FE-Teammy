@@ -30,10 +30,17 @@ const ProjectCard = ({
 
   const myGroupId =
     membership?.groupId || myGroupDetails?.groupId || myGroupDetails?.id;
+  const mentorNames = (project.mentors || [])
+    .map((m) => m.mentorName)
+    .filter(Boolean);
+  const displayMentors = mentorNames.length
+    ? mentorNames
+    : project.mentor
+    ? [project.mentor]
+    : [];
   const rawTopicGroups = project.groups || project.detail?.groups || [];
   const topicGroups = rawTopicGroups.filter(
-    (g, idx, arr) =>
-      arr.findIndex((item) => item.groupId === g.groupId) === idx
+    (g, idx, arr) => arr.findIndex((item) => item.groupId === g.groupId) === idx
   );
   const myGroupInTopic = topicGroups.find((g) => g.groupId === myGroupId);
   const hasPendingInvitation = myGroupInTopic?.status === "pending_invitation";
@@ -106,11 +113,11 @@ const ProjectCard = ({
         )}
 
         <div className="flex flex-col gap-2">
-          {project.mentor && (
+          {displayMentors.length > 0 && (
             <div className="text-sm text-gray-600">
               {t("mentor")}:{" "}
               <span className="font-medium text-gray-800">
-                {project.mentor}
+                {displayMentors.join(", ")}
               </span>
             </div>
           )}
