@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   Form,
@@ -11,21 +11,35 @@ import {
 } from "antd";
 import { useTranslation } from "../../hook/useTranslation";
 import { AdminService } from "../../services/admin.service";
+import { SemesterService } from "../../services/semester.service";
 
 const { Option } = Select;
 
-export default function UserAddModal({ open, onClose, onAdd, majorList }) {
+export default function UserAddModal({
+  open,
+  onClose,
+  onAdd,
+  majorList,
+  existingUsers = [],
+}) {
   const [form] = Form.useForm();
   const { t } = useTranslation();
   const [submitting, setSubmitting] = useState(false);
+  const [semesters, setSemesters] = useState([]);
+  const [semestersLoading, setSemestersLoading] = useState(false);
 
   const handleRoleChange = (role) => {
     // Nếu không phải Student => xóa các field chỉ dành cho Student
     if (role !== "Student") {
-      form.setFieldsValue({ studentCode: undefined, gpa: undefined });
+      form.setFieldsValue({
+        studentCode: undefined,
+        gpa: undefined,
+        semesterId: undefined,
+      });
       form.setFields([
         { name: "studentCode", errors: [] },
         { name: "gpa", errors: [] },
+        { name: "semesterId", errors: [] },
       ]);
     }
 
@@ -36,6 +50,35 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
     }
   };
 
+  useEffect(() => {
+    let mounted = true;
+    const fetchSemesters = async () => {
+      setSemestersLoading(true);
+      try {
+        const res = await SemesterService.list();
+        const payload = res?.data ?? res;
+        const list = Array.isArray(payload) ? payload : payload?.data ?? [];
+        if (mounted) {
+          setSemesters(list);
+          const current = form.getFieldValue("semesterId");
+          const active = list.find((s) => s.isActive);
+          if (!current && active?.semesterId) {
+            form.setFieldsValue({ semesterId: active.semesterId });
+          }
+        }
+      } catch {
+        // ignore errors
+      } finally {
+        if (mounted) setSemestersLoading(false);
+      }
+    };
+
+    if (open) fetchSemesters();
+    return () => {
+      mounted = false;
+    };
+  }, [open, form]);
+
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
@@ -45,6 +88,48 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
       const needMajor = ["Student", "Mentor", "Moderator"].includes(
         values.role
       );
+      const normalizedEmail = String(values.email || "")
+        .trim()
+        .toLowerCase();
+      const normalizedStudentCode = String(values.studentCode || "")
+        .trim()
+        .toLowerCase();
+      const duplicateEmail = existingUsers.find(
+        (u) =>
+          String(u.email || "")
+            .trim()
+            .toLowerCase() === normalizedEmail
+      );
+      const duplicateStudentCode =
+        isStudent &&
+        normalizedStudentCode &&
+        existingUsers.find(
+          (u) =>
+            String(u.studentCode || "")
+              .trim()
+              .toLowerCase() === normalizedStudentCode
+        );
+
+      if (duplicateEmail || duplicateStudentCode) {
+        const errors = [];
+        if (duplicateEmail) {
+          errors.push({
+            name: "email",
+            errors: [t("emailAlreadyExists") || "Email already exists."],
+          });
+        }
+        if (duplicateStudentCode) {
+          errors.push({
+            name: "studentCode",
+            errors: [
+              t("studentCodeAlreadyExists") || "StudentCode already exists.",
+            ],
+          });
+        }
+        form.setFields(errors);
+        setSubmitting(false);
+        return;
+      }
 
       const payload = {
         email: values.email,
@@ -61,6 +146,9 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
 
         // Student/Mentor/Moderator có major
         majorId: needMajor ? values.majorId || null : null,
+
+        // Student có semesterId
+        semesterId: isStudent ? values.semesterId || null : null,
       };
 
       const res = await AdminService.createUser(payload);
@@ -83,6 +171,7 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
         major: majorName,
         studentCode: created.studentCode || payload.studentCode || null,
         gpa: created.gpa ?? payload.gpa ?? null,
+        semesterId: created.semesterId ?? payload.semesterId ?? null,
         avatarUrl: created.avatarUrl || null,
         displayName: created.displayName || payload.displayName,
         majorId: created.majorId || payload.majorId || null,
@@ -176,7 +265,11 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
       <Form
         layout="vertical"
         form={form}
-        style={{ background: "white", borderRadius: 12, padding: "22px 20px" }}
+        style={{
+          background: "white",
+          borderRadius: 12,
+          padding: "22px 20px",
+        }}
       >
         {/* Row 1 */}
         <Row gutter={16}>
@@ -260,38 +353,77 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
           </Col>
         </Row>
 
-        {/* Major: hiện cho Student/Mentor/Moderator */}
+        {/* Major + Semester (Student/Mentor/Moderator) */}
         <Form.Item noStyle shouldUpdate={(prev, cur) => prev.role !== cur.role}>
           {({ getFieldValue }) => {
             const role = getFieldValue("role");
             const showMajor = ["Student", "Mentor", "Moderator"].includes(role);
+            const isStudent = role === "Student";
+
             if (!showMajor) return null;
 
             return (
-              <Row gutter={16}>
-                <Col xs={24} md={12}>
-                  <Form.Item
-                    label={t("major") || "Major"}
-                    name="majorId"
-                    rules={[
-                      {
-                        required: true,
-                        message: t("selectMajor") || "Select a major",
-                      },
-                    ]}
-                  >
-                    <Select
-                      placeholder={t("enterMajorPlaceholder") || "Select major"}
+              <>
+                <Row gutter={16}>
+                  <Col xs={24} md={12}>
+                    <Form.Item
+                      label={t("major") || "Major"}
+                      name="majorId"
+                      rules={[
+                        {
+                          required: true,
+                          message: t("selectMajor") || "Select a major",
+                        },
+                      ]}
                     >
-                      {majorList?.map((m) => (
-                        <Option key={m.majorId} value={m.majorId}>
-                          {m.majorName}
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
+                      <Select
+                        placeholder={t("enterMajorPlaceholder") || "Select major"}
+                      >
+                        {majorList?.map((m) => (
+                          <Option key={m.majorId} value={m.majorId}>
+                            {m.majorName}
+                          </Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                  </Col>
+
+                  {isStudent && (
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        label={t("semester") || "Semester"}
+                        name="semesterId"
+                        rules={[
+                          {
+                            required: true,
+                            message:
+                              t("pleaseSelectSemester") ||
+                              "Please select semester",
+                          },
+                        ]}
+                      >
+                        <Select
+                          placeholder={
+                            t("selectSemester") || "Select semester"
+                          }
+                          loading={semestersLoading}
+                        >
+                          {semesters.map((sem) => (
+                            <Option
+                              key={sem.semesterId ?? sem.id}
+                              value={sem.semesterId ?? sem.id}
+                            >
+                              {[sem.season, sem.year]
+                                .filter(Boolean)
+                                .join(" ")}
+                            </Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                  )}
+                </Row>
+              </>
             );
           }}
         </Form.Item>
@@ -303,61 +435,59 @@ export default function UserAddModal({ open, onClose, onAdd, majorList }) {
             if (!isStudent) return null;
 
             return (
-              <>
-                <Row gutter={16}>
-                  <Col xs={24} md={12}>
-                    <Form.Item
-                      label={t("studentCode") || "Student Code"}
-                      name="studentCode"
-                      rules={[
-                        {
-                          required: true,
-                          message:
-                            t("pleaseEnterStudentCode") ||
-                            "Please enter student code",
-                        },
-                      ]}
-                    >
-                      <Input
-                        placeholder={
-                          t("enterStudentCodePlaceholder") ||
-                          "Enter student code"
-                        }
-                      />
-                    </Form.Item>
-                  </Col>
+              <Row gutter={16}>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label={t("studentCode") || "Student Code"}
+                    name="studentCode"
+                    rules={[
+                      {
+                        required: true,
+                        message:
+                          t("pleaseEnterStudentCode") ||
+                          "Please enter student code",
+                      },
+                    ]}
+                  >
+                    <Input
+                      placeholder={
+                        t("enterStudentCodePlaceholder") ||
+                        "Enter student code"
+                      }
+                    />
+                  </Form.Item>
+                </Col>
 
-                  <Col xs={24} md={12}>
-                    <Form.Item
-                      label={t("gpa") || "GPA"}
-                      name="gpa"
-                      rules={[
-                        {
-                          required: true,
-                          message: t("pleaseEnterGPA") || "Please enter GPA",
-                        },
-                        {
-                          type: "number",
-                          min: 0,
-                          max: 10,
-                          message:
-                            t("gpaInvalid") || "GPA must be between 0 and 10",
-                        },
-                      ]}
-                    >
-                      <InputNumber
-                        style={{ width: "100%" }}
-                        placeholder={
-                          t("enterGPAPlaceholder") || "Enter GPA (0 - 10)"
-                        }
-                        min={0}
-                        max={10}
-                        step={0.01}
-                      />
-                    </Form.Item>
-                  </Col>
-                </Row>
-              </>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label={t("gpa") || "GPA"}
+                    name="gpa"
+                    rules={[
+                      {
+                        required: true,
+                        message: t("pleaseEnterGPA") || "Please enter GPA",
+                      },
+                      {
+                        type: "number",
+                        min: 0,
+                        max: 10,
+                        message:
+                          t("gpaInvalid") || "GPA must be between 0 and 10",
+                      },
+                    ]}
+                  >
+                    <InputNumber
+                      style={{ width: "100%" }}
+                      placeholder={
+                        t("enterGPAPlaceholder") || "Enter GPA (0 - 10)"
+                      }
+                      min={0}
+                      max={10}
+                      step={0.01}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
             );
           }}
         </Form.Item>

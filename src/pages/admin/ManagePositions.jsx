@@ -166,7 +166,7 @@ const ManagePositions = () => {
         const res = await AdminService.updatePosition(
           editingPosition.positionId,
           {
-            name: values.name,
+            positionName: values.name,
             majorId: values.majorId,
           }
         );
@@ -194,7 +194,7 @@ const ManagePositions = () => {
         );
       } else {
         const res = await AdminService.createPosition({
-          name: values.name,
+          positionName: values.name,
           majorId: values.majorId,
         });
         const payload = res?.data ?? res;
@@ -217,9 +217,25 @@ const ManagePositions = () => {
       setIsModalOpen(false);
     } catch (error) {
       if (!error?.errorFields) {
-        notification.error({
-          message: t("saveFailed") || "Failed to save position",
-        });
+        const responseData = error?.response?.data;
+        const apiMessage =
+          (typeof responseData === "string" ? responseData : null) ||
+          responseData?.message ||
+          responseData?.error ||
+          error?.message ||
+          "";
+        if (apiMessage) {
+          form.setFields([
+            {
+              name: "name",
+              errors: [apiMessage],
+            },
+          ]);
+        } else {
+          notification.error({
+            message: t("saveFailed") || "Failed to save position",
+          });
+        }
       }
     } finally {
       setSaving(false);
@@ -270,20 +286,119 @@ const ManagePositions = () => {
     }
   };
 
+  const getPositionId = (position, fallback) =>
+    position?.positionId ?? position?.id ?? fallback;
+
+  const getImportMessage = (payload) => {
+    if (!payload || typeof payload !== "object") return "";
+
+    if (typeof payload.message === "string" && payload.message.trim()) {
+      return payload.message.trim();
+    }
+
+    const skippedReasons = Array.isArray(payload.skippedReasons)
+      ? payload.skippedReasons
+      : [];
+    if (!skippedReasons.length) return "";
+
+    return skippedReasons
+      .map((item) => item?.message ?? item?.reason ?? "")
+      .filter((text) => typeof text === "string" && text.trim())
+      .join("\n");
+  };
+
+  const showImportResultModal = (payload) => {
+    const skippedReasons = Array.isArray(payload?.skippedReasons)
+      ? payload.skippedReasons
+      : [];
+    if (!skippedReasons.length) return false;
+
+    const total = Number(payload?.total) || 0;
+    const created = Number(payload?.created) || 0;
+    const updated = Number(payload?.updated) || 0;
+    const skipped = Number(payload?.skipped) || 0;
+    const errorsCount = Array.isArray(payload?.errors)
+      ? payload.errors.length
+      : Number(payload?.errors) || 0;
+
+    Modal.info({
+      title: t("importResult") || "Import result",
+      centered: true,
+      content: (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+            <div>{`Total: ${total}`}</div>
+            <div>{`Created: ${created}`}</div>
+            <div>{`Updated: ${updated}`}</div>
+            <div>{`Skipped: ${skipped}`}</div>
+            <div>{`Errors: ${errorsCount}`}</div>
+          </div>
+          <div className="border-t border-gray-200 pt-2 text-sm font-semibold text-gray-700">
+            {t("skippedReasons") || "Skipped reasons"}
+          </div>
+          <div className="max-h-64 overflow-y-auto pr-2">
+            {skippedReasons.map((item, index) => {
+              const row = item?.row ?? "-";
+              const message = item?.message ?? item?.reason ?? "";
+              const text = message ? `Row ${row}: ${message}` : `Row ${row}`;
+              return (
+                <div key={`${row}-${index}`} className="text-gray-700">
+                  {text}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ),
+    });
+    return true;
+  };
+
   const uploadProps = {
     showUploadList: false,
     customRequest: async ({ file, onSuccess, onError }) => {
       setImporting(true);
       try {
-        await AdminService.importPositions(file);
+        const res = await AdminService.importPositions(file);
+        const payload = res?.data ?? res;
+        const importMessage = getImportMessage(payload);
+        const hasModal = showImportResultModal(payload);
+        const prevIds = new Set(
+          (positionList || []).map((p, idx) =>
+            String(getPositionId(p, idx))
+          )
+        );
         notification.success({
-          message: t("importSuccess") || "Imported successfully",
+          message:
+            hasModal || !importMessage
+              ? t("importSuccess") || "Imported successfully"
+              : importMessage,
         });
         await fetchPositions(filters.majorId);
+        setPositionList((current) => {
+          if (!Array.isArray(current) || !prevIds.size) return current;
+          const added = [];
+          const existing = [];
+          current.forEach((p, idx) => {
+            const id = String(getPositionId(p, idx));
+            if (prevIds.has(id)) {
+              existing.push(p);
+            } else {
+              added.push(p);
+            }
+          });
+          return added.length ? [...added, ...existing] : current;
+        });
         onSuccess?.(null, file);
       } catch (error) {
+        const payload = error?.response?.data ?? error?.data ?? error;
+        const importMessage = getImportMessage(payload);
+        const hasModal = showImportResultModal(payload);
         notification.error({
-          message: t("importFailed") || "Failed to import positions",
+          message:
+            hasModal || !importMessage
+              ? t("importFailed") || "Failed to import positions"
+              : importMessage,
         });
         onError?.(error);
       } finally {

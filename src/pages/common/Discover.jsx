@@ -725,13 +725,11 @@ const Discover = () => {
               } else {
                 errorTitle = t("cannotSelectTopic") || "Không thể chọn topic";
                 errorDesc =
-                  errorMessage ||
-                  t("topicConflict") ||
-                  "Nhóm không thể chọn topic này. Vui lòng kiểm tra lại trạng thái nhóm.";
+                  errorMessage || t("pleaseTryAgain") || "Vui lòng thử lại.";
               }
             }
 
-            notification.error({
+            notification.info({
               message: errorTitle,
               description: errorDesc,
             });

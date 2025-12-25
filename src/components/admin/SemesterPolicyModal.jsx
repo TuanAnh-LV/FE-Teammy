@@ -97,11 +97,6 @@ const SemesterPolicyModal = ({
               {
                 validator: (_, value) => {
                   if (!value) return Promise.resolve();
-                  if (semester?.year && value.year() !== semester.year) {
-                    return Promise.reject(
-                      new Error("TeamSelfSelectStart must be semester year.")
-                    );
-                  }
                   if (
                     semester?.startDate &&
                     value.isAfter(dayjs(semester.startDate), "day")
@@ -123,9 +118,6 @@ const SemesterPolicyModal = ({
               format="YYYY-MM-DD"
               disabledDate={(current) => {
                 if (!current) return false;
-                if (semester?.year && current.year() !== semester.year) {
-                  return true;
-                }
                 if (semester?.startDate) {
                   return current.isAfter(dayjs(semester.startDate), "day");
                 }
@@ -142,11 +134,6 @@ const SemesterPolicyModal = ({
               {
                 validator: (_, value) => {
                   if (!value) return Promise.resolve();
-                  if (semester?.year && value.year() !== semester.year) {
-                    return Promise.reject(
-                      new Error("TeamSelfSelectEnd must be semester year.")
-                    );
-                  }
                   const startDate = form.getFieldValue("teamSelfSelectStart");
                   if (startDate && value.isBefore(startDate, "day")) {
                     return Promise.reject(
@@ -177,9 +164,6 @@ const SemesterPolicyModal = ({
               format="YYYY-MM-DD"
               disabledDate={(current) => {
                 if (!current) return false;
-                if (semester?.year && current.year() !== semester.year) {
-                  return true;
-                }
                 if (semester?.startDate) {
                   return current.isAfter(dayjs(semester.startDate), "day");
                 }
@@ -197,11 +181,6 @@ const SemesterPolicyModal = ({
             {
               validator: (_, value) => {
                 if (!value) return Promise.resolve();
-                if (semester?.year && value.year() !== semester.year) {
-                  return Promise.reject(
-                    new Error("TeamSuggestStart must be semester year.")
-                  );
-                }
                 if (
                   semester?.startDate &&
                   value.isAfter(dayjs(semester.startDate), "day")
@@ -223,9 +202,6 @@ const SemesterPolicyModal = ({
             format="YYYY-MM-DD"
             disabledDate={(current) => {
               if (!current) return false;
-              if (semester?.year && current.year() !== semester.year) {
-                return true;
-              }
               if (semester?.startDate) {
                 return current.isAfter(dayjs(semester.startDate), "day");
               }
@@ -243,11 +219,6 @@ const SemesterPolicyModal = ({
               {
                 validator: (_, value) => {
                   if (!value) return Promise.resolve();
-                  if (semester?.year && value.year() !== semester.year) {
-                    return Promise.reject(
-                      new Error("TopicSelfSelectStart must be semester year.")
-                    );
-                  }
                   if (
                     semester?.startDate &&
                     value.isAfter(dayjs(semester.startDate), "day")
@@ -269,9 +240,6 @@ const SemesterPolicyModal = ({
               format="YYYY-MM-DD"
               disabledDate={(current) => {
                 if (!current) return false;
-                if (semester?.year && current.year() !== semester.year) {
-                  return true;
-                }
                 if (semester?.startDate) {
                   return current.isAfter(dayjs(semester.startDate), "day");
                 }
@@ -288,11 +256,6 @@ const SemesterPolicyModal = ({
               {
                 validator: (_, value) => {
                   if (!value) return Promise.resolve();
-                  if (semester?.year && value.year() !== semester.year) {
-                    return Promise.reject(
-                      new Error("TopicSelfSelectEnd must be semester year.")
-                    );
-                  }
                   const startDate = form.getFieldValue("topicSelfSelectStart");
                   if (startDate && value.isBefore(startDate, "day")) {
                     return Promise.reject(
@@ -323,9 +286,6 @@ const SemesterPolicyModal = ({
               format="YYYY-MM-DD"
               disabledDate={(current) => {
                 if (!current) return false;
-                if (semester?.year && current.year() !== semester.year) {
-                  return true;
-                }
                 if (semester?.startDate) {
                   return current.isAfter(dayjs(semester.startDate), "day");
                 }
@@ -343,11 +303,6 @@ const SemesterPolicyModal = ({
             {
               validator: (_, value) => {
                 if (!value) return Promise.resolve();
-                if (semester?.year && value.year() !== semester.year) {
-                  return Promise.reject(
-                    new Error("TopicSuggestStart must be semester year.")
-                  );
-                }
                 if (
                   semester?.startDate &&
                   value.isAfter(dayjs(semester.startDate), "day")
@@ -369,9 +324,6 @@ const SemesterPolicyModal = ({
             format="YYYY-MM-DD"
             disabledDate={(current) => {
               if (!current) return false;
-              if (semester?.year && current.year() !== semester.year) {
-                return true;
-              }
               if (semester?.startDate) {
                 return current.isAfter(dayjs(semester.startDate), "day");
               }

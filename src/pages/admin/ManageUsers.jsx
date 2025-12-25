@@ -420,6 +420,7 @@ const ManageUsers = () => {
         onClose={() => setIsAddOpen(false)}
         onAdd={handleAddUser}
         majorList={majorList}
+        existingUsers={userList}
         destroyOnClose
       />
     </div>
