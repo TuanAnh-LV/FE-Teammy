@@ -37,7 +37,14 @@ const Invitations = () => {
     try {
       setAcceptingInvitationId(invitationId);
       await InvitationService.accept(invitationId);
-      setInvitations((prev) => prev.filter((x) => x.id !== invitation.id));
+      // Update status instead of removing from list
+      setInvitations((prev) =>
+        prev.map((inv) =>
+          inv.id === invitation.id || inv.invitationId === invitationId
+            ? { ...inv, status: "accepted" }
+            : inv
+        )
+      );
       notificationApi.success({
         message: t("accepted") || "Accepted",
       });
@@ -58,7 +65,14 @@ const Invitations = () => {
     try {
       setRejectingInvitationId(invitationId);
       await InvitationService.decline(invitationId);
-      setInvitations((prev) => prev.filter((x) => x.id !== invitation.id));
+      // Update status instead of removing from list
+      setInvitations((prev) =>
+        prev.map((inv) =>
+          inv.id === invitation.id || inv.invitationId === invitationId
+            ? { ...inv, status: "rejected" }
+            : inv
+        )
+      );
       notificationApi.info({
         message: t("invitationRejected") || "Invitation rejected",
       });

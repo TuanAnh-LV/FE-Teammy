@@ -108,7 +108,8 @@ const MessagesPage = () => {
 
   const mergedConversations = (() => {
     const map = new Map();
-    const includeGroups = !(isMentor && isMentorRoute);
+    // Always include groups - mentors should see groups they mentor
+    const includeGroups = true;
 
     const normalize = (c) => {
       const rawType = c?.type || c?.sessionType || "";
