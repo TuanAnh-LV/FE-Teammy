@@ -39,11 +39,16 @@ export default function ImportStep3Preview({
         }
       });
 
-      if (Array.isArray(row.messages) && row.messages.length) {
+      const hasMessages = Array.isArray(row.messages) && row.messages.length;
+      if (hasMessages) {
         issues.push(...row.messages);
       }
 
-      if (issues.length > 0 && row.isValid) status = "Warning";
+      if (hasMessages) {
+        status = "Error";
+      } else if (issues.length > 0 && row.isValid) {
+        status = "Warning";
+      }
 
       return {
         key: i,
@@ -55,6 +60,7 @@ export default function ImportStep3Preview({
         gender: u.gender || "-",
         studentCode: u.studentCode || "-",
         gpa: u.gpa || "-",
+        semesterCode: u.semesterCode || "-",
         status,
         issues,
       };
@@ -124,6 +130,7 @@ export default function ImportStep3Preview({
       { title: t("gender") || "Gender", dataIndex: "gender" },
       { title: t("studentCode") || "Student Code", dataIndex: "studentCode" },
       { title: t("gpa") || "GPA", dataIndex: "gpa" },
+      { title: t("semesterCode") || "Semester Code", dataIndex: "semesterCode" },
       {
         title: t("status") || "Status",
         dataIndex: "status",

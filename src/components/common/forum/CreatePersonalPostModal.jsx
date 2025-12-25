@@ -4,7 +4,7 @@ import { Modal, Input, Button, Form, notification } from "antd";
 import { PostService } from "../../../services/post.service";
 import { AuthService } from "../../../services/auth.service";
 import { AiService } from "../../../services/ai.service";
-
+import { Sparkles } from "lucide-react";
 const { TextArea } = Input;
 
 const CreatePersonalPostModal = ({
@@ -142,7 +142,7 @@ const CreatePersonalPostModal = ({
             disabled={isGeneratingAI || isSubmitting}
             className="!border-orange-400 !text-orange-500"
           >
-            {t("generateWithAI") || "Generate with AI"}
+            <Sparkles className="w-4 h-4 text-[#FF7A00] animate-pulse" />
           </Button>
         </div>
       }

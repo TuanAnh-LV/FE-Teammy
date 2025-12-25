@@ -40,7 +40,6 @@ const ManageSemesters = () => {
   const [policyForm] = Form.useForm();
   const [filters, setFilters] = useState({
     search: "",
-    status: "All Status",
     season: "All Seasons",
   });
   const [detailLoading, setDetailLoading] = useState(false);
@@ -296,22 +295,6 @@ const ManageSemesters = () => {
       ),
     },
     {
-      title: t("status") || "Status",
-      dataIndex: "isActive",
-      key: "isActive",
-      render: (isActive) => {
-        const label = isActive
-          ? t("active") || "Active"
-          : t("inactive") || "Inactive";
-        const color = isActive ? "green" : "red";
-        return (
-          <Tag color={color} className="px-3 py-0.5 rounded-full text-xs">
-            {label}
-          </Tag>
-        );
-      },
-    },
-    {
       title: t("actions") || "Actions",
       key: "actions",
       render: (_, record) => (
@@ -343,10 +326,6 @@ const ManageSemesters = () => {
   ];
 
   const filteredSemesters = semesters.filter((semester) => {
-    const statusMatch =
-      filters.status === "All Status" ||
-      (filters.status === "Active" && semester.isActive) ||
-      (filters.status === "Inactive" && !semester.isActive);
     const seasonMatch =
       filters.season === "All Seasons" || semester.season === filters.season;
     const searchText = filters.search.toLowerCase();
@@ -354,7 +333,7 @@ const ManageSemesters = () => {
       semester.season?.toLowerCase().includes(searchText) ||
       semester.year?.toString().includes(searchText);
 
-    return statusMatch && seasonMatch && searchMatch;
+    return seasonMatch && searchMatch;
   });
 
   const disableStartDate = (current) => {
@@ -409,17 +388,6 @@ const ManageSemesters = () => {
                 setFilters({ ...filters, search: e.target.value })
               }
             />
-            <Select
-              value={filters.status}
-              onChange={(v) => setFilters({ ...filters, status: v })}
-              className="w-full"
-            >
-              <Option value="All Status">
-                {t("allStatus") || "All Status"}
-              </Option>
-              <Option value="Active">{t("active") || "Active"}</Option>
-              <Option value="Inactive">{t("inactive") || "Inactive"}</Option>
-            </Select>
             <Select
               value={filters.season}
               onChange={(v) => setFilters({ ...filters, season: v })}
