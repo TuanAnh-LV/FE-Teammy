@@ -76,6 +76,24 @@ export const getRoleMenus = (role, language = "EN") => {
         icon: <TeamOutlined />,
       },
       {
+        key: "majors",
+        label: getTranslation("managementMajors", language),
+        path: "/admin/majors",
+        icon: <TagsOutlined />,
+      },
+      {
+        key: "positions",
+        label: getTranslation("managementPositions", language),
+        path: "/admin/positions",
+        icon: <SettingOutlined />,
+      },
+      {
+        key: "skills",
+        label: getTranslation("managementSkills", language),
+        path: "/admin/skills",
+        icon: <BulbOutlined />,
+      },
+      {
         key: "semesters",
         label: getTranslation("semesterManagement", language),
         path: "/admin/semesters",

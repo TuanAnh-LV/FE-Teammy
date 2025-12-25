@@ -15,7 +15,7 @@ const FilterSidebar = ({ onFilterChange }) => {
         const payload = res?.data ?? res;
         const list = Array.isArray(payload) ? payload : payload?.data ?? [];
         setMajors(list || []);
-      } catch (err) {
+      } catch {
         notification.error({
           message: t("failedLoadMajors") || "Failed to load majors",
           description:
@@ -24,6 +24,8 @@ const FilterSidebar = ({ onFilterChange }) => {
       }
     };
     fetchMajors();
+    // t is unstable and can trigger refetch loops; keep effect stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

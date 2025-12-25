@@ -1,4 +1,4 @@
-﻿export const translations = {
+export const translations = {
   EN: {
     // Navbar
     findProjects: "Find Projects",
@@ -576,7 +576,7 @@
     userUpdatedSuccess: "User updated successfully",
     userUpdateFailed: "Failed to update user",
     due: "Due",
-    applying: "Applyingâ€¦",
+    applying: "Applying…",
     currentTopic: "Current topic",
     noTopicAssigned: "No topic assigned yet",
     searchTopicPlaceholder: "Search by keyword or lecturer",
@@ -1034,6 +1034,8 @@
     aiAssistant: "AI Assistant",
     auditLogs: "Audit Logs",
     managementUsers: "Management Users",
+    managementMajors: "Management Majors",
+    managementPositions: "Management Positions",
     report: "Report",
     semesterManagement: "Semester Management",
     createSemester: "Create Semester",
@@ -1154,6 +1156,21 @@
     uploadFile: "Upload File",
     uploadYourFile: "Upload your file",
     downloadTemplate: "Download Template",
+    downloadFailed: "Failed to download template",
+    importPositions: "Import Positions",
+    importMajors: "Import Majors",
+    addMajor: "Add Major",
+    addPosition: "Add Position",
+    editMajor: "Edit Major",
+    editPosition: "Edit Position",
+    searchMajors: "Search majors...",
+    searchPositions: "Search positions...",
+    enterMajor: "Enter major name",
+    enterPosition: "Enter position name",
+    saveFailed: "Failed to save major",
+    failedLoadPositions: "Failed to load positions",
+    deleted: "Deleted successfully",
+    confirmDeleteContent: "This action cannot be undone. Do you want to continue?",
     dragDropOrClick:
       "Drag and drop your CSV or Excel file here or click to browse",
     rowsFound: "{count} rows found",
@@ -1401,9 +1418,47 @@
     expiresAt: "Expires At",
     more: "more",
     match: "Match",
-    ai:"AI"
+    ai:"AI",
+    clickToUpload: "Click to upload",
+    topicTitleExists: "Topic title already exists in this semester",
+    groupsMissingMember: "Groups Missing Member",
+    pleaseImportFile: "Please import file",
+    groupsSelectingTopic: "Groups are selecting this topic",
+    positionName: "Position Name",
+    managementSkills: "Management Skills",
+    skillToken: "Token",
+    aliases: "Aliases",
+    importSkills: "Import Skills",
+    searchSkills:"Search skills...",
+    failedLoadSkills: "Failed to load skills",
+    saveFailedSkill: "Failed to save skill",
+    editSkill: "Edit Skill",
+    addNewSkill: "Add Skill",
+    enterSkillToken: "Enter skill token",
+    enterRole: "Enter role",
+    enterAliases: "Enter aliases",
+    tokenExists: "Token already exists",
   },
   VIE: {
+    tokenExists: "Bí kíp đã tồn tại",
+    enterAliases: "Nhập bí danh",
+    enterRole: "Nhập vai trò",
+    enterSkillToken: "Nhập kĩ năng",
+    editSkill: "Chỉnh sửa Kĩ Năng",
+    addNewSkill: "Thêm Kĩ Năng Mới",
+    saveFailedSkill: "Lưu kĩ năng thất bại",
+    failedLoadSkills: "Tải kĩ năng thất bại",
+    searchSkills:"Tìm kĩ năng...",
+    importSkills: "Nhập Kĩ Năng",
+    aliases: "Bí Danh",
+    skillToken: "Kĩ Năng",
+    managementSkills: "Quản lý kĩ năng",
+    positionName: "Tên Vị Trí",
+    groupsSelectingTopic: "Nhóm Đang chọn chủ đề này",
+    pleaseImportFile: "Vui lòng nhập tập",
+    groupsMissingMember: "Nhóm Thiếu Thành Viên",
+    topicTitleExists: "Tiêu đề chủ đề đã tồn tại trong học kỳ này",
+    clickToUpload: "Nhập để tải lên",
     ai:"AI",
     match: "Phù Hợp",
     more: "thêm",
@@ -1845,7 +1900,6 @@
     failedToConfirmClose: "Xác nhận đóng nhóm thất bại",
     failedToRejectClose: "Từ chối đóng nhóm thất bại",
     processing: "Đang xử lý...",
-
     // Tasks
     task: "Nhiệm vụ",
     createTask: "Tạo nhiệm vụ",
@@ -1922,7 +1976,6 @@
     pendingApplications: "Đơn chờ duyệt",
     mostRecentGroup: "Nhóm tạo gần nhất",
     updating: "Đang cập nhật",
-
     // MyGroup Page
     addMember: "Thêm Thành Viên",
     openWorkspace: "Mở Khung Làm Việc",
@@ -2087,7 +2140,6 @@
     hoursAgo: "giờ trước",
     dayAgo: "ngày trước",
     daysAgo: "ngày trước",
-
     // Workspace
     todo: "Cần Làm",
     done: "Hoàn Thành",
@@ -2115,7 +2167,6 @@
     noConversations: "Chưa có cuộc hội thoại.",
     failedLoadMessages: "Không thể tải tin nhắn",
     failedSendMessage: "Không thể gửi tin nhắn",
-
     // Project Detail
     projectId: "ID",
     fields: "Lĩnh Vực",
@@ -2145,7 +2196,6 @@
     enterTitle: "Nhập tiêu đề",
     enterDescription: "Nhập mô tả",
     targetDate: "Ngày mục tiêu",
-
     // Mentor Pages
     groupId: "Nhóm #",
     timelineTasks: "Timeline & Nhiệm Vụ",
@@ -2330,7 +2380,6 @@
     groupMarkedFull: "Đã đánh dấu nhóm là Đầy",
     groupReopened: "Đã mở lại tuyển thành viên",
     topicReminderSent: "Đã gửi nhắc nhở",
-
     // Import / Upload
     fileImportedSuccess: "Nhập file thành công",
     fileParsedLocally: "File đã được xử lý cục bộ (lỗi API)",
@@ -2405,7 +2454,6 @@
     // MembersList
     invitation: "Lời mời",
     kick: "Xóa khỏi nhóm",
-
     // Form Validations
     pleaseEnterColumnName: "Vui lòng nhập tên cột",
     columnName: "Tên cột",
@@ -2652,7 +2700,9 @@
     aiAssistant: "Trợ Lý AI",
     auditLogs: "Nhật Ký Kiểm Toán",
     managementUsers: "Quản Lý Người Dùng",
+    managementMajors: "Quản Lý Chuyên Ngành",
     report: "Báo Cáo",
+    managementPositions: "Quản Lý Vị Trí",
     semesterManagement: "Quản Lý Học Kỳ",
     createSemester: "Tạo Học Kỳ",
     editSemester: "Chỉnh Sửa Học Kỳ",

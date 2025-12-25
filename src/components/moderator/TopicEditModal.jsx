@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Form, Input, Select, notification } from "antd";
+import { Modal, Form, Input, Select, notification, Upload, Button } from "antd";
+import { UploadOutlined } from "@ant-design/icons";
 import { TopicService } from "../../services/topic.service";
 import { MajorService } from "../../services/major.service";
 import { SemesterService } from "../../services/semester.service";
@@ -14,17 +15,81 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
   const [majors, setMajors] = useState([]);
   const [semesters, setSemesters] = useState([]);
   const [topicDetail, setTopicDetail] = useState(null);
+  const [existingTopics, setExistingTopics] = useState([]);
+
+  const normalizeTitle = (value = "") =>
+    value.trim().replace(/\s+/g, " ").toLowerCase();
+
+  const parseMentorEmails = (value = "") =>
+    value
+      .split(/[,;|\n]+/g)
+      .map((email) => email.trim())
+      .filter(Boolean);
+
+  const validateMentorEmails = (_, value) => {
+    const emails = parseMentorEmails(value);
+    if (emails.length === 0) return Promise.resolve();
+    const invalid = emails.filter(
+      (email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    );
+    if (invalid.length === 0) return Promise.resolve();
+    return Promise.reject(
+      new Error(
+        t("invalidMentorEmails") || "Please enter valid mentor email addresses."
+      )
+    );
+  };
+
+  const validateTitle = (_, value) => {
+    if (!value || !value.trim()) {
+      return Promise.resolve();
+    }
+
+    const currentTopicId = topicDetail?.topicId || topic?.topicId;
+    const currentSemesterId = form.getFieldValue("semesterId");
+
+    if (!currentSemesterId) {
+      return Promise.resolve();
+    }
+
+    const normalizedTitle = normalizeTitle(value);
+    const duplicate = existingTopics.find((item) => {
+      const itemId = item.topicId || item.id;
+      const itemSemesterId = item.semesterId;
+      const itemTitle = item.title || item.topicName || item.name || "";
+      return (
+        String(itemSemesterId) === String(currentSemesterId) &&
+        normalizeTitle(itemTitle) === normalizedTitle &&
+        String(itemId) !== String(currentTopicId)
+      );
+    });
+
+    if (duplicate) {
+      return Promise.reject(
+        new Error(
+          t("topicTitleExists") ||
+            "Topic title already exists in this semester."
+        )
+      );
+    }
+
+    return Promise.resolve();
+  };
+
   useEffect(() => {
     if (!open) return;
 
     (async () => {
       try {
-        const [majorsRes, semestersRes] = await Promise.all([
+        const [majorsRes, semestersRes, topicsRes] = await Promise.all([
           MajorService.getMajors(),
           SemesterService.list(),
+          TopicService.getTopics({ pageSize: 1000 }),
         ]);
         setMajors(majorsRes?.data || []);
         setSemesters(semestersRes?.data || []);
+        const topicsData = topicsRes?.data?.data || topicsRes?.data || [];
+        setExistingTopics(Array.isArray(topicsData) ? topicsData : []);
       } catch {
         notification.error({
           message: t("failedLoadMetadata") || "Failed to load metadata",
@@ -38,7 +103,7 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
 
     (async () => {
       try {
-        const res = await TopicService.getTopicById(topic.topicId);
+        const res = await TopicService.getTopicDetail(topic.topicId);
         setTopicDetail(res?.data ?? res);
       } catch {
         setTopicDetail(topic);
@@ -61,25 +126,81 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
       description: data.description,
       majorId: data.majorId,
       semesterId: data.semesterId,
-      source: data.source,
       status: data.status,
       mentorEmails: mentorEmailsArr.join(", "),
     });
+
+    if (data.registrationFile && typeof data.registrationFile === "object") {
+      const fileName = data.registrationFile.fileName || "Existing File";
+      const fileUrl = data.registrationFile.fileUrl;
+
+      if (fileUrl) {
+        form.setFieldsValue({
+          registrationFile: [
+            {
+              uid: "-1",
+              name: fileName,
+              status: "done",
+              url: fileUrl,
+            },
+          ],
+        });
+      }
+    }
   }, [open, topicDetail, topic, form]);
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+      const currentTopicId = topicDetail?.topicId || topic?.topicId;
+      const normalizedTitle = normalizeTitle(values.title);
+      const duplicate = existingTopics.find((item) => {
+        const itemId = item.topicId || item.id;
+        const itemSemesterId = item.semesterId;
+        const itemTitle = item.title || item.topicName || item.name || "";
+        return (
+          String(itemSemesterId) === String(values.semesterId) &&
+          normalizeTitle(itemTitle) === normalizedTitle &&
+          String(itemId) !== String(currentTopicId)
+        );
+      });
+
+      if (duplicate) {
+        form.setFields([
+          {
+            name: "title",
+            errors: [
+              t("topicTitleExists") ||
+                "Topic title already exists in this semester.",
+            ],
+          },
+        ]);
+        return;
+      }
+
       setSubmitting(true);
 
-      const payload = {
-        ...values,
-        mentorEmails: values.mentorEmails
-          ? values.mentorEmails.split(",").map((e) => e.trim())
-          : [],
-      };
+      const formData = new FormData();
 
-      await TopicService.updateTopic(topic.topicId, payload);
+      formData.append("SemesterId", values.semesterId);
+      formData.append("MajorId", values.majorId);
+      formData.append("Title", values.title);
+      formData.append("Description", values.description);
+      formData.append("Status", values.status || "open");
+
+      const mentorEmails = parseMentorEmails(values.mentorEmails);
+      mentorEmails.forEach((email) => {
+        formData.append("MentorEmails", email);
+      });
+
+      if (values.registrationFile?.length > 0) {
+        const file = values.registrationFile[0];
+        if (file.originFileObj) {
+          formData.append("RegistrationFile", file.originFileObj);
+        }
+      }
+
+      await TopicService.updateTopic(topic.topicId, formData);
       notification.success({
         message: t("topicUpdated") || "Topic updated successfully",
       });
@@ -89,9 +210,18 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
       if (err.errorFields) {
         return;
       }
+      const apiMessage = err?.response?.data?.message || err?.message;
+      if (
+        apiMessage &&
+        /title/i.test(apiMessage) &&
+        /exist|already/i.test(apiMessage)
+      ) {
+        form.setFields([{ name: "title", errors: [apiMessage] }]);
+        return;
+      }
       notification.error({
         message: t("failedUpdateTopic") || "Failed to update topic",
-        description: err?.response?.data?.message || err.message,
+        description: apiMessage,
       });
     } finally {
       setSubmitting(false);
@@ -136,7 +266,14 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
         <Form.Item
           label={t("title") || "Title"}
           name="title"
-          rules={[{ required: true, message: "Please input title" }]}
+          rules={[
+            {
+              required: true,
+              message: t("pleaseInputTitle") || "Please input title",
+            },
+            { validator: validateTitle },
+          ]}
+          validateTrigger={["onBlur", "onChange"]}
         >
           <Input placeholder="Enter topic title" />
         </Form.Item>
@@ -144,7 +281,13 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
         <Form.Item
           label={t("description") || "Description"}
           name="description"
-          rules={[{ required: true, message: "Please input description" }]}
+          rules={[
+            {
+              required: true,
+              message:
+                t("pleaseInputDescription") || "Please input description",
+            },
+          ]}
         >
           <Input.TextArea rows={4} placeholder="Enter description" />
         </Form.Item>
@@ -169,7 +312,10 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
             name="semesterId"
             rules={[{ required: true, message: "Please select semester" }]}
           >
-            <Select placeholder="Select semester">
+            <Select
+              placeholder="Select semester"
+              onChange={() => form.validateFields(["title"])}
+            >
               {semesters.map((sem) => (
                 <Option key={sem.semesterId} value={sem.semesterId}>
                   {sem.season} {sem.year}
@@ -178,19 +324,6 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
             </Select>
           </Form.Item>
         </div>
-
-        <Form.Item
-          label={t("source") || "Source"}
-          name="source"
-          rules={[
-            {
-              required: true,
-              message: t("pleaseImportSource") || "Please import source",
-            },
-          ]}
-        >
-          <Input placeholder="https://example.com" />
-        </Form.Item>
 
         <Form.Item label={t("status") || "Status"} name="status">
           <Select>
@@ -208,9 +341,32 @@ const TopicEditModal = ({ open, onClose, topic, onSuccess }) => {
               message:
                 t("pleaseImportMailMentor") || "Please import mentor emails",
             },
+            { validator: validateMentorEmails },
           ]}
         >
           <Input placeholder="email1@example.com, email2@example.com" />
+        </Form.Item>
+
+        <Form.Item
+          label={t("registrationFile") || "Registration File"}
+          name="registrationFile"
+          valuePropName="fileList"
+          getValueFromEvent={(e) => {
+            if (Array.isArray(e)) {
+              return e;
+            }
+            return e?.fileList;
+          }}
+        >
+          <Upload
+            maxCount={1}
+            beforeUpload={() => false}
+            accept=".pdf,.doc,.docx,.xls,.xlsx"
+          >
+            <Button icon={<UploadOutlined />}>
+              {t("clickToUpload") || "Click to Upload"}
+            </Button>
+          </Upload>
         </Form.Item>
       </Form>
     </Modal>

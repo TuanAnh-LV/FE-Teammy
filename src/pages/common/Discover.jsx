@@ -45,8 +45,97 @@ const Discover = () => {
   });
   const [isLoadingTopics, setIsLoadingTopics] = useState(true);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
+  const [isLoadingGroupDetails, setIsLoadingGroupDetails] = useState(false);
 
   const aiSuggestionsFetchedRef = useRef(null);
+
+  const mapTopics = useCallback((list) => {
+    return (list || [])
+      .filter((t) => {
+        const status = (t.status || "open").toLowerCase();
+        return status !== "closed";
+      })
+      .map((t) => ({
+        ...t,
+        topicId: t.topicId || t.id,
+        title: t.title || t.topicName || "Untitled",
+        description: t.description || "",
+        domain: t.majorName || "General",
+        majorId: t.majorId,
+        status: t.status || "open",
+        tags: [t.status || "open"],
+        mentor:
+          (t.mentors &&
+            t.mentors[0] &&
+            (t.mentors[0].mentorName || t.mentors[0].name)) ||
+          t.createdByName ||
+          "",
+        mentorsRaw: t.mentors || [],
+        progress: 0,
+        members: (t.mentors || []).map((m) =>
+          (m.mentorName || m.name || "M")
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+        ),
+        createdAt: t.createdAt,
+        attachedFiles: t.attachedFiles || [],
+        referenceDocs: t.referenceDocs || [],
+        registrationFile: t.registrationFile || null,
+        topicSkills: t.skills || [],
+        groups: t.groups || [],
+      }));
+  }, []);
+
+  const mapAiSuggestions = useCallback((suggestions) => {
+    return (suggestions || [])
+      .filter((item) => {
+        const detail = item.detail || {};
+        const status = (detail.status || "open").toLowerCase();
+        return status !== "closed";
+      })
+      .map((item) => {
+        const detail = item.detail || {};
+        const mentors = Array.isArray(detail.mentors) ? detail.mentors : [];
+
+        return {
+          topicId: item.topicId || detail.topicId,
+          title: item.title || detail.title || "Untitled",
+          description: item.description || detail.description || "",
+          domain: detail.majorName || "General",
+          majorId: detail.majorId,
+          status: detail.status || "open",
+          tags: [detail.status || "open"],
+          mentor:
+            mentors.length > 0
+              ? mentors
+                  .map((m) => m.mentorName || m.name || m.mentorEmail)
+                  .join(", ")
+              : detail.createdByName || "",
+          mentorsRaw: mentors,
+          progress: 0,
+          members: mentors.map((m) =>
+            (m.mentorName || m.name || "M")
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+          ),
+          createdAt: detail.createdAt,
+          attachedFiles: detail.attachedFiles || [],
+          referenceDocs: detail.referenceDocs || [],
+          registrationFile:
+            detail.registrationFile || item.registrationFile || null,
+          score: item.score || 0,
+          canTakeMore: item.canTakeMore,
+          matchingSkills: item.matchingSkills || [],
+          topicSkills: item.topicSkills || detail.skills || [],
+          isAISuggestion: true,
+          groups: detail.groups || [],
+          aiReason: item.aiReason || null,
+          detail: detail,
+        };
+      });
+  }, []);
 
   const refetchTopics = useCallback(async () => {
     try {
@@ -57,55 +146,39 @@ const Discover = () => {
         (Array.isArray(payload?.data) && payload.data) ||
         (Array.isArray(payload?.data?.data) && payload.data.data) ||
         [];
-      const mapped = (list || [])
-        .filter((t) => {
-          const status = (t.status || "open").toLowerCase();
-          return status !== "closed";
-        })
-        .map((t) => ({
-          ...t,
-          topicId: t.topicId || t.id,
-          title: t.title || t.topicName || "Untitled",
-          description: t.description || "",
-          domain: t.majorName || "General",
-          majorId: t.majorId,
-          status: t.status || "open",
-          tags: [t.status || "open"],
-          mentor:
-            (t.mentors &&
-              t.mentors[0] &&
-              (t.mentors[0].mentorName || t.mentors[0].name)) ||
-            t.createdByName ||
-            "",
-          mentorsRaw: t.mentors || [],
-          progress: 0,
-          members: (t.mentors || []).map((m) =>
-            (m.mentorName || m.name || "M")
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-          ),
-          createdAt: t.createdAt,
-          attachedFiles: t.attachedFiles || [],
-          referenceDocs: t.referenceDocs || [],
-          registrationFile: t.registrationFile || null,
-          topicSkills: t.skills || [],
-          groups: t.groups || [],
-        }));
+      const mapped = mapTopics(list);
       setProjects(mapped);
       setFilteredProjects(mapped);
     } catch (err) {
       console.error("Failed to refetch topics:", err);
     }
-  }, []);
+  }, [mapTopics]);
 
   const refetchAISuggestions = useCallback(async () => {
-    if (!membership.groupId) return;
+    if (!membership.groupId) {
+      setIsLoadingAI(false);
+      return 0;
+    }
+
+    // Don't fetch AI suggestions if group already has a topic
+    const hasTopicId =
+      myGroupDetails?.topicId != null &&
+      String(myGroupDetails.topicId).trim() !== "";
+    const hasTopicObject =
+      myGroupDetails?.topic?.topicId != null &&
+      String(myGroupDetails.topic.topicId).trim() !== "";
+
+    if (hasTopicId || hasTopicObject) {
+      setAiSuggestedTopics([]);
+      setIsLoadingAI(false);
+      return 0;
+    }
 
     try {
+      setIsLoadingAI(true);
       const aiResponse = await AiService.getTopicSuggestions({
         groupId: membership.groupId,
-        limit: 5,
+        limit: null,
       });
 
       if (
@@ -114,69 +187,29 @@ const Discover = () => {
         !aiResponse.data.data
       ) {
         setAiSuggestedTopics([]);
-        return;
+        return 0;
       }
 
-      let suggestions = Array.isArray(aiResponse.data.data)
+      const suggestions = Array.isArray(aiResponse.data.data)
         ? aiResponse.data.data
         : [];
 
       if (suggestions.length > 0) {
-        const mapped = suggestions
-          .filter((item) => {
-            const detail = item.detail || {};
-            const status = (detail.status || "open").toLowerCase();
-            return status !== "closed";
-          })
-          .map((item) => {
-            const detail = item.detail || {};
-            const mentors = Array.isArray(detail.mentors) ? detail.mentors : [];
-
-            return {
-              topicId: item.topicId || detail.topicId,
-              title: item.title || detail.title || "Untitled",
-              description: item.description || detail.description || "",
-              domain: detail.majorName || "General",
-              majorId: detail.majorId,
-              status: detail.status || "open",
-              tags: [detail.status || "open"],
-              mentor:
-                mentors.length > 0
-                  ? mentors
-                      .map((m) => m.mentorName || m.name || m.mentorEmail)
-                      .join(", ")
-                  : detail.createdByName || "",
-              mentorsRaw: mentors,
-              progress: 0,
-              members: mentors.map((m) =>
-                (m.mentorName || m.name || "M")
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-              ),
-              createdAt: detail.createdAt,
-              attachedFiles: detail.attachedFiles || [],
-              referenceDocs: detail.referenceDocs || [],
-              registrationFile:
-                detail.registrationFile || item.registrationFile || null,
-              score: item.score || 0,
-              canTakeMore: item.canTakeMore,
-              matchingSkills: item.matchingSkills || [],
-              topicSkills: item.topicSkills || detail.skills || [],
-              isAISuggestion: true,
-              groups: detail.groups || [],
-              detail: detail,
-            };
-          });
+        const mapped = mapAiSuggestions(suggestions);
         setAiSuggestedTopics(mapped);
+        return mapped.length;
       } else {
         setAiSuggestedTopics([]);
+        return 0;
       }
     } catch (err) {
       console.error("Failed to refetch AI suggestions:", err);
       setAiSuggestedTopics([]);
+      return 0;
+    } finally {
+      setIsLoadingAI(false);
     }
-  }, [membership.groupId]);
+  }, [membership.groupId, myGroupDetails, mapAiSuggestions]);
 
   const refetchGroupData = useCallback(async () => {
     try {
@@ -191,62 +224,38 @@ const Discover = () => {
       });
 
       if (groupId) {
+        setIsLoadingGroupDetails(true);
         try {
           const groupRes = await GroupService.getGroupDetail(groupId);
           setMyGroupDetails(groupRes?.data || null);
         } catch {
           setMyGroupDetails(null);
+        } finally {
+          setIsLoadingGroupDetails(false);
         }
+      } else {
+        setIsLoadingGroupDetails(false);
       }
     } catch (err) {
       console.error("Failed to refetch group data:", err);
+      setIsLoadingGroupDetails(false);
     }
   }, []);
 
   useEffect(() => {
-    let mounted = true;
-    const fetchMembership = async () => {
-      try {
-        const res = await AuthService.getMembership();
-        if (mounted) {
-          const groupId = res?.data?.groupId || null;
-          const hasGroup = !!res?.data?.hasGroup;
-          const status = res?.data?.status || null;
-          setMembership({
-            hasGroup,
-            groupId,
-            status,
-          });
-
-          if (groupId) {
-            try {
-              const groupRes = await GroupService.getGroupDetail(groupId);
-              setMyGroupDetails(groupRes?.data || null);
-            } catch {
-              setMyGroupDetails(null);
-            }
-          }
-        }
-      } catch (err) {
-        notification.error({
-          message: t("failedToFetchMembership") || "Failed to fetch membership",
-          description:
-            err?.response?.data?.message ||
-            t("pleaseTryAgain") ||
-            "Please try again",
-        });
-      }
-    };
-    fetchMembership();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    refetchGroupData();
+  }, [refetchGroupData]);
 
   useEffect(() => {
     if (!membership.groupId) {
       setAiSuggestedTopics([]);
+      setIsLoadingAI(false);
       aiSuggestionsFetchedRef.current = null;
+      return;
+    }
+
+    // Wait for group details to be loaded before deciding whether to fetch AI suggestions
+    if (isLoadingGroupDetails) {
       return;
     }
 
@@ -260,6 +269,7 @@ const Discover = () => {
 
     if (hasTopicId || hasTopicObject) {
       setAiSuggestedTopics([]);
+      setIsLoadingAI(false);
       aiSuggestionsFetchedRef.current = null;
       return;
     }
@@ -271,90 +281,21 @@ const Discover = () => {
     let mounted = true;
     const fetchAISuggestions = async () => {
       try {
-        setIsLoadingAI(true);
-        const aiResponse = await AiService.getTopicSuggestions({
-          groupId: membership.groupId,
-          limit: 5,
-        });
-
-        if (
-          !aiResponse ||
-          aiResponse.success === false ||
-          !aiResponse.data.data
-        ) {
-          if (mounted) setAiSuggestedTopics([]);
-          return;
-        }
-
-        let suggestions = Array.isArray(aiResponse.data.data)
-          ? aiResponse.data.data
-          : [];
-
-        if (mounted && suggestions.length > 0) {
-          const mapped = suggestions
-            .filter((item) => {
-              const detail = item.detail || {};
-              const status = (detail.status || "open").toLowerCase();
-              return status !== "closed";
-            })
-            .map((item) => {
-              const detail = item.detail || {};
-              const mentors = Array.isArray(detail.mentors)
-                ? detail.mentors
-                : [];
-
-              return {
-                topicId: item.topicId || detail.topicId,
-                title: item.title || detail.title || "Untitled",
-                description: item.description || detail.description || "",
-                domain: detail.majorName || "General",
-                majorId: detail.majorId,
-                status: detail.status || "open",
-                tags: [detail.status || "open"],
-                mentor:
-                  mentors.length > 0
-                    ? mentors
-                        .map((m) => m.mentorName || m.name || m.mentorEmail)
-                        .join(", ")
-                    : detail.createdByName || "",
-
-                mentorsRaw: mentors,
-                progress: 0,
-                members: mentors.map((m) =>
-                  (m.mentorName || m.name || "M")
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                ),
-                createdAt: detail.createdAt,
-                attachedFiles: detail.attachedFiles || [],
-                referenceDocs: detail.referenceDocs || [],
-                registrationFile:
-                  detail.registrationFile || item.registrationFile || null,
-                score: item.score || 0,
-                canTakeMore: item.canTakeMore,
-                matchingSkills: item.matchingSkills || [],
-                topicSkills: item.topicSkills || detail.skills || [],
-                isAISuggestion: true,
-                groups: detail.groups || [],
-                aiReason: item.aiReason || null,
-              };
-            });
-          setAiSuggestedTopics(mapped);
+        const count = await refetchAISuggestions();
+        if (mounted) {
           aiSuggestionsFetchedRef.current = membership.groupId;
-          notification.info({
-            message: t("aiSuggestionsAvailable") || "AI Suggestions Available",
-            description: `Found ${mapped.length} recommended topics for your group`,
-            placement: "topRight",
-            duration: 3,
-          });
-        } else {
-          if (mounted) setAiSuggestedTopics([]);
+          if (count > 0) {
+            notification.info({
+              message:
+                t("aiSuggestionsAvailable") || "AI Suggestions Available",
+              description: `Found ${count} recommended topics for your group`,
+              placement: "topRight",
+              duration: 3,
+            });
+          }
         }
       } catch {
         if (mounted) setAiSuggestedTopics([]);
-      } finally {
-        if (mounted) setIsLoadingAI(false);
       }
     };
 
@@ -362,59 +303,20 @@ const Discover = () => {
     return () => {
       mounted = false;
     };
-  }, [membership.groupId, myGroupDetails]);
+  }, [
+    membership.groupId,
+    myGroupDetails,
+    isLoadingGroupDetails,
+    refetchAISuggestions,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ]);
 
   useEffect(() => {
     let mounted = true;
     const fetchTopics = async () => {
       try {
         setIsLoadingTopics(true);
-        const res = await TopicService.getTopics();
-        const payload = res?.data ?? res;
-        const list =
-          (Array.isArray(payload) && payload) ||
-          (Array.isArray(payload?.data) && payload.data) ||
-          (Array.isArray(payload?.data?.data) && payload.data.data) ||
-          [];
-        const mapped = (list || [])
-          .filter((t) => {
-            const status = (t.status || "open").toLowerCase();
-            return status !== "closed";
-          })
-          .map((t) => ({
-            ...t,
-            topicId: t.topicId || t.id,
-            title: t.title || t.topicName || "Untitled",
-            description: t.description || "",
-            domain: t.majorName || "General",
-            majorId: t.majorId,
-            status: t.status || "open",
-            tags: [t.status || "open"],
-            mentor:
-              (t.mentors &&
-                t.mentors[0] &&
-                (t.mentors[0].mentorName || t.mentors[0].name)) ||
-              t.createdByName ||
-              "",
-            mentorsRaw: t.mentors || [],
-            progress: 0,
-            members: (t.mentors || []).map((m) =>
-              (m.mentorName || m.name || "M")
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-            ),
-            createdAt: t.createdAt,
-            attachedFiles: t.attachedFiles || [],
-            referenceDocs: t.referenceDocs || [],
-            registrationFile: t.registrationFile || null,
-            topicSkills: t.skills || [],
-            groups: t.groups || [],
-          }));
-        if (mounted) {
-          setProjects(mapped);
-          setFilteredProjects(mapped);
-        }
+        await refetchTopics();
       } catch {
         notification.error({
           message: t("failedLoadTopics") || "Failed to load topics",
@@ -427,10 +329,12 @@ const Discover = () => {
     return () => {
       mounted = false;
     };
-  }, []);
+    // t is unstable and can trigger refetch loops; keep effect stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refetchTopics]);
 
   const aiTopicIds = useMemo(() => {
-    return new Set(aiSuggestedTopics.map((t) => t.topicId));
+    return new Set(aiSuggestedTopics.map((t) => t.topicId).filter(Boolean));
   }, [aiSuggestedTopics]);
 
   useEffect(() => {

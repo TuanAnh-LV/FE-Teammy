@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Modal, Form, Input, Select, notification } from "antd";
+import { Modal, Form, Input, Select, notification, Upload, Button } from "antd";
+import { UploadOutlined } from "@ant-design/icons";
 import { TopicService } from "../../services/topic.service";
 import { MajorService } from "../../services/major.service";
 import { SemesterService } from "../../services/semester.service";
@@ -13,6 +14,30 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
   const [submitting, setSubmitting] = useState(false);
   const [majors, setMajors] = useState([]);
   const [semesters, setSemesters] = useState([]);
+  const [existingTopics, setExistingTopics] = useState([]);
+
+  const normalizeTitle = (value = "") =>
+    value.trim().replace(/\s+/g, " ").toLowerCase();
+
+  const parseMentorEmails = (value = "") =>
+    value
+      .split(/[,;|\n]+/g)
+      .map((email) => email.trim())
+      .filter(Boolean);
+
+  const validateMentorEmails = (_, value) => {
+    const emails = parseMentorEmails(value);
+    if (emails.length === 0) return Promise.resolve();
+    const invalid = emails.filter(
+      (email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    );
+    if (invalid.length === 0) return Promise.resolve();
+    return Promise.reject(
+      new Error(
+        t("invalidMentorEmails") || "Please enter valid mentor email addresses."
+      )
+    );
+  };
 
   const activeSemester = useMemo(
     () => semesters.find((s) => s.isActive),
@@ -24,16 +49,19 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
 
     const fetchMetadata = async () => {
       try {
-        const [majorsRes, semestersRes] = await Promise.all([
+        const [majorsRes, semestersRes, topicsRes] = await Promise.all([
           MajorService.getMajors(),
           SemesterService.list(),
+          TopicService.getTopics({ pageSize: 1000 }),
         ]);
 
         const majorsData = majorsRes?.data || [];
         const semestersData = semestersRes?.data || [];
+        const topicsData = topicsRes?.data?.data || topicsRes?.data || [];
 
         setMajors(majorsData);
         setSemesters(semestersData);
+        setExistingTopics(Array.isArray(topicsData) ? topicsData : []);
         const current = form.getFieldValue("semesterId");
         const active = semestersData.find((s) => s.isActive);
         if (!current && active?.semesterId) {
@@ -68,19 +96,51 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
         return;
       }
 
+      const normalizedTitle = normalizeTitle(values.title);
+      const duplicate = existingTopics.find((topic) => {
+        const topicSemesterId = topic.semesterId;
+        const topicTitle = topic.title || topic.topicName || topic.name || "";
+        return (
+          String(topicSemesterId) === String(values.semesterId) &&
+          normalizeTitle(topicTitle) === normalizedTitle
+        );
+      });
+
+      if (duplicate) {
+        form.setFields([
+          {
+            name: "title",
+            errors: [
+              t("topicTitleExists") ||
+                "Topic title already exists in this semester.",
+            ],
+          },
+        ]);
+        return;
+      }
+
       setSubmitting(true);
 
-      const payload = {
-        ...values,
-        mentorEmails: values.mentorEmails
-          ? values.mentorEmails
-              .split(/[,;|\n]+/g)
-              .map((e) => e.trim())
-              .filter(Boolean)
-          : [],
-      };
+      const formData = new FormData();
 
-      await TopicService.createTopic(payload);
+      formData.append("SemesterId", values.semesterId);
+      formData.append("MajorId", values.majorId);
+      formData.append("Title", values.title);
+      formData.append("Description", values.description);
+      formData.append("Status", values.status || "open");
+
+      const mentorEmails = parseMentorEmails(values.mentorEmails);
+      mentorEmails.forEach((email) => {
+        formData.append("MentorEmails", email);
+      });
+
+      if (values.registrationFile?.fileList?.[0]) {
+        formData.append(
+          "RegistrationFile",
+          values.registrationFile.fileList[0].originFileObj
+        );
+      }
+      await TopicService.createTopic(formData);
 
       notification.success({
         message: t("topicCreated") || "Topic created successfully",
@@ -96,10 +156,19 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
       onClose?.();
     } catch (err) {
       if (err?.errorFields) return;
+      const apiMessage = err?.response?.data?.message || err?.message;
+      if (
+        apiMessage &&
+        /title/i.test(apiMessage) &&
+        /exist|already/i.test(apiMessage)
+      ) {
+        form.setFields([{ name: "title", errors: [apiMessage] }]);
+        return;
+      }
 
       notification.error({
         message: t("failedCreateTopic") || "Failed to create topic",
-        description: err?.response?.data?.message || err?.message,
+        description: apiMessage,
       });
     } finally {
       setSubmitting(false);
@@ -205,10 +274,7 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
               },
             ]}
           >
-            <Select
-              placeholder={t("selectSemester") || "Select semester"}
-              // nếu chỉ muốn cho chọn active: có thể set disabled luôn nếu chỉ có 1 active
-            >
+            <Select placeholder={t("selectSemester") || "Select semester"}>
               {semesters.map((sem) => {
                 const label = `${sem.season} ${sem.year}${
                   sem.isActive ? "" : " (Inactive)"
@@ -218,7 +284,7 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
                   <Option
                     key={sem.semesterId}
                     value={sem.semesterId}
-                    disabled={!sem.isActive} // ✅ disable kỳ chưa active
+                    disabled={!sem.isActive}
                   >
                     {label}
                   </Option>
@@ -227,19 +293,6 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
             </Select>
           </Form.Item>
         </div>
-
-        <Form.Item
-          label={t("source") || "Source"}
-          name="source"
-          rules={[
-            {
-              required: true,
-              message: t("pleaseImportSource") || "Please import source",
-            },
-          ]}
-        >
-          <Input placeholder="https://example.com" />
-        </Form.Item>
 
         <Form.Item
           label={t("status") || "Status"}
@@ -261,9 +314,33 @@ const TopicAddModal = ({ open, onClose, onSuccess }) => {
               message:
                 t("pleaseImportMailMentor") || "Please import mentor emails",
             },
+            { validator: validateMentorEmails },
           ]}
         >
           <Input placeholder="email1@example.com, email2@example.com" />
+        </Form.Item>
+
+        <Form.Item
+          label={t("registrationFile") || "Registration File"}
+          name="registrationFile"
+          valuePropName="file"
+          rules={[
+            {
+              required: true,
+              message:
+                t("pleaseImportFile") || "Please import registration file",
+            },
+          ]}
+        >
+          <Upload
+            maxCount={1}
+            beforeUpload={() => false}
+            accept=".pdf,.doc,.docx,.xls,.xlsx"
+          >
+            <Button icon={<UploadOutlined />}>
+              {t("clickToUpload") || "Click to Upload"}
+            </Button>
+          </Upload>
         </Form.Item>
       </Form>
     </Modal>

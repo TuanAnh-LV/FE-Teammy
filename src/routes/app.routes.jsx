@@ -15,6 +15,9 @@ const GroupDetail = lazy(() => import("../pages/mentor/GroupDetail"));
 // Admin
 const AdminDashboard = lazy(() => import("../pages/admin/Dashboard"));
 const ManageUsers = lazy(() => import("../pages/admin/ManageUsers"));
+const ManageMajors = lazy(() => import("../pages/admin/ManageMajors"));
+const ManagePositions = lazy(() => import("../pages/admin/ManagePositions"));
+const ManageSkills = lazy(() => import("../pages/admin/ManageSkills"));
 const AuditLogs = lazy(() => import("../pages/admin/AuditLogs"));
 const Reports = lazy(() => import("../pages/admin/Reports"));
 const Settings = lazy(() => import("../pages/admin/Settings"));
@@ -89,6 +92,9 @@ const routes = [
           { index: true, element: <AdminDashboard /> },
           { path: "dashboard", element: <AdminDashboard /> },
           { path: "users", element: <ManageUsers /> },
+          { path: "majors", element: <ManageMajors /> },
+          { path: "positions", element: <ManagePositions /> },
+          { path: "skills", element: <ManageSkills /> },
           { path: "logs", element: <AuditLogs /> },
           { path: "reports", element: <Reports /> },
           { path: "settings", element: <Settings /> },
