@@ -46,13 +46,14 @@ export default function FeedbackTab({
   // Verify if current user is the assigned mentor
   const isAssignedMentor = React.useMemo(() => {
     if (!isMentor || !groupDetail || !userInfo?.email) return false;
-    const mentor = (Array.isArray(groupDetail?.mentors) && groupDetail.mentors.length > 0) 
-      ? groupDetail.mentors[0] 
-      : null;
-    if (!mentor) return false;
-    const mentorEmail = (mentor.email || mentor.userEmail || "").toLowerCase();
+    const mentors = Array.isArray(groupDetail?.mentors) ? groupDetail.mentors : [];
+    if (mentors.length === 0) return false;
     const currentUserEmail = userInfo.email.toLowerCase();
-    return mentorEmail === currentUserEmail;
+    // Kiểm tra xem user hiện tại có trong danh sách mentors không
+    return mentors.some((mentor) => {
+      const mentorEmail = (mentor.email || mentor.userEmail || "").toLowerCase();
+      return mentorEmail === currentUserEmail;
+    });
   }, [isMentor, groupDetail, userInfo]);
 
   const fetchFeedbackList = async (
