@@ -149,7 +149,7 @@ export default function ModeratorNotifications() {
       : t("selectGroupsToNotify") || "Select groups to notify";
 
   const getAnnouncementTemplate = (type, ov, picked) => {
-    const prefix = `[Teammy][${semesterLabel} - ${majorLabel}]`;
+    const prefix = `[${semesterLabel} - ${majorLabel}]`;
 
     const startDate = semesterObj?.startDate;
     const endDate = semesterObj?.endDate;

@@ -268,6 +268,7 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
             >
               <Select>
                 <Option value="Admin">Admin</Option>
+                <Option value="Moderator">Moderator</Option>
                 <Option value="Mentor">Mentor</Option>
                 <Option value="Student">Student</Option>
               </Select>
@@ -288,96 +289,106 @@ export default function UserEditModal({ open, onClose, user, onSave }) {
             const isStudent = getFieldValue("role") === "Student";
 
             return (
-              <Row gutter={16}>
-                <Col span={isStudent ? 12 : 24}>
-                  <Form.Item
-                    label={t("major") || "Major"}
-                    name="majorId"
-                    rules={[
-                      {
-                        required: true,
-                        message: t("pleaseEnterMajor") || "Please enter major",
-                      },
-                    ]}
-                  >
-                    <Select
-                      placeholder={t("enterMajorPlaceholder") || "Select major"}
-                      loading={majorsLoading}
-                      showSearch
-                      optionFilterProp="children"
-                      filterOption={(input, option) => {
-                        const label = String(option?.children ?? "");
-                        return label
-                          .toLowerCase()
-                          .includes(input.toLowerCase());
-                      }}
-                    >
-                      {majors.map((m) => (
-                        <Option
-                          key={m.majorId ?? m.id}
-                          value={m.majorId ?? m.id}
-                        >
-                          {m.majorName || m.name}
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-
-                {isStudent && (
-                  <Col span={12}>
+              <>
+                <Row gutter={16}>
+                  <Col span={isStudent ? 12 : 24}>
                     <Form.Item
-                      label={t("studentCode") || "Student Code"}
-                      name="studentCode"
+                      label={t("major") || "Major"}
+                      name="majorId"
                       rules={[
                         {
                           required: true,
                           message:
-                            t("pleaseEnterStudentCode") ||
-                            "Please enter student code",
+                            t("pleaseEnterMajor") || "Please enter major",
                         },
                       ]}
                     >
-                      <Input
+                      <Select
                         placeholder={
-                          t("enterStudentCodePlaceholder") ||
-                          "Enter student code"
+                          t("enterMajorPlaceholder") || "Select major"
                         }
-                      />
+                        loading={majorsLoading}
+                        showSearch
+                        optionFilterProp="children"
+                        filterOption={(input, option) => {
+                          const label = String(option?.children ?? "");
+                          return label
+                            .toLowerCase()
+                            .includes(input.toLowerCase());
+                        }}
+                      >
+                        {majors.map((m) => (
+                          <Option
+                            key={m.majorId ?? m.id}
+                            value={m.majorId ?? m.id}
+                          >
+                            {m.majorName || m.name}
+                          </Option>
+                        ))}
+                      </Select>
                     </Form.Item>
                   </Col>
+
+                  {isStudent && (
+                    <Col span={12}>
+                      <Form.Item
+                        label={t("studentCode") || "Student Code"}
+                        name="studentCode"
+                        rules={[
+                          {
+                            required: true,
+                            message:
+                              t("pleaseEnterStudentCode") ||
+                              "Please enter student code",
+                          },
+                        ]}
+                      >
+                        <Input
+                          placeholder={
+                            t("enterStudentCodePlaceholder") ||
+                            "Enter student code"
+                          }
+                        />
+                      </Form.Item>
+                    </Col>
+                  )}
+                </Row>
+
+                {isStudent && (
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item
+                        label={t("gpa") || "GPA"}
+                        name="gpa"
+                        rules={[
+                          {
+                            required: true,
+                            message: t("pleaseEnterGPA") || "Please enter GPA",
+                          },
+                          {
+                            pattern: /^[0-9](\.[0-9]{1,2})?$/,
+                            message:
+                              t("gpaInvalid") || "GPA must be between 0 and 10",
+                          },
+                        ]}
+                      >
+                        <Input
+                          placeholder={
+                            t("enterGPAPlaceholder") || "Enter GPA (0 - 10)"
+                          }
+                          type="number"
+                          step="0"
+                          min="0"
+                          max="10"
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
                 )}
-              </Row>
+              </>
             );
           }}
         </Form.Item>
-
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              label={t("gpa") || "GPA"}
-              name="gpa"
-              rules={[
-                {
-                  required: true,
-                  message: t("pleaseEnterGPA") || "Please enter GPA",
-                },
-                {
-                  pattern: /^[0-9](\.[0-9]{1,2})?$/,
-                  message: t("gpaInvalid") || "GPA must be between 0 and 10",
-                },
-              ]}
-            >
-              <Input
-                placeholder={t("enterGPAPlaceholder") || "Enter GPA (0 - 10)"}
-                type="number"
-                step="0"
-                min="0"
-                max="10"
-              />
-            </Form.Item>
-          </Col>
-        </Row>
       </Form>
     </Modal>
   );

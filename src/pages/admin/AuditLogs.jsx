@@ -193,7 +193,7 @@ const AuditLogs = () => {
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between flex-wrap gap-4">
         <div>

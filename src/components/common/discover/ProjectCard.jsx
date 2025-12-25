@@ -30,7 +30,11 @@ const ProjectCard = ({
 
   const myGroupId =
     membership?.groupId || myGroupDetails?.groupId || myGroupDetails?.id;
-  const topicGroups = project.groups || project.detail?.groups || [];
+  const rawTopicGroups = project.groups || project.detail?.groups || [];
+  const topicGroups = rawTopicGroups.filter(
+    (g, idx, arr) =>
+      arr.findIndex((item) => item.groupId === g.groupId) === idx
+  );
   const myGroupInTopic = topicGroups.find((g) => g.groupId === myGroupId);
   const hasPendingInvitation = myGroupInTopic?.status === "pending_invitation";
 

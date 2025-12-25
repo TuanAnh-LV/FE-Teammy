@@ -103,6 +103,12 @@ export const API = {
   },
   MAJORS: {
     LIST: "/majors",
+    CREATE: "/majors",
+    DETAIL: (id) => `/majors/${id}`,
+    UPDATE: (id) => `/majors/${id}`,
+    DELETE: (id) => `/majors/${id}`,
+    TEMPLATE: "/majors/template",
+    IMPORT: "/majors/import",
   },
   SKILLS: {
     LIST: "/skills",
@@ -110,6 +116,16 @@ export const API = {
     DETAIL: (token) => `/skills/${token}`,
     UPDATE: (token) => `/skills/${token}`,
     DELETE: (token) => `/skills/${token}`,
+    TEMPLATE: "/skills/template",
+    IMPORT: "/skills/import",
+  },
+  POSITIONS: {
+    LIST: "/positions",
+    CREATE: "/positions",
+    UPDATE: (id) => `/positions/${id}`,
+    DELETE: (id) => `/positions/${id}`,
+    TEMPLATE: "/positions/template",
+    IMPORT: "/positions/import",
   },
   BOARD: {
     DETAIL: (groupId) => `/groups/${groupId}/board`,
