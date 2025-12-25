@@ -80,13 +80,13 @@ const ModeratorDashboard = () => {
     },
     {
       title: t("groupsMissingTopic") || "Groups Missing Topic",
-      value: dashboardData?.groupsMissingTopic ?? 0,
+      value: dashboardData?.groupsWithoutTopic ?? 0,
       icon: <BulbOutlined className="text-white text-xl" />,
       bg: "from-amber-500 to-orange-400",
     },
     {
-      title: t("groupsMissingMentor") || "Groups Missing Mentor",
-      value: dashboardData?.groupsMissingMentor ?? 0,
+      title: t("groupsMissingMember") || "Groups Missing Member",
+      value: dashboardData?.groupsWithoutMember ?? 0,
       icon: <UserOutlined className="text-white text-xl" />,
       bg: "from-violet-500 to-fuchsia-400",
     },
@@ -127,12 +127,28 @@ const ModeratorDashboard = () => {
       title: t("status") || "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => (
-        <Badge
-          status={status === "active" ? "success" : "default"}
-          text={status || "N/A"}
-        />
-      ),
+      render: (status) => {
+        const s = String(status || "").toLowerCase();
+
+        const map = {
+          recruiting: {
+            badge: "processing",
+            text: t("recruiting") || "Recruiting",
+          },
+          active: {
+            badge: "success",
+            text: t("active") || "Active",
+          },
+          closed: {
+            badge: "default",
+            text: t("closed") || "Closed",
+          },
+        };
+
+        const meta = map[s] || { badge: "default", text: status || "N/A" };
+
+        return <Badge status={meta.badge} text={meta.text} />;
+      },
     },
   ];
 
@@ -158,11 +174,18 @@ const ModeratorDashboard = () => {
       dataIndex: "status",
       key: "status",
       render: (status) => {
-        let statusType = "default";
-        if (status === "open") statusType = "success";
-        else if (status === "pending") statusType = "warning";
-        else if (status === "closed") statusType = "error";
-        return <Badge status={statusType} text={status || "N/A"} />;
+        const s = String(status || "").toLowerCase();
+
+        const statusType =
+          s === "open" ? "success" : s === "closed" ? "error" : "default";
+        const text =
+          s === "open"
+            ? t("open") || "Open"
+            : s === "closed"
+            ? t("closed") || "Closed"
+            : status || "N/A";
+
+        return <Badge status={statusType} text={text} />;
       },
     },
   ];

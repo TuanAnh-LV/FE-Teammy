@@ -127,4 +127,171 @@ export const AdminService = {
     isLoading,
   });
 },
+
+  getPositions(params = {}, isLoading = true) {
+    return BaseService.get({
+      url: API.POSITIONS.LIST,
+      params,
+      isLoading,
+    });
+  },
+
+  createPosition(payload = {}, isLoading = true) {
+    return BaseService.post({
+      url: API.POSITIONS.CREATE,
+      payload,
+      isLoading,
+    });
+  },
+
+  updatePosition(positionId, payload = {}, isLoading = true) {
+    return BaseService.put({
+      url: API.POSITIONS.UPDATE(positionId),
+      payload,
+      isLoading,
+    });
+  },
+
+  deletePosition(positionId, isLoading = true) {
+    return BaseService.remove({
+      url: API.POSITIONS.DELETE(positionId),
+      isLoading,
+    });
+  },
+
+  downloadPositionsTemplate(isLoading = false) {
+    return BaseService.get({
+      url: API.POSITIONS.TEMPLATE,
+      isLoading,
+      responseType: "blob",
+    });
+  },
+
+  importPositions(file, isLoading = true) {
+    const form = new FormData();
+    form.append("file", file);
+
+    return BaseService.post({
+      url: API.POSITIONS.IMPORT,
+      payload: form,
+      isLoading,
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  getSkills(params = {}, isLoading = true) {
+    return BaseService.get({
+      url: API.SKILLS.LIST,
+      params,
+      isLoading,
+    });
+  },
+
+  createSkill(payload = {}, isLoading = true) {
+    return BaseService.post({
+      url: API.SKILLS.CREATE,
+      payload,
+      isLoading,
+    });
+  },
+
+  detailSkill(token, isLoading = true) {
+    return BaseService.get({
+      url: API.SKILLS.DETAIL(token),
+      isLoading,
+    });
+  },
+
+  updateSkill(token, payload = {}, isLoading = true) {
+    return BaseService.put({
+      url: API.SKILLS.UPDATE(token),
+      payload,
+      isLoading,
+    });
+  },
+
+  deleteSkill(token, isLoading = true) {
+    return BaseService.remove({
+      url: API.SKILLS.DELETE(token),
+      isLoading,
+    });
+  },
+
+  downloadSkillsTemplate(isLoading = false) {
+    return BaseService.get({
+      url: API.SKILLS.TEMPLATE,
+      isLoading,
+      responseType: "blob",
+    });
+  },
+
+  importSkills(file, isLoading = true) {
+    const form = new FormData();
+    form.append("file", file);
+
+    return BaseService.post({
+      url: API.SKILLS.IMPORT,
+      payload: form,
+      isLoading,
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  getMajors(params = {}, isLoading = true) {
+    return BaseService.get({
+      url: API.MAJORS.LIST,
+      params,
+      isLoading,
+    });
+  },
+
+  createMajor(payload = {}, isLoading = true) {
+    return BaseService.post({
+      url: API.MAJORS.CREATE,
+      payload,
+      isLoading,
+    });
+  },
+
+  detailMajor(majorId, isLoading = true) {
+    return BaseService.get({
+      url: API.MAJORS.DETAIL(majorId),
+      isLoading,
+    });
+  },
+
+  updateMajor(majorId, payload = {}, isLoading = true) {
+    return BaseService.put({
+      url: API.MAJORS.UPDATE(majorId),
+      payload,
+      isLoading,
+    });
+  },
+
+  deleteMajor(majorId, isLoading = true) {
+    return BaseService.remove({
+      url: API.MAJORS.DELETE(majorId),
+      isLoading,
+    });
+  },
+
+  downloadMajorsTemplate(isLoading = false) {
+    return BaseService.get({
+      url: API.MAJORS.TEMPLATE,
+      isLoading,
+      responseType: "blob",
+    });
+  },
+
+  importMajors(file, isLoading = true) {
+    const form = new FormData();
+    form.append("file", file);
+
+    return BaseService.post({
+      url: API.MAJORS.IMPORT,
+      payload: form,
+      isLoading,
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };

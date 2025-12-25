@@ -31,7 +31,11 @@ const TopicDetailModal = ({
 
   const myGroupId =
     membership?.groupId || myGroupDetails?.groupId || myGroupDetails?.id;
-  const topicGroups = topic.groups || topic.detail?.groups || [];
+  const rawTopicGroups = topic.groups || topic.detail?.groups || [];
+  const topicGroups = rawTopicGroups.filter(
+    (g, idx, arr) =>
+      arr.findIndex((item) => item.groupId === g.groupId) === idx
+  );
   const myGroupInTopic = topicGroups.find((g) => g.groupId === myGroupId);
   const hasPendingInvitation = myGroupInTopic?.status === "pending_invitation";
   const groupHasAnyPending = allProjects.some((p) => {
@@ -46,7 +50,10 @@ const TopicDetailModal = ({
     (g) => g.groupId !== myGroupId && g.status === "pending_invitation"
   );
 
-  const canSelectTopic = isOpen && !hasPendingInvitation && !groupHasAnyPending;
+  const status = String(topic.status || topic.tags?.[0] || "").toLowerCase();
+  const isTopicOpen = status === "open";
+  const canSelectTopic =
+    isTopicOpen && !hasPendingInvitation && !groupHasAnyPending;
 
   const formattedDate = topic.createdAt
     ? new Date(topic.createdAt).toLocaleDateString("en-US", {

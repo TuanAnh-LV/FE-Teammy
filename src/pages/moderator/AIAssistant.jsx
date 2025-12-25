@@ -104,7 +104,11 @@ export default function AIAssistantModerator() {
         groupId: item.groupId,
         status: ["noTopic"],
         suggestions: {
-          topics: item.suggestions || [],
+          topics: (item.suggestions || []).map((topic) => ({
+            ...topic,
+            score: topic.score || 0,
+            matchingSkills: topic.matchingSkills || [],
+          })),
         },
         confidence: item.suggestions?.[0]?.score || 0,
         majorName: item.majorName,
@@ -507,10 +511,42 @@ export default function AIAssistantModerator() {
                                   >
                                     <CheckOutlined className="text-green-600 mt-0.5" />
                                     <div className="flex-1">
-                                      <div className="text-blue-600 font-medium">
-                                        {topic.title}
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-blue-600 font-medium">
+                                          {topic.title}
+                                        </span>
+                                        {topic.score !== undefined && (
+                                          <Tag
+                                            color={
+                                              topic.score >= 80
+                                                ? "green"
+                                                : topic.score >= 50
+                                                ? "blue"
+                                                : "orange"
+                                            }
+                                            className="rounded-full"
+                                          >
+                                            {t("score") || "Score"}:{" "}
+                                            {topic.score}
+                                          </Tag>
+                                        )}
                                       </div>
-                                      <div className="text-xs text-gray-500">
+                                      {topic.matchingSkills &&
+                                        topic.matchingSkills.length > 0 && (
+                                          <div className="flex flex-wrap gap-1 mt-1">
+                                            {topic.matchingSkills.map(
+                                              (skill, skillIdx) => (
+                                                <Tag
+                                                  key={skillIdx}
+                                                  className="text-xs"
+                                                >
+                                                  {skill}
+                                                </Tag>
+                                              )
+                                            )}
+                                          </div>
+                                        )}
+                                      <div className="text-xs text-gray-500 mt-1">
                                         {topic.reason}
                                       </div>
                                     </div>
@@ -590,40 +626,6 @@ export default function AIAssistantModerator() {
                           </div>
                         )}
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="flex lg:flex-col items-center lg:items-end justify-between lg:justify-start gap-2">
-                    <div className="text-center lg:text-right">
-                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                        {t("confidence") || "Confidence"}
-                      </div>
-                      <div
-                        className={`text-3xl font-bold ${
-                          item.confidence >= 80
-                            ? "text-green-600"
-                            : item.confidence >= 50
-                            ? "text-blue-600"
-                            : "text-yellow-600"
-                        }`}
-                      >
-                        {item.confidence}%
-                      </div>
-                    </div>
-                    <div
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        item.confidence >= 80
-                          ? "bg-green-100 text-green-700"
-                          : item.confidence >= 50
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {item.confidence >= 80
-                        ? t("high") || "High"
-                        : item.confidence >= 50
-                        ? t("medium") || "Medium"
-                        : t("low") || "Low"}
                     </div>
                   </div>
                 </div>

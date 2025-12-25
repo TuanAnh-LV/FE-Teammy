@@ -393,7 +393,7 @@ const ManageUsers = () => {
             columns={columns}
             dataSource={filteredUsers}
             loading={loading}
-            pagination={{ pageSize: 5 }}
+            pagination={{ pageSize: 8 }}
             bordered
             scroll={{ x: "max-content" }}
             className="rounded-lg mt-5"
