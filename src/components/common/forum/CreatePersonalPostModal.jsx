@@ -66,7 +66,7 @@ const CreatePersonalPostModal = ({
       const nextDescription = draft?.description || "";
 
       if (!nextTitle && !nextDescription) {
-        notification.warning({
+        notification.info({
           message: t("aiNoContent") || "AI returned empty content",
         });
         return;
@@ -240,3 +240,4 @@ const CreatePersonalPostModal = ({
 };
 
 export default CreatePersonalPostModal;
+

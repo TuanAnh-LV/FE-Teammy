@@ -1,12 +1,19 @@
-import React, { useEffect, useState } from "react";
-import { Loader2, Tag } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { TopicService } from "../../services/topic.service";
 import { useTranslation } from "../../hook/useTranslation";
+import ProjectCard from "../../components/common/discover/ProjectCard";
+import TopicDetailModal from "../../components/common/discover/TopicDetailModal";
 
 const MyTopics = () => {
   const { t } = useTranslation();
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [detailModalState, setDetailModalState] = useState({
+    open: false,
+    topic: null,
+    loading: false,
+  });
 
   useEffect(() => {
     fetchTopics();
@@ -25,77 +32,109 @@ const MyTopics = () => {
     }
   };
 
+  const mappedTopics = useMemo(() => {
+    return (topics || []).map((topic) => ({
+      ...topic,
+      topicId: topic.topicId || topic.id,
+      title: topic.title || topic.topicName || "Untitled",
+      description: topic.description || "",
+      domain: topic.majorName || "General",
+      majorId: topic.majorId,
+      status: topic.status || "open",
+      tags: [topic.status || "open"],
+      mentor:
+        (topic.mentors &&
+          topic.mentors[0] &&
+          (topic.mentors[0].mentorName || topic.mentors[0].name)) ||
+        topic.createdByName ||
+        "",
+      mentors: topic.mentors || [],
+      createdAt: topic.createdAt,
+      attachedFiles: topic.attachedFiles || [],
+      referenceDocs: topic.referenceDocs || [],
+      registrationFile: topic.registrationFile || null,
+      topicSkills: topic.skills || [],
+      groups: topic.groups || [],
+    }));
+  }, [topics]);
+
+  const handleViewTopicDetail = useCallback(async (topic) => {
+    if (!topic?.topicId) return;
+
+    setDetailModalState({ open: true, topic, loading: true });
+
+    try {
+      const res = await TopicService.getTopicDetail(topic.topicId);
+      const fullTopic = res?.data || res;
+
+      if (fullTopic) {
+        const mergedTopic = {
+          ...topic,
+          ...fullTopic,
+          registrationFile:
+            fullTopic.registrationFile || topic.registrationFile,
+          topicSkills: fullTopic.skills || topic.topicSkills,
+        };
+
+        setDetailModalState({
+          open: true,
+          topic: mergedTopic,
+          loading: false,
+        });
+      } else {
+        setDetailModalState({ open: true, topic, loading: false });
+      }
+    } catch {
+      setDetailModalState({ open: true, topic, loading: false });
+    }
+  }, []);
+
   return (
-    <div className="space-y-6 min-h-screen">
-      <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-black">
-          {t("topics") || "Topics"}
-        </h1>
-        <p className="text-gray-600">
-          {t("browseAllTopics") || "Topics assigned to you."}
-        </p>
+    <div className="min-h-screen pt-20 md:pt-24 pb-12">
+      <div className="px-4 sm:px-6 md:px-8 space-y-6">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-black">
+            {t("topics") || "Topics"}
+          </h1>
+          <p className="text-gray-600">
+            {t("browseAllTopics") || "Topics assigned to you."}
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+          {loading ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+            </div>
+          ) : mappedTopics.length === 0 ? (
+            <div className="text-sm text-gray-500 py-6 text-center">
+              {t("noTopicsFound") || "No topics found."}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {mappedTopics.map((topic) => (
+                <ProjectCard
+                  key={topic.topicId}
+                  project={topic}
+                  onViewDetail={handleViewTopicDetail}
+                  hasGroupTopic
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-        {loading ? (
-          <div className="flex justify-center items-center py-10">
-            <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-          </div>
-        ) : topics.length === 0 ? (
-          <div className="text-sm text-gray-500 py-6 text-center">
-            {t("noTopicsFound") || "No topics found."}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {topics.map((topic) => (
-              <div
-                key={topic.id || topic.topicId}
-                className="border border-gray-200 rounded-xl p-4 bg-gray-50"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      {topic.title || topic.name || "Untitled topic"}
-                    </h3>
-                    {topic.description && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        {topic.description}
-                      </p>
-                    )}
-                  </div>
-                  {topic.status && (
-                    <span className="text-xs text-gray-600 border border-gray-200 rounded-full px-2 py-0.5 bg-white">
-                      {topic.status}
-                    </span>
-                  )}
-                </div>
-                {Array.isArray(topic.skills) && topic.skills.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {topic.skills.slice(0, 6).map((skill, idx) => {
-                      const label =
-                        typeof skill === "string" ? skill : skill?.token || skill?.name;
-                      return (
-                        <span
-                          key={`${label}-${idx}`}
-                          className="inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-700 text-xs px-2 py-0.5"
-                        >
-                          <Tag className="w-3 h-3" />
-                          {label}
-                        </span>
-                      );
-                    })}
-                    {topic.skills.length > 6 && (
-                      <span className="text-xs text-gray-500">
-                        +{topic.skills.length - 6}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <TopicDetailModal
+        isOpen={detailModalState.open}
+        onClose={() =>
+          setDetailModalState({ open: false, topic: null, loading: false })
+        }
+        topic={detailModalState.topic}
+        detailLoading={detailModalState.loading}
+        hasGroupTopic
+        membership={{ status: "mentor" }}
+      />
     </div>
   );
 };

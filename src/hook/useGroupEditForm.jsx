@@ -150,7 +150,7 @@ export const useGroupEditForm = ({ group, groupMembers, userInfo, t, setGroup })
         error?.message || 
         t("error") || 
         "Failed to update group.";
-      notification.warning({
+      notification.info({
         message: errorMessage,
       });
     } finally {
@@ -170,5 +170,6 @@ export const useGroupEditForm = ({ group, groupMembers, userInfo, t, setGroup })
     handleSubmitEdit,
   };
 };
+
 
 

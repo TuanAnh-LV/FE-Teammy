@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tooltip } from "antd";
+import dayjs from "dayjs";
 import {
   MoreVertical,
   Users,
@@ -49,6 +50,16 @@ export default function MembersPanel({
   const canEditMembers = !!group?.canEdit;
   // Riêng invite + assign role sẽ bị khóa khi group CLOSED
   const canInviteAndAssign = !!group?.canEdit && !isGroupClosed();
+  const semesterStartDate =
+    group?.semester?.startDate ||
+    group?.semesterStartDate ||
+    group?.startDate ||
+    group?.start;
+  const isInviteLockedBySemesterStart = (() => {
+    if (!semesterStartDate) return false;
+    const parsed = dayjs(semesterStartDate);
+    return parsed.isValid() && parsed.isSame(dayjs(), "day");
+  })();
 
   // Calculate member contributions based on task assignments
   const calculateMemberContributions = () => {
@@ -247,7 +258,7 @@ export default function MembersPanel({
           <h4 className="text-sm font-semibold text-gray-500 uppercase mb-4">
             {t("contribution") || "Contribution"}
           </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
             {memberStats.length ? (
           memberStats.map((member, idx) => {
             const initials = (member.name || member.displayName || "U")
@@ -263,14 +274,20 @@ export default function MembersPanel({
               member.tasks?.done ?? member.taskCount ?? 0;
             const tasksAssigned =
               member.tasks?.assigned ?? member.tasksAssigned ?? 0;
-            const memberId = getMemberId(member) || member.memberId || member.id;
-            const showDetails = expandedIds.has(memberId);
+            const memberId =
+              getMemberId(member) ||
+              member.memberId ||
+              member.id ||
+              member.email ||
+              `member-${idx}`;
+            const memberKey = String(memberId);
+            const showDetails = expandedIds.has(memberKey);
             const progressPercent = tasksAssigned
               ? Math.round((tasksCompleted / tasksAssigned) * 100)
               : 0;
             return (
               <div
-                key={member.id || member.email}
+                key={memberKey}
                 className="border border-gray-200 rounded-2xl bg-white shadow-sm p-5 flex flex-col gap-4 relative"
               >
                 {/* Kebab Menu */}
@@ -397,7 +414,7 @@ export default function MembersPanel({
                 </div>
                 <button
                   type="button"
-                  onClick={() => toggleDetails(memberId)}
+                  onClick={() => toggleDetails(memberKey)}
                   className="mt-2 w-full text-sm text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2 border-t border-gray-100 pt-3"
                 >
                   {showDetails ? (
@@ -615,14 +632,21 @@ export default function MembersPanel({
             )}
             {canInviteAndAssign && (
               <Tooltip
-                title={!isCurrentUserLeader() ? (t("onlyLeaderCanInvite") || "Chỉ leader mới có thể mời thành viên") : ""}
+                title={
+                  !isCurrentUserLeader()
+                    ? t("onlyLeaderCanInvite") || "Only leader can invite members"
+                    : isInviteLockedBySemesterStart
+                    ? t("inviteDisabledSemesterStart") ||
+                      "Invitations are closed on the semester start date."
+                    : ""
+                }
               >
                 <button
                   type="button"
                   onClick={onInvite}
-                  disabled={!isCurrentUserLeader()}
+                  disabled={!isCurrentUserLeader() || isInviteLockedBySemesterStart}
                   className={`w-full inline-flex items-center justify-center gap-2 border border-dashed rounded-xl py-2.5 text-sm font-semibold transition ${
-                    isCurrentUserLeader()
+                    isCurrentUserLeader() && !isInviteLockedBySemesterStart
                       ? "border-blue-400 text-blue-600 bg-white hover:bg-blue-50"
                       : "border-gray-300 text-gray-400 bg-gray-50 cursor-not-allowed"
                   }`}
@@ -740,3 +764,6 @@ export default function MembersPanel({
     </>
   );
 }
+
+
+

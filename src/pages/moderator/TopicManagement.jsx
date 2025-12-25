@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "../../hook/useTranslation";
 import { useNavigate } from "react-router-dom";
 import {
@@ -126,7 +126,7 @@ const TopicManagement = () => {
 
   const handleDelete = (record) => {
     if (record.hasGroup) {
-      notification.warning({
+      notification.info({
         message: t("cannotDeleteTopic") || "Cannot Delete Topic",
         description:
           t("topicAlreadyAssigned") ||
@@ -359,3 +359,4 @@ const TopicManagement = () => {
 };
 
 export default TopicManagement;
+

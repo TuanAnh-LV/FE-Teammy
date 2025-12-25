@@ -78,7 +78,7 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
       setList(items);
     } catch (err) {
 
-      notification.warning({
+      notification.info({
         message: t("error") || "Error",
         description: t("failedLoadMilestones") || "Failed to load milestones",
       });
@@ -149,7 +149,7 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
   const handleSave = async () => {
     if (readOnly || !groupId || isGroupClosed()) return;
     if (!form.name.trim()) {
-      notification.warning({
+      notification.info({
         message: t("validationError") || "Validation error",
         description: t("pleaseEnterTitle") || "Please enter title",
       });
@@ -158,7 +158,7 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
 
     // Validate target date: cannot be in the past
     if (form.targetDate && dayjs(form.targetDate).isBefore(dayjs().startOf("day"))) {
-      notification.warning({
+      notification.info({
         message: t("validationError") || "Validation error",
         description: t("dueDateCannotBePast") || "Due date cannot be in the past.",
       });
@@ -188,7 +188,7 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
       fetchMilestones();
     } catch (err) {
 
-      notification.warning({
+      notification.info({
         message: t("actionFailed") || "Action failed",
         description: err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
       });
@@ -219,7 +219,7 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
       cancelText: t("cancel") || "Cancel",
       onOk: async () => {
         if (inputValue.toLowerCase() !== "delete") {
-          notification.warning({
+          notification.info({
             message: t("validationError") || "Validation Error",
             description: t("mustTypeDelete") || "You must type 'delete' to confirm.",
           });
@@ -231,7 +231,7 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
           fetchMilestones();
         } catch (err) {
 
-          notification.warning({
+          notification.info({
             message: t("actionFailed") || "Action failed",
             description: err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
           });
@@ -249,7 +249,7 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
 
   const handleAssign = async () => {
     if (readOnly || !groupId || !assignMilestoneId || !assignBacklogIds.length || isGroupClosed()) {
-      notification.warning({
+      notification.info({
         message: t("validationError") || "Validation error",
         description: t("pleaseSelectItems") || "Please select backlog items.",
       });
@@ -263,7 +263,7 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
       fetchMilestones();
     } catch (err) {
 
-      notification.warning({
+      notification.info({
         message: t("actionFailed") || "Action failed",
         description: err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
       });
@@ -286,7 +286,7 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
           fetchBacklogOptions();
         } catch (err) {
 
-          notification.warning({
+          notification.info({
             message: t("actionFailed") || "Action failed",
             description: err?.response?.data?.message || t("pleaseTryAgain") || "Please try again.",
           });
@@ -596,4 +596,5 @@ export default function MilestonesTab({ groupId, readOnly = false, groupStatus =
     </div>
   );
 }
+
 

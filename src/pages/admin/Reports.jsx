@@ -61,7 +61,7 @@ const Reports = () => {
   const handleExport = async () => {
     try {
       if (!filters.semesterId || !filters.majorId) {
-        notification.warning({
+        notification.info({
           message: "Please select semester and major first",
         });
         return;
@@ -326,3 +326,4 @@ const Reports = () => {
 };
 
 export default Reports;
+
