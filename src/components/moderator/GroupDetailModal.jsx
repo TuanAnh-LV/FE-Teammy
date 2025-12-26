@@ -26,7 +26,9 @@ export default function GroupDetailModal({ open, onClose, group }) {
   const topic = group.topic?.title || "Not Assigned";
   const majorName = group.major?.majorName || "";
 
-  const mentor = group.mentor || null;
+  const mentors = Array.isArray(group.mentors) ? group.mentors : [];
+  const fallbackMentor = group.mentor ? [group.mentor] : [];
+  const mentorList = mentors.length ? mentors : fallbackMentor;
   const leader = group.leader || null;
   const members = group.members || [];
   const semester = group.semester || null;
@@ -101,15 +103,32 @@ export default function GroupDetailModal({ open, onClose, group }) {
             <div className="flex items-center gap-3 px-4 py-3 border-b">
               <UserOutlined className="text-blue-500 text-lg" />
               <span className="font-medium">{t("mentor") || "Mentor"}</span>
+              {mentorList.length > 0 && (
+                <Tag className="ml-auto">{mentorList.length}</Tag>
+              )}
             </div>
-            <div className="px-4 py-3 flex items-center gap-3">
-              <Avatar src={mentor?.avatarUrl} size={48} />
-              <div>
-                <p className="font-medium">
-                  {mentor?.displayName || t("notAssigned") || "Not Assigned"}
-                </p>
-                <p className="text-xs text-gray-500">{mentor?.email}</p>
-              </div>
+
+            <div className="px-4 py-3 space-y-3">
+              {mentorList.length === 0 ? (
+                <Tag color="orange">{t("notAssigned") || "Not Assigned"}</Tag>
+              ) : (
+                mentorList.map((m) => (
+                  <div
+                    key={m.userId || m.id || m.email}
+                    className="flex items-center gap-3"
+                  >
+                    <Avatar src={cleanAvatarUrl(m.avatarUrl)} size={48} />
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">
+                        {m.displayName || m.name || m.email}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {m.email}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

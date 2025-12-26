@@ -17,6 +17,7 @@ import {
 } from "@ant-design/icons";
 import { useTranslation } from "../../hook/useTranslation";
 import { AiService } from "../../services/ai.service";
+import { SemesterService } from "../../services/semester.service";
 const normalizeSkillTags = (skillTags) => {
   const arr = Array.isArray(skillTags) ? skillTags : [];
   return arr
@@ -37,19 +38,48 @@ export default function AIAssistantModerator() {
   });
   const [loading, setLoading] = useState(false);
   const [aiOptionsData, setAiOptionsData] = useState(null);
+  const [semesterList, setSemesterList] = useState([]);
+  const [selectedSemesterId, setSelectedSemesterId] = useState(null);
   const itemsFoundText = (t("itemsFound") || "{count} items found").replace(
     "{count}",
     analysisResults.length
   );
   useEffect(() => {
-    fetchAiOptions();
+    fetchSemesters();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchAiOptions = async () => {
+  useEffect(() => {
+    if (!selectedSemesterId) return;
+    fetchAiOptions(selectedSemesterId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSemesterId]);
+
+  const fetchSemesters = async () => {
+    try {
+      const res = await SemesterService.list();
+      const payload = res?.data?.data || res?.data || [];
+      const list = Array.isArray(payload) ? payload : [];
+      setSemesterList(list);
+      const active = list.find((s) => s?.isActive);
+      setSelectedSemesterId(
+        active?.semesterId || list[0]?.semesterId || null
+      );
+    } catch (error) {
+      console.error("Failed to fetch semesters:", error);
+      notification.error({
+        message: t("error") || "Error",
+        description: t("failedToFetchSemesters") || "Failed to fetch semesters",
+        placement: "topRight",
+      });
+    }
+  };
+
+  const fetchAiOptions = async (semesterId) => {
     try {
       setLoading(true);
       const response = await AiService.getOptions({
+        semesterId,
         section: "All",
         page: 1,
         pageSize: 20,
@@ -61,7 +91,7 @@ export default function AIAssistantModerator() {
       if (isSuccess && data) {
         setAiOptionsData(data);
 
-        const summaryResponse = await AiService.getSummary();
+        const summaryResponse = await AiService.getSummary({ semesterId });
 
         const summaryData =
           summaryResponse?.data?.data || summaryResponse?.data;
@@ -179,7 +209,7 @@ export default function AIAssistantModerator() {
 
       if (mode === "groupsAndMembers") {
         await AiService.autoAssignTeams({
-          semesterId: aiOptionsData?.semesterId || null,
+          semesterId: selectedSemesterId || aiOptionsData?.semesterId || null,
           majorId: null,
           limit: null,
         });
@@ -225,7 +255,7 @@ export default function AIAssistantModerator() {
       setLoading(true);
 
       await AiService.autoResolve({
-        semesterId: aiOptionsData?.semesterId || null,
+        semesterId: selectedSemesterId || aiOptionsData?.semesterId || null,
         majorId: null,
       });
 
@@ -335,6 +365,19 @@ export default function AIAssistantModerator() {
             </p>
           </div>
           <Space size="large" className="flex-wrap">
+            <Select
+              value={selectedSemesterId}
+              onChange={(value) => setSelectedSemesterId(value)}
+              className="w-80"
+              size="large"
+              placeholder={t("selectSemester") || "Select semester"}
+            >
+              {semesterList.map((s) => (
+                <Option key={s.semesterId} value={s.semesterId}>
+                  {`${s.season || ""} ${s.year || ""}`.trim()}
+                </Option>
+              ))}
+            </Select>
             <Select
               value={mode}
               onChange={(value) => {
