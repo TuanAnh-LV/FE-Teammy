@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calendar, MessageSquare, Star, AlertTriangle, ArrowRight, CheckCircle, Clock, User, Edit, Trash2, MoreVertical } from "lucide-react";
+import { Calendar, MessageSquare, Star, AlertTriangle, ArrowRight, CheckCircle, Clock, User, Edit, Trash2, MoreVertical, Send } from "lucide-react";
 import { Modal, Form, Input, Select, Button } from "antd";
 import { useTranslation } from "../../../hook/useTranslation";
 
@@ -15,6 +15,9 @@ export default function FeedbackCard({ feedback, isLeader, isMentor, onUpdateSta
     if (!status) return "follow_up_requested";
     const statusLower = (status || "").toLowerCase();
     // Map valid statuses
+    if (statusLower === "submitted") {
+      return "submitted";
+    }
     if (statusLower === "acknowledged" || statusLower === "đã xác nhận") {
       return "acknowledged";
     }
@@ -24,12 +27,19 @@ export default function FeedbackCard({ feedback, isLeader, isMentor, onUpdateSta
     if (statusLower === "follow_up_requested" || statusLower === "chờ xử lý") {
       return "follow_up_requested";
     }
-    // Map invalid statuses (like "submitted") to default
+    // Map invalid statuses to default
     return "follow_up_requested";
   };
 
   const getStatusConfig = (status) => {
     const statusLower = (status || "").toLowerCase();
+    if (statusLower === "submitted") {
+      return {
+        label: t("submittedStatus") || "Submitted",
+        color: "bg-blue-500 text-white",
+        icon: <Send className="w-3 h-3" />,
+      };
+    }
     if (statusLower === "acknowledged" || statusLower === "đã xác nhận") {
       return {
         label: t("acknowledgedStatus") || "Acknowledged",
@@ -351,6 +361,7 @@ export default function FeedbackCard({ feedback, isLeader, isMentor, onUpdateSta
           <Form.Item
             name="note"
             label={t("note") || "Note"}
+            rules={[{ required: true, message: t("required") || "Required" }]}
           >
             <TextArea rows={4} placeholder={t("notePlaceholder") || "Enter note (optional)"} />
           </Form.Item>
@@ -372,4 +383,8 @@ export default function FeedbackCard({ feedback, isLeader, isMentor, onUpdateSta
     </>
   );
 }
+
+
+
+
 
