@@ -139,6 +139,9 @@ export default function SendFeedbackModal({
             <Form.Item
               name="category"
               label={t("feedbackCategory") || "Category"}
+              rules={[
+                { required: true, message: t("required") || "Required" },
+              ]}
             >
               <Select
                 placeholder={t("feedbackCategoryPlaceholder") || "Select category"}
@@ -156,6 +159,9 @@ export default function SendFeedbackModal({
             <Form.Item
               name="rating"
               label={t("feedbackRating") || "Rating"}
+              rules={[
+                { required: true, message: t("required") || "Required" },
+              ]}
             >
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((value) => {
@@ -186,6 +192,9 @@ export default function SendFeedbackModal({
             <Form.Item
               name="details"
               label={t("feedbackDetails") || "Details"}
+              rules={[
+                { required: true, message: t("required") || "Required" },
+              ]}
             >
               <TextArea
                 rows={4}
@@ -197,6 +206,9 @@ export default function SendFeedbackModal({
             <Form.Item
               name="blockers"
               label={t("feedbackBlockers") || "Blockers"}
+              rules={[
+                { required: true, message: t("required") || "Required" },
+              ]}
             >
               <Input
                 placeholder={t("feedbackBlockersPlaceholder") || "Issues hindering progress..."}
@@ -207,6 +219,9 @@ export default function SendFeedbackModal({
             <Form.Item
               name="nextSteps"
               label={t("feedbackNextSteps") || "Next Steps"}
+              rules={[
+                { required: true, message: t("required") || "Required" },
+              ]}
             >
               <Input
                 placeholder={t("feedbackNextStepsPlaceholder") || "Suggest next steps..."}
