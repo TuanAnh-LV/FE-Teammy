@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, Badge, Spin, notification, Table, Tag } from "antd";
+import { Card, Badge, Spin, notification, Table, Tag, Select } from "antd";
 import {
   ExclamationCircleOutlined,
   TeamOutlined,
@@ -11,6 +11,8 @@ import { useTranslation } from "../../hook/useTranslation";
 import { AdminService } from "../../services/admin.service";
 import { GroupService } from "../../services/group.service";
 import { TopicService } from "../../services/topic.service";
+import { SemesterService } from "../../services/semester.service";
+const { Option } = Select;
 
 const ModeratorDashboard = () => {
   const { t } = useTranslation();
@@ -20,17 +22,44 @@ const ModeratorDashboard = () => {
   const [topics, setTopics] = useState([]);
   const [loadingGroups, setLoadingGroups] = useState(false);
   const [loadingTopics, setLoadingTopics] = useState(false);
+  const [semesterList, setSemesterList] = useState([]);
+  const [selectedSemesterId, setSelectedSemesterId] = useState(null);
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchSemesters();
     fetchGroups();
     fetchTopics();
   }, []);
 
-  const fetchDashboardData = async () => {
+  useEffect(() => {
+    if (!selectedSemesterId) return;
+    fetchDashboardData(selectedSemesterId);
+  }, [selectedSemesterId]);
+
+  const fetchSemesters = async () => {
+    try {
+      const res = await SemesterService.list();
+      const payload = res?.data?.data || res?.data || [];
+      const list = Array.isArray(payload) ? payload : [];
+      setSemesterList(list);
+      const active = list.find((s) => s?.isActive);
+      setSelectedSemesterId(
+        active?.semesterId || list[0]?.semesterId || null
+      );
+    } catch {
+      notification.error({
+        message: t("error"),
+        description: "Failed to load semesters",
+      });
+    }
+  };
+
+  const fetchDashboardData = async (semesterId) => {
     try {
       setLoading(true);
-      const response = await AdminService.getDashboardModerator();
+      const response = await AdminService.getDashboardModerator({
+        semesterId,
+      });
       if (response?.data) setDashboardData(response.data);
     } catch {
       notification.error({
@@ -212,6 +241,18 @@ const ModeratorDashboard = () => {
             </Tag>
           )}
         </div>
+        <Select
+          value={selectedSemesterId}
+          onChange={(value) => setSelectedSemesterId(value)}
+          className="w-60"
+          placeholder={t("selectSemester") || "Select semester"}
+        >
+          {semesterList.map((s) => (
+            <Option key={s.semesterId} value={s.semesterId}>
+              {`${s.season || ""} ${s.year || ""}`.trim()}
+            </Option>
+          ))}
+        </Select>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
