@@ -323,6 +323,8 @@ export default function FeedbackTab({
     
     if (filterStatus === "all") {
       matchesStatus = true;
+    } else if (filterStatus === "submitted") {
+      matchesStatus = feedbackStatus === "submitted";
     } else if (filterStatus === "acknowledged") {
       matchesStatus = feedbackStatus === "acknowledged" || feedbackStatus === "đã xác nhận";
     } else if (filterStatus === "follow_up_requested") {
@@ -388,6 +390,7 @@ export default function FeedbackTab({
             suffixIcon={<Filter className="w-4 h-4 text-gray-400" />}
           >
             <Select.Option value="all">{t("allStatuses") || "All statuses"}</Select.Option>
+            <Select.Option value="submitted">{t("submittedStatus") || "Submitted"}</Select.Option>
             <Select.Option value="follow_up_requested">{t("followUpRequestedStatus") || "Follow Up Requested"}</Select.Option>
             <Select.Option value="acknowledged">{t("acknowledgedStatus") || "Acknowledged"}</Select.Option>
             <Select.Option value="resolved">{t("resolvedStatus") || "Resolved"}</Select.Option>
@@ -499,5 +502,6 @@ export default function FeedbackTab({
     </div>
   );
 }
+
 
 

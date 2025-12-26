@@ -930,6 +930,7 @@ export const translations = {
     sendingFeedback: "Sending...",
     searchFeedback: "Search feedback...",
     allStatuses: "All statuses",
+    submittedStatus: "Submitted",
     followUpRequestedStatus: "Follow Up Requested",
     acknowledgedStatus: "Acknowledged",
     resolvedStatus: "Resolved",
@@ -2619,6 +2620,7 @@ export const translations = {
     sendingFeedback: "Đang gửi...",
     searchFeedback: "Tìm kiếm feedback...",
     allStatuses: "Tất cả trạng thái",
+    submittedStatus: "Đã gửi",
     followUpRequestedStatus: "Yêu cầu theo dõi",
     acknowledgedStatus: "Đã xác nhận",
     resolvedStatus: "Đã giải quyết",
@@ -2859,5 +2861,7 @@ export const translations = {
 export const getTranslation = (key, language = "VIE") => {
   return translations[language]?.[key] || key;
 };
+
+
 
 
