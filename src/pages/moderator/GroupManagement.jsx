@@ -14,7 +14,6 @@ import { SearchOutlined, EyeOutlined, BellOutlined } from "@ant-design/icons";
 import GroupDetailModal from "../../components/moderator/GroupDetailModal";
 import { useTranslation } from "../../hook/useTranslation";
 import { GroupService } from "../../services/group.service";
-import { normalizeGroup } from "../../utils/group.utils";
 import { MajorService } from "../../services/major.service";
 const { Option } = Select;
 
@@ -40,23 +39,53 @@ export default function GroupManagement() {
       try {
         const res = await GroupService.getListGroup();
         const arr = Array.isArray(res?.data) ? res.data : [];
-        const normalized = arr.map((g, idx) => normalizeGroup(g, idx));
-        const mapped = normalized.map((g) => ({
-          key: g.id,
-          groupName: g.title,
-          topic: g.topicTitle || "Not Assigned",
-          mentor: g.mentor || "Not Assigned",
-          members: g.members || 0,
-          capacity: g.maxMembers || 5,
-          isFull: g.members >= (g.maxMembers || 5),
-          major: g.field || "",
-          status:
-            g.status && typeof g.status === "string"
+        const mapped = arr.map((g, idx) => {
+          const mentorObj =
+            g?.mentor ??
+            (Array.isArray(g?.mentors) && g.mentors.length > 0
+              ? g.mentors[0]
+              : null);
+
+          const mentorName =
+            (typeof mentorObj === "string" ? mentorObj : null) ||
+            mentorObj?.displayName ||
+            mentorObj?.fullName ||
+            mentorObj?.name ||
+            mentorObj?.mentorName ||
+            mentorObj?.email ||
+            g?.mentorName ||
+            "Not Assigned";
+          const membersCount = Number.isFinite(Number(g?.currentMembers))
+            ? g.currentMembers
+            : 0;
+          const capacity = Number.isFinite(Number(g?.maxMembers))
+            ? g.maxMembers
+            : 5;
+          const status =
+            g?.status && typeof g.status === "string"
               ? g.status.charAt(0).toUpperCase() + g.status.slice(1)
-              : "Active",
-          membersDetail: Array.isArray(g.memberPreview) ? g.memberPreview : [],
-          raw: g,
-        }));
+              : "Active";
+          return {
+            key: String(g?.groupId || g?.id || `G-${idx + 1}`),
+            groupName: g?.name || g?.title || `Group ${idx + 1}`,
+            topic: g?.topic?.title || g?.topicTitle || "Not Assigned",
+            mentor: mentorName || "Not Assigned",
+            members: membersCount,
+            capacity,
+            isFull: membersCount >= capacity,
+            major:
+              g?.field ||
+              g?.major?.majorName ||
+              g?.major?.name ||
+              (typeof g?.major === "string" ? g.major : "") ||
+              "",
+            status,
+            membersDetail: Array.isArray(g?.memberPreview)
+              ? g.memberPreview
+              : [],
+            raw: g,
+          };
+        });
         if (mounted) setRows(mapped);
       } catch {
         notification.error({
@@ -88,14 +117,6 @@ export default function GroupManagement() {
       mounted = false;
     };
   }, []);
-
-  const remindTopic = (record) => {
-    notification.info({
-      message:
-        t("topicReminderSent") ||
-        `Reminder sent for group "${record.groupName}".`,
-    });
-  };
 
   const columns = [
     {
@@ -165,7 +186,6 @@ export default function GroupManagement() {
       title: t("actions") || "Actions",
       key: "actions",
       render: (_, record) => {
-        const noTopic = record.topic === "Not Assigned";
         return (
           <Space size="small">
             <Tooltip title={t("viewDetails") || "View details"}>
@@ -187,20 +207,6 @@ export default function GroupManagement() {
                     });
                   }
                 }}
-              />
-            </Tooltip>
-            <Tooltip
-              title={
-                noTopic
-                  ? t("sendTopicReminder") || "Send topic reminder"
-                  : t("topicAlreadyAssigned") || "Topic already assigned"
-              }
-            >
-              <Button
-                type="text"
-                icon={<BellOutlined />}
-                disabled={!noTopic}
-                onClick={() => remindTopic(record)}
               />
             </Tooltip>
           </Space>
